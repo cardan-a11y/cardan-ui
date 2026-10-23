@@ -60,7 +60,7 @@ Base frontend guidelines (architecture, CSS design system, WCAG 2.2 requirements
 
 ### Utility Components
 
-- **CardanLogo**: Cardan logo in full, symbol and tile forms, with color variants and sub-brand lockups (e.g. `product="academy"`)
+- **CardanLogo**: Cardan logo in full, symbol and tile forms, with color variants and sub-brand lockups (e.g. `product="academy"`); the product name is always set in Hanken Grotesk
 - **FocusLoop**: Keyboard navigation management to trap focus inside a container
 - **LanguageSelect**: Language switcher to switch between English and Dutch
 - **ThemeSelect**: Theme selection
@@ -73,10 +73,10 @@ Base frontend guidelines (architecture, CSS design system, WCAG 2.2 requirements
 The [auth/](auth/) directory is a separate, opt-in Nuxt layer (`@cardan/auth-ui`) with the sign-in and MFA forms for Nuxt SPAs backed by Laravel Fortify. Projects extend it next to Cardan UI, as a peer: `github:cardan-a11y/cardan-ui/auth`. It is not part of the base layer because it adds pages and needs `nuxt-auth-sanctum`, which most projects do not use. Its documentation is in [auth/README.md](auth/README.md).
 
 - **Pages**: `/login`, `/forgot-password`, `/reset-password`, `/two-factor-authentication` and `/mfa-setup`, in the `AuthPage` frame (the Cardan Academy design, which Cardan Auditor adopts too). An app overrides a page by creating one at the same path
-- **Components**: `AuthPage`, `LoginForm`, `AuthError`, the password forms (`PasswordForgotForm`, `PasswordResetForm`, `PasswordUpdateForm`, `PasswordRequirements`), `MfaSettings`, `LogoutDialog`, `PasswordConfirmationDialog` and the MFA flow (`MfaChallenge`, `MfaSetup`, `MfaDialog`, `MfaQr`, `MfaCode`, recovery codes, …)
-- **Composables**: `useAuth`, `useMfa`, `useMfaDialog`, `usePasswordConfirmation`, `useMfaSetupReminder`, `usePasswordPolicy`, `useLoginEmail`, `useLogoutDialog` (wrapping `nuxt-auth-sanctum`), plus the `mfa-setup` middleware and the 403 plugin behind the setup reminder
-- Copy lives in the layer's `auth`, `mfa` and `password` messages; apps override keys. Buttons use the `black` (main actions) and `ghost` (secondary) variants; there is no app config and there are no button slots
-- The password endpoints are the Cardan Academy API's `/api/v1` paths, hardened against telling known from unknown addresses; other Cardan APIs follow them (see the Backend section of auth/README.md). `extractAuthError()` reads both Laravel's error shape and the JSON:API envelope
+- **Components**: `AuthPage`, `LoginForm`, `AuthError`, the password forms (`PasswordForgotForm`, `PasswordResetForm`, `PasswordUpdateForm`, `PasswordRequirements`, `PasswordReveal`), `MfaSettings`, `LogoutDialog`, `PasswordConfirmationDialog` and the MFA flow (`MfaChallenge`, `MfaSetup`, `MfaDialog`, `MfaQr`, `MfaCode`, recovery codes, …)
+- **Composables**: `useAuth`, `useMfa`, `useMfaDialog`, `usePasswordConfirmation`, `useMfaSetupReminder`, `usePasswordPolicy`, `useLoginEmail`, `useLogoutDialog`, `useCardanAuthConfig` (wrapping `nuxt-auth-sanctum` and the app config), plus the `mfa-setup` middleware and the 403 plugin behind the setup reminder
+- Copy lives in the layer's `auth`, `mfa` and `password` messages; apps override keys. Buttons use the `black` (main actions) and `ghost` (secondary) variants; there are no button slots
+- The endpoints and the password policy are settings under `cardanAuth` in the app config, with the Cardan Academy API's paths as defaults (`auth/app/app.config.ts`, read through `useCardanAuthConfig()`); an app whose API still serves Fortify's own password routes overrides them in its `app.config.ts` (see the Backend and Configuration sections of auth/README.md). `extractAuthError()` reads both Laravel's error shape and the JSON:API envelope
 - The layer uses the Cardan UI components and tokens only, with no tokens of its own
 - The demo is the Auth UI section of the playground (`/auth`), backed by mock Fortify endpoints in `.playground/server/routes`; its pages render client-side only, like the SPAs that use the layer
 

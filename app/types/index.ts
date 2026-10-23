@@ -100,15 +100,7 @@ declare global {
     | 'xxxxl';
 
   type FontSize =
-    | 'xxs'
-    | 'xs'
-    | 'sm'
-    | 'md'
-    | 'lg'
-    | 'xl'
-    | 'xxl'
-    | 'xxxl'
-    | 'xxxxl';
+    'xxs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'xxxl' | 'xxxxl';
 
   type ButtonSize = 'xxs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   type ButtonVariant =
@@ -119,6 +111,7 @@ declare global {
     | 'ghost-red'
     | 'outline'
     | 'outline-green'
+    | 'outline-red'
     | 'tab'
     | 'cta'
     | 'black'
@@ -150,11 +143,7 @@ declare global {
   type ChipSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
   type DialogPosition =
-    | 'inline-start'
-    | 'center'
-    | 'inline-end'
-    | 'block-start'
-    | 'block-end';
+    'inline-start' | 'center' | 'inline-end' | 'block-start' | 'block-end';
   type MobileMenuPosition = 'inline-start' | 'inline-end';
 
   type DatePickerAriaLabels = {

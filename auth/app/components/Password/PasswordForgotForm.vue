@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
- * Asks for a reset link (`POST /api/v1/auth/forgot-password`). The API answers the
- * same whether or not the address has an account, so this form does too.
+ * Asks for a reset link (`endpoints.forgotPassword`). The Cardan APIs answer
+ * the same whether or not the address has an account, so this form does too.
  */
 const { client } = useAuth();
+const { endpoints } = useCardanAuthConfig();
 
 const email = useLoginEmail();
 
@@ -17,7 +18,7 @@ async function requestResetLink() {
   loading.value = true;
 
   try {
-    await client('/api/v1/auth/forgot-password', {
+    await client(endpoints.forgotPassword, {
       method: 'POST',
       body: { email: email.value },
     });

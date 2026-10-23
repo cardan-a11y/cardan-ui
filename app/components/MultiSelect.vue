@@ -260,9 +260,9 @@ function preventEscape(event: KeyboardEvent) {
   }
 
   --ms-bg-disabled: var(--color-white);
-  --ms-border-color: var(--color-grey-graphic);
+  --ms-border-color: var(--color-grey-light);
   --ms-border-width: 1px;
-  --ms-border-color-active: var(--focus-color);
+  --ms-border-color-active: var(--color-grey-light);
   /* --ms-border-width-active: 1px; */
   --ms-radius: var(--radius-md);
   --ms-py: 0.35em;
@@ -272,7 +272,7 @@ function preventEscape(event: KeyboardEvent) {
   --ms-placeholder-color: var(--color-grey-text);
   --ms-max-height: 16rem;
 
-  --ms-spinner-color: var(--color-accent);
+  --ms-spinner-color: var(--color-accent-graphic);
   --ms-caret-color: var(--color-grey-graphic);
   --ms-clear-color: var(--color-grey-text);
   --ms-clear-color-hover: var(--color-text);
@@ -297,7 +297,7 @@ function preventEscape(event: KeyboardEvent) {
   /* --ms-tag-remove-mx: 0.125rem; */
 
   --ms-dropdown-bg: var(--color-card-bg);
-  --ms-dropdown-border-color: var(--focus-color);
+  --ms-dropdown-border-color: var(--color-grey-light);
   --ms-dropdown-border-width: 1px;
   --ms-dropdown-radius: var(--radius-md);
 
@@ -320,8 +320,8 @@ function preventEscape(event: KeyboardEvent) {
   --ms-option-font-size: var(--font-size-sm);
   /* --ms-option-line-height: 1.375; */
   /* The pointed (hovered or keyboard-highlighted) option needs a 3:1 contrast change */
-  --ms-option-bg-pointed: var(--color-accent);
-  --ms-option-color-pointed: var(--color-on-accent);
+  --ms-option-bg-pointed: var(--color-accent-bg);
+  --ms-option-color-pointed: var(--color-accent-text);
   --ms-option-bg-selected: var(--color-green-bg);
   --ms-option-color-selected: var(--color-green-text);
   --ms-option-bg-disabled: var(--color-grey-bg);

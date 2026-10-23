@@ -317,8 +317,7 @@ const emit = defineEmits<{
   background-color: var(--color-red-bg);
 
   &:not(:disabled, .disabled):hover {
-    color: var(--color-white);
-    background-color: var(--color-red-text);
+    background-color: color-mix(in srgb, var(--color-red) 20%, white);
   }
 }
 
@@ -499,10 +498,15 @@ const emit = defineEmits<{
   &:not(:disabled, .disabled):hover {
     background-color: var(--color-green-bg);
   }
+}
 
-  &.router-link-active {
-    text-decoration: underline;
-    color: var(--color-accent-text);
+.button-variant--outline-red {
+  color: var(--color-red-text);
+  background-color: transparent;
+  border-color: var(--color-red-graphic);
+
+  &:not(:disabled, .disabled):hover {
+    background-color: var(--color-red-bg);
   }
 }
 

@@ -195,6 +195,7 @@ const emit = defineEmits<{
 .menu-list--inline {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--gap);
 
   > .menu-list-item {

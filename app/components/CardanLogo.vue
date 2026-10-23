@@ -198,9 +198,12 @@ const computedStyle = computed(() => ({
     overflow: visible;
   }
 
+  /* The product name is brand artwork like the colors: always Hanken Grotesk,
+     whatever font the project uses. @nuxt/fonts, registered by the layer,
+     serves it from the project itself. */
   .logo-product {
-    font-family: var(--font-family, sans-serif);
-    font-weight: var(--font-weight-regular, 400);
+    font-family: 'Hanken Grotesk', Arial, sans-serif;
+    font-weight: 400;
     fill: var(--logo-product);
   }
 

@@ -4,7 +4,7 @@ Accessible authentication UX for [Nuxt](https://nuxt.com) SPAs backed by [Larave
 
 Cardan Auth UI is a [Nuxt Layer](https://nuxt.com/docs/getting-started/layers) in a public repository. It ships the sign-in pages and the whole MFA flow — login, forgot and reset password, the second factor at sign-in, setting up MFA, account settings for MFA and the password, signing out — in the Cardan design, so an app extends the layer instead of rebuilding them.
 
-The pages render inside your app's default layout; an app overrides one by creating a page at the same path. Copy is in the layer's messages, so an app changes a sentence by overriding its key, and the buttons follow one variant setting in your app config.
+The pages render inside your app's default layout; an app overrides one by creating a page at the same path. Copy is in the layer's messages, so an app changes a sentence by overriding its key, and the endpoints it calls and the password policy it shows are settings in your app config (see [Configuration](#configuration)).
 
 ## Dependencies
 
@@ -74,24 +74,53 @@ export default defineNuxtConfig({
 
 ### Backend
 
-The layer calls these endpoints, relative to your configured `sanctum.baseUrl`: Fortify's own for sign-in and MFA, and the Cardan API's `/api/v1` paths for passwords. The Cardan Academy API is the reference; another Cardan API serves the same paths.
+The layer calls these endpoints, relative to your configured `sanctum.baseUrl`: Fortify's own for sign-in and MFA, and the Cardan API's `/api/v1` paths for passwords. These are the defaults, the Cardan Academy API's; [Configuration](#configuration) shows how an app points them elsewhere.
 
-| Endpoint                                        | Method            | Used for                                      |
-| ----------------------------------------------- | ----------------- | --------------------------------------------- |
-| `/api/user/two-factor-authentication`           | `POST` / `DELETE` | Enable / disable MFA                          |
-| `/api/user/two-factor-qr-code`                  | `GET`             | The setup QR code (inline SVG)                |
-| `/api/user/confirmed-two-factor-authentication` | `POST`            | Confirm the first code                        |
-| `/api/user/two-factor-recovery-codes`           | `GET` / `POST`    | Read / regenerate recovery codes              |
-| `/api/two-factor-challenge`                     | `POST`            | Second factor at sign-in                      |
-| your `sanctum.endpoints.login`                  | `POST`            | Sign in (path taken from your Sanctum config) |
-| `/api/v1/auth/forgot-password`                  | `POST`            | Request a reset link (`email`)                |
-| `/api/v1/auth/reset-password`                   | `POST`            | Set a new password from the reset link        |
-| `/api/v1/profile/password`                      | `PATCH`           | Change the password while signed in           |
-| `/api/v1/password-policy`                       | `GET`             | `{ data: { min_length, max_length } }`        |
+| Endpoint                                        | Method                           | Config key                | Used for                                                       |
+| ----------------------------------------------- | -------------------------------- | ------------------------- | -------------------------------------------------------------- |
+| `/api/user/two-factor-authentication`           | `POST` / `DELETE`                | `twoFactorAuthentication` | Enable / disable MFA                                           |
+| `/api/user/two-factor-qr-code`                  | `GET`                            | `twoFactorQrCode`         | The setup QR code (inline SVG) and its `otpauth://` link       |
+| `/api/user/confirmed-two-factor-authentication` | `POST`                           | `twoFactorConfirmation`   | Confirm the first code                                         |
+| `/api/user/two-factor-recovery-codes`           | `GET` / `POST`                   | `twoFactorRecoveryCodes`  | Read / regenerate recovery codes                               |
+| `/api/two-factor-challenge`                     | `POST`                           | `twoFactorChallenge`      | Second factor at sign-in                                       |
+| `/api/user/confirmed-password-status`           | `GET`                            | `confirmedPasswordStatus` | Whether the password was confirmed recently                    |
+| `/api/user/confirm-password`                    | `POST`                           | `confirmPassword`         | Confirm the password                                           |
+| your `sanctum.endpoints.login`                  | `POST`                           |                           | Sign in (path taken from your Sanctum config)                  |
+| `/api/v1/auth/forgot-password`                  | `POST`                           | `forgotPassword`          | Request a reset link (`email`)                                 |
+| `/api/v1/auth/reset-password`                   | `POST`                           | `resetPassword`           | Set a new password from the reset link                         |
+| `/api/v1/profile/password`                      | `PATCH` (`updatePasswordMethod`) | `updatePassword`          | Change the password while signed in                            |
+| `/api/v1/password-policy`                       | `GET`                            | `passwordPolicy`          | `{ data: { min_length, max_length } }`, or `false` without one |
 
-Enable Fortify's `two-factor-authentication` feature with `confirm: true`. Leave Fortify's `resetPasswords` feature off: its routes tell a known address from an unknown one. The password endpoints take Fortify's fields (`token`, `email`, `password`, `password_confirmation`, `current_password`) and answer a known and an unknown address identically. Errors may come in Laravel's shape (`{ message, errors: { field: [...] } }`) or as a JSON:API envelope (`{ errors: [{ detail, source: { parameter } }] }`); `extractAuthError()` reads both. Point the reset email at your app's `/reset-password` page with `?token=…&email=…`.
+Enable Fortify's `two-factor-authentication` feature with `confirm: true`. Leave Fortify's `resetPasswords` feature off: its routes tell a known address from an unknown one. The password endpoints take Fortify's fields (`token`, `email`, `password`, `password_confirmation`, `current_password`) and answer a known and an unknown address identically. Errors may come in Laravel's shape (`{ message, errors: { field: [...] } }`) or as a JSON:API envelope (`{ errors: [{ detail, source: { parameter } }] }`); `extractAuthError()` reads both. Point the reset email at your app's `/reset-password` page with `?token=…&email=…`; a mail without the `email`, such as Fortify's own, gets a visible email field on that page.
 
 The user payload tells the layer whether MFA is on: `mfa_enabled`, plus `mfa_required` (a role or organization requires it) and `mfa_exempt` (never remind this account). Without `mfa_enabled` the setup reminder stays off.
+
+### Configuration
+
+The settings live under `cardanAuth` in the app config, with the Cardan Academy API as the default (`app/app.config.ts` in the layer). Nuxt merges the app config of every layer, so an app overrides single keys in its own `app/app.config.ts`, and code reads them with `useCardanAuthConfig()`. An API that still serves Fortify's own password routes, and has no policy endpoint, sets:
+
+```ts
+// app/app.config.ts
+export default defineAppConfig({
+  cardanAuth: {
+    endpoints: {
+      forgotPassword: '/api/forgot-password',
+      resetPassword: '/api/reset-password',
+      updatePassword: '/api/user/password',
+      passwordPolicy: false,
+    },
+    updatePasswordMethod: 'PUT',
+    passwordPolicy: { minLength: 8, maxLength: null, serverChecks: false },
+  },
+});
+```
+
+| Key                                     | Default         |                                                                                                                                                 |
+| --------------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `endpoints.*`                           | the paths above | Relative to `sanctum.baseUrl`. Sign-in, sign-out, the identity and the CSRF cookie stay in the `sanctum` config                                 |
+| `updatePasswordMethod`                  | `'PATCH'`       | `'PUT'` for Fortify's own `/user/password` route                                                                                                |
+| `passwordPolicy.minLength`, `maxLength` | `14`, `128`     | Shown until the policy endpoint answers, or as the policy when `endpoints.passwordPolicy` is `false`. `maxLength: null` sets no maximum         |
+| `passwordPolicy.serverChecks`           | `true`          | Whether the API also refuses breached and common passwords and ones with personal information on save; the forms list those checks when it does |
 
 ## Usage
 
@@ -264,7 +293,7 @@ The buttons follow the [button variants](#button-variants) of your app config.
 
 `/forgot-password` and `/reset-password` use `PasswordForgotForm` and `PasswordResetForm`. The forgot form starts from the address typed on the login page (`useLoginEmail()`). After a reset the user is signed in: straight on, or through the sign-in challenge when the account has MFA.
 
-`PasswordUpdateForm` changes the password while signed in, for an account settings page, and shows a toast when it is saved. Both password forms list the requirements with `PasswordRequirements` and check the length while the user types, read from `/api/v1/password-policy` (14 characters until it answers).
+`PasswordUpdateForm` changes the password while signed in, for an account settings page, and shows a toast when it is saved. Both password forms list the requirements with `PasswordRequirements` and check the length while the user types, read from the policy endpoint, or from the `passwordPolicy` settings for an API without one (see [Configuration](#configuration)). Every password field has a reveal button (`PasswordReveal`); in the reset and update forms the one beside the last field reveals them all. When the reset link carries no `?email=`, the reset form asks for the address.
 
 ### Account settings for MFA
 
@@ -334,7 +363,8 @@ Every `useAuth().user` in your app is then typed against your own payload, with 
 |                         |                                                                                    |
 | ----------------------- | ---------------------------------------------------------------------------------- |
 | `useLoginEmail()`       | The address typed on the login page, shared with the forgot-password page          |
-| `usePasswordPolicy()`   | `minLength` and `maxLength` of new passwords                                       |
+| `usePasswordPolicy()`   | `minLength`, `maxLength` and `serverChecks` of new passwords                       |
+| `useCardanAuthConfig()` | The `cardanAuth` settings of the app config, see [Configuration](#configuration)   |
 | `useLogoutDialog()`     | `logoutDialogRef` to open `LogoutDialog`, and `handleLogout()`                     |
 | `useMfaSetupReminder()` | `mfaEnabled`, `mfaRequired`, `needsMfaSetup` and the reminder used by `/mfa-setup` |
 
@@ -365,6 +395,7 @@ Reach for it to build your own flow. For the standard one, `useMfaDialog()` plus
 | `PasswordForgotForm`, `PasswordResetForm`                             | Request a reset link, set a new password from it             |
 | `PasswordUpdateForm`                                                  | Change the password while signed in                          |
 | `PasswordRequirements`                                                | The password rules, with the length checked while typing     |
+| `PasswordReveal`                                                      | The reveal-password toggle beside a password field           |
 | `MfaSettings`                                                         | MFA status and actions for an account settings page          |
 | `LogoutDialog`                                                        | Asks before signing out                                      |
 | `MfaDialog`                                                           | The enable/disable flow, all six steps. Emits `refresh`      |
@@ -403,7 +434,7 @@ Built to WCAG 2.2 AA, like everything at Cardan:
 - Errors render in a `role="alert"` region.
 - The QR code is exposed as `role="img"` with a translated name, and the written setup instructions sit beside it rather than only inside the image.
 - Dialogs are native `<dialog>` elements from Cardan UI: modal focus trapping, `Escape` to close, and a labelled heading.
-- `LoginForm`'s reveal-password button is a real toggle button carrying `aria-pressed`, not an icon that silently swaps meaning, and the fields declare `autocomplete="username"` / `"current-password"` (WCAG 1.3.5).
+- The reveal-password button beside every password field (`PasswordReveal`) is a real toggle button carrying `aria-pressed`, not an icon that silently swaps meaning, and the fields declare `autocomplete="username"` / `"current-password"` (WCAG 1.3.5).
 
 ## Development
 

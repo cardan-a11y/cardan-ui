@@ -1,35 +1,38 @@
 /**
- * Used until the API has answered, and when it cannot; the API validates
- * every password anyway, so a stale bound only affects the hint.
- */
-const FALLBACK_POLICY: PasswordPolicyData = { min_length: 14, max_length: 128 };
-
-/**
- * The password length the API enforces, read from `GET /api/v1/password-policy`
- * (`{ data: { min_length, max_length } }`) so it is never hard-coded. Until it
- * answers, the fallback applies. Only the length can be checked while someone
- * types: the breach, common-password and name checks run on the server and
- * come back as validation errors on submit.
+ * The password length the API enforces, so it is never hard-coded here: read
+ * from the policy endpoint (`{ data: { min_length, max_length } }`) when the
+ * config names one, with `passwordPolicy` of the config as the answer until it
+ * does. An API without such an endpoint sets `endpoints.passwordPolicy` to
+ * `false`, and the config's policy is the one shown.
+ *
+ * Only the length can be checked while someone types: the breach,
+ * common-password and personal-information checks run on the server and come
+ * back as validation errors on submit; `serverChecks` says whether the API
+ * runs them, so the forms can list them.
  *
  * Fetched once per session and shared through `useState`.
  */
 export function usePasswordPolicy() {
   const { client } = useAuth();
+  const { endpoints, passwordPolicy: configured } = useCardanAuthConfig();
 
-  const policy = useState<PasswordPolicyData>(
+  const policy = useState<{ minLength: number; maxLength?: number }>(
     'passwordPolicy',
-    () => FALLBACK_POLICY,
+    () => ({
+      minLength: configured.minLength,
+      maxLength: configured.maxLength ?? undefined,
+    }),
   );
   const requested = useState('passwordPolicyRequested', () => false);
 
-  if (!requested.value) {
+  if (endpoints.passwordPolicy && !requested.value) {
     requested.value = true;
 
-    client<{ data: PasswordPolicyData }>('/api/v1/password-policy')
+    client<{ data: PasswordPolicyData }>(endpoints.passwordPolicy)
       .then(({ data }) => {
         policy.value = {
-          min_length: data.min_length,
-          max_length: data.max_length,
+          minLength: data.min_length,
+          maxLength: data.max_length,
         };
       })
       .catch((error) => {
@@ -39,11 +42,13 @@ export function usePasswordPolicy() {
       });
   }
 
-  const minLength = computed(() => policy.value.min_length);
-  const maxLength = computed(() => policy.value.max_length);
+  const minLength = computed(() => policy.value.minLength);
+  const maxLength = computed(() => policy.value.maxLength);
+  const serverChecks = computed(() => configured.serverChecks);
 
   return {
     minLength,
     maxLength,
+    serverChecks,
   };
 }

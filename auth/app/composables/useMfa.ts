@@ -8,6 +8,7 @@
 export function useMfa() {
   const { client, refreshIdentity, loginRedirectTarget } = useAuth();
   const { withPasswordConfirmation } = usePasswordConfirmation();
+  const { endpoints } = useCardanAuthConfig();
 
   const mfaStep = useState<MfaStep>('mfaStep', () => 1);
   const qrCode = useState('qrCode', () => '');
@@ -84,7 +85,7 @@ export function useMfa() {
 
     try {
       const codes = await settingsRequest<string[]>(
-        '/api/user/two-factor-recovery-codes',
+        endpoints.twoFactorRecoveryCodes,
       );
       if (codes?.length) recoveryCodes.value = codes;
     } catch (error) {
@@ -97,7 +98,7 @@ export function useMfa() {
     loadingGenerateRecoveryCodes.value = true;
 
     try {
-      await settingsRequest('/api/user/two-factor-recovery-codes', {
+      await settingsRequest(endpoints.twoFactorRecoveryCodes, {
         method: 'POST',
       });
       await getRecoveryCodes();
@@ -112,7 +113,7 @@ export function useMfa() {
     mfaError.value = null;
 
     try {
-      await settingsRequest('/api/user/two-factor-authentication', {
+      await settingsRequest(endpoints.twoFactorAuthentication, {
         method: 'POST',
       });
       mfaStep.value = 2;
@@ -132,7 +133,7 @@ export function useMfa() {
     loadingDisableMfa.value = true;
 
     try {
-      await settingsRequest('/api/user/two-factor-authentication', {
+      await settingsRequest(endpoints.twoFactorAuthentication, {
         method: 'DELETE',
       });
       if (showResult) mfaStep.value = 6;
@@ -151,7 +152,7 @@ export function useMfa() {
 
     try {
       const data = await settingsRequest<{ svg?: string; url?: string }>(
-        '/api/user/two-factor-qr-code',
+        endpoints.twoFactorQrCode,
       );
       if (data?.svg) qrCode.value = data.svg;
       if (data?.url) qrCodeUrl.value = data.url;
@@ -172,7 +173,7 @@ export function useMfa() {
       // enrolment.
       await getRecoveryCodes();
 
-      await settingsRequest('/api/user/confirmed-two-factor-authentication', {
+      await settingsRequest(endpoints.twoFactorConfirmation, {
         method: 'POST',
         body: mfaCredentials.value,
       });
@@ -197,7 +198,7 @@ export function useMfa() {
     const redirect = loginRedirectTarget();
 
     try {
-      await client('/api/two-factor-challenge', {
+      await client(endpoints.twoFactorChallenge, {
         method: 'POST',
         body: mfaCredentials.value,
       });

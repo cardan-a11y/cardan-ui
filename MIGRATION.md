@@ -235,3 +235,38 @@ On a `--color-grey-bg` or `--color-grey-light` surface that hover is invisible o
 - **Sidebar Button**: the icon takes the text color, the hover color is `--color-accent-text-hover`, and the link to the current page is underlined in `--color-accent-text`.
 - **`useCookiesDialog`** only holds the consent state and the `acceptCookies` and `denyCookies` actions. `CookiesDialog` now loads GTM and applies the saved choice, so a page sends one consent update however many components call the composable (before, each call sent its own). Render `<CookiesDialog />` once in your layout; without it, GTM no longer loads.
 - **MenuList**: group labels are bold, the hover color is `--color-accent-text` instead of `--color-accent`, and the link to the current page is underlined in the text color instead of the accent color.
+
+## 8. Upgrading to 2.2
+
+2.2 makes the endpoints and the password policy of Cardan Auth UI configurable, gives every password field a reveal button, lets the reset page ask for the email address when the reset link has none, and sets the product name of `CardanLogo` in Hanken Grotesk whatever font the project uses.
+
+### Cardan Auth UI settings
+
+The endpoints the auth layer calls and the password policy it shows are settings under `cardanAuth` in the app config, with the Cardan Academy API's paths as the defaults (`auth/app/app.config.ts`). Nothing changes for an app on those paths. An app whose API still serves Fortify's own password routes, with no policy endpoint, overrides them in its `app/app.config.ts`:
+
+```ts
+export default defineAppConfig({
+  cardanAuth: {
+    endpoints: {
+      forgotPassword: '/api/forgot-password',
+      resetPassword: '/api/reset-password',
+      updatePassword: '/api/user/password',
+      passwordPolicy: false,
+    },
+    updatePasswordMethod: 'PUT',
+    passwordPolicy: { minLength: 8, maxLength: null, serverChecks: false },
+  },
+});
+```
+
+With `serverChecks: false` the forms list only the length rule. The Configuration section of [`auth/README.md`](auth/README.md) describes every key.
+
+### Password forms
+
+- `PasswordResetForm` and `PasswordUpdateForm` have a reveal-password button beside their last field, which reveals all their password fields, as `LoginForm` has beside its password field; `PasswordConfirmationDialog` has one too. The button is the new `PasswordReveal` component, which also owns the `.password-input-wrapper` rule that `LoginForm` used to carry.
+- `PasswordResetForm` shows a required email field when the reset link has no `?email=`, as Fortify's own reset mail. A link with the address keeps the hidden field.
+- `usePasswordPolicy()` also returns `serverChecks`.
+
+### CardanLogo
+
+The product name in a lockup such as `<CardanLogo product="auditor" />` is set in Hanken Grotesk, as brand artwork, instead of the project's `--font-family`. `@nuxt/fonts`, registered by the layer, serves the font from the project itself; a project on another font downloads one weight of it for the logo, since no other text uses it.

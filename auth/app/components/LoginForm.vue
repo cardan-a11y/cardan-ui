@@ -139,20 +139,10 @@ defineExpose({ submitting, error });
         :size="size"
       />
 
-      <Button
+      <PasswordReveal
         v-if="showPasswordToggle"
-        :label="$t('password.show')"
-        :aria-pressed="showPassword"
-        :icon="
-          showPassword
-            ? 'material-symbols:visibility'
-            : 'material-symbols:visibility-off'
-        "
-        hide-label
-        class="show-password"
+        v-model="showPassword"
         :size="size"
-        variant="ghost"
-        @click="showPassword = !showPassword"
       />
     </div>
 
@@ -200,16 +190,6 @@ defineExpose({ submitting, error });
     margin-block-start: 0rem;
     min-width: 100%;
     max-width: none;
-  }
-
-  .password-input-wrapper {
-    display: flex;
-    gap: 0.25rem;
-    align-items: end;
-
-    .form-field-wrapper {
-      flex-grow: 1;
-    }
   }
 
   &.show-invalid:has(:invalid) .button[type='button'] {

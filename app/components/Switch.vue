@@ -130,7 +130,7 @@ const computedAriaDescribedby = computed(() =>
   }
 
   .switch-label {
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
     transition-property: color, font-weight;
     transition-duration: var(--duration-sm);

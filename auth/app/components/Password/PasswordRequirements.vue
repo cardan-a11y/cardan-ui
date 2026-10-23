@@ -3,20 +3,32 @@ const { password = '' } = defineProps<{
   password?: string;
 }>();
 
-const { minLength } = usePasswordPolicy();
+const { minLength, serverChecks } = usePasswordPolicy();
 
-// Length is checked while typing. The API checks the others when the form is
-// saved and explains a refusal, which the form shows as an error; they are
-// listed so the rules are known up front.
-const requirements = computed(() => [
+type Requirement = {
+  key: string;
+  valid?: boolean;
+  count?: number;
+  checkedOnSave?: boolean;
+};
+
+// Length is checked while typing. An API that also checks breaches, common
+// passwords and personal information (`serverChecks`) does so when the form
+// is saved and explains a refusal, which the form shows as an error; those
+// are listed so the rules are known up front.
+const requirements = computed<Requirement[]>(() => [
   {
     key: 'length',
     valid: password.length >= minLength.value,
     count: minLength.value,
   },
-  { key: 'breached', checkedOnSave: true },
-  { key: 'common', checkedOnSave: true },
-  { key: 'context', checkedOnSave: true },
+  ...(serverChecks.value
+    ? [
+        { key: 'breached', checkedOnSave: true },
+        { key: 'common', checkedOnSave: true },
+        { key: 'context', checkedOnSave: true },
+      ]
+    : []),
 ]);
 </script>
 
@@ -69,6 +81,13 @@ const requirements = computed(() => [
 </template>
 
 <style>
+/* The new password field with its requirements below it, as one row of the
+   form: the form's row gap stays between the fields, not inside this pair. */
+.password-new-field {
+  display: grid;
+  gap: 0.5rem;
+}
+
 .password-requirements {
   @container (min-width: 280px) {
     background-color: var(--color-bg);

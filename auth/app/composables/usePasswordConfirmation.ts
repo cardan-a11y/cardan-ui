@@ -21,6 +21,7 @@ let pendingAfterConfirm: (() => Promise<unknown>) | null = null;
  */
 export function usePasswordConfirmation() {
   const { client } = useAuth();
+  const { endpoints } = useCardanAuthConfig();
 
   const passwordConfirmationDialogRef = useState<DialogComponent | null>(
     'passwordConfirmationDialogRef',
@@ -83,7 +84,7 @@ export function usePasswordConfirmation() {
   async function isPasswordConfirmed() {
     try {
       const status = await client<{ confirmed?: boolean }>(
-        '/api/user/confirmed-password-status',
+        endpoints.confirmedPasswordStatus,
       );
       return !!status?.confirmed;
     } catch {
@@ -106,7 +107,7 @@ export function usePasswordConfirmation() {
     loadingPasswordConfirmation.value = true;
 
     try {
-      await client('/api/user/confirm-password', {
+      await client(endpoints.confirmPassword, {
         method: 'POST',
         body: { password },
       });
