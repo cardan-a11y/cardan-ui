@@ -7,6 +7,21 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.3.1" date="2026-11-02">
+      <ul>
+        <li>
+          MarkdownPreview renders a bare YouTube or Vimeo link in a paragraph of
+          its own as a VideoPlayer, also without <code>trusted</code>; a link
+          with its own text stays a link
+        </li>
+        <li>
+          VideoPlayer shares its URL parsing with MarkdownPreview
+          (<code>parseVideoUrl()</code>) and recognises YouTube shorts and live
+          URLs
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.3.0" date="2026-10-29">
       <ul>
         <li>
@@ -46,19 +61,18 @@ useHead({ title: 'Changelog' });
           at 0.8 times the logo height, the logo is 20px high by default (was
           16px), a lockup takes the room it gets in a flex row, from 144px (new
           <code>narrow-width</code> prop) up to its height, so it fits in a
-          320px app header, and
-          the tile is the color symbol on a white tile
+          320px app header, and the tile is the color symbol on a white tile
           (<code>variant="white"</code> for the purple tile)
         </li>
         <li>
-          The favicon in <code>.playground/public</code> is the light round
-          tile with the symbol at 72%
+          The favicon in <code>.playground/public</code> is the light round tile
+          with the symbol at 72%
         </li>
         <li>
           The primary Button is white text on purple in dark mode too, with the
           <code>--color-accent</code>, <code>--color-on-accent</code> and
-          <code>--color-accent-hover</code> tokens, which every project needs
-          in its <code>main.css</code>; it replaces the <code>cta</code>
+          <code>--color-accent-hover</code> tokens, which every project needs in
+          its <code>main.css</code>; it replaces the <code>cta</code>
           Button, which is removed
         </li>
         <li>
@@ -91,9 +105,9 @@ useHead({ title: 'Changelog' });
     <ChangelogEntry v="2.2.1" date="2026-10-27">
       <ul>
         <li>
-          Make the Popover trigger text one step smaller, like the Button of
-          the same size: <code>sm</code> for <code>md</code>,
-          <code>md</code> for <code>lg</code> and <code>lg</code> for
+          Make the Popover trigger text one step smaller, like the Button of the
+          same size: <code>sm</code> for <code>md</code>, <code>md</code> for
+          <code>lg</code> and <code>lg</code> for
           <code>xl</code>
         </li>
         <li>
@@ -122,12 +136,12 @@ useHead({ title: 'Changelog' });
         </li>
         <li>
           Feature: add <code>iconPos</code> prop to Accordion and
-          AccordionDetails components, with the icon at the
-          <code>end</code> by default
+          AccordionDetails components, with the icon at the <code>end</code> by
+          default
         </li>
         <li>
-          AccordionDetails component shows the same chevron as Accordion
-          instead of the native disclosure triangle, with
+          AccordionDetails component shows the same chevron as Accordion instead
+          of the native disclosure triangle, with
           <code>icon</code> and <code>arrow</code> props
         </li>
         <li>
@@ -193,9 +207,7 @@ useHead({ title: 'Changelog' });
           Use larger text in Avatar and UserMenu components, semibold Avatar
           initials and 14px labels in Switch component
         </li>
-        <li>
-          Use <code>--color-bg</code> as background of the flat grey Chip
-        </li>
+        <li>Use <code>--color-bg</code> as background of the flat grey Chip</li>
         <li>Fix: align the items of an inline MenuList vertically</li>
       </ul>
     </ChangelogEntry>

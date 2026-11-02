@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { parseVideoUrl, type VideoSource } from '../utils/video';
+
 const props = defineProps<{
   url: string;
   caption?: string;
@@ -7,79 +9,21 @@ const props = defineProps<{
 
 const started = ref(false);
 
-const videoProvider = computed(() => {
-  if (props.url?.includes('vimeo')) {
-    return 'vimeo';
-  }
-  return 'youtube';
-});
-
-/** Vimeo video id and optional privacy hash (path or `h` query). */
-function parseVimeoUrl(url: string | undefined): { id: string; hash?: string } {
-  if (!url) {
-    return { id: 'e' };
-  }
-
-  try {
-    const parsed = new URL(url);
-    const hFromQuery = parsed.searchParams.get('h') ?? undefined;
-    const segments = parsed.pathname.split('/').filter(Boolean);
-    const videoIndex = segments[0] === 'video' && segments.length >= 2 ? 1 : 0;
-    const idSegment = segments[videoIndex];
-    if (idSegment && /^\d+$/.test(idSegment)) {
-      const next = segments[videoIndex + 1];
-      const hashFromPath =
-        next && /^[a-zA-Z0-9]+$/.test(next) ? next : undefined;
-      return {
-        id: idSegment,
-        hash: hashFromPath ?? hFromQuery,
-      };
-    }
-  } catch {
-    /* relative or malformed URL */
-  }
-
-  const legacy = url.match(
-    /:\/\/(?:player\.)?vimeo\.com\/(?:video\/)?(\d+)(?:#t=(\d+?)s)?/,
-  );
-  if (legacy?.[1]) {
-    const hParam = url.match(/[?&]h=([a-zA-Z0-9]+)/);
-    return { id: legacy[1], hash: hParam?.[1] };
-  }
-
-  return { id: 'e' };
-}
-
-const vimeoParsed = computed(() =>
-  videoProvider.value === 'vimeo' ? parseVimeoUrl(props.url) : null,
+/** A URL that is no video keeps the YouTube embed with a dummy id, so the figure still renders. */
+const video = computed<VideoSource>(
+  () => parseVideoUrl(props.url) ?? { provider: 'youtube', id: 'e' },
 );
 
-const videoKey = computed(() => {
-  if (videoProvider.value === 'vimeo') {
-    return vimeoParsed.value?.id ?? 'e';
-  }
-
-  const match = props.url?.match(
-    /:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/)?([a-zA-Z0-9-_]+)(?:(?:&t=|\?t=|\?start=)(\d+))?/,
-  );
-
-  if (match?.length === 3) {
-    return match[1];
-  }
-
-  return 'e';
-});
-
-const vimeoPrivacyHash = computed(() => vimeoParsed.value?.hash);
-
 const metadataUrl = computed(() => {
-  if (videoProvider.value === 'vimeo') {
-    const pageUrl = vimeoPrivacyHash.value
-      ? `https://vimeo.com/${videoKey.value}/${vimeoPrivacyHash.value}`
-      : `https://vimeo.com/${videoKey.value}`;
+  const { provider, id, hash } = video.value;
+
+  if (provider === 'vimeo') {
+    const pageUrl = hash
+      ? `https://vimeo.com/${id}/${hash}`
+      : `https://vimeo.com/${id}`;
     return `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(pageUrl)}&width=960&height=540`;
   }
-  return `https://youtube.com/oembed?url=https://youtube.com/watch?v=${videoKey.value}&format=json`;
+  return `https://youtube.com/oembed?url=https://youtube.com/watch?v=${id}&format=json`;
 });
 
 const { data: videoData } = await useAsyncData<VideoMetaData>(
@@ -104,21 +48,20 @@ const ratio = computed(() => {
 });
 
 const embedUrl = computed(() => {
-  if (videoProvider.value === 'vimeo') {
-    const h =
-      vimeoPrivacyHash.value &&
-      `&h=${encodeURIComponent(vimeoPrivacyHash.value)}`;
-    return `https://player.vimeo.com/video/${videoKey.value}?autoplay=1&keyboard=0${h ?? ''}`;
+  const { provider, id, hash } = video.value;
+
+  if (provider === 'vimeo') {
+    const h = hash ? `&h=${encodeURIComponent(hash)}` : '';
+    return `https://player.vimeo.com/video/${id}?autoplay=1&keyboard=0${h}`;
   }
-  return `https://www.youtube-nocookie.com/embed/${videoKey.value}?autoplay=1&disablekb=1`;
+  return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&disablekb=1`;
 });
 
 const thumbUrl = computed(() => {
-  if (videoProvider.value === 'vimeo') {
+  if (video.value.provider === 'vimeo') {
     return videoData.value?.thumbnail_url;
   }
-  return `https://i.ytimg.com/vi_webp/${videoKey.value}/hq720.webp`;
-  // return `https://img.youtube.com/vi/${videoKey.value}/maxresdefault.jpg`;
+  return `https://i.ytimg.com/vi_webp/${video.value.id}/hq720.webp`;
 });
 
 function playVideo() {

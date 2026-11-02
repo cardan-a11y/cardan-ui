@@ -1,4 +1,5 @@
 import markdownit from 'markdown-it';
+import type { Token } from 'markdown-it';
 import { attrs } from '@mdit/plugin-attrs';
 import { mark } from '@mdit/plugin-mark';
 import {
@@ -7,6 +8,7 @@ import {
   italicExtension,
   tableScrollExtension,
   targetBlankExtension,
+  videoExtension,
 } from './extensions';
 
 import { hljs } from './highlight';
@@ -45,6 +47,7 @@ function createRenderer(trusted: boolean) {
   md.use(italicExtension);
   md.use(headingOffsetExtension);
   md.use(tableScrollExtension);
+  md.use(videoExtension);
   md.use(attrs, trusted ? {} : { allowed: SAFE_ATTRIBUTES });
   md.use(mark);
 
@@ -68,17 +71,71 @@ export type MarkdownRenderOptions = {
   tableLabel?: string;
 };
 
+/** A piece of the text as HTML, or a video to render with VideoPlayer. */
+export type MarkdownSegment =
+  { type: 'html'; html: string } | { type: 'video'; url: string };
+
+function select({
+  trusted = false,
+  headingOffset = 0,
+  tableLabel = 'Table',
+}: MarkdownRenderOptions) {
+  return {
+    md: trusted ? renderers.trusted : renderers.safe,
+    env: { headingOffset, tableLabel },
+  };
+}
+
 export function renderMarkdown(
   content: string,
-  {
-    trusted = false,
-    inline = false,
-    headingOffset = 0,
-    tableLabel = 'Table',
-  }: MarkdownRenderOptions = {},
+  options: MarkdownRenderOptions = {},
 ) {
-  const md = trusted ? renderers.trusted : renderers.safe;
-  const env = { headingOffset, tableLabel };
+  const { md, env } = select(options);
 
-  return inline ? md.renderInline(content, env) : md.render(content, env);
+  return options.inline
+    ? md.renderInline(content, env)
+    : md.render(content, env);
+}
+
+/**
+ * The text as HTML in segments: the HTML between the videos, and each video
+ * (a bare YouTube or Vimeo link in a paragraph of its own) on its own, for
+ * MarkdownPreview to render with the VideoPlayer component. A text without
+ * videos is one HTML segment.
+ */
+export function renderMarkdownSegments(
+  content: string,
+  options: Omit<MarkdownRenderOptions, 'inline'> = {},
+): MarkdownSegment[] {
+  const { md, env } = select(options);
+  const segments: MarkdownSegment[] = [];
+  let run: Token[] = [];
+  let skip = 0;
+
+  const flush = () => {
+    if (run.length) {
+      segments.push({
+        type: 'html',
+        html: md.renderer.render(run, md.options, env),
+      });
+      run = [];
+    }
+  };
+
+  for (const token of md.parse(content, env)) {
+    if (skip) {
+      skip -= 1;
+    } else if (typeof token.meta?.video === 'string') {
+      // A video paragraph; its `inline` and `paragraph_close` tokens follow
+      flush();
+      segments.push({ type: 'video', url: token.meta.video });
+      skip = 2;
+    } else {
+      run.push(token);
+    }
+  }
+
+  flush();
+
+  return segments.length ? segments : [{ type: 'html', html: '' }];
 }

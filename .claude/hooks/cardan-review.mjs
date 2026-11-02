@@ -245,6 +245,45 @@ function start() {
 }
 
 /**
+ * The reviewer's report. SubagentStop passes it as `last_assistant_message`
+ * when the reviewer ends with text (the terminal). Where it hands the report
+ * back with a tool call instead (the VS Code extension), that field is
+ * missing or holds other text, and the report is the call's `message` in
+ * the agent's transcript, which can be written a moment after the hook
+ * starts: wait for it, for up to ten seconds, and fall back to the last
+ * text the reviewer wrote.
+ */
+function report(input) {
+  const given = input.last_assistant_message ?? '';
+  if (/^Reviewed repository: /m.test(given)) return given;
+
+  const path = input.agent_transcript_path ?? '';
+  if (!path) return given;
+  const deadline = Date.now() + 10_000;
+
+  for (;;) {
+    let text = '';
+    for (const line of read(path)?.toString().split('\n').reverse() ?? []) {
+      let entry;
+      try {
+        entry = JSON.parse(line);
+      } catch {
+        continue;
+      }
+      if (entry?.type !== 'assistant') continue;
+
+      const content = entry.message?.content;
+      const parts = Array.isArray(content) ? content : [];
+      const handback = parts.find((part) => part.type === 'tool_use' && part.name === 'SubagentHandback');
+      if (handback) return String(handback.input?.message ?? '');
+      text ||= parts.filter((part) => part.type === 'text').map((part) => part.text).join('\n');
+    }
+    if (Date.now() >= deadline) return text;
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250);
+  }
+}
+
+/**
  * SubagentStop of cardan-reviewer: records the state as reviewed, but only
  * when the reviewer names the session's repository on its last line and no
  * file changed while the review ran.
@@ -257,7 +296,7 @@ function mark() {
   if (!root) return;
   const startFile = markerPath(root) + '-start';
 
-  const named = /^Reviewed repository: (.+)$/m.exec(input.last_assistant_message ?? '')?.[1].trim();
+  const named = /^Reviewed repository: (.+)$/m.exec(report(input))?.[1].trim();
   let reviewed;
   try {
     reviewed = named && git(shellPath(named), 'rev-parse', '--show-toplevel');

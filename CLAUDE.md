@@ -56,7 +56,7 @@ The shared Cardan guidelines (architecture, CSS design system, WCAG 2.2 requirem
 - **Callout**: Highlighted information box (`solid` (default) and `outline` variants)
 - **Markdown**: Markdown rendering and editing
   - MarkdownEditor: Rich text editor (uses [md-editor-v3](https://imzbf.github.io/md-editor-v3/))
-  - MarkdownPreview: Markdown display (uses [markdown-it](https://markdown-it.github.io/) and [highlight.js](https://highlightjs.org/)). Safe by default: no raw HTML, and `{…}` sets only `lang`, `dir` and `class`; `trusted` allows both, for text the team wrote. `inline` renders a title or label in a `<span>`, `heading-offset` moves headings down
+  - MarkdownPreview: Markdown display (uses [markdown-it](https://markdown-it.github.io/) and [highlight.js](https://highlightjs.org/)). Safe by default: no raw HTML, and `{…}` sets only `lang`, `dir` and `class`; `trusted` allows both, for text the team wrote. `inline` renders a title or label in a `<span>`, `heading-offset` moves headings down. A bare YouTube or Vimeo link in a paragraph of its own renders as VideoPlayer, also without `trusted`; a link with its own text stays a link, and so does one in an `inline` or clamped text
 
 ### Utility Components
 
@@ -86,6 +86,7 @@ The [auth/](auth/) directory is a separate, opt-in Nuxt layer (`@cardan/auth-ui`
 - **file**: File handling utilities
 - **markdown**: Markdown processing
 - **sort**: Sorting algorithms
+- **video**: `parseVideoUrl()`, the YouTube and Vimeo URLs VideoPlayer plays, shared with MarkdownPreview
 - **index**: General utility functions
 
 ## Usage Patterns

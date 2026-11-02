@@ -1,4 +1,5 @@
 import type { MarkdownIt } from 'markdown-it';
+import { parseVideoUrl } from '../../utils/video';
 
 /**
  * A colour value on its own: `#abc`, `#aabbcc`, `rgb(…)` or `hsl(…)` with only
@@ -111,4 +112,37 @@ export function tableScrollExtension(md: MarkdownIt) {
   md.renderer.rules.table_close = function (tokens, idx, options, env, self) {
     return self.renderToken(tokens, idx, options) + '</div>';
   };
+}
+
+/**
+ * A paragraph that is only a bare YouTube or Vimeo link (pasted, or in `<…>`)
+ * gets the link's URL as `meta.video`, so MarkdownPreview can show the video
+ * with the VideoPlayer component instead. A link with its own text stays a
+ * link, and so does a link in a list or quote: a video is a block of its own,
+ * at the top level of the text. The paragraph itself still renders as a link
+ * where there is no player, such as in the HTML string.
+ */
+export function videoExtension(md: MarkdownIt) {
+  md.core.ruler.push('video', (state) => {
+    state.tokens.forEach((token, index) => {
+      const inline = state.tokens[index + 1];
+      const [open, text, close, ...rest] = inline?.children ?? [];
+      const url = open?.attrGet('href');
+
+      if (
+        token.type === 'paragraph_open' &&
+        token.level === 0 &&
+        inline?.type === 'inline' &&
+        open?.type === 'link_open' &&
+        open.info === 'auto' &&
+        text?.type === 'text' &&
+        close?.type === 'link_close' &&
+        rest.length === 0 &&
+        typeof url === 'string' &&
+        parseVideoUrl(url)
+      ) {
+        token.meta = { ...token.meta, video: url };
+      }
+    });
+  });
 }
