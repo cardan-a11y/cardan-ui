@@ -4,11 +4,16 @@
  * a colleague, an AI), so raw HTML is shown as text and `{…}` sets only
  * `lang`, `dir` and `class`. `trusted` allows both, for text the team wrote.
  *
+ * A bare YouTube or Vimeo link in a paragraph of its own renders as a
+ * VideoPlayer, also without `trusted`: the link only ever becomes a video id.
+ * A link with its own text stays a link.
+ *
  * `inline` is for a title or label: inline markup only, in a `<span>`, so it
  * fits inside a button, link or label and adds no block margins.
  */
 import { computed } from 'vue';
-import { renderMarkdown } from './renderer';
+import { renderMarkdown, renderMarkdownSegments } from './renderer';
+import type { MarkdownSegment } from './renderer';
 
 const {
   content = '',
@@ -40,14 +45,36 @@ const computedStyle = computed(() => ({
 
 const { t } = useI18n();
 
-const preview = computed(() =>
-  renderMarkdown(content, {
-    inline,
-    trusted,
-    headingOffset,
-    tableLabel: t('aria.table'),
-  }),
+const options = computed(() => ({
+  trusted,
+  headingOffset,
+  tableLabel: t('aria.table'),
+}));
+
+/**
+ * The HTML between the videos and each video on its own; one HTML segment
+ * without videos. An inline text has no paragraphs, and a clamped text has
+ * no room for a player: both are one string, with a video as a link.
+ */
+const segments = computed<MarkdownSegment[]>(() =>
+  inline || ellipsisLines
+    ? [
+        {
+          type: 'html',
+          html: renderMarkdown(content, { ...options.value, inline }),
+        },
+      ]
+    : renderMarkdownSegments(content, options.value),
 );
+
+/** The whole text as one string of HTML, unless it has videos. */
+const html = computed(() => {
+  const [segment, ...rest] = segments.value;
+
+  return segment?.type === 'html' && rest.length === 0
+    ? segment.html
+    : undefined;
+});
 
 const classes = computed(() => [
   'cardan-markdown-preview',
@@ -56,13 +83,28 @@ const classes = computed(() => [
 </script>
 
 <template>
-  <span
-    v-if="inline"
+  <span v-if="inline" :class="classes" :style="computedStyle" v-html="html" />
+  <div
+    v-else-if="html !== undefined"
     :class="classes"
     :style="computedStyle"
-    v-html="preview"
+    v-html="html"
   />
-  <div v-else :class="classes" :style="computedStyle" v-html="preview" />
+  <div v-else :class="classes" :style="computedStyle">
+    <!-- A player is keyed by its URL too, so a new video in the same place
+         gets a fresh player instead of the title and state of the old one -->
+    <template
+      v-for="(segment, index) in segments"
+      :key="segment.type === 'video' ? `${index}:${segment.url}` : index"
+    >
+      <VideoPlayer
+        v-if="segment.type === 'video'"
+        :url="segment.url"
+        loading="lazy"
+      />
+      <div v-else class="markdown-chunk" v-html="segment.html" />
+    </template>
+  </div>
 </template>
 
 <style>
@@ -111,20 +153,26 @@ const classes = computed(() => [
     }
   }
 
-  > * + * {
-    margin-block-start: 1em;
-  }
-  > * + :is(h1, h2, h3, h4, h5, h6) {
-    margin-block-start: 1.5em;
-  }
+  /* A text with videos is in chunks around the players, with the same space
+     between blocks inside a chunk. `:where`, so the specificity stays that
+     of the rules on the preview itself. */
+  &,
+  > :where(.markdown-chunk) {
+    > * + * {
+      margin-block-start: 1em;
+    }
+    > * + :is(h1, h2, h3, h4, h5, h6) {
+      margin-block-start: 1.5em;
+    }
 
-  /* The element around the text sets the space outside it. */
-  > :first-child {
-    margin-block-start: 0;
-  }
+    /* The element around the text sets the space outside it. */
+    > :first-child {
+      margin-block-start: 0;
+    }
 
-  > :last-child {
-    margin-block-end: 0;
+    > :last-child {
+      margin-block-end: 0;
+    }
   }
 
   /* A wide table scrolls in its own region instead of the page (reflow at

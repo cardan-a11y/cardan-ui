@@ -6,7 +6,7 @@ export default defineNuxtConfig({
 
   $production: {
     image: {
-      domains: ['i.ytimg.com'],
+      domains: ['i.ytimg.com', 'i.vimeocdn.com'],
     },
   },
 

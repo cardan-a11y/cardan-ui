@@ -381,3 +381,13 @@ Add `trusted` where a field turns out to need it, or clean up the text.
 ### Grey graphics
 
 `--color-grey-graphic` in light mode is Body 60% (`--cardan-body-60`, `#7e7c81`) instead of Always grey (`#7e7e77`), as in dark mode: the brand book replaces Always grey with Body 60%. Change it in your `main.css`, and delete `--cardan-always-grey` unless your own CSS uses it.
+
+### 2.3.1
+
+2.3.1 lets a markdown text show a video: a bare YouTube or Vimeo link in a paragraph of its own renders as a **VideoPlayer**, so authors paste the link where the video belongs, in any markdown editor.
+
+- **A bare YouTube or Vimeo link in a paragraph of its own renders as a VideoPlayer** in MarkdownPreview: the thumbnail, the play button and the video's title, and the player after a click. Also without `trusted`: the link only ever becomes a video id, so a text cannot embed anything else. A link with its own text (`[Watch the recording](https://…)`), a link inside a sentence, a list or a quote, and a link in an `inline` or clamped (`ellipsis-lines`) text stay links. In a `trusted` text, keep a video link out of raw HTML blocks: a player between a `<div>` and its `</div>` ends up outside them. Check your stored markdown for a video link alone in a paragraph that should stay a link, and give it a text.
+- **The text around a video is in chunks** (`.markdown-chunk`), with the players between them. CSS on `.cardan-markdown-preview > p` or another direct child does not reach a text with videos; select `.cardan-markdown-preview p` instead.
+- **VideoPlayer needs `@nuxt/image`** for the thumbnail. A project that shows markdown from others and does not have it yet (cardan-auditor-nuxt) adds it to its modules (`pnpm add -D @nuxt/image`), and allows the thumbnail hosts in production, like the playground does: `image: { domains: ['i.ytimg.com', 'i.vimeocdn.com'] }`.
+- **A strict Content Security Policy** on a page that shows markdown needs the player's hosts, as a page with a VideoPlayer does: `connect-src` for `youtube.com` and `vimeo.com` (the video's title), `img-src` for `i.ytimg.com` and `i.vimeocdn.com` (the thumbnail) and `frame-src` for `www.youtube-nocookie.com` and `player.vimeo.com` (the player).
+- **VideoPlayer's URL parsing is shared**: `parseVideoUrl()` in `app/utils/video.ts` tells which URLs the player plays, for MarkdownPreview and your own code. It now also recognises YouTube `shorts` and `live` URLs, and `m.youtube.com`.

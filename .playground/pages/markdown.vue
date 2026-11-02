@@ -22,6 +22,16 @@ const trustedContent = [
   '<details><summary>More</summary>A details element.</details>',
 ].join('\n');
 
+// A bare YouTube or Vimeo link in a paragraph of its own renders as a
+// VideoPlayer; a link with its own text stays a link.
+const video = [
+  'A video from a link in a paragraph of its own:',
+  '',
+  'https://youtube.com/watch?v=PGvgdZuQu6w',
+  '',
+  'A link with its own text stays a link: [the same video](https://youtube.com/watch?v=PGvgdZuQu6w).',
+].join('\n');
+
 const title = 'Chapter with *emphasis* and `code`';
 const ellipsisLines = ref(0);
 const fontSize = ref<FontSize>('md');
@@ -117,6 +127,17 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
           />
         </section>
       </div>
+    </Card>
+
+    <Card class="mbs-2">
+      <h2>Video</h2>
+      <p class="mbe-1">
+        A bare YouTube or Vimeo link in a paragraph of its own renders as a
+        <NuxtLink to="/video">VideoPlayer</NuxtLink>, also without
+        <code>trusted</code>. A link with its own text stays a link.
+      </p>
+
+      <MarkdownPreview :content="video" data-case="video" />
     </Card>
 
     <Card class="mbs-2">
