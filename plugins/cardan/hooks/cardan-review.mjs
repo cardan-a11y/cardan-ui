@@ -7,9 +7,13 @@
  *               `gh pr create` until the cardan:cardan-reviewer agent has
  *               reviewed the files exactly as they are now. A change that
  *               touches only documentation (Markdown outside `plugins/`
- *               and `.claude/`) passes without a review, and so does a
- *               push or PR from `main` or `develop` with nothing
- *               uncommitted or unpushed (a release).
+ *               and `.claude/`) passes without a review, and so do a PR
+ *               from a branch with nothing uncommitted or unpushed and a
+ *               push that sends only commits already on `origin/main` or
+ *               `origin/develop` (main brought back into develop).
+ *               These pass in any repository, each as the only gated
+ *               command in its line; anything else must be reviewed in a
+ *               session started in the repository.
  *   start       SubagentStart of the reviewer: notes the state it reviews.
  *   mark        SubagentStop of the reviewer: records that state as
  *               reviewed, unless a file changed while the review ran.
@@ -147,22 +151,73 @@ function markdownOnly(root) {
 }
 
 /**
- * Whether HEAD is `main` or `develop` with nothing uncommitted and nothing
- * unpushed. A push or PR from there carries only commits that are already
- * on the remote, where they arrived through reviewed pull requests: the
- * release PR from develop into main, and main brought back into develop.
+ * The branch HEAD is on, when nothing is uncommitted and nothing unpushed:
+ * HEAD equals `origin/<branch>` and the working tree equals HEAD.
+ * Undefined otherwise.
  */
-function integrationBranchAtRemote(root) {
+function pushedBranch(root) {
   try {
     const branch = git(root, 'symbolic-ref', '--short', 'HEAD');
-    if (!/^(main|develop)$/.test(branch)) return false;
-    return (
+    const pushed =
       git(root, 'rev-parse', 'HEAD') === git(root, 'rev-parse', `origin/${branch}`) &&
-      workingTree(root) === git(root, 'rev-parse', 'HEAD^{tree}')
-    );
+      workingTree(root) === git(root, 'rev-parse', 'HEAD^{tree}');
+    return pushed ? branch : undefined;
   } catch {
-    return false;
+    return undefined;
   }
+}
+
+/** Options of `git push` that do not change what it sends. */
+const PUSH_OPTIONS = /^(-u|--set-upstream|-q|--quiet|-v|--verbose)$/;
+
+/**
+ * The commits a `git push` to origin sends, from the arguments after
+ * `push`: the sources of its refspecs, or HEAD without one. Undefined when
+ * that is not clear: another remote, a deletion, an option such as `--all`,
+ * `--tags` or `--force`, or a quote.
+ */
+function pushSources(args) {
+  const words = args.trim().split(/\s+/).filter(Boolean);
+  if (words.some((word) => /["'`$]/.test(word))) return undefined;
+  if (words.some((word) => word.startsWith('-') && !PUSH_OPTIONS.test(word))) return undefined;
+
+  const [remote, ...refspecs] = words.filter((word) => !word.startsWith('-'));
+  if (remote !== undefined && remote !== 'origin') return undefined;
+  if (refspecs.length === 0) return ['HEAD'];
+
+  const sources = refspecs.map((refspec) => refspec.split(':')[0]);
+  return sources.every(Boolean) ? sources : undefined;
+}
+
+/**
+ * Whether a commit is on `origin/main` or `origin/develop`, where commits
+ * arrive only through reviewed pull requests.
+ */
+function onIntegrationBranch(root, source) {
+  return ['origin/main', 'origin/develop'].some((ref) => {
+    try {
+      git(root, 'merge-base', '--is-ancestor', source, ref);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+}
+
+/**
+ * Whether the command ships nothing new: a PR from a branch that is pushed
+ * and clean, whose commits passed the push gate or were pushed outside it by
+ * the user's choice (the release PR from develop is one); or a push that
+ * sends only commits already on `origin/main` or `origin/develop` (main
+ * brought back into develop). `rest` is the command line after the matched
+ * command, up to the next separator.
+ */
+function nothingNew(root, matched, rest) {
+  if (/\bgh\s+pr\s+create\b/.test(matched)) return pushedBranch(root) !== undefined;
+  if (!/\bpush$/.test(matched)) return false;
+
+  const sources = pushSources(rest);
+  return sources !== undefined && sources.every((source) => onIntegrationBranch(root, source));
 }
 
 function read(file) {
@@ -201,6 +256,14 @@ function gate() {
   }
   if (!existsSync(join(root, 'REVIEW.md'))) return;
 
+  // What needs no review passes in any repository, also one the session
+  // did not start in: the session check only matters for a recorded review.
+  // Only for a single gated command: in a chain, a later commit or push
+  // could run in another state or another repository than the one checked.
+  const single = command.match(new RegExp(REVIEW_COMMAND.source, 'gm')).length === 1;
+  const rest = command.slice(match.index + match[0].length).split(/[;&|)\n]/)[0];
+  if (single && (markdownOnly(root) || nothingNew(root, match[0], rest))) return;
+
   const session = sessionRoot(input);
   if (root !== session) {
     block(
@@ -211,8 +274,6 @@ function gate() {
     );
   }
 
-  if (markdownOnly(root) || integrationBranchAtRemote(root)) return;
-
   const marker = read(markerPath(root))?.toString().trim();
   if (marker !== workingTree(root)) {
     block(
@@ -220,7 +281,9 @@ function gate() {
         'cardan:cardan-reviewer agent as described in the Cardan guidelines ("Review Before ' +
         'Commit, Push and PR"); it records the reviewed state when it finishes, and any change ' +
         'after that needs a new review. Only a change to documentation alone (Markdown outside ' +
-        'plugins/ and .claude/) needs none. ' +
+        'plugins/ and .claude/), a PR from a branch with nothing uncommitted or unpushed, and a ' +
+        'push that sends only commits already on origin/main or origin/develop need none, each ' +
+        'as a command of its own. ' +
         'Only when the user explicitly said to skip the review for this change, put ' +
         'SKIP_REVIEW=1 in front of the command.',
     );

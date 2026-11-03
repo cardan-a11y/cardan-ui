@@ -41,8 +41,10 @@ release (2.3.x) is the norm, a minor one (2.x.0) for a breaking change.
 `main` is production, `develop` is staging. Every change reached `develop`
 through a reviewed pull request, so a release is one pull request from
 `develop` into `main` with no code of its own, and it needs no review: the
-review hook lets a push or PR from `develop` or `main` through when nothing
-is uncommitted or unpushed. Start from a clean working tree.
+review hook lets a PR from a branch with nothing uncommitted or unpushed
+through, and a push that sends only commits already on `origin/main` or
+`origin/develop`, each as a command of its own. Start from a clean working
+tree.
 
 1. **Stand on develop**: `git fetch origin`, then `git checkout develop`
    and `git pull --ff-only origin develop`. Stop when `git status` shows
