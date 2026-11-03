@@ -31,19 +31,31 @@ pnpm run build      # Build the application for production
 
 ---
 
+## Branches and releases
+
+- **Without a `develop` branch** (cardan-ui, cardan-cms-nuxt): cut a branch from `main` and open the pull request against `main`. In cardan-ui a merge reaches every project at its next production build; `/cardan:release` makes it a version.
+- **cardan-lms-nuxt and cardan-auditor-nuxt release from `develop`**: `main` is production, `develop` is staging, which Netlify builds on every merge. One branch per issue, cut from `develop`, with a pull request against `develop`. Merging into `develop` is not a production deploy, so an issue never waits for another one on its branch. A release is one pull request from `develop` into `main` without code of its own, merged with a merge commit; `/cardan:release` opens it with the merged PRs as its description. A hotfix is cut from `main` with a pull request against `main`; after its merge, `main` is brought into `develop` (`/cardan:release`, step 4), so staging matches production again.
+- A release, and `main` brought back into `develop`, needs no review: see the exceptions under "Review Before Commit, Push and PR".
+
+---
+
 ## Review Before Commit, Push and PR
 
 ### 🚨 MANDATORY: a fresh reviewer checks every change before it leaves the machine
 
-Run a review **before every `git commit`, `git push` and `gh pr create`** in a Cardan repository. There is no review in GitHub Actions, so this local review is the only one. The one exception: a change that touches only documentation (Markdown files outside `plugins/` and `.claude/`) needs no review; the plugin's own prompts and skills are Markdown too, and those are reviewed like code.
+Run a review **before every `git commit`, `git push` and `gh pr create`** in a Cardan repository. There is no review in GitHub Actions, so this local review is the only one. Three cases need no review, each run as a command of its own (not chained with another commit, push or PR):
 
-The `cardan` plugin's hook enforces it: it blocks those commands until the `cardan:cardan-reviewer` agent has reviewed the files exactly as they are now. When that agent finishes, the hook records the state of the working tree; any change after that, a fix included, needs a new review. Never record that state yourself. Reviews are recorded only for the repository the session started in, so commit, push and open PRs in another repository from a session started there. Skip the review only when the user explicitly says to skip it for this change, by putting `SKIP_REVIEW=1` in front of the command; "commit this" or "push" is not a skip. The hook only sees the commands Claude runs: a push from the user's own terminal is not gated.
+- A change that touches only documentation (Markdown files outside `plugins/` and `.claude/`). The plugin's own prompts and skills are Markdown too, and those are reviewed like code.
+- A PR from a branch with nothing uncommitted and nothing unpushed: its commits are already on the remote, through the push gate or a push the user made outside it.
+- A push that sends only commits already on `origin/main` or `origin/develop`, which arrived through reviewed pull requests. This covers bringing `main` back into `develop`; the release PR is the case above.
+
+The `cardan` plugin's hook enforces it: it blocks those commands until the `cardan:cardan-reviewer` agent has reviewed the files exactly as they are now. When that agent finishes, the hook records the state of the working tree; any change after that, a fix included, needs a new review. Never record that state yourself. Reviews are recorded only for the repository the session started in, so a change in another repository that needs a review is committed and pushed from a session started there; the three cases above pass in any repository. Skip the review only when the user explicitly says to skip it for this change, by putting `SKIP_REVIEW=1` in front of the command; "commit this" or "push" is not a skip. The hook only sees the commands Claude runs: a push from the user's own terminal is not gated.
 
 1. **Run the checks first**: `pnpm run lint`, plus `pnpm run typecheck` and `pnpm test` where the project has those scripts. REVIEW.md leaves out what ESLint enforces, so lint must pass on its own.
 2. **Start the reviewer**: launch the `cardan:cardan-reviewer` agent with the Agent tool (`subagent_type: "cardan:cardan-reviewer"`). Never review your own changes in your own context, and never use a `fork` (it inherits your context).
-3. **Brief it** with only the diff command and the target branch, never your own reasoning or what you think is fine:
+3. **Brief it** (except in the three cases above) with only the diff command and the target branch, never your own reasoning or what you think is fine:
    - Before a commit: every uncommitted change (`git diff HEAD`, plus untracked files). The hook records the whole working tree as reviewed, so review all of it, not only what is staged.
-   - Before a push or PR: the whole branch against the branch it will merge into (`git diff origin/<base>`, which includes uncommitted changes). That is `main`, or `develop` in cardan-auditor-nuxt and cardan-lms-nuxt when the PR targets `develop`. If every commit on the branch was already reviewed this way and nothing changed since, the commit review covers it and the hook lets the push through.
+   - Before a push or PR: the whole branch against the branch it will merge into (`git diff origin/<base>`, which includes uncommitted changes). That is the branch the PR targets: `main`, or `develop` in cardan-auditor-nuxt and cardan-lms-nuxt ("Branches and releases" above). If every commit on the branch was already reviewed this way and nothing changed since, the commit review covers it and the hook lets the push through.
 4. **Act on the findings**:
    - 🔴 Important: fix it. If after checking the code you think the finding is wrong, tell the user why instead of fixing it. After fixes, run the reviewer again on the changes since, saying in the brief that it is a re-review (Important findings only). Never commit or push with an open Important finding unless the user decides to.
    - 🟡 Nit: fix the clear ones before the re-review and list the rest for the user.
