@@ -1,0 +1,5 @@
+{
+  "name": "cardan",
+  "description": "The shared Claude Code setup of the Cardan Nuxt projects: the frontend guidelines, the local review before every commit (the cardan:cardan-reviewer agent and its hook), release and PR skills, and a Playwright MCP server for browser checks.",
+  "author": { "name": "Cardan", "url": "https://cardan.com" }
+}

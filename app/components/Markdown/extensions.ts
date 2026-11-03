@@ -20,9 +20,11 @@ export function swatchExtension(md: MarkdownIt) {
     };
 
   md.renderer.rules.code_inline = function (tokens, idx, options, env, self) {
-    if (COLOR_VALUE.test(tokens[idx]?.content ?? '')) {
-      tokens[idx].attrPush(['data-color', tokens[idx]?.content]);
-      tokens[idx].attrPush(['style', '--color:' + tokens[idx]?.content]);
+    const token = tokens[idx];
+
+    if (token && COLOR_VALUE.test(token.content)) {
+      token.attrPush(['data-color', token.content]);
+      token.attrPush(['style', '--color:' + token.content]);
     }
 
     return defaultRender(tokens, idx, options, env, self);

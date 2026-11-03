@@ -1,52 +1,28 @@
 #!/usr/bin/env node
 /**
- * The local review of the Cardan Nuxt projects, described in
- * .claude/rules/cardan-guidelines.md. cardan-ui holds the original of this
- * file; cardan-lms-nuxt, cardan-auditor-nuxt, cardan-cms-nuxt and
- * cardan-support-nuxt hold an exact copy. Edit it in cardan-ui only.
+ * The local review of the Cardan Nuxt projects, described in the guidelines
+ * skill of this plugin (skills/guidelines/SKILL.md).
  *
- *   gate   PreToolUse on Bash: blocks `git commit`, `git push` and
- *          `gh pr create` until the cardan-reviewer agent has reviewed the
- *          files exactly as they are now. In cardan-ui it also blocks while
- *          the copies in the projects next to it differ from the originals.
- *   start  SubagentStart of cardan-reviewer: notes the state it reviews.
- *   mark   SubagentStop of cardan-reviewer: records that state as reviewed,
- *          unless a file changed while the review ran.
- *   drift  SessionStart: tells Claude when the shared files here and in
- *          cardan-ui (when it is checked out next to this one) differ.
- *   sync   By hand in cardan-ui (scripts/sync-claude-guidelines.sh): copies
- *          the shared files to the projects next to it. `sync --check`
- *          only reports the differences and exits with 1 when there are any.
+ *   gate        PreToolUse on Bash: blocks `git commit`, `git push` and
+ *               `gh pr create` until the cardan:cardan-reviewer agent has
+ *               reviewed the files exactly as they are now. A change that
+ *               touches only documentation (Markdown outside `plugins/`
+ *               and `.claude/`) passes without a review.
+ *   start       SubagentStart of the reviewer: notes the state it reviews.
+ *   mark        SubagentStop of the reviewer: records that state as
+ *               reviewed, unless a file changed while the review ran.
+ *   guidelines  SessionStart: prints the guidelines, which Claude Code adds
+ *               to the session's context.
  */
 
 import { execFileSync } from 'node:child_process';
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
+import { copyFileSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-/** The files cardan-ui shares with the projects, byte for byte. */
-const SHARED_FILES = [
-  '.claude/rules/cardan-guidelines.md',
-  '.claude/agents/cardan-reviewer.md',
-  '.claude/hooks/cardan-review.mjs',
-  '.claude/settings.json',
-];
-
-const ORIGIN = 'cardan-ui';
-const PROJECTS = [
-  'cardan-lms-nuxt',
-  'cardan-auditor-nuxt',
-  'cardan-cms-nuxt',
-  'cardan-support-nuxt',
-];
+const PLUGIN_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const REVIEWER = /^(cardan:)?cardan-reviewer$/;
 
 /**
  * `git commit`, `git push` or `gh pr create` where a command starts: at the
@@ -121,38 +97,55 @@ function markerPath(root) {
   return resolve(root, git(root, 'rev-parse', '--git-path', 'cardan-review'));
 }
 
-/** The Cardan checkouts next to `root`, by GitHub name. */
-function siblings(root) {
-  const found = new Map();
-  const parent = dirname(root);
-  for (const entry of readdirSync(parent, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    const dir = join(parent, entry.name);
-    const name = repositoryName(dir);
-    if (name && !found.has(name)) found.set(name, dir);
+/**
+ * The remote branch nearest to HEAD: the upstream, or the one of
+ * origin/develop, origin/main and origin/HEAD with the fewest commits behind
+ * HEAD. Undefined without a remote.
+ */
+function nearestRemote(root) {
+  let nearest;
+  for (const ref of ['@{upstream}', 'origin/develop', 'origin/main', 'origin/HEAD']) {
+    let count;
+    try {
+      count = Number(git(root, 'rev-list', '--count', `${ref}..HEAD`));
+    } catch {
+      continue;
+    }
+    if (nearest === undefined || count < nearest.count) nearest = { ref, count };
   }
-  return found;
+  return nearest?.ref;
+}
+
+/**
+ * A Markdown file that is documentation, not behaviour: the plugin's agent
+ * prompt and skills under `plugins/` and anything under `.claude/` are
+ * Markdown too, and those are reviewed like code.
+ */
+function isDocumentation(file) {
+  return /\.md$/i.test(file) && !/^(plugins|\.claude)\//.test(file);
+}
+
+/**
+ * Whether the change touches only documentation: the working tree against
+ * HEAD, the untracked files, and the commits not yet on the nearest remote
+ * branch. Such a change needs no review. Anything unclear counts as code.
+ */
+function markdownOnly(root) {
+  try {
+    const files = new Set();
+    const add = (output) => output.split('\n').filter(Boolean).forEach((file) => files.add(file));
+    add(git(root, 'diff', '--name-only', 'HEAD'));
+    add(git(root, 'ls-files', '--others', '--exclude-standard'));
+    const remote = nearestRemote(root);
+    if (remote) add(git(root, 'diff', '--name-only', `${remote}...HEAD`));
+    return files.size > 0 && [...files].every(isDocumentation);
+  } catch {
+    return false;
+  }
 }
 
 function read(file) {
   return existsSync(file) ? readFileSync(file) : undefined;
-}
-
-/** The shared files that differ between the cardan-ui checkout and `dir`. */
-function differences(originDir, dir) {
-  return SHARED_FILES.filter((file) => {
-    const original = read(join(originDir, file));
-    const copy = read(join(dir, file));
-    return !original || !copy || !original.equals(copy);
-  });
-}
-
-/** For cardan-ui: the projects next to it whose copies differ. */
-function outdatedProjects(originDir) {
-  const checkouts = siblings(originDir);
-  return PROJECTS.filter((name) => checkouts.has(name))
-    .map((name) => ({ name, dir: checkouts.get(name), files: differences(originDir, checkouts.get(name)) }))
-    .filter(({ files }) => files.length);
 }
 
 function readInput() {
@@ -197,27 +190,18 @@ function gate() {
     );
   }
 
-  if (repositoryName(root) === ORIGIN) {
-    const outdated = outdatedProjects(root);
-    if (outdated.length) {
-      block(
-        'Blocked: the shared Claude files in ' +
-          outdated.map(({ name }) => name).join(', ') +
-          ' differ from cardan-ui. Run scripts/sync-claude-guidelines.sh in cardan-ui, ' +
-          'tell the user which projects now have changes to commit, then try again.',
-      );
-    }
-  }
+  if (markdownOnly(root)) return;
 
   const marker = read(markerPath(root))?.toString().trim();
   if (marker !== workingTree(root)) {
     block(
       'Blocked: the files as they are now have not been reviewed. Run the ' +
-        'cardan-reviewer agent as described in .claude/rules/cardan-guidelines.md ' +
-        '("Review Before Commit, Push and PR"); it records the reviewed state when ' +
-        'it finishes, and any change after that needs a new review. Only when the ' +
-        'user explicitly said to skip the review for this change, put SKIP_REVIEW=1 ' +
-        'in front of the command.',
+        'cardan:cardan-reviewer agent as described in the Cardan guidelines ("Review Before ' +
+        'Commit, Push and PR"); it records the reviewed state when it finishes, and any change ' +
+        'after that needs a new review. Only a change to documentation alone (Markdown outside ' +
+        'plugins/ and .claude/) needs none. ' +
+        'Only when the user explicitly said to skip the review for this change, put ' +
+        'SKIP_REVIEW=1 in front of the command.',
     );
   }
 }
@@ -234,10 +218,10 @@ function sessionRoot(input) {
   }
 }
 
-/** SubagentStart of cardan-reviewer: the state the review starts from. */
+/** SubagentStart of the reviewer: the state the review starts from. */
 function start() {
   const input = readInput();
-  if (input.agent_type !== 'cardan-reviewer') return;
+  if (!REVIEWER.test(input.agent_type ?? '')) return;
 
   const root = sessionRoot(input);
   if (!root) return;
@@ -284,13 +268,13 @@ function report(input) {
 }
 
 /**
- * SubagentStop of cardan-reviewer: records the state as reviewed, but only
+ * SubagentStop of the reviewer: records the state as reviewed, but only
  * when the reviewer names the session's repository on its last line and no
  * file changed while the review ran.
  */
 function mark() {
   const input = readInput();
-  if (input.agent_type !== 'cardan-reviewer') return;
+  if (!REVIEWER.test(input.agent_type ?? '')) return;
 
   const root = sessionRoot(input);
   if (!root) return;
@@ -324,81 +308,33 @@ function mark() {
   }
 }
 
-function drift() {
-  const root = git(process.env.CLAUDE_PROJECT_DIR ?? process.cwd(), 'rev-parse', '--show-toplevel');
+/**
+ * SessionStart: the guidelines for Claude's context, in a Cardan project
+ * (one with a REVIEW.md or a cardan-a11y remote). The guidelines skill's
+ * text, without its frontmatter.
+ */
+function guidelines() {
+  const root = sessionRoot(readInput());
+  if (!root || (!existsSync(join(root, 'REVIEW.md')) && !repositoryName(root))) return;
 
-  if (repositoryName(root) === ORIGIN) {
-    const outdated = outdatedProjects(root);
-    if (outdated.length) {
-      console.log(
-        'The shared Claude files of ' +
-          outdated.map(({ name, files }) => `${name} (${files.join(', ')})`).join('; ') +
-          ' differ from cardan-ui. Tell the user, and offer to run scripts/sync-claude-guidelines.sh.',
-      );
-    }
-    return;
-  }
-
-  const originDir = siblings(root).get(ORIGIN);
-  if (!originDir) return;
-  const files = differences(originDir, root);
-  if (files.length) {
-    console.log(
-      `The shared Claude files ${files.join(', ')} differ from the cardan-ui checkout at ${originDir}. ` +
-        'Tell the user: either this copy is outdated (run scripts/sync-claude-guidelines.sh in ' +
-        'cardan-ui) or cardan-ui is on a branch with unmerged changes. Never edit the copies here.',
-    );
-  }
+  const skill = readFileSync(join(PLUGIN_ROOT, 'skills', 'guidelines', 'SKILL.md'), 'utf8');
+  process.stdout.write(skill.replace(/^---\n[\s\S]*?\n---\n/, '').trim() + '\n');
 }
 
-function sync(check) {
-  const originDir = git(process.cwd(), 'rev-parse', '--show-toplevel');
-  if (repositoryName(originDir) !== ORIGIN) {
-    console.error('Run this in cardan-ui.');
-    process.exit(1);
-  }
-
-  const checkouts = siblings(originDir);
-  let differ = false;
-
-  for (const name of PROJECTS) {
-    const dir = checkouts.get(name);
-    if (!dir) {
-      console.log(`${name}: no checkout next to cardan-ui, skipped`);
-      continue;
-    }
-    const files = differences(originDir, dir);
-    if (!files.length) {
-      console.log(`${name}: up to date`);
-    } else if (check) {
-      console.log(`${name}: differs from cardan-ui (${files.join(', ')})`);
-      differ = true;
-    } else {
-      for (const file of files) {
-        mkdirSync(dirname(join(dir, file)), { recursive: true });
-        copyFileSync(join(originDir, file), join(dir, file));
-      }
-      console.log(`${name}: updated ${files.join(', ')}; commit them in that repository`);
-    }
-  }
-
-  if (differ) process.exit(1);
-}
-
-const [command, option] = process.argv.slice(2);
+const command = process.argv[2];
 
 try {
   if (command === 'gate') gate();
   else if (command === 'start') start();
   else if (command === 'mark') mark();
-  else if (command === 'drift') drift();
-  else if (command === 'sync') sync(option === '--check');
+  else if (command === 'guidelines') guidelines();
   else {
-    console.error('Usage: cardan-review.mjs gate | start | mark | drift | sync [--check]');
+    console.error('Usage: cardan-review.mjs gate | start | mark | guidelines');
     process.exit(1);
   }
 } catch (error) {
-  // A hook that fails on its own must not block Claude; report and let it pass.
-  if (command === 'sync') throw error;
+  // The gate fails closed (its hook has onFailure: block); the others must
+  // never block a session or a subagent.
   process.stderr.write(`cardan-review ${command}: ${error.message}\n`);
+  if (command === 'gate') process.exit(1);
 }
