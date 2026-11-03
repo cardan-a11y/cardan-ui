@@ -47,7 +47,7 @@ The `cardan` plugin's hook enforces it: it blocks those commands until the `card
 4. **Act on the findings**:
    - 🔴 Important: fix it. If after checking the code you think the finding is wrong, tell the user why instead of fixing it. After fixes, run the reviewer again on the changes since, saying in the brief that it is a re-review (Important findings only). Never commit or push with an open Important finding unless the user decides to.
    - 🟡 Nit: fix the clear ones before the re-review and list the rest for the user.
-5. **Report**: show the user the tally, the findings and what you did with each before you commit, push or open the PR. Put a one-line summary of the local review in the PR description (the `cardan:pr-body` skill has the format).
+5. **Report**: before the re-review, and before you commit, push or open the PR, show the user the tally and every finding with what you did with it and why: fixed (and how), not fixed (and the reason), or left for the user to decide. The user can veto a decision only when they see the reasoning. Put a one-line summary of the local review in the PR description (the `cardan:pr-body` skill has the format).
 
 The reviewer's report arrives a moment before the hook records it: when a commit right after the report is blocked as "not reviewed", wait a few seconds and try once more before anything else.
 
