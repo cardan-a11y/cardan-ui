@@ -7,7 +7,9 @@
  *               `gh pr create` until the cardan:cardan-reviewer agent has
  *               reviewed the files exactly as they are now. A change that
  *               touches only documentation (Markdown outside `plugins/`
- *               and `.claude/`) passes without a review.
+ *               and `.claude/`) passes without a review, and so does a
+ *               push or PR from `main` or `develop` with nothing
+ *               uncommitted or unpushed (a release).
  *   start       SubagentStart of the reviewer: notes the state it reviews.
  *   mark        SubagentStop of the reviewer: records that state as
  *               reviewed, unless a file changed while the review ran.
@@ -144,6 +146,25 @@ function markdownOnly(root) {
   }
 }
 
+/**
+ * Whether HEAD is `main` or `develop` with nothing uncommitted and nothing
+ * unpushed. A push or PR from there carries only commits that are already
+ * on the remote, where they arrived through reviewed pull requests: the
+ * release PR from develop into main, and main brought back into develop.
+ */
+function integrationBranchAtRemote(root) {
+  try {
+    const branch = git(root, 'symbolic-ref', '--short', 'HEAD');
+    if (!/^(main|develop)$/.test(branch)) return false;
+    return (
+      git(root, 'rev-parse', 'HEAD') === git(root, 'rev-parse', `origin/${branch}`) &&
+      workingTree(root) === git(root, 'rev-parse', 'HEAD^{tree}')
+    );
+  } catch {
+    return false;
+  }
+}
+
 function read(file) {
   return existsSync(file) ? readFileSync(file) : undefined;
 }
@@ -190,7 +211,7 @@ function gate() {
     );
   }
 
-  if (markdownOnly(root)) return;
+  if (markdownOnly(root) || integrationBranchAtRemote(root)) return;
 
   const marker = read(markerPath(root))?.toString().trim();
   if (marker !== workingTree(root)) {
