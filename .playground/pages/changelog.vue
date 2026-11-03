@@ -7,6 +7,23 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.3.2" date="2026-11-03">
+      <ul>
+        <li>
+          Nuxt 4.6.4, a security update, and the latest versions of the other
+          dependencies except TypeScript
+        </li>
+        <li>
+          The cardan Claude Code plugin: the release skill also opens the
+          release pull request from <code>develop</code> into
+          <code>main</code> in Cardan LMS and Cardan Auditor, the guidelines
+          describe the branches and releases of each project, and the review
+          hook lets a pull request from a pushed branch through without a new
+          review
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.3.1" date="2026-11-02">
       <ul>
         <li>
