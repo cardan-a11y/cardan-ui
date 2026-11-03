@@ -7,7 +7,7 @@ a Nuxt layer. cardan-auditor-nuxt (Cardan Auditor), cardan-lms-nuxt
 cardan-shop-nuxt extends it too, but is being phased out soon: leave it out
 of the review. Cardan is an accessibility-first company: an accessibility
 regression in this library is a production bug in every project, not polish.
-CLAUDE.md and `.claude/rules/cardan-guidelines.md` hold the conventions;
+CLAUDE.md and the Cardan guidelines (the `cardan:guidelines` skill) hold the conventions;
 MIGRATION.md tells projects how to upgrade. The `auth/` directory is a
 separate layer, Cardan Auth UI, used by cardan-lms-nuxt and
 cardan-auditor-nuxt; its documentation is `auth/README.md`.
@@ -104,11 +104,10 @@ happens.
   `--color-*-text` token.
 - Custom CSS only: no Tailwind classes; nested classes, logical properties
   (`margin-inline`, `padding-block`, …), mobile-first.
-- After a change to one of the shared Claude files (`.claude/rules/cardan-guidelines.md`,
-  `.claude/agents/cardan-reviewer.md`, `.claude/hooks/cardan-review.mjs`,
-  `.claude/settings.json`), the copies in the other projects are updated
-  with `scripts/sync-claude-guidelines.sh` (`--check` lists the ones that
-  differ).
+- The `cardan` plugin under `plugins/cardan` is what every Cardan project
+  loads: a change to its guidelines, reviewer, hook or skills reaches them
+  at their next plugin update, so it is reviewed like a change to a
+  component. `claude plugin validate ./plugins/cardan` must pass.
 - Common translations belong here: a string that several projects need
   (buttons like Close, Save or Cancel, generic labels and errors) goes into
   the layer's locale files, as the auth strings did, so projects don't each
@@ -128,15 +127,17 @@ happens.
 
 ## Do not report
 
-- Type errors that pre-exist on the base branch. There is a known baseline
-  (`app/components/Markdown/extensions.ts`,
-  `app/composables/useCookiesDialog.ts`, `app/utils/sort.ts` and others);
-  only report type issues the change introduces.
+- Type errors elsewhere than in the change: `pnpm run typecheck` passes on
+  `main`, so a type error the change introduces is a finding, one the
+  base branch already has is not.
 - Anything `pnpm run lint` (ESLint) already enforces, or formatting.
 - `pnpm-lock.yaml`, `.playground/public/**`, and generated or vendored code.
 - Code style in the playground pages under `.playground/`; they are
   documentation. Accessibility problems in them still count.
-- Missing tests: there is no test suite yet.
+- A missing test for a change that is not a form component or dialog:
+  the suite under `test/` covers those with axe and is growing from there.
+  A change to a component that has a test without an updated or new test
+  is a 🟡 Nit.
 
 ## Cap the nits
 

@@ -1,48 +1,13 @@
 {
-  "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/cardan-review.mjs\" drift"
-          }
-        ]
+  "enabledPlugins": {
+    "cardan@cardan-ui": true
+  },
+  "extraKnownMarketplaces": {
+    "cardan-ui": {
+      "source": {
+        "source": "github",
+        "repo": "cardan-a11y/cardan-ui"
       }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/cardan-review.mjs\" gate"
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "matcher": "^cardan-reviewer$",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/cardan-review.mjs\" start"
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "matcher": "^cardan-reviewer$",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/cardan-review.mjs\" mark"
-          }
-        ]
-      }
-    ]
+    }
   }
 }

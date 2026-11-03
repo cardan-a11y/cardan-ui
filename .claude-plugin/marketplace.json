@@ -1,0 +1,11 @@
+{
+  "name": "cardan-ui",
+  "owner": { "name": "Cardan", "url": "https://cardan.com" },
+  "plugins": [
+    {
+      "name": "cardan",
+      "source": "./plugins/cardan",
+      "description": "The shared Claude Code setup of the Cardan Nuxt projects: the frontend guidelines, the local review before every commit (the cardan:cardan-reviewer agent and its hook), release and PR skills, and a Playwright MCP server for browser checks."
+    }
+  ]
+}

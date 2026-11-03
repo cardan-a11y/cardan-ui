@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Multiselect from '@vueform/multiselect';
 import type MultiselectProps from '@vueform/multiselect';
+import type { ComponentPublicInstance } from 'vue';
 
 const model = defineModel<MultiselectProps['modelValue']>();
 
@@ -78,7 +79,9 @@ const attrs = useAttrs();
 
 // An open-direction passed by the parent wins over the automatic placement
 const fixedOpenDirection = computed(
-  () => (attrs.openDirection ?? attrs['open-direction']) as string | undefined,
+  () =>
+    (attrs.openDirection ?? attrs['open-direction']) as
+      'top' | 'bottom' | undefined,
 );
 
 const openDirection = ref<'top' | 'bottom'>('bottom');
@@ -90,7 +93,8 @@ const availableHeight = ref<number>();
 async function placeDropdown() {
   if (fixedOpenDirection.value) return;
 
-  const container = multiSelectRef.value?.$el as HTMLElement | undefined;
+  const container = (multiSelectRef.value as ComponentPublicInstance | null)
+    ?.$el as HTMLElement | undefined;
   const dropdown = container?.querySelector<HTMLElement>(
     '.multiselect-dropdown',
   );

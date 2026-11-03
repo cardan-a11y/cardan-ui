@@ -1,12 +1,12 @@
-<!--
-  Shared guidelines of the Cardan Nuxt projects. The original lives in
-  cardan-ui at .claude/rules/cardan-guidelines.md; the other projects hold an
-  exact copy, as of the cardan-reviewer agent, the review hook and
-  .claude/settings.json. Edit them in cardan-ui only, then run
-  `scripts/sync-claude-guidelines.sh` there to update the copies.
--->
+---
+name: guidelines
+description: The shared frontend guidelines of the Cardan Nuxt projects (architecture, the review before every commit, CSS, code quality, WCAG 2.2). Claude Code adds them to every session in a Cardan repository; the cardan:cardan-reviewer agent loads them itself.
+---
 
 # Cardan frontend guidelines
+
+These guidelines apply in every Cardan Nuxt repository. They come from the
+`cardan` plugin (`plugins/cardan` in cardan-ui); edit them there only.
 
 ## Frontend architecture
 
@@ -22,9 +22,11 @@
 ## Development Commands
 
 ```bash
-pnpm dev          # Start development server
-pnpm run lint     # Run ESLint
-pnpm run build    # Build the application for production
+pnpm dev            # Start development server
+pnpm run lint       # Run ESLint
+pnpm run typecheck  # Run vue-tsc, where the project has the script
+pnpm test           # Run the tests, where the project has the script
+pnpm run build      # Build the application for production
 ```
 
 ---
@@ -33,21 +35,21 @@ pnpm run build    # Build the application for production
 
 ### 🚨 MANDATORY: a fresh reviewer checks every change before it leaves the machine
 
-Run a review **before every `git commit`, `git push` and `gh pr create`** in this repository. The Claude review in GitHub Actions is disabled for its cost, so this local review is the only one.
+Run a review **before every `git commit`, `git push` and `gh pr create`** in a Cardan repository. There is no review in GitHub Actions, so this local review is the only one. The one exception: a change that touches only documentation (Markdown files outside `plugins/` and `.claude/`) needs no review; the plugin's own prompts and skills are Markdown too, and those are reviewed like code.
 
-A hook enforces it (`.claude/hooks/cardan-review.mjs`): it blocks those commands until the `cardan-reviewer` agent has reviewed the files exactly as they are now. When that agent finishes, the hook records the state of the working tree; any change after that, a fix included, needs a new review. Never record that state yourself. Reviews are recorded only for the repository the session started in, so commit, push and open PRs in another repository from a session started there. Skip the review only when the user explicitly says to skip it for this change, by putting `SKIP_REVIEW=1` in front of the command; "commit this" or "push" is not a skip.
+The `cardan` plugin's hook enforces it: it blocks those commands until the `cardan:cardan-reviewer` agent has reviewed the files exactly as they are now. When that agent finishes, the hook records the state of the working tree; any change after that, a fix included, needs a new review. Never record that state yourself. Reviews are recorded only for the repository the session started in, so commit, push and open PRs in another repository from a session started there. Skip the review only when the user explicitly says to skip it for this change, by putting `SKIP_REVIEW=1` in front of the command; "commit this" or "push" is not a skip. The hook only sees the commands Claude runs: a push from the user's own terminal is not gated.
 
-1. **Run the checks first**: `pnpm run lint`, and `pnpm test` where the project has a test script. REVIEW.md leaves out what ESLint enforces, so lint must pass on its own.
-2. **Start the reviewer**: launch the `cardan-reviewer` agent with the Agent tool (`subagent_type: "cardan-reviewer"`). Never review your own changes in your own context, and never use a `fork` (it inherits your context).
+1. **Run the checks first**: `pnpm run lint`, plus `pnpm run typecheck` and `pnpm test` where the project has those scripts. REVIEW.md leaves out what ESLint enforces, so lint must pass on its own.
+2. **Start the reviewer**: launch the `cardan:cardan-reviewer` agent with the Agent tool (`subagent_type: "cardan:cardan-reviewer"`). Never review your own changes in your own context, and never use a `fork` (it inherits your context).
 3. **Brief it** with only the diff command and the target branch, never your own reasoning or what you think is fine:
    - Before a commit: every uncommitted change (`git diff HEAD`, plus untracked files). The hook records the whole working tree as reviewed, so review all of it, not only what is staged.
    - Before a push or PR: the whole branch against the branch it will merge into (`git diff origin/<base>`, which includes uncommitted changes). That is `main`, or `develop` in cardan-auditor-nuxt and cardan-lms-nuxt when the PR targets `develop`. If every commit on the branch was already reviewed this way and nothing changed since, the commit review covers it and the hook lets the push through.
 4. **Act on the findings**:
    - 🔴 Important: fix it. If after checking the code you think the finding is wrong, tell the user why instead of fixing it. After fixes, run the reviewer again on the changes since, saying in the brief that it is a re-review (Important findings only). Never commit or push with an open Important finding unless the user decides to.
    - 🟡 Nit: fix the clear ones before the re-review and list the rest for the user.
-5. **Report**: show the user the tally, the findings and what you did with each before you commit, push or open the PR. Put a one-line summary of the local review in the PR description.
+5. **Report**: before the re-review, and before you commit, push or open the PR, show the user the tally and every finding with what you did with it and why: fixed (and how), not fixed (and the reason), or left for the user to decide. The user can veto a decision only when they see the reasoning. Put a one-line summary of the local review in the PR description (the `cardan:pr-body` skill has the format).
 
-The shared Claude files (this file, the `cardan-reviewer` agent, the hook and `.claude/settings.json`) are exact copies of the originals in cardan-ui; never edit them in another project. When a session starts with a note that they differ from cardan-ui, tell the user.
+The reviewer's report arrives a moment before the hook records it: when a commit right after the report is blocked as "not reviewed", wait a few seconds and try once more before anything else.
 
 ---
 
@@ -77,6 +79,7 @@ The shared Claude files (this file, the `cardan-reviewer` agent, the hook and `.
 - Use ESLint for code quality
 - Test keyboard navigation
 - Verify screen reader compatibility
+- Check a change in the browser while you work on it: the plugin's Playwright MCP server loads the dev server, walks a page with the keyboard, reads the console and screenshots at 320px. The reviewer does not do this; the working session does
 
 ### Performance
 - Implement tree-shaking for components
@@ -124,4 +127,4 @@ When working on new features or components:
 - Verify with screen readers (built-in or extensions)
 - Check color contrast ratios
 - Validate HTML semantics
-- Run automated accessibility tests (if available, with `vitest-axe` for example)
+- Run the automated accessibility tests where the project has them (`pnpm test`, with vitest-axe)

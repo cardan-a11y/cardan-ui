@@ -1,113 +1,42 @@
 # Cardan UI
 
-Accessible Vue 3 component library for Nuxt 4 in TypeScript, distributed as a [Nuxt Layer](https://nuxt.com/docs/getting-started/layers).
+Accessible Vue 3 component library for Nuxt 4 in TypeScript, distributed as a [Nuxt Layer](https://nuxt.com/docs/getting-started/layers). cardan-lms-nuxt (Cardan Academy), cardan-auditor-nuxt, cardan-cms-nuxt and cardan-support-nuxt extend it: `github:cardan-a11y/cardan-ui` (`main`, untagged) in production and `../cardan-ui` in development. A merge here reaches all of them at their next build.
 
-The shared Cardan guidelines (architecture, CSS design system, WCAG 2.2 requirements, the review before every commit) live in [.claude/rules/cardan-guidelines.md](.claude/rules/cardan-guidelines.md) and apply here too. This repository holds the originals of the shared Claude files: that file, the `cardan-reviewer` agent (`.claude/agents/`), the review hook (`.claude/hooks/cardan-review.mjs`) and `.claude/settings.json`. cardan-lms-nuxt, cardan-auditor-nuxt, cardan-cms-nuxt and cardan-support-nuxt hold exact copies. After changing one, run `scripts/sync-claude-guidelines.sh` to update the copies in the checkouts next to this one, and commit them there (`--check` only reports differences). The hook blocks commits here while a copy differs.
+The shared Cardan guidelines (the review before every commit, CSS, code quality, WCAG 2.2) come from the `cardan` Claude Code plugin, which adds them to every session in a Cardan repository. This repository is the plugin's home: [plugins/cardan](plugins/cardan/) holds the guidelines skill, the `cardan:cardan-reviewer` agent, the review hook, the `release`, `pr-body` and `i18n-pair` skills and a Playwright MCP server, and [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json) lists it as the `cardan-ui` marketplace. The projects enable it in their `.claude/settings.json` and take a new version with `claude plugin update cardan@cardan-ui`. To try a change to the plugin here, run `/reload-plugins` in a session that reads it from this checkout (`claude plugin list` shows where it reads from), or start one with `claude --plugin-dir ./plugins/cardan`. `claude plugin validate ./plugins/cardan` checks it.
 
-## Component Categories
+## Working here
 
-### Form Components
+- **Branches**: `main` is what the projects build from. Cut a feature branch from it and merge with a pull request. Releases are not tagged.
+- **Checks**: `pnpm run lint`, `pnpm run typecheck` (vue-tsc over the playground's generated project; it passes on `main`, so a type error is a signal) and `pnpm test` (vitest in the playground's Nuxt environment, with axe through `test/a11y.ts`). CI runs all three on every pull request and on `main`. There is no review in GitHub Actions: the local review before every commit is the review.
+- **Done means**: the checks pass; the change was tried in the playground with the keyboard, at 320px and at desktop width, in both locales and both color modes (the plugin's Playwright MCP server does this from the session); a changed component with a test has its test updated; the local review ran and its tally is in the PR description (`cardan:pr-body`).
+- **Release**: `/cardan:release`: the version in `package.json`, an entry in [.playground/pages/changelog.vue](.playground/pages/changelog.vue), a section in [MIGRATION.md](MIGRATION.md) with what projects must do, then the PR.
+- **The review gate** only sees the commands Claude runs: a push from your own terminal is not gated.
+- **Machine-specific**: the projects are checked out next to this one in `~/Development` and extend `../cardan-ui`; the playground runs on port 3003 (`pnpm dev`). A cloud session has only this repository and the playground.
 
-- **Input**: Text input with accessibility features
-- **Textarea**: Multi-line text input
-- **Select**: Dropdown selection component
-- **MultiSelect**: Multi-option selection (uses [@vueform/multiselect](https://vueform.com/multiselect/))
-- **Checkbox**: Single checkbox with group support
-- **CheckboxGroup**: Multiple checkbox management
-- **Radio**: Radio button with group support
-- **RadioGroup**: Radio button group management
-- **Switch**: Toggle switch component
-- **DatePicker**: Date selection component (uses [Vue DatePicker](https://vue3datepicker.com/))
-- **FileInput**: File upload component
-- **RangeInput**: Slider/range input component
-- **Search**: Search input with suggestions
-- **Form**: Form wrapper with validation support
-- **RequiredChip**: "Required" chip next to the label of required form fields
+## Components
 
-### Layout & Navigation
+One file per component in [app/components/](app/components/), auto-imported by file name. The playground at `http://localhost:3003` ([.playground/pages/](.playground/pages/)) shows nearly all of them with live examples of most props. What a listing cannot show:
 
-- **Card**: Content container component
-- **Accordion**: Collapsible content sections
-- **AccordionDetails**: Accordion content wrapper
-- **Tabs**: Tabbed interface component
-- **MenuList**: Navigation menu component
-- **MenuListTooltip**: Menu with tooltip support
-- **MobileMenu**: Mobile-optimized navigation
-- **Pagination**: Page navigation component
-- **Spacer**: Layout spacing utility
-- **SkipLink**: Accessibility skip navigation
-
-### Interactive Elements
-
-- **Button**: Primary button component
-- **CopyButton**: Copy-to-clipboard functionality
-- **Dialog**: Modal dialog component
-- **Popover**: Floating content overlay
-- **Tooltip**: Contextual help text (uses the native Popover API and CSS anchor positioning)
-- **ProgressCircle**: Circular progress indicator
-- **ProgressMeter**: Linear progress bar
-- **Skeleton**: Loading state placeholder
-
-### Data Display
-
-- **Table**: Data table component
-- **Chip**: Tag/label component
-- **Ellipsis**: Text truncation with expand
-- **Callout**: Highlighted information box (`solid` (default) and `outline` variants)
-- **Markdown**: Markdown rendering and editing
-  - MarkdownEditor: Rich text editor (uses [md-editor-v3](https://imzbf.github.io/md-editor-v3/))
-  - MarkdownPreview: Markdown display (uses [markdown-it](https://markdown-it.github.io/) and [highlight.js](https://highlightjs.org/)). Safe by default: no raw HTML, and `{…}` sets only `lang`, `dir` and `class`; `trusted` allows both, for text the team wrote. `inline` renders a title or label in a `<span>`, `heading-offset` moves headings down. A bare YouTube or Vimeo link in a paragraph of its own renders as VideoPlayer, also without `trusted`; a link with its own text stays a link, and so does one in an `inline` or clamped text
-
-### Utility Components
-
-- **CardanLogo**: Cardan logo in full, symbol and tile forms, with color variants and sub-brand lockups (e.g. `product="academy"`, shown as "| Academy"); the product name is always set in Hanken Grotesk, in Body or white, never purple. 20px high by default; below 320px a lockup is 144px wide (`narrow-width` prop), and from 320px it takes the room it gets in a flex row, from that width up to its height, so it fits in a 320px app header. The favicon is the light round tile with the symbol at 72%
-- **FocusLoop**: Keyboard navigation management to trap focus inside a container
-- **LanguageSelect**: Language switcher to switch between English and Dutch
-- **ThemeSelect**: Theme selection
-- **ThemeToggle**: Theme toggle switch to toggle between light and dark mode
-- **UserMenu**: User account menu
-- **VideoPlayer**: Video playback component to play videos from YouTube or Vimeo (uses [YouTube](https://developers.google.com/youtube/iframe_api_reference) and [Vimeo](https://developer.vimeo.com/player/sdk/embed) APIs)
+- **MarkdownPreview** ([app/components/Markdown/](app/components/Markdown/), markdown-it and highlight.js) is safe by default: raw HTML shows as text and `{…}` sets only `lang`, `dir` and `class`; `trusted` allows both, for text the team wrote. `inline` renders a title or label in a `<span>`, `heading-offset` moves headings down. A bare YouTube or Vimeo link in a paragraph of its own renders as VideoPlayer, also without `trusted`; a link with its own text, or one in an `inline` or clamped text, stays a link. **MarkdownEditor** wraps md-editor-v3.
+- **VideoPlayer** plays YouTube and Vimeo videos: a thumbnail and a play button first, the player after a click. `parseVideoUrl()` in [app/utils/video.ts](app/utils/video.ts) decides which URLs it plays, for MarkdownPreview too. It needs `@nuxt/image` in the project, which the layer does not register.
+- **CardanLogo**: full, symbol and tile forms, color variants and product lockups (`product="academy"` shows "| Academy"; the product name is always Hanken Grotesk, in Body or white, never purple). 20px high by default; a lockup is 144px wide below 320px (`narrow-width`) and from there takes the room it gets in a flex row, up to its height. The favicon is the light round tile with the symbol at 72%.
+- **Dialog** is a native `<dialog>`, opened and closed through its exposed `openDialog()` and `closeDialog()`; **Tooltip** uses the native Popover API and CSS anchor positioning; **Callout** has `solid` (default) and `outline` variants; **FocusLoop** traps focus in a container; **MultiSelect** wraps @vueform/multiselect, **DatePicker** wraps Vue DatePicker, **FileInput** compresses images with compressorjs.
+- **Composables** in [app/composables/](app/composables/): `useToast()` queues the toasts that **ToastManager** shows and hides one by its id; `useCookiesDialog()` holds the cookie consent that **CookiesDialog** collects and applies (it loads GTM), so any component reads it without repeating that work; `useScreenSize()` exposes the breakpoints and the pointer type as refs; `useDate()` formats relative dates in the current locale.
+- **Utilities** in [app/utils/](app/utils/): `datetime`, `file`, `markdown`, `sort`, `video` and `index`. Shared types are `declare global` in [app/types/index.ts](app/types/index.ts).
 
 ## Cardan Auth UI layer
 
-The [auth/](auth/) directory is a separate, opt-in Nuxt layer (`@cardan/auth-ui`) with the sign-in and MFA forms for Nuxt SPAs backed by Laravel Fortify. Projects extend it next to Cardan UI, as a peer: `github:cardan-a11y/cardan-ui/auth`. It is not part of the base layer because it adds pages and needs `nuxt-auth-sanctum`, which most projects do not use. Its documentation is in [auth/README.md](auth/README.md).
+The [auth/](auth/) directory is a separate, opt-in Nuxt layer (`@cardan/auth-ui`) with the sign-in and MFA forms for Nuxt SPAs backed by Laravel Fortify. Projects extend it next to Cardan UI, as a peer: `github:cardan-a11y/cardan-ui/auth`. It is not part of the base layer because it adds pages and needs `nuxt-auth-sanctum`, which most projects do not use. Its documentation is [auth/README.md](auth/README.md).
 
-- **Pages**: `/login`, `/forgot-password`, `/reset-password`, `/two-factor-authentication` and `/mfa-setup`, in the `AuthPage` frame (the Cardan Academy design, which Cardan Auditor adopts too). An app overrides a page by creating one at the same path
-- **Components**: `AuthPage`, `LoginForm`, `AuthError`, the password forms (`PasswordForgotForm`, `PasswordResetForm`, `PasswordUpdateForm`, `PasswordRequirements`, `PasswordReveal`), `MfaSettings`, `LogoutDialog`, `PasswordConfirmationDialog` and the MFA flow (`MfaChallenge`, `MfaSetup`, `MfaDialog`, `MfaQr`, `MfaCode`, recovery codes, …)
-- **Composables**: `useAuth`, `useMfa`, `useMfaDialog`, `usePasswordConfirmation`, `useMfaSetupReminder`, `usePasswordPolicy`, `useLoginEmail`, `useLogoutDialog`, `useCardanAuthConfig` (wrapping `nuxt-auth-sanctum` and the app config), plus the `mfa-setup` middleware and the 403 plugin behind the setup reminder
-- Copy lives in the layer's `auth`, `mfa` and `password` messages; apps override keys. Buttons use the `black` (main actions) and `ghost` (secondary) variants; there are no button slots
-- The endpoints and the password policy are settings under `cardanAuth` in the app config, with the Cardan Academy API's paths as defaults (`auth/app/app.config.ts`, read through `useCardanAuthConfig()`); an app whose API still serves Fortify's own password routes overrides them in its `app.config.ts` (see the Backend and Configuration sections of auth/README.md). `extractAuthError()` reads both Laravel's error shape and the JSON:API envelope
-- The layer uses the Cardan UI components and tokens only, with no tokens of its own
-- The demo is the Auth UI section of the playground (`/auth`), backed by mock Fortify endpoints in `.playground/server/routes`; its pages render client-side only, like the SPAs that use the layer
+- **Pages**: `/login`, `/forgot-password`, `/reset-password`, `/two-factor-authentication` and `/mfa-setup`, in the `AuthPage` frame (the Cardan Academy design, which Cardan Auditor adopts too). An app overrides a page by creating one at the same path.
+- **Components**: `AuthPage`, `LoginForm`, `AuthError`, the password forms, `MfaSettings`, `LogoutDialog`, `PasswordConfirmationDialog` and the MFA flow (`MfaChallenge`, `MfaSetup`, `MfaDialog`, `MfaQr`, `MfaCode`, recovery codes, …).
+- **Composables**: `useAuth`, `useMfa`, `useMfaDialog`, `usePasswordConfirmation`, `useMfaSetupReminder`, `usePasswordPolicy`, `useLoginEmail`, `useLogoutDialog`, `useCardanAuthConfig` (wrapping `nuxt-auth-sanctum` and the app config), plus the `mfa-setup` middleware and the 403 plugin behind the setup reminder.
+- Copy lives in the layer's `auth`, `mfa` and `password` messages; apps override keys. Buttons use the `black` (main actions) and `ghost` (secondary) variants; there are no button slots.
+- The endpoints and the password policy are settings under `cardanAuth` in the app config, with the Cardan Academy API's paths as defaults (`auth/app/app.config.ts`, read through `useCardanAuthConfig()`); an app whose API still serves Fortify's own password routes overrides them in its `app.config.ts`. `extractAuthError()` reads both Laravel's error shape and the JSON:API envelope.
+- The layer uses the Cardan UI components and tokens only, with no tokens of its own.
+- The demo is the Auth UI section of the playground (`/auth`), backed by mock Fortify endpoints in `.playground/server/routes`; its pages render client-side only, like the SPAs that use the layer.
 
-## Utilities Available
-
-- **datetime**: Date and time formatting
-- **file**: File handling utilities
-- **markdown**: Markdown processing
-- **sort**: Sorting algorithms
-- **video**: `parseVideoUrl()`, the YouTube and Vimeo URLs VideoPlayer plays, shared with MarkdownPreview
-- **index**: General utility functions
-
-## Usage Patterns
-
-### Basic Component Usage
-
-```vue
-<script setup>
-import { Button } from '@cardan/ui';
-
-function handleClick() {
-  console.log('Button clicked');
-}
-</script>
-
-<template>
-  <Button label="Click me" variant="primary" @click="handleClick" />
-</template>
-```
-
-## CSS Variables
+## CSS variables
 
 All global CSS variables for color, spacing, typography, etc. are declared in [main.css](app/assets/main.css). The layer does not load this file: it is the Cardan template that each consuming project copies into its own `main.css` (a stylesheet shipped by the layer would add a render-blocking request). The playground imports it from [playground.css](.playground/assets/playground.css).
 
@@ -117,118 +46,10 @@ All global CSS variables for color, spacing, typography, etc. are declared in [m
 - Every text and graphic token pair must meet WCAG 2.2 AA contrast (4.5:1 for text, 3:1 for graphics) in light and dark mode. Never fix a contrast failure by inventing a new color; use a brand token.
 - Text and icons on tinted (`-bg`) surfaces use the matching `--color-*-text` token; every `-text` token must reach 4.5:1 on its `-bg` surface.
 
-## Nuxt Layer Integration
+## Icons
 
-Cardan UI can be used in two different ways:
+Components take an `icon` prop, powered by [@nuxt/icon](https://nuxt.com/modules/icon) and Iconify. Use [Material Symbols](https://icones.js.org/collection/material-symbols): `material-symbols:<name>-outline-rounded` first, `-rounded` when the design wants a filled icon, the plain name when neither variant exists. Icons are decorative (hidden from screen readers) unless the component has no text label, so give an icon-only control an `aria-label`. An icon that causes layout shift goes into `defaultIcons` in [.playground/utils/defaultIcons.ts](.playground/utils/defaultIcons.ts).
 
-### 1. Extend from local folder (Development)
+## MCP
 
-```ts
-defineNuxtConfig({
-  extends: ['../cardan-ui'],
-});
-```
-
-### 2. Extend from GitHub repository (Development / Production)
-
-[GitHub repository](https://github.com/cardan-a11y/cardan-ui)
-
-```ts
-defineNuxtConfig({
-  extends: ['github:cardan-a11y/cardan-ui'],
-});
-```
-
-## Icon Usage Guidelines
-
-Cardan UI components support icons through the `icon` prop, powered by [@nuxt/icon](https://nuxt.com/modules/icon) and Iconify. This provides access to over 200,000 open-source vector icons.
-
-### Icon Library Preference
-
-We primarily use the **Material Symbols** library for consistency across the design system:
-
-- **Preferred**: `material-symbols` with rounded variants
-- **Default Style**: `outline-rounded` (outlined icons with rounded corners)
-- **Alternative**: `rounded` (filled icons with rounded corners) when design requires
-- **Fallback**: Default rounded variant (no suffix) when outline variant is not available
-- **Fallback**: Default variant (no suffix) when both outline and rounded variants are not available
-
-### Icon Usage Examples
-
-```vue
-<template>
-  <!-- Using outline-rounded variant (preferred) -->
-  <Button icon="material-symbols:home-outline-rounded" label="Home" />
-
-  <!-- Using rounded variant (without outline suffix) when the design requires it -->
-  <Button icon="material-symbols:star-rounded" label="Favorite" />
-
-  <!-- Using default variant when no rounded variants are available -->
-  <Button icon="material-symbols:account-circle" label="Profile" />
-
-  <!-- Other components with icon support -->
-  <Input icon="material-symbols:search-rounded" label="Search" />
-  <Chip icon="material-symbols:check-rounded" label="Completed" />
-</template>
-```
-
-### Icon Naming Convention
-
-Material Symbols icons follow this pattern:
-
-- `material-symbols:{icon-name}-{variant}`
-- Common variants: `outline-rounded`, `rounded`, `outline`, `sharp`
-
-### Finding Icons
-
-1. **Browse**: Visit [Material Symbols collection](https://icones.js.org/collection/material-symbols) on icones.js.org
-2. **Search**: Use the search functionality to find specific icons
-3. **Preview**: Hover over icons to see their names and variants
-4. **Filter**: Use the variant filters to find outline-rounded, rounded, or default variants
-
-### Icon Best Practices
-
-- **Consistency**: Stick to Material Symbols library when possible
-- **Accessibility**: Icons are usually used to support text labels, because by default they are hidden from screen readers. They should be accompanied by text labels or proper ARIA labels.
-- **Size**: Icons automatically scale with the component's size
-- **Performance**: Icons are loaded on-demand to keep bundle size minimal
-- **Layout Shift**: When an icon causes layout shift, add it to the `defaultIcons` array in [.playground/utils/defaultIcons.ts](.playground/utils/defaultIcons.ts) (used by [.playground/nuxt.config.ts](.playground/nuxt.config.ts))
-
-### Icon Selection Process
-
-When suggesting an icon:
-
-1. First check Material Symbols collection on icones.js.org
-2. Prefer outline-rounded variants
-3. Use rounded variants when design requires filled icons
-4. Fall back to default variants when rounded options aren't available
-5. Always consider accessibility implications
-
-## Documentation
-
-The playground is available at `http://localhost:3003` and serves as interactive documentation with live examples of nearly all components showcasing most of their props.
-
-### External Dependencies & Documentation
-
-#### UI & Interaction
-
-- **[@vueform/multiselect](https://vueform.com/multiselect/)**: Multi-select dropdown component
-- **[Vue DatePicker](https://vue3datepicker.com/)**: Date picker component used in DatePicker
-- **[compressorjs](https://github.com/fengyuanchen/compressorjs)**: Image compression utility for FileInput component
-
-#### Markdown Extensions
-
-- **[markdown-it](https://markdown-it.github.io/)**: Markdown parser used in MarkdownPreview component
-- **[highlight.js](https://highlightjs.org/)**: Syntax highlighting for code blocks in MarkdownPreview
-- **[md-editor-v3](https://imzbf.github.io/md-editor-v3/)**: Rich markdown editor used in MarkdownEditor component
-- **[@mdit/plugin-attrs](https://github.com/mdit-vue/mdit-plugin-attrs)**: HTML attributes support
-- **[@mdit/plugin-mark](https://github.com/mdit-vue/mdit-plugin-mark)**: Mark syntax support
-
-#### Accessibility Testing
-
-- **[axe-core](https://github.com/dequelabs/axe-core)**: Accessibility testing
-- **[vue-axe](https://github.com/vue-a11y/vue-axe)**: Vue.js accessibility testing integration for playground
-
-## MCP Integration
-
-For real-time, detailed project structure information, connect to the Nuxt MCP endpoint at `http://localhost:3003/__mcp/sse` during development.
+For real-time project structure information, connect to the playground's Nuxt MCP endpoint at `http://localhost:3003/__mcp/sse` while `pnpm dev` runs.
