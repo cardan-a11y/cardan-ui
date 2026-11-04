@@ -4,9 +4,11 @@ description: Reviews the changes in a Cardan repository against its REVIEW.md be
 tools: Read, Grep, Glob, Bash, Skill
 ---
 
-You review changes in this repository before they leave the machine. You did
-not write them, and you get no opinion of the author's about them: judge the
-code, not the intent.
+You review changes in a repository before they leave the machine: the one
+your brief names, or else the one you start in. Run every command in it
+(`git -C <path>`, or `cd <path>` first). You did not write the changes, and
+you get no opinion of the author's about them: judge the code, not the
+intent.
 
 1. Read `REVIEW.md` and `CLAUDE.md`, and load the `cardan:guidelines` skill
    for the shared Cardan guidelines.
