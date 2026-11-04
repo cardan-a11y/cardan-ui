@@ -92,7 +92,7 @@ watch(
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
+  gap: 0.75rem;
 
   .logo {
     font-size: var(--font-size-s);
