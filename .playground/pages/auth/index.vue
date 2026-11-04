@@ -1,7 +1,6 @@
 <script setup lang="ts">
 useHead({ title: 'Auth UI' });
 
-const { isAuthenticated } = useAuth();
 const { logoutDialogRef } = useLogoutDialog();
 </script>
 
@@ -25,9 +24,8 @@ const { logoutDialogRef } = useLogoutDialog();
       <h2>Logout dialog</h2>
 
       <p>
-        Asks before signing out. An app mounts it once, in its layout. Sign in
-        on the Login page below first: signing out ends that demo session and
-        returns to the start page.
+        Asks before signing out. An app mounts it once, in its layout. In this
+        demo, Sign out only closes the dialog.
       </p>
 
       <Button
@@ -35,7 +33,6 @@ const { logoutDialogRef } = useLogoutDialog();
         size="lg"
         icon="material-symbols:logout"
         :label="$t('general.sign-out')"
-        :disabled="!isAuthenticated"
         @click="logoutDialogRef?.openDialog()"
       />
 
