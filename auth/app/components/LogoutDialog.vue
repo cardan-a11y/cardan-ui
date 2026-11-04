@@ -29,5 +29,9 @@ const { logoutDialogRef, handleLogout } = useLogoutDialog();
 <style>
 .logout-dialog {
   --dialog-max-width: 440px;
+
+  .dialog-buttons {
+    margin-block-start: 2.5rem;
+  }
 }
 </style>
