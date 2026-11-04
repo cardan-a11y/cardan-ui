@@ -7,6 +7,49 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.3.3" date="2026-11-04">
+      <ul>
+        <li>
+          CardanLogo: a product lockup takes the room it gets in a flex row
+          from the narrow width up at every screen width, no longer only from
+          320px
+        </li>
+        <li>
+          MobileMenu: the close button is md by default (was sm)
+        </li>
+        <li>
+          Dialog: the new <code>--dialog-max-width</code> on a dialog's class
+          sets its width (800px for one at the side by default; a centered one
+          without it is as wide as its content)
+        </li>
+        <li>
+          Dialog: the close button is ghost by default (was outline), and the
+          buttons share the row at their own size (md, was lg)
+        </li>
+        <li>
+          Dialog, MultiSelect, DatePicker and FileInput remove their event
+          listeners when they unmount; a FileInput no longer keeps handling
+          pastes after it is gone
+        </li>
+        <li>
+          ThemeSwitch keeps its place on the server with an empty box of its
+          size, so the header no longer moves when the switch appears
+        </li>
+        <li>
+          Button no longer has <code>aria-live="polite"</code>, so a screen
+          reader no longer announces a button whose text changes
+        </li>
+        <li>
+          Button: no extra padding around its text, so a button with a label
+          is a little narrower
+        </li>
+        <li>
+          CopyButton announces "Copied" through a status message of its own,
+          also when a project gives it its own label
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.3.2" date="2026-11-03">
       <ul>
         <li>

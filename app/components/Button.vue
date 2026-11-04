@@ -93,7 +93,6 @@ const emit = defineEmits<{
     :title="
       !download && target === '_blank' ? $t('aria.open-new-window') : undefined
     "
-    aria-live="polite"
     @click="handleClick"
   >
     <slot v-if="!showExternalIcon" name="icon" />
@@ -134,7 +133,6 @@ const emit = defineEmits<{
     ]"
     :style="computedStyle"
     :title="disabled ? undefined : title"
-    aria-live="polite"
     @click="handleClick"
   >
     <slot name="icon" />
@@ -238,10 +236,6 @@ const emit = defineEmits<{
   min-height: 2rem;
   padding-inline: 0.65rem;
 
-  .button-text {
-    padding-inline: 0.1rem;
-  }
-
   .iconify {
     font-size: var(--button-icon-size, larger);
   }
@@ -262,10 +256,6 @@ const emit = defineEmits<{
   min-height: 2.75rem;
   padding-inline: 1rem;
 
-  .button-text {
-    padding-inline: 0.2rem;
-  }
-
   .iconify {
     font-size: var(--button-icon-size, larger);
   }
@@ -276,10 +266,6 @@ const emit = defineEmits<{
   min-height: 3rem;
   padding-inline: 1.25rem;
 
-  .button-text {
-    padding-inline: 0.25rem;
-  }
-
   .iconify {
     font-size: var(--button-icon-size, larger);
   }
@@ -289,10 +275,6 @@ const emit = defineEmits<{
   font-size: var(--button-font-size, var(--font-size-md));
   min-height: 3.5rem;
   padding-inline: 1.5rem;
-
-  .button-text {
-    padding-inline: 0.5rem;
-  }
 
   .iconify {
     font-size: var(--button-icon-size, larger);
@@ -517,10 +499,6 @@ const emit = defineEmits<{
       margin-bottom: -0.125em;
       margin-inline-start: 0.25em;
     }
-  }
-
-  .button-text {
-    padding-inline: 0;
   }
 
   &:hover {

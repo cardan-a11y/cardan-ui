@@ -23,4 +23,19 @@ describe('Dialog', () => {
     expect(wrapper.find('button[aria-label], button').exists()).toBe(true);
     expect(await checkA11y()).toHaveNoViolations();
   });
+
+  it('stops Escape from closing it only with disable-escape', async () => {
+    for (const disableEscape of [false, true]) {
+      const wrapper = await mountSuspended(Dialog, {
+        props: { label: 'Settings', disableEscape },
+        attachTo: document.body,
+      });
+
+      const cancel = new Event('cancel', { cancelable: true });
+      wrapper.get('dialog').element.dispatchEvent(cancel);
+      expect(cancel.defaultPrevented).toBe(disableEscape);
+
+      wrapper.unmount();
+    }
+  });
 });

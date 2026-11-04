@@ -107,7 +107,6 @@ function handleClose() {
         type="submit"
         :form="formId"
         variant="black"
-        size="lg"
         icon="material-symbols:check"
         :label="$t('general.confirm')"
         :loading="loadingPasswordConfirmation"
@@ -119,8 +118,7 @@ function handleClose() {
 
 <style>
 .password-confirmation-dialog {
-  width: 100%;
-  max-width: 490px;
+  --dialog-max-width: 480px;
 
   p {
     margin-block-start: 0;
@@ -138,11 +136,7 @@ function handleClose() {
   }
 
   .dialog-buttons {
-    margin-block-start: 1.5rem;
-
-    .button {
-      --button-font-size: var(--font-size-sm);
-    }
+    margin-block-start: 1.25rem;
   }
 }
 </style>

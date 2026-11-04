@@ -73,10 +73,6 @@ const groupedKey = computed(
     color: var(--color-text);
   }
 
-  .copy-button {
-    --button-font-size: var(--font-size-sm);
-  }
-
   .mfa-setup-key-description {
     margin-block: 0;
     font-size: var(--font-size-sm);

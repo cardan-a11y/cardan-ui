@@ -1,4 +1,7 @@
 <script setup lang="ts">
+// The attributes, such as a project's own label, go to the button, not the status
+defineOptions({ inheritAttrs: false });
+
 const {
   hideLabel = true,
   iconSize = 'lg',
@@ -43,7 +46,13 @@ async function handleClick() {
     :title="disabled ? undefined : title"
     :disabled="disabled"
     class="copy-button"
-    aria-live="polite"
+    v-bind="$attrs"
     @click="handleClick"
   />
+
+  <!-- A screen reader announces a change in a live region that is already on
+       the page, not in the focused button's own name -->
+  <span role="status" class="visuallyhidden">
+    {{ copied ? $t('general.copied') : '' }}
+  </span>
 </template>

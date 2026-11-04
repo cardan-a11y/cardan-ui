@@ -80,7 +80,6 @@ defineExpose({
   }
 
   .copy-button {
-    --button-font-size: var(--font-size-sm);
     margin-block-start: 1rem;
   }
 

@@ -275,10 +275,6 @@ onMounted(() => {
     @media (min-width: 480px) {
       justify-content: space-between;
     }
-
-    .button {
-      --button-font-size: var(--font-size-sm);
-    }
   }
 }
 </style>

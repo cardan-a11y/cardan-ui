@@ -4,7 +4,7 @@ const {
   disableEscape = false,
   clickOutside = true,
   position = 'center',
-  closeButtonVariant = 'outline',
+  closeButtonVariant = 'ghost',
   closeButtonRadius = 'full',
   closeButtonIconSize = 'md',
   label = undefined,
@@ -88,16 +88,6 @@ function preventEscape(event: Event) {
   }
 }
 
-onMounted(() => {
-  dialogTemplateRef.value?.addEventListener('cancel', (event) =>
-    preventEscape(event),
-  );
-});
-
-onUnmounted(() =>
-  dialogTemplateRef.value?.removeEventListener('cancel', preventEscape),
-);
-
 defineExpose({
   openDialog,
   closeDialog,
@@ -112,6 +102,7 @@ defineExpose({
     :aria-labelledby="label ? id : undefined"
     :class="['dialog', `dialog-position--${position}`]"
     :role="role"
+    @cancel="preventEscape"
     @click="handleDialogClick"
     @close="handleClose"
   >
@@ -146,7 +137,6 @@ defineExpose({
       <div v-if="$slots.buttons" class="dialog-buttons">
         <Button
           :label="$t('general.cancel')"
-          size="lg"
           variant="outline"
           @click="closeDialog"
         />
@@ -220,8 +210,6 @@ html:has(.dialog[open]) {
       font-size: larger;
       flex-shrink: 0;
     }
-
-    /* > .dialog-title { */
   }
 
   .close-button {
@@ -239,20 +227,32 @@ html:has(.dialog[open]) {
     padding-inline: var(--dialog-padding-inline);
     display: flex;
     flex-wrap: wrap;
-    gap: 0.65rem;
+    gap: 0.75rem;
 
     > .button {
-      flex-grow: 1;
-      max-width: none;
-      width: calc(50% - 0.5rem);
+      flex: 1;
+      min-width: fit-content;
+      /* CSS taken from https://www.youtube.com/watch?v=3ugXM3ZDUuE */
     }
   }
+}
+
+/* The default --dialog-max-width, without specificity, so the token on a
+   dialog's own class always wins, whatever order the stylesheets load in.
+   A centered dialog without it is as wide as its content, like the browser's
+   dialog; the browser's max-width keeps a margin around it on a narrow screen. */
+:where(.dialog-position--center) {
+  --dialog-max-width: fit-content;
+}
+
+:where(.dialog-position--inline-start, .dialog-position--inline-end) {
+  --dialog-max-width: 800px;
 }
 
 .dialog-position--center {
   --dialog-padding-inline: 1.25rem;
   --dialog-padding-block: 1.5rem 1.25rem;
-
+  width: var(--dialog-max-width);
   border: 2px solid var(--color-dialog-border);
   border-radius: var(--radius-lg);
   padding-block: var(--dialog-padding-block);
@@ -275,18 +275,15 @@ html:has(.dialog[open]) {
   }
 }
 
-.dialog-position--inline-start {
-  margin: 0 auto 0 0;
+.dialog-position--inline-start,
+.dialog-position--inline-end {
   border: none;
-  border-inline-end: 1px solid var(--color-dialog-border);
-  padding-block-end: var(--dialog-padding-block);
   width: 100%;
-  max-width: min(100vw, 800px);
   min-height: 100dvh;
+  max-width: min(100vw, var(--dialog-max-width));
+  padding-block-end: var(--dialog-padding-block);
 
   &[open] {
-    animation: slideFadeInLeft var(--duration-md) forwards;
-
     &::backdrop {
       animation: fadeIn var(--duration-md) forwards;
     }
@@ -294,48 +291,36 @@ html:has(.dialog[open]) {
 
   &[closing] {
     display: block;
-    animation: slideFadeOutLeft var(--duration-md) forwards;
 
     &::backdrop {
       animation: fadeOut var(--duration-md) forwards;
     }
   }
+}
 
-  .close-button {
-    right: 1.5rem;
-    top: 1.5rem;
+.dialog-position--inline-start {
+  margin: 0 auto 0 0;
+  border-inline-end: 1px solid var(--color-dialog-border);
+
+  &[open] {
+    animation: slideFadeInLeft var(--duration-md) forwards;
+  }
+
+  &[closing] {
+    animation: slideFadeOutLeft var(--duration-md) forwards;
   }
 }
 
 .dialog-position--inline-end {
   margin: 0 0 0 auto;
-  border: none;
   border-inline-start: 1px solid var(--color-dialog-border);
-  padding-block-end: var(--dialog-padding-block);
-  width: 100%;
-  max-width: min(100vw, 800px);
-  min-height: 100dvh;
 
   &[open] {
     animation: slideFadeInRight var(--duration-md) forwards;
-
-    &::backdrop {
-      animation: fadeIn var(--duration-md) forwards;
-    }
   }
 
   &[closing] {
-    display: block;
     animation: slideFadeOutRight var(--duration-md) forwards;
-
-    &::backdrop {
-      animation: fadeOut var(--duration-md) forwards;
-    }
-  }
-
-  .close-button {
-    right: 1.5rem;
-    top: 1.5rem;
   }
 }
 

@@ -222,7 +222,7 @@ function makeToast() {
 }
 
 .demo-dialog-content {
-  max-width: 360px;
+  --dialog-max-width: 360px;
 
   p {
     font-size: var(--font-size-sm);

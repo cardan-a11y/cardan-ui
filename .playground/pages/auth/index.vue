@@ -1,5 +1,8 @@
 <script setup lang="ts">
 useHead({ title: 'Auth UI' });
+
+const { isAuthenticated } = useAuth();
+const { logoutDialogRef } = useLogoutDialog();
 </script>
 
 <template>
@@ -16,6 +19,27 @@ useHead({ title: 'Auth UI' });
     <Card>
       <h2>MFA dialogs</h2>
       <MfaDemo />
+    </Card>
+
+    <Card>
+      <h2>Logout dialog</h2>
+
+      <p>
+        Asks before signing out. An app mounts it once, in its layout. Sign in
+        on the Login page below first: signing out ends that demo session and
+        returns to the start page.
+      </p>
+
+      <Button
+        variant="outline"
+        size="lg"
+        icon="material-symbols:logout"
+        :label="$t('general.sign-out')"
+        :disabled="!isAuthenticated"
+        @click="logoutDialogRef?.openDialog()"
+      />
+
+      <LogoutDialog />
     </Card>
 
     <Card>
