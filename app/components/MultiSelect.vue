@@ -123,7 +123,7 @@ async function placeDropdown() {
 onMounted(() => {
   if (autofocus) setTimeout(() => focusElement(), 200);
 
-  document.addEventListener('keydown', (event) => preventEscape(event));
+  document.addEventListener('keydown', preventEscape);
 });
 
 onUnmounted(() => document.removeEventListener('keydown', preventEscape));

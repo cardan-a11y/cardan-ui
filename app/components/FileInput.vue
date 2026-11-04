@@ -51,9 +51,7 @@ function handlePaste(event: ClipboardEvent) {
 }
 
 onMounted(() => {
-  window.addEventListener('paste', (event: ClipboardEvent) => {
-    handlePaste(event);
-  });
+  window.addEventListener('paste', handlePaste);
 });
 
 onUnmounted(() => {

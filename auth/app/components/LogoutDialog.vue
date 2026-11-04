@@ -12,42 +12,26 @@ const { logoutDialogRef, handleLogout } = useLogoutDialog();
     ref="logoutDialogRef"
     class="logout-dialog"
     :label="$t('general.sign-out')"
-    close-button-variant="ghost"
   >
     <p>{{ $t('auth.confirm-logout') }}</p>
 
-    <div class="button-group">
-      <Button
-        variant="outline"
-        size="lg"
-        :label="$t('general.cancel')"
-        @click="logoutDialogRef?.closeDialog"
-      />
-
+    <template #buttons>
       <Button
         variant="black"
-        size="lg"
         icon="material-symbols:logout"
         :label="$t('general.sign-out')"
         @click="handleLogout"
       />
-    </div>
+    </template>
   </Dialog>
 </template>
 
 <style>
 .logout-dialog {
-  min-width: 320px;
-  width: 100%;
-  max-width: 360px;
+  --dialog-max-width: 440px;
 
-  .button-group {
+  .dialog-buttons {
     margin-block-start: 2.5rem;
-    justify-content: space-between;
-
-    > .button {
-      flex-grow: 1;
-    }
   }
 }
 </style>

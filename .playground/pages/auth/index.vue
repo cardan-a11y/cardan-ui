@@ -1,5 +1,7 @@
 <script setup lang="ts">
 useHead({ title: 'Auth UI' });
+
+const { logoutDialogRef } = useLogoutDialog();
 </script>
 
 <template>
@@ -16,6 +18,25 @@ useHead({ title: 'Auth UI' });
     <Card>
       <h2>MFA dialogs</h2>
       <MfaDemo />
+    </Card>
+
+    <Card>
+      <h2>Logout dialog</h2>
+
+      <p>
+        Asks before signing out. An app mounts it once, in its layout. In this
+        demo, Sign out only closes the dialog.
+      </p>
+
+      <Button
+        variant="outline"
+        size="lg"
+        icon="material-symbols:logout"
+        :label="$t('general.sign-out')"
+        @click="logoutDialogRef?.openDialog()"
+      />
+
+      <LogoutDialog />
     </Card>
 
     <Card>

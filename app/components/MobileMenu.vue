@@ -22,7 +22,7 @@ const {
   closeIcon = 'material-symbols:close-rounded',
   closeButtonVariant = 'ghost',
   closeButtonRadius = 'full',
-  closeButtonSize = 'sm',
+  closeButtonSize = 'md',
   closeButtonIconSize = 'md',
   hideCloseButton = false,
   closeOnDesktop = true,

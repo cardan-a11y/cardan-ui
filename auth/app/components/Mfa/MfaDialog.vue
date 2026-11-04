@@ -111,7 +111,6 @@ const emit = defineEmits<{
       <Button
         v-if="mfaStep === 1"
         variant="black"
-        size="lg"
         icon="material-symbols:lock-outline"
         :label="$t('mfa.enable')"
         @click="handleEnableMfa()"
@@ -120,7 +119,6 @@ const emit = defineEmits<{
       <Button
         v-if="mfaStep === 2"
         variant="black"
-        size="lg"
         icon="material-symbols:arrow-right-alt"
         icon-pos="end"
         :label="$t('general.continue')"
@@ -132,7 +130,6 @@ const emit = defineEmits<{
         type="submit"
         form="mfa-code-confirmation-form"
         variant="black"
-        size="lg"
         icon="material-symbols:check"
         :disabled="mfaCredentials.code.length !== 6"
         :loading="loadingConfirmationCode"
@@ -142,7 +139,6 @@ const emit = defineEmits<{
       <Button
         v-if="mfaStep === 4 || mfaStep === 6"
         variant="black"
-        size="lg"
         icon="material-symbols:check"
         :label="$t('general.done')"
         @click="closeMfaDialog()"
@@ -151,7 +147,6 @@ const emit = defineEmits<{
       <Button
         v-if="mfaStep === 5"
         variant="danger"
-        size="lg"
         icon="material-symbols:lock-open-outline"
         :label="$t('mfa.disable')"
         :loading="loadingDisableMfa"
@@ -163,8 +158,7 @@ const emit = defineEmits<{
 
 <style>
 .mfa-dialog {
-  width: 100%;
-  max-width: 490px;
+  --dialog-max-width: 480px;
 
   .mfa-dialog-divider {
     block-size: 1px;
@@ -187,11 +181,7 @@ const emit = defineEmits<{
   }
 
   .dialog-buttons {
-    margin-block-start: 1.5rem;
-
-    .button {
-      --button-font-size: var(--font-size-sm);
-    }
+    margin-block-start: 1.25rem;
   }
 
   .mfa-content {

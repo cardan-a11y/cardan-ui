@@ -91,7 +91,7 @@ function preventEscape(event: KeyboardEvent) {
 
 onMounted(() => {
   isMounted.value = true;
-  document.addEventListener('keydown', (event) => preventEscape(event));
+  document.addEventListener('keydown', preventEscape);
 });
 
 onUnmounted(() => document.removeEventListener('keydown', preventEscape));

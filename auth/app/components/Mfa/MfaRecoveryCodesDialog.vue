@@ -64,7 +64,6 @@ function handleClose() {
       <Button
         v-if="isConfirming"
         variant="black"
-        size="lg"
         :label="$t('mfa.recovery-codes-generate')"
         icon="material-symbols:refresh-rounded"
         :loading="loadingGenerateRecoveryCodes"
@@ -74,7 +73,6 @@ function handleClose() {
       <Button
         v-else
         variant="black"
-        size="lg"
         icon="material-symbols:check"
         :label="$t('mfa.setup-finish')"
         @click="closeMfaRecoveryCodesDialog()"
@@ -85,8 +83,7 @@ function handleClose() {
 
 <style>
 .mfa-recovery-codes-dialog {
-  width: 100%;
-  max-width: 490px;
+  --dialog-max-width: 480px;
 
   .mfa-recovery-codes-divider {
     block-size: 1px;
@@ -95,17 +92,12 @@ function handleClose() {
   }
 
   .dialog-buttons {
-    margin-block-start: 1.5rem;
+    margin-block-start: 1.25rem;
     justify-content: space-between;
 
     .button {
-      --button-font-size: var(--font-size-sm);
       .button-text {
         padding-block: 0.25rem;
-      }
-
-      @media (min-width: 375px) {
-        max-width: max-content;
       }
     }
   }
