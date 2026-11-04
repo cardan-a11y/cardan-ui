@@ -55,7 +55,10 @@ tree.
    commit). Take each PR's title from `gh pr view <number> --json title`
    where the subject only names its number. Leave out a "Bring main into
    develop" merge (step 4). Nothing to release when the list is empty.
-3. **Open the release PR**: `gh pr create --base main --head develop`.
+3. **Open the release PR**: first do the steps of its own that the
+   project's CLAUDE.md lists for a release, such as a version bump or
+   release notes elsewhere, each through its own pull request as that
+   CLAUDE.md describes, then `gh pr create --base main --head develop`.
    The title is `Release <version>` when `package.json` has a `version`
    that the user wants to raise (set it on `develop` first, through its own
    PR), otherwise `Release <today>`. The description is a list with one
