@@ -8,6 +8,15 @@ export default defineNuxtConfig({
     image: {
       domains: ['i.ytimg.com', 'i.vimeocdn.com'],
     },
+
+    // Cached on Netlify like the pages of cardan-cms-nuxt, so a component that
+    // renders differently per visitor or over time shows up here first. The
+    // mock endpoints answer per session, so they are never cached.
+    routeRules: {
+      '/**': { isr: 3600 },
+      '/api/**': { isr: false },
+      '/sanctum/**': { isr: false },
+    },
   },
 
   i18n: {
@@ -54,12 +63,6 @@ export default defineNuxtConfig({
     '/mfa-setup': { ssr: false },
   },
 
-  // Nuxt 4.6 fails the server build when it tries to inline the highlight.js
-  // theme that Markdown/highlight.ts imports with ?url for md-editor-v3
-  features: {
-    inlineStyles: false,
-  },
-
   // Netlify builds from the repository root, so it looks for the publish
   // directory and the server function there, not in .playground
   nitro: process.env.NETLIFY
@@ -103,6 +106,20 @@ export default defineNuxtConfig({
 
   devServer: {
     port: 3003,
+  },
+
+  // As in cardan-lms-nuxt and cardan-auditor-nuxt, so the layer's typecheck
+  // and build see what theirs see, such as typed routes
+  future: {
+    compatibilityVersion: 5,
+  },
+
+  experimental: {
+    // compatibilityVersion 5 turns off the auto-imports of the server bundle,
+    // which the server runtime of @nuxtjs/i18n and @nuxt/image still relies
+    // on: without them the build fails ("useRuntimeConfig" is not exported by
+    // "#imports")
+    nitroAutoImports: true,
   },
 
   compatibilityDate: '2025-03-19',

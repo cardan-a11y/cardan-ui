@@ -3,8 +3,7 @@
 import hljs from 'highlight.js/lib/core';
 // Registers the common languages (including css, javascript and typescript) on the core instance
 import 'highlight.js/lib/common';
+// md-editor-v3 adds no <link> for a theme when it is given an instance
 import 'highlight.js/styles/stackoverflow-dark.css';
-// Served from the app's own origin, for the <link> that md-editor-v3 adds
-import codeThemeUrl from 'highlight.js/styles/stackoverflow-dark.min.css?url';
 
-export { hljs, codeThemeUrl };
+export { hljs };

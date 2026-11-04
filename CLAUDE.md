@@ -42,7 +42,7 @@ All global CSS variables for color, spacing, typography, etc. are declared in [m
 
 - The `--cardan-*` primitives hold the brand palette; components never use them, only the semantic `--color-*` tokens do.
 - Custom properties that a component sets for itself, such as from a `fontSize` or `iconSize` prop, are prefixed with the component name (`--button-icon-size`, not `--icon-size`), so they don't leak into nested components.
-- Components use tokens without fallbacks: `var(--token)`, not `var(--token, var(--other))`. When a component needs a new token, add it to `main.css` and to the token list in [MIGRATION.md](MIGRATION.md), with a value that keeps the current look of existing projects.
+- Components use tokens without fallbacks: `var(--token)`, not `var(--token, var(--other))`. When a component needs a new token, add it to `main.css` and to the release's section in [MIGRATION.md](MIGRATION.md), with a value that keeps the current look of existing projects.
 - Every text and graphic token pair must meet WCAG 2.2 AA contrast (4.5:1 for text, 3:1 for graphics) in light and dark mode. Never fix a contrast failure by inventing a new color; use a brand token.
 - Text and icons on tinted (`-bg`) surfaces use the matching `--color-*-text` token; every `-text` token must reach 4.5:1 on its `-bg` surface.
 

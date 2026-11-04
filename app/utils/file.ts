@@ -1,6 +1,13 @@
-export function formatFileSize(size: number) {
-  if (size < 1000000) return Math.floor(size / 1024) + ' KB';
-  else return Math.floor(size / 1024 / 1024) + ' MB';
+/** "2,4 MB" or "480 KB", in the current locale unless another is given */
+export function formatFileSize(
+  bytes: number,
+  locale = useNuxtApp().$i18n.locale.value,
+) {
+  const kilobytes = Math.max(1, Math.round(bytes / 1000));
+  if (kilobytes < 1000) return `${kilobytes.toLocaleString(locale)} KB`;
+
+  const megabytes = bytes / 1_000_000;
+  return `${megabytes.toLocaleString(locale, { maximumFractionDigits: 1 })} MB`;
 }
 
 export function getFileExtension(filename?: string) {
