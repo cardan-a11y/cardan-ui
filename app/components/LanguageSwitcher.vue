@@ -7,7 +7,7 @@ const { locale, setLocale } = useI18n();
     <ul role="list">
       <li class="list-item--nl">
         <NuxtLinkLocale
-          to="/"
+          :to="{ path: '/' }"
           locale="nl"
           lang="nl"
           :class="locale === 'nl' ? 'active' : ''"
@@ -20,7 +20,7 @@ const { locale, setLocale } = useI18n();
 
       <li class="list-item--en">
         <NuxtLinkLocale
-          to="/en"
+          :to="{ path: '/' }"
           locale="en"
           lang="en"
           :class="locale === 'en' ? 'active' : ''"

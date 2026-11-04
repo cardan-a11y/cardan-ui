@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { MdEditor, config } from 'md-editor-v3';
+import type { ToolbarNames, Footers } from 'md-editor-v3';
 import type { MarkdownIt } from 'markdown-it';
 import { attrs } from '@mdit/plugin-attrs';
 import { mark } from '@mdit/plugin-mark';
@@ -8,7 +9,7 @@ import {
   italicExtension,
   targetBlankExtension,
 } from './extensions';
-import { hljs, codeThemeUrl } from './highlight';
+import { hljs } from './highlight';
 import 'md-editor-v3/lib/style.css';
 
 const {
@@ -34,6 +35,48 @@ const {
   instruction?: string;
 }>();
 
+const footers: Footers[] = [
+  // 'markdownTotal',
+  // '=',
+  // 'scrollSwitch',
+];
+
+const toolbars: ToolbarNames[] = [
+  'bold',
+  // 'underline',
+  'italic',
+  // 'strikeThrough',
+  '-',
+  // 'title',
+  // 'sub',
+  // 'sup',
+  'unorderedList',
+  'orderedList',
+  'quote',
+  // 'task',
+  '-',
+  'codeRow',
+  'code',
+  // 'link',
+  // 'image',
+  // 'table',
+  // 'mermaid',
+  // 'katex',
+  '-',
+  'revoke',
+  'next',
+  // 'save',
+  '=',
+  // 'prettier',
+  'pageFullscreen',
+  // 'fullscreen',
+  'preview',
+  // 'previewOnly',
+  // 'htmlPreview',
+  // 'catalog',
+  // 'github',
+];
+
 config({
   markdownItConfig(mdit) {
     // md-editor-v3 types its instance with markdown-it 14, the plugins expect the
@@ -50,9 +93,6 @@ config({
     // Bundled instead of loaded from a CDN, so no third-party requests or CSP exceptions
     highlight: {
       instance: hljs,
-      css: {
-        'stackoverflow-dark': { light: codeThemeUrl, dark: codeThemeUrl },
-      },
     },
   },
 });
@@ -113,7 +153,6 @@ const emit = defineEmits<{
         :placeholder="placeholder"
         :disabled="disabled"
         :theme="colorMode.value === 'light' ? 'light' : 'dark'"
-        code-theme="stackoverflow-dark"
         :aria-describedby="`${instruction ? `instruction-${id}` : ''}`"
         no-mermaid
         no-katex

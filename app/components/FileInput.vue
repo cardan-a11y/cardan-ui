@@ -210,7 +210,7 @@ function removeFile() {
           <span>
             {{ $t('files.button-text') }}
           </span>
-          <span>(max. {{ maxFileSize / 1000 }} MB) </span>
+          <span>(max. {{ formatFileSize(maxFileSize * 1000) }}) </span>
         </span>
 
         <img
