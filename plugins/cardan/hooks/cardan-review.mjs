@@ -394,15 +394,12 @@ function mark() {
     root = undefined;
   }
 
+  // Only the named repository's start state is used up: reviewers of other
+  // repositories may be running at the same time and still need theirs.
+  // The other states stay until the next reviewer's start replaces them.
   const startFile = root && candidates.includes(root) ? markerPath(root) + '-start' : undefined;
   const started = startFile && read(startFile)?.toString().trim();
-  for (const candidate of candidates) {
-    try {
-      rmSync(markerPath(candidate) + '-start', { force: true });
-    } catch {
-      // Nothing to clean up in a repository that cannot be read.
-    }
-  }
+  if (startFile) rmSync(startFile, { force: true });
 
   if (!started) {
     process.stderr.write(
