@@ -11,18 +11,20 @@
  *               from a branch with nothing uncommitted or unpushed and a
  *               push that sends only commits already on `origin/main` or
  *               `origin/develop` (main brought back into develop).
- *               These pass in any repository, each as the only gated
- *               command in its line; anything else must be reviewed in a
- *               session started in the repository.
- *   start       SubagentStart of the reviewer: notes the state it reviews.
- *   mark        SubagentStop of the reviewer: records that state as
- *               reviewed, unless a file changed while the review ran.
+ *               These pass each as the only gated command in its line.
+ *               A review counts for the repository the reviewer named,
+ *               whichever repository the session started in.
+ *   start       SubagentStart of the reviewer: notes the state of every
+ *               repository it may review (see `candidateRoots`).
+ *   mark        SubagentStop of the reviewer: records the state of the
+ *               repository it names as reviewed, unless a file in it
+ *               changed while the review ran.
  *   guidelines  SessionStart: prints the guidelines, which Claude Code adds
  *               to the session's context.
  */
 
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -256,24 +258,16 @@ function gate() {
   }
   if (!existsSync(join(root, 'REVIEW.md'))) return;
 
-  // What needs no review passes in any repository, also one the session
-  // did not start in: the session check only matters for a recorded review.
-  // Only for a single gated command: in a chain, a later commit or push
-  // could run in another state or another repository than the one checked.
+  // What needs no review passes, but only for a single gated command: in a
+  // chain, a later commit or push could run in another state or another
+  // repository than the one checked.
   const single = command.match(new RegExp(REVIEW_COMMAND.source, 'gm')).length === 1;
   const rest = command.slice(match.index + match[0].length).split(/[;&|)\n]/)[0];
   if (single && (markdownOnly(root) || nothingNew(root, match[0], rest))) return;
 
-  const session = sessionRoot(input);
-  if (root !== session) {
-    block(
-      `Blocked: this Claude session started in ${session ?? 'a folder outside a repository'} ` +
-        `and records reviews only for that repository. Commit, push or open the PR in ${root} ` +
-        'from a Claude session started there. Only when the user explicitly said to skip the ' +
-        'review for this change, put SKIP_REVIEW=1 in front of the command.',
-    );
-  }
-
+  // The marker lives in this repository's own .git and holds the state the
+  // reviewer reviewed there, so a review of one repository never counts for
+  // another, whichever repository the session started in.
   const marker = read(markerPath(root))?.toString().trim();
   if (marker !== workingTree(root)) {
     block(
@@ -290,10 +284,7 @@ function gate() {
   }
 }
 
-/**
- * The repository the session started in. Reviews are recorded for it only,
- * so a review of one repository can never count for another.
- */
+/** The repository the session started in, or undefined outside one. */
 function sessionRoot(input) {
   try {
     return git(process.env.CLAUDE_PROJECT_DIR ?? input.cwd ?? process.cwd(), 'rev-parse', '--show-toplevel');
@@ -302,14 +293,48 @@ function sessionRoot(input) {
   }
 }
 
-/** SubagentStart of the reviewer: the state the review starts from. */
+/**
+ * The repositories a review may be of: the session's, and the Cardan
+ * repositories (those with a REVIEW.md) next to it, the way the checkouts
+ * sit side by side. SubagentStart does not say which one the reviewer was
+ * asked to review, so `start` notes the state of each, and `mark` records
+ * the one the reviewer names.
+ */
+function candidateRoots(input) {
+  const session = sessionRoot(input);
+  const roots = new Set(session ? [session] : []);
+  const parent = dirname(session ?? resolve(input.cwd ?? process.cwd()));
+
+  let entries = [];
+  try {
+    entries = readdirSync(parent, { withFileTypes: true });
+  } catch {
+    // An unreadable parent leaves the session's repository alone.
+  }
+  for (const entry of entries) {
+    const dir = join(parent, entry.name);
+    if (!entry.isDirectory() || !existsSync(join(dir, 'REVIEW.md'))) continue;
+    try {
+      roots.add(git(dir, 'rev-parse', '--show-toplevel'));
+    } catch {
+      // Not a git repository.
+    }
+  }
+  return [...roots];
+}
+
+/** SubagentStart of the reviewer: the state each candidate starts from. */
 function start() {
   const input = readInput();
   if (!REVIEWER.test(input.agent_type ?? '')) return;
 
-  const root = sessionRoot(input);
-  if (!root) return;
-  writeFileSync(markerPath(root) + '-start', workingTree(root) + '\n');
+  for (const root of candidateRoots(input)) {
+    try {
+      writeFileSync(markerPath(root) + '-start', workingTree(root) + '\n');
+    } catch {
+      // A repository that cannot be read cannot be recorded as reviewed.
+    }
+  }
 }
 
 /**
@@ -352,35 +377,40 @@ function report(input) {
 }
 
 /**
- * SubagentStop of the reviewer: records the state as reviewed, but only
- * when the reviewer names the session's repository on its last line and no
- * file changed while the review ran.
+ * SubagentStop of the reviewer: records the state of the repository the
+ * reviewer names on its last line as reviewed, but only when `start` noted
+ * that repository's state and no file in it changed while the review ran.
  */
 function mark() {
   const input = readInput();
   if (!REVIEWER.test(input.agent_type ?? '')) return;
 
-  const root = sessionRoot(input);
-  if (!root) return;
-  const startFile = markerPath(root) + '-start';
-
+  const candidates = candidateRoots(input);
   const named = /^Reviewed repository: (.+)$/m.exec(report(input))?.[1].trim();
-  let reviewed;
+  let root;
   try {
-    reviewed = named && git(shellPath(named), 'rev-parse', '--show-toplevel');
+    root = named && git(shellPath(named), 'rev-parse', '--show-toplevel');
   } catch {
-    reviewed = undefined;
+    root = undefined;
   }
-  if (reviewed !== root) {
-    rmSync(startFile, { force: true });
+
+  const startFile = root && candidates.includes(root) ? markerPath(root) + '-start' : undefined;
+  const started = startFile && read(startFile)?.toString().trim();
+  for (const candidate of candidates) {
+    try {
+      rmSync(markerPath(candidate) + '-start', { force: true });
+    } catch {
+      // Nothing to clean up in a repository that cannot be read.
+    }
+  }
+
+  if (!started) {
     process.stderr.write(
-      `cardan-review: the reviewer did not name ${root} as the reviewed repository, so the review was not recorded.\n`,
+      `cardan-review: the reviewer named ${named ?? 'no repository'}, which is not the session's ` +
+        'repository or a Cardan repository next to it, so the review was not recorded.\n',
     );
     return;
   }
-
-  const started = read(startFile)?.toString().trim();
-  rmSync(startFile, { force: true });
 
   const tree = workingTree(root);
   if (started === tree) {
