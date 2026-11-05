@@ -91,8 +91,7 @@ const isAccordionOpen = ref(false);
 
         <p class="c-grey-text">Custom accordion component that uses CSS for smooth animations.</p>
 
-
-        <Accordion v-model="isAccordionOpen" arrow>
+        <Accordion :open="isAccordionOpen" h-tag="h3">
           <template #trigger>Accordion with CSS</template>
 
           <template #content>
@@ -108,7 +107,7 @@ const isAccordionOpen = ref(false);
           </template>
         </Accordion>
 
-        <Accordion icon-pos="start">
+        <Accordion icon-pos="start" h-tag="h3">
           <template #trigger>Accordion with the icon at the start</template>
 
           <template #content>
@@ -119,7 +118,7 @@ const isAccordionOpen = ref(false);
           </template>
         </Accordion>
 
-        <Accordion icon-size="xl">
+        <Accordion icon-size="xl" h-tag="h3">
           <template #trigger>Accordion with a larger icon</template>
 
           <template #content>
@@ -130,6 +129,21 @@ const isAccordionOpen = ref(false);
             </p>
           </template>
         </Accordion>
+
+        <Accordion h-tag="h3" region>
+          <template #trigger>Accordion with a region</template>
+
+          <template #content>
+            <p>
+              Set <code>region</code> to make the panel a region landmark
+              named by its trigger, for a panel with headings or nested
+              accordions of its own. Not for a page with many accordions,
+              where the landmarks would pile up.
+            </p>
+          </template>
+        </Accordion>
+
+        <p class="c-grey-text">Set <code>h-tag</code> to the heading level the trigger has in the page, so the trigger is a heading with a button in it, as the pattern asks. Set <code>open</code> to open it from outside.</p>
       </Card>
 
       <Card>
@@ -137,8 +151,8 @@ const isAccordionOpen = ref(false);
         <ul class="a11y-list">
           <li>The accordion trigger is a <code>button</code> element.</li>
           <li>
-            Each accordion header button is wrapped in an element with role
-            <code>heading</code>.
+            Each accordion header button is wrapped in a heading
+            (<code>h-tag</code>), at the level the title has in the page.
           </li>
           <li>
             The trigger element has the <code>aria-expanded</code> attribute.
@@ -151,7 +165,13 @@ const isAccordionOpen = ref(false);
           </li>
 
           <li>
-            If the Accordion Panel contains focussable elements when using the <code>{{ `<Accordion>` }}</code> component, you should set <code>tabindex="-1"</code> on the focussable elements when they are hidden.
+            A closed panel is <code>inert</code>: nothing in it can be focused
+            or read, so focusable content needs no care of its own.
+          </li>
+          <li>
+            The panel is a <code>region</code> landmark only with the
+            <code>region</code> prop, as the pattern makes it optional and
+            warns against a page full of them.
           </li>
         </ul>
       </Card>
