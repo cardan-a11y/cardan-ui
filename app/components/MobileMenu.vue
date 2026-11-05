@@ -270,7 +270,9 @@ body:has(.mobile-dialog[open]) {
 
   .dialog-content {
     display: grid;
-    padding-inline-start: calc(1.25rem + env(safe-area-inset-left));
+    padding-inline-start: calc(
+      var(--app-padding-inline) + env(safe-area-inset-left)
+    );
   }
 }
 

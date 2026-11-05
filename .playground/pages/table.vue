@@ -174,7 +174,6 @@ function handleFilter() {
           mode="tags"
           placeholder="All levels"
           show-option-icons
-          size="lg"
           @update:model-value="handleFilter()"
         />
 
