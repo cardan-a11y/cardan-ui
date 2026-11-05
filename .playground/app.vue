@@ -68,11 +68,6 @@ const isAuthSubpage = computed(() => authPages.includes(route.path));
   --app-max-width: 1280px;
   --app-header-height: 4rem;
   --app-padding-block: 2.5rem;
-  --app-padding-inline: 0.75rem;
-
-  @media (min-width: 480px) {
-    --app-padding-inline: 1.5rem;
-  }
 }
 
 main {

@@ -288,6 +288,13 @@
   --size-xxs: 0.5rem; /* 8px */
   --size-xxxs: 0.25rem; /* 4px */
 
+  /* Inline padding of the app, also of MobileMenu's content */
+  --app-padding-inline: 0.75rem;
+
+  @media (min-width: 480px) {
+    --app-padding-inline: 1.5rem;
+  }
+
   /* Backdrop behind Dialog and MobileMenu */
   --color-backdrop: rgb(20 20 19 / 60%);
 
