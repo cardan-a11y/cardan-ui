@@ -20,6 +20,10 @@ useHead({ title: 'Changelog' });
           opening one no longer clips focus outlines, also with reduced motion
         </li>
         <li>
+          Accordion: an open panel keeps the width of the accordion, so a long
+          word in it no longer makes the page scroll sideways at 320px
+        </li>
+        <li>
           Button: the outline variant has a grey-light border, so it stands
           out from the background
         </li>

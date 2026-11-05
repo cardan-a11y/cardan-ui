@@ -167,8 +167,11 @@ defineExpose({ toggleAccordion });
   transition: grid-template-rows var(--duration-md) var(--cubic-bezier);
 }
 
+/* min-width: 0, so an open panel, whose overflow is visible, keeps the width
+   of the accordion instead of growing to its longest word (reflow at 320px). */
 .accordion-panel {
   overflow: var(--overflow, hidden);
+  min-width: 0;
   min-height: var(--min-height);
 }
 
