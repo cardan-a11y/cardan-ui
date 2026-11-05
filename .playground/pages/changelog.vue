@@ -7,6 +7,57 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.3.4" date="2026-11-05">
+      <ul>
+        <li>
+          Accordion follows the APG accordion pattern: the new
+          <code>h-tag</code> prop puts the trigger in a heading, and the panel
+          is a <code>region</code> landmark only with the new
+          <code>region</code> prop
+        </li>
+        <li>
+          Accordion: a closing panel no longer paints over what follows and an
+          opening one no longer clips focus outlines, also with reduced motion
+        </li>
+        <li>
+          Button: the outline variant has a grey-light border, so it stands
+          out from the background
+        </li>
+        <li>
+          MobileMenu pads its content with the project's
+          <code>--app-padding-inline</code> (was 1.25rem), a token that is now
+          in the <code>main.css</code> template
+        </li>
+        <li>
+          LogoutDialog has more room above its buttons
+        </li>
+        <li>
+          <code>formatFileSize()</code> counts in decimal units and formats in
+          the current locale ("2,4 MB" in Dutch); a file just over 1 MB no
+          longer shows "0 MB". FileInput uses it for its limit too
+        </li>
+        <li>
+          LanguageSwitcher links to the home page of each locale under every
+          i18n strategy and passes the typecheck with typed routes
+        </li>
+        <li>
+          MarkdownEditor and MarkdownPreview no longer break a server build
+          that inlines styles
+        </li>
+        <li>
+          The Dutch label of a trigger without text is "Uitklappen" (was
+          "Expand")
+        </li>
+        <li>
+          The cardan Claude Code plugin: a review counts for the repository
+          the reviewer names, the release skill runs a project's own release
+          steps and trims MIGRATION.md, the Playwright browser has its own
+          profile per session, and the guidelines describe the Netlify build
+          skip for documentation, AI and CI changes
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.3.3" date="2026-11-04">
       <ul>
         <li>
