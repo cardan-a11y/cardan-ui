@@ -89,10 +89,12 @@ export default defineNuxtConfig({
       include: [
         'markdown-it',
         'highlight.js/lib/core',
+        'highlight.js/lib/languages/xml',
         'highlight.js/lib/languages/css',
         'highlight.js/lib/languages/javascript',
         'highlight.js/lib/languages/typescript',
-        'highlight.js/lib/common',
+        'highlight.js/lib/languages/json',
+        'highlight.js/lib/languages/bash',
         '@mdit/plugin-attrs',
         '@mdit/plugin-mark',
         'vue-axe',

@@ -11,6 +11,8 @@ import {
 } from './extensions';
 import { hljs } from './highlight';
 import 'md-editor-v3/lib/style.css';
+// md-editor-v3 adds no <link> for a theme when it is given an instance
+import 'highlight.js/styles/stackoverflow-dark.css';
 
 const {
   id = useId(),

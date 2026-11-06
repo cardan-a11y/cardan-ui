@@ -7,6 +7,34 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.3.5" date="2026-11-06">
+      <ul>
+        <li>
+          MarkdownPreview loads highlight.js only when a text has a code
+          block, and with six grammars (HTML, CSS, JavaScript, TypeScript,
+          JSON and bash) instead of 38: its chunk is half the size, and a
+          page without code never loads highlight.js
+        </li>
+        <li>
+          A code block is a dark block with plain text first and gets its
+          colours a moment later; its <code>&lt;code&gt;</code> element
+          carries the language in <code>data-lang</code>
+        </li>
+        <li>
+          The header cells of a markdown table have
+          <code>scope="col"</code>
+        </li>
+        <li>
+          The playground's markdown page lists the grammars and shows a code
+          block without a language
+        </li>
+        <li>
+          The cardan Claude Code plugin: the release skill keeps the five
+          most recent releases in MIGRATION.md
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.3.4" date="2026-11-05">
       <ul>
         <li>
