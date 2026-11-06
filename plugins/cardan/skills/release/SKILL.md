@@ -12,37 +12,47 @@ and needs no skill.
 ## Release Cardan UI
 
 Release the changes on the current branch of cardan-ui as a new version.
-Ask the user for the version when the branch does not say it; a patch
-release (2.3.x) is the norm, a minor one (2.x.0) for a breaking change.
+Work starts on `release/<version>`, so the branch names the version; ask
+the user when it does not. A patch release (2.3.x) is the norm, a minor
+one (2.x.0) for a breaking change.
 
 1. **Version**: set `version` in `package.json`.
 2. **Changelog**: add a `<ChangelogEntry v="<version>" date="<today>">`
    above the previous one in `.playground/pages/changelog.vue`, one `<li>`
    per change, in the voice of the entries there.
-3. **Migration notes**: in `MIGRATION.md`, describe what a project that
-   extends the layer must do or check: new tokens for `main.css`, renamed
+3. **Migration notes**: in `MIGRATION.md`, describe only what a project
+   that extends the layer must do, or a change that can break it; the
+   changelog lists every change, so the notes leave the rest out. That is: new tokens for `main.css`, renamed
    props or classes, behaviour that changes for stored content, modules or
-   CSP hosts a project needs. A patch release is a `### <version>`
-   subsection at the end of the current minor's section; a minor release
-   is a new `## Upgrading to <version>` section. Then keep the five most
-   recent releases, the one you are writing included, and remove the older
-   ones, so the file stays short for the projects and for the AI sessions
-   that read it. A release is a `### <version>` subsection, or a minor's
-   own notes: everything in its section before its first `### <version>`
+   CSP hosts a project needs, and a plugin update (step 5) as a bullet with
+   `claude plugin update cardan@cardan-ui --scope user`. A patch release is
+   a `### <version>` subsection at the end of the current minor's section;
+   a minor release is a new `## Upgrading to <version>` section. A release
+   that asks nothing of the projects gets only the line `<version> needs
+   nothing from projects.`, without details: the changelog says what it
+   changed. Then keep the five most recent releases that ask something, the
+   one you are writing included, with the one-line sections between them,
+   and remove everything older, so the file stays short for the projects
+   and for the AI sessions that read it. A one-line release removes
+   nothing. A release is a `### <version>` subsection, or a minor's own
+   notes: everything in its section before its first `### <version>`
    subsection, with their topical `###` subsections. Remove from the oldest
    up, and a `## Upgrading to` section itself when nothing is left in it.
-   The projects are kept up to date, and older notes stay in the history
-   of the file (`git log -p MIGRATION.md`).
+   The projects are kept up to date, and older notes stay in the history of
+   the file (`git log -p MIGRATION.md`).
 4. **CLAUDE.md**: update the component list or the sections that describe
    what changed, so it stays true.
 5. **Plugin**: if anything under `plugins/cardan` changed, the other
-   projects receive it with `claude plugin update cardan@cardan-ui`; say so
-   in the PR description. The Playwright MCP server in `.mcp.json` is
-   pinned; bump it there when a newer `@playwright/mcp` is wanted.
+   projects receive it with
+   `claude plugin update cardan@cardan-ui --scope user`; say so in the PR
+   description. The Playwright MCP server in `.mcp.json` is pinned; bump
+   it there when a newer `@playwright/mcp` is wanted.
 6. **Checks and review**: `pnpm run lint`, `pnpm run typecheck`,
    `pnpm test`, then the review as the Cardan guidelines describe.
 7. **Pull request**: commit, push and open the PR against `main` with the
-   `cardan:pr-body` skill. Merge only when the user says so.
+   `cardan:pr-body` skill. Merge only when the user says so. After the
+   merge, the next work starts on `release/<next patch version>`, cut from
+   `main`.
 
 ## Release a project
 

@@ -15,17 +15,13 @@ changed for users of the code, not how the work went. Mention a
 
 ## Verification
 
-A bullet per check that was run, with its result: lint, typecheck and
-tests where the repository has them; what was checked in the browser (the
-pages, keyboard walk, both locales, light and dark mode, 320px); and the
-manual steps a reviewer can repeat. Leave out checks that were not run.
+Focus on the manual steps a reviewer can repeat. Only mention checks that failed or leave questions.
 
 ## Local review
 
 One line: how many rounds the `cardan:cardan-reviewer` agent ran, the
 tally of the first round (Important and nits), and what happened to each
-Important finding (fixed, or left open and why). For a Markdown-only
-change, say that no review was needed.
+Important finding and nit (fixed, or left open and why).
 
 End with the attribution line the session was given, such as
 `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
