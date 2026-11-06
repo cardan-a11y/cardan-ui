@@ -1,7 +1,7 @@
 {
   "name": "@cardan/ui",
   "type": "module",
-  "version": "2.3.6",
+  "version": "2.3.7",
   "main": "./nuxt.config.ts",
   "repository": {
     "type": "git",
