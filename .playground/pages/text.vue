@@ -620,14 +620,15 @@ function makeToast() {
         />.
       </p>
 
-      <h3 class="default-icons-title">Default icons</h3>
+      <h3 class="default-icons-title">Bundled icons</h3>
+      <p>
+        The icons the components show on first paint, in the client bundle of
+        every project through the layer's <code>nuxt.config.ts</code>.
+      </p>
       <ul role="list" class="icon-grid">
-        <li v-for="icon in defaultIcons" :key="icon">
+        <li v-for="icon in bundledIcons" :key="icon">
           <Icon :name="icon" />
-          <div class="name">
-            <span class="visuallyhidden">material-symbols:</span>
-            <span>{{ icon.replace('material-symbols:', '') }}</span>
-          </div>
+          <div class="name">{{ icon }}</div>
         </li>
       </ul>
     </Card>

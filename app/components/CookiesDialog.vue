@@ -26,15 +26,23 @@ const {
 const {
   cookieConsent,
   consentCookie,
-  cookiesDialogRef,
+  cookiesDialogOpen,
   acceptCookies,
   denyCookies,
 } = useCookiesDialog();
 
+const dialogRef = useTemplateRef<DialogComponent>('dialog');
+
+// The dialog follows the shared flag, which a CookiesButton anywhere can set
+watch(cookiesDialogOpen, (open) => {
+  if (open) dialogRef.value?.openDialog();
+  else dialogRef.value?.closeDialog();
+});
+
 const consentTrigger = useScriptTriggerConsent();
 
 const gtm = useScriptGoogleTagManager({
-  id: useRuntimeConfig().public.gtmId as string,
+  id: useRuntimeConfig().public.gtmId,
 
   onBeforeGtmStart: (gtag) => {
     gtag('consent', 'default', {
@@ -106,20 +114,32 @@ onMounted(() => {
   }
 
   if (!isChoice(cookieConsent.value)) {
-    cookiesDialogRef.value?.openDialog();
+    cookiesDialogOpen.value = true;
   }
+
+  // The watcher sees changes only: a flag that is already set opens it here
+  if (cookiesDialogOpen.value) {
+    dialogRef.value?.openDialog();
+  }
+});
+
+// A dialog unmounted while open, as on the way to a page in another layout,
+// fires no close event: reset the flag, or the next dialog never opens
+onUnmounted(() => {
+  cookiesDialogOpen.value = false;
 });
 </script>
 
 <template>
   <Dialog
-    ref="cookiesDialogRef"
+    ref="dialog"
     class="cookies-dialog"
     :position="position"
     :click-outside="clickOutside"
     :aria-label="ariaLabel || $t('cookies.heading')"
     :close-button-variant="closeButtonVariant"
     :close-button-radius="closeButtonRadius"
+    @close="cookiesDialogOpen = false"
   >
     <template #header>
       <div class="cookies-dialog-content">

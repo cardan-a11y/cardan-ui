@@ -1,5 +1,5 @@
 export function useDate() {
-  const { t, locale } = useNuxtApp().$i18n;
+  const { t, locale } = useI18n();
 
   function formatDate(dateString: string): string | undefined {
     // Format as e.g. '3 hours ago' or fallback to ISO date

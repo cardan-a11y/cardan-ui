@@ -1,4 +1,6 @@
 <script setup lang="ts">
+
+const { t } = useI18n();
 const {
   color = 'accent',
   fontSize = 'sm',
@@ -37,10 +39,10 @@ const computedIcon = computed(() => {
 });
 
 const computedIconLabel = computed(() => {
-  if (color === 'blue') return $t('aria.callout-info');
-  if (color === 'green') return $t('aria.callout-success');
-  if (color === 'red') return $t('aria.callout-error');
-  if (color === 'orange') return $t('aria.callout-warning');
+  if (color === 'blue') return t('aria.callout-info');
+  if (color === 'green') return t('aria.callout-success');
+  if (color === 'red') return t('aria.callout-error');
+  if (color === 'orange') return t('aria.callout-warning');
 
   return undefined;
 });
