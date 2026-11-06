@@ -99,9 +99,17 @@ export function italicExtension(md: MarkdownIt) {
  * A table in a region that scrolls on its own, so a wide table does not
  * widen the page (reflow at 320px). The region is focusable, so the keyboard
  * can scroll it too, and named by `env.tableLabel`. The table itself keeps
- * its display, and with it its table semantics.
+ * its display, and with it its table semantics. A header cell gets
+ * `scope="col"`: markdown has column headers only, and WCAG H63 asks for
+ * the scope.
  */
 export function tableScrollExtension(md: MarkdownIt) {
+  md.renderer.rules.th_open = function (tokens, idx, options, env, self) {
+    tokens[idx]!.attrSet('scope', 'col');
+
+    return self.renderToken(tokens, idx, options);
+  };
+
   md.renderer.rules.table_open = function (tokens, idx, options, env, self) {
     const label = md.utils.escapeHtml(String(env?.tableLabel ?? 'Table'));
 

@@ -11,7 +11,6 @@ import {
   videoExtension,
 } from './extensions';
 
-import { hljs } from './highlight';
 import { escapeHTML } from '../../utils/markdown';
 
 /**
@@ -23,20 +22,16 @@ import { escapeHTML } from '../../utils/markdown';
  */
 const SAFE_ATTRIBUTES = ['lang', 'dir', 'class'];
 
+/**
+ * A fenced block, escaped, with its language on the element: markdown-it's
+ * `highlight` is synchronous, so MarkdownPreview colours the block after
+ * mount, and only then loads highlight.js. A fence without a language has
+ * no `data-lang` and stays plain.
+ */
 function highlight(str: string, lang: string) {
-  if (lang && hljs.getLanguage(lang)) {
-    try {
-      return (
-        '<pre><code class="hljs">' +
-        hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
-        '</code></pre>'
-      );
-    } catch (error) {
-      console.log(error);
-    }
-  }
+  const language = lang ? ` data-lang="${escapeHTML(lang)}"` : '';
 
-  return '<pre><code class="hljs">' + escapeHTML(str) + '</code></pre>';
+  return `<pre><code class="hljs"${language}>${escapeHTML(str)}</code></pre>`;
 }
 
 function createRenderer(trusted: boolean) {

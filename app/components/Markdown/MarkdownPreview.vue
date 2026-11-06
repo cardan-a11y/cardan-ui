@@ -11,9 +11,12 @@
  * `inline` is for a title or label: inline markup only, in a `<span>`, so it
  * fits inside a button, link or label and adds no block margins.
  */
-import { computed } from 'vue';
+import { computed, onMounted, useTemplateRef, watch } from 'vue';
 import { renderMarkdown, renderMarkdownSegments } from './renderer';
 import type { MarkdownSegment } from './renderer';
+// The theme of a code block, with the component: a block is a dark block
+// from the first paint, also without a language, before highlight.js loads
+import 'highlight.js/styles/stackoverflow-dark.css';
 
 const {
   content = '',
@@ -80,17 +83,57 @@ const classes = computed(() => [
   'cardan-markdown-preview',
   ellipsisLines && 'ellipsis',
 ]);
+
+const root = useTemplateRef<HTMLElement>('root');
+
+/**
+ * Colour the code blocks once the HTML is in the DOM. highlight.js and its
+ * grammars load here, not with the renderer, so a text without a code block
+ * never loads them, and a block shows plain first and coloured a moment
+ * later. A language highlight.js does not know stays plain, as before.
+ */
+async function highlightCode() {
+  if (!root.value?.querySelector('code.hljs[data-lang]')) return;
+
+  const { hljs } = await import('./highlight');
+
+  // Queried again: the text may have changed while highlight.js loaded
+  const blocks = root.value?.querySelectorAll<HTMLElement>(
+    'code.hljs[data-lang]',
+  );
+
+  for (const block of blocks ?? []) {
+    const language = block.dataset.lang;
+
+    if (language && hljs.getLanguage(language)) {
+      block.innerHTML = hljs.highlight(block.textContent ?? '', {
+        language,
+        ignoreIllegals: true,
+      }).value;
+    }
+  }
+}
+
+onMounted(highlightCode);
+watch(segments, highlightCode, { flush: 'post' });
 </script>
 
 <template>
-  <span v-if="inline" :class="classes" :style="computedStyle" v-html="html" />
-  <div
-    v-else-if="html !== undefined"
+  <span
+    v-if="inline"
+    ref="root"
     :class="classes"
     :style="computedStyle"
     v-html="html"
   />
-  <div v-else :class="classes" :style="computedStyle">
+  <div
+    v-else-if="html !== undefined"
+    ref="root"
+    :class="classes"
+    :style="computedStyle"
+    v-html="html"
+  />
+  <div v-else ref="root" :class="classes" :style="computedStyle">
     <!-- A player is keyed by its URL too, so a new video in the same place
          gets a fresh player instead of the title and state of the old one -->
     <template

@@ -24,15 +24,15 @@ release (2.3.x) is the norm, a minor one (2.x.0) for a breaking change.
    props or classes, behaviour that changes for stored content, modules or
    CSP hosts a project needs. A patch release is a `### <version>`
    subsection at the end of the current minor's section; a minor release
-   is a new `## Upgrading to <version>` section. Then remove the oldest
-   release's notes, so the file stays short for the projects and for the
-   AI sessions that read it: everything in the first section before its
-   first `### <version>` subsection (that minor's own notes, with their
-   topical `###` subsections), or, once those are gone, that first
-   `### <version>` subsection, and the section itself when nothing is left
-   in it. Never remove the release you
-   are writing. The projects are kept up to date, and older notes stay in
-   the history of the file (`git log -p MIGRATION.md`).
+   is a new `## Upgrading to <version>` section. Then keep the five most
+   recent releases, the one you are writing included, and remove the older
+   ones, so the file stays short for the projects and for the AI sessions
+   that read it. A release is a `### <version>` subsection, or a minor's
+   own notes: everything in its section before its first `### <version>`
+   subsection, with their topical `###` subsections. Remove from the oldest
+   up, and a `## Upgrading to` section itself when nothing is left in it.
+   The projects are kept up to date, and older notes stay in the history
+   of the file (`git log -p MIGRATION.md`).
 4. **CLAUDE.md**: update the component list or the sections that describe
    what changed, so it stays true.
 5. **Plugin**: if anything under `plugins/cardan` changed, the other

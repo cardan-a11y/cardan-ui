@@ -40,3 +40,8 @@ const isOpen = ref(false);
   }
 }
 ```
+
+```
+A block without a language, or in one highlight.js does not know, stays
+plain text in the same dark block.
+```

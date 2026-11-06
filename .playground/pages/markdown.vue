@@ -32,6 +32,19 @@ const video = [
   'A link with its own text stays a link: [the same video](https://youtube.com/watch?v=PGvgdZuQu6w).',
 ].join('\n');
 
+// The grammars MarkdownPreview colours, as a markdown table: the component
+// renders it with its scroll region and the header cells' scope.
+const grammars = [
+  '| Fence | Grammar |',
+  '| --- | --- |',
+  '| `html`, `xml`, `svg` | `xml` |',
+  '| `css` | `css` |',
+  '| `js`, `javascript`, `jsx` | `javascript` |',
+  '| `ts`, `typescript`, `tsx` | `typescript` |',
+  '| `json` | `json` |',
+  '| `bash`, `sh` | `bash` |',
+].join('\n');
+
 const title = 'Chapter with *emphasis* and `code`';
 const ellipsisLines = ref(0);
 const fontSize = ref<FontSize>('md');
@@ -150,6 +163,31 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
       <Button variant="outline" data-case="inline">
         <MarkdownPreview :content="title" inline />
       </Button>
+    </Card>
+
+    <Card class="mbs-2">
+      <h2>Code highlighting</h2>
+      <p>
+        A fenced code block (<code>```css</code>) is coloured with highlight.js
+        after the text is in the page: the block is a dark block with plain
+        text first and its tokens get their colours a moment later. A text
+        without a code block never loads highlight.js. The grammars are the
+        ones Cardan content uses, registered in
+        <code>app/components/Markdown/highlight.ts</code>, with the most
+        common fence names of each (highlight.js knows a few more aliases,
+        such as <code>mjs</code>, <code>xhtml</code> and <code>zsh</code>).
+      </p>
+
+      <MarkdownPreview :content="grammars" class="mbs-1" />
+
+      <p class="mbs-1">
+        A fence in another language, or without one, stays plain text in the
+        same dark block, with the name in <code>data-lang</code> on the
+        <code>&lt;code&gt;</code> element. When Cardan content needs another
+        grammar, register it in that file, so every project gets it: the
+        layer has no per-project list. <code>MarkdownEditor</code> always
+        loads the same instance, so md-editor-v3 loads nothing from a CDN.
+      </p>
     </Card>
 
     <Card class="mbs-2">
