@@ -37,6 +37,16 @@ watch([() => disabled, () => isVisible], init);
 
 onMounted(init);
 
+// Unmounted while still open, as when a link in a dialog leads to a page in
+// another layout and the dialog goes with the old one before it has closed:
+// the rest of the page would stay inert, and nothing on it could be clicked.
+onBeforeUnmount(() => {
+  if (isVisible && !disabled) {
+    lockForSwipeScreenReader(false);
+    ariaHiddenElements = [];
+  }
+});
+
 function init() {
   nextTick(() => {
     const active = isVisible && !disabled;

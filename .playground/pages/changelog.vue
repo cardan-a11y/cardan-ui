@@ -7,6 +7,18 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.3.6" date="2026-11-06">
+      <ul>
+        <li>
+          FocusLoop lifts the <code>inert</code> it put on the rest of the
+          page when it is unmounted while still open, as when a link in
+          MobileMenu leads to a page in another layout: until now nothing on
+          the new page could be clicked or focused. Dialog and UserMenu, which
+          use FocusLoop too, get the same fix
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.3.5" date="2026-11-06">
       <ul>
         <li>

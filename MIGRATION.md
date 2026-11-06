@@ -6,16 +6,6 @@ The projects are kept up to date, so the file only holds the five most recent re
 
 ## Upgrading to 2.3
 
-### 2.3.1
-
-2.3.1 lets a markdown text show a video: a bare YouTube or Vimeo link in a paragraph of its own renders as a **VideoPlayer**, so authors paste the link where the video belongs, in any markdown editor.
-
-- **A bare YouTube or Vimeo link in a paragraph of its own renders as a VideoPlayer** in MarkdownPreview: the thumbnail, the play button and the video's title, and the player after a click. Also without `trusted`: the link only ever becomes a video id, so a text cannot embed anything else. A link with its own text (`[Watch the recording](https://…)`), a link inside a sentence, a list or a quote, and a link in an `inline` or clamped (`ellipsis-lines`) text stay links. In a `trusted` text, keep a video link out of raw HTML blocks: a player between a `<div>` and its `</div>` ends up outside them. Check your stored markdown for a video link alone in a paragraph that should stay a link, and give it a text.
-- **The text around a video is in chunks** (`.markdown-chunk`), with the players between them. CSS on `.cardan-markdown-preview > p` or another direct child does not reach a text with videos; select `.cardan-markdown-preview p` instead.
-- **VideoPlayer needs `@nuxt/image`** for the thumbnail. A project that shows markdown from others and does not have it yet (cardan-auditor-nuxt) adds it to its modules (`pnpm add -D @nuxt/image`), and allows the thumbnail hosts in production, like the playground does: `image: { domains: ['i.ytimg.com', 'i.vimeocdn.com'] }`.
-- **A strict Content Security Policy** on a page that shows markdown needs the player's hosts, as a page with a VideoPlayer does: `connect-src` for `youtube.com` and `vimeo.com` (the video's title), `img-src` for `i.ytimg.com` and `i.vimeocdn.com` (the thumbnail) and `frame-src` for `www.youtube-nocookie.com` and `player.vimeo.com` (the player).
-- **VideoPlayer's URL parsing is shared**: `parseVideoUrl()` in `app/utils/video.ts` tells which URLs the player plays, for MarkdownPreview and your own code. It now also recognises YouTube `shorts` and `live` URLs, and `m.youtube.com`.
-
 ### 2.3.2
 
 2.3.2 is a security update: Nuxt 4.6.4, and the latest versions of the other dependencies except TypeScript.
@@ -60,3 +50,9 @@ The projects are kept up to date, so the file only holds the five most recent re
 - **`vite.optimizeDeps.include`** in a project's `nuxt.config.ts`: replace `highlight.js/lib/common` with the six `highlight.js/lib/languages/*` entries, as the playground does (`.playground/nuxt.config.ts`); cardan-lms-nuxt has them.
 - **The header cells of a markdown table** carry `scope="col"`, which WCAG H63 asks for. Nothing to do, unless your CSS selects `th[scope]`.
 - **The cardan plugin**: run `claude plugin update cardan@cardan-ui --scope user`. The release skill now keeps the five most recent releases in this file.
+
+### 2.3.6
+
+2.3.6 needs nothing from projects. It fixes a page that could no longer be used after a link in **MobileMenu**.
+
+- **FocusLoop lifts the `inert` it put on the rest of the page when it is unmounted while still open.** A link in MobileMenu (or a Dialog or UserMenu) that leads to a page in another layout unmounts the menu with the old layout before it has closed, and until now everything outside the menu stayed `inert`: nothing on the new page could be clicked or focused until a reload.
