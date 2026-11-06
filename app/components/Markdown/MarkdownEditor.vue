@@ -79,6 +79,8 @@ const toolbars: ToolbarNames[] = [
   // 'github',
 ];
 
+const { t, locale } = useI18n();
+
 config({
   markdownItConfig(mdit) {
     // md-editor-v3 types its instance with markdown-it 14, the plugins expect the
@@ -86,7 +88,7 @@ config({
     const md = mdit as unknown as MarkdownIt;
 
     md.use(swatchExtension);
-    md.use(targetBlankExtension);
+    md.use(targetBlankExtension, { label: () => t('aria.open-new-window') });
     md.use(italicExtension);
     md.use(attrs);
     md.use(mark);
@@ -99,11 +101,14 @@ config({
   },
 });
 
-onMounted(() => {
-  if (autofocus) setTimeout(() => focusEditor(), 250);
+onMounted(async () => {
+  if (!autofocus) return;
+
+  // The editor is in a ClientOnly, which renders it in the tick after mount
+  await nextTick();
+  focusEditor();
 });
 
-const { locale } = useI18n();
 const colorMode = useColorMode();
 
 const content = defineModel<string>();
@@ -120,9 +125,9 @@ defineExpose({
 const computedErrorMessage = computed(() => {
   if (errorMessage) return errorMessage;
   if (required && !content.value) {
-    return $t('form.missing-value', { item: label });
+    return t('form.missing-value', { item: label });
   }
-  return $t('form.invalid-value');
+  return t('form.invalid-value');
 });
 
 const emit = defineEmits<{

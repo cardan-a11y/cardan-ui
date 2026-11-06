@@ -56,6 +56,23 @@ function handleNextTab(tab: TabOption) {
   nextTab?.click();
 }
 
+/** The enabled tabs in their order, for Home and End */
+function enabledTabElements() {
+  return tabElements.value.filter((x) => !x.disabled);
+}
+
+function handleFirstTab() {
+  const first = enabledTabElements()[0];
+  first?.focus();
+  first?.click();
+}
+
+function handleLastTab() {
+  const last = enabledTabElements().at(-1);
+  last?.focus();
+  last?.click();
+}
+
 function setActiveTab(tab: TabOption) {
   activeTab.value = tab.value;
 }
@@ -83,7 +100,7 @@ defineExpose({
       '--tabs-icon-size': iconSize && `var(--font-size-${iconSize})`,
     }"
   >
-    <div class="tablist" role="tablist" :aria-label="ariaLabel" v-bind="$attrs">
+    <div class="tablist" role="tablist" :aria-label="ariaLabel">
       <template v-for="tab in tabs" :key="'tab-' + tab.value">
         <button
           :id="`tab-${tab.value}`"
@@ -95,8 +112,10 @@ defineExpose({
           :tabindex="tab.value === activeTab ? '0' : '-1'"
           :aria-controls="`tabpanel-${tab.value}`"
           :disabled="tab.disabled"
-          @keyup.left="handlePrevTab(tab)"
-          @keyup.right="handleNextTab(tab)"
+          @keydown.left.prevent="handlePrevTab(tab)"
+          @keydown.right.prevent="handleNextTab(tab)"
+          @keydown.home.prevent="handleFirstTab()"
+          @keydown.end.prevent="handleLastTab()"
           @click="setActiveTab(tab)"
         >
           <span
@@ -259,8 +278,8 @@ defineExpose({
 
 .tabs-color--green {
   .tablist .tab[aria-selected='true'] {
-    color: var(--color-green);
-    border-color: var(--color-green);
+    color: var(--color-green-text);
+    border-color: var(--color-green-graphic);
   }
 }
 

@@ -13,6 +13,7 @@ const contentRef = useTemplateRef<HTMLElement>('menuContent');
 const dialogRef = useTemplateRef<DialogComponent>('logoutDialog');
 
 const showMenu = defineModel<boolean>();
+const menuId = useId();
 
 onClickOutside(contentRef, () => (showMenu.value = false));
 
@@ -35,8 +36,10 @@ function closeLogoutDialog() {
   dialogRef.value?.closeDialog();
 }
 
-function focusMenu() {
-  setTimeout(() => triggerRef.value?.focusElement());
+/** After the tick that removes the menu, so focus lands on the trigger */
+async function focusMenu() {
+  await nextTick();
+  triggerRef.value?.focusElement();
 }
 
 function hideMenu() {
@@ -56,7 +59,7 @@ defineExpose({
   <div class="user-menu-wrapper" @keydown.esc="hideMenu">
     <AvatarButton
       ref="menuTrigger"
-      aria-controls="user-menu"
+      :aria-controls="menuId"
       :aria-expanded="showMenu"
       :aria-label="$t('aria.open-user-menu')"
       :icon="icon"
@@ -67,7 +70,7 @@ defineExpose({
 
     <Transition name="stretch-fade">
       <FocusLoop
-        id="user-menu"
+        :id="menuId"
         :is-visible="showMenu"
         class="user-menu-popover"
       >

@@ -68,10 +68,16 @@ function closeDialog() {
   // `finished` settles on finish *and* on cancel, resolves immediately
   // when animations run with 0s durations (prefers-reduced-motion), and
   // the closure keeps working if the component is torn down mid-close.
-  Promise.allSettled(dialog.getAnimations().map((a) => a.finished)).then(() => {
-    dialog.removeAttribute('closing');
-    dialog.close();
-  });
+  Promise.allSettled(dialog.getAnimations().map((a) => a.finished)).then(
+    async () => {
+      dialog.removeAttribute('closing');
+      // The loop first, and its render, so the page is not inert when the
+      // browser gives focus back to the element that opened the dialog
+      isVisible.value = false;
+      await nextTick();
+      dialog.close();
+    },
+  );
 }
 
 function handleClose() {
@@ -83,9 +89,18 @@ function handleClose() {
 }
 
 function preventEscape(event: Event) {
+  // Only the dialog's own cancel, which Escape fires: a file input in it
+  // fires a cancel that bubbles here when its picker is dismissed
+  if (event.target !== event.currentTarget) return;
+
   if (disableEscape) {
     event.preventDefault();
+    return;
   }
+
+  // Escape closes the dialog right after this event: the loop first, so the
+  // page is not inert when the browser gives focus back to the opener
+  isVisible.value = false;
 }
 
 defineExpose({

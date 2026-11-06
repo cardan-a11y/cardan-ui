@@ -1,4 +1,6 @@
 <script setup lang="ts">
+
+const { t } = useI18n();
 const model = defineModel<string | number>();
 
 const {
@@ -58,13 +60,13 @@ const computedErrorMessage = computed(() => {
   if (errorMessage) {
     return errorMessage;
   } else if (required && !model.value) {
-    return $t('form.missing-value', { item: label });
+    return t('form.missing-value', { item: label });
   } else if (type === 'email') {
-    return $t('form.invalid-email');
+    return t('form.invalid-email');
   } else if (type === 'url') {
-    return $t('form.invalid-url');
+    return t('form.invalid-url');
   }
-  return $t('form.invalid-value');
+  return t('form.invalid-value');
 });
 
 const inputMode = computed(() => {
@@ -97,14 +99,9 @@ const computedAriaDescribedby = computed(() =>
 function handleInput(event: Event) {
   const target = event.target as HTMLInputElement;
 
-  if (type === 'number') {
-    if (Number(target.value) < Number(min)) {
-      return;
-    }
-    if (Number(target.value) > Number(max)) {
-      return;
-    }
-  }
+  // Also a number outside min and max: the field is invalid until the number
+  // is in range, which the form reports. A model kept at the old value would
+  // differ from the number the field shows.
   model.value = target.value;
 }
 
@@ -126,23 +123,18 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div
-    :class="[
-      'form-field-wrapper',
-      `input-size--${size}`,
-      `input-variant--${variant}`,
-      showInvalid && 'show-invalid',
-    ]"
+  <FormField
+    :id="id"
+    :class="[`input-size--${size}`, `input-variant--${variant}`]"
+    :label="label"
+    :hide-label="hideLabel"
+    :required="required"
+    :disabled="disabled"
+    :chip-size="chipSize"
+    :instruction="instruction"
+    :error-text="computedErrorMessage"
+    :show-invalid="showInvalid"
   >
-    <label
-      :for="id"
-      :class="[hideLabel && 'visuallyhidden', disabled && 'disabled']"
-    >
-      <span>{{ label }}</span>
-
-      <RequiredChip v-if="required" :size="chipSize" />
-    </label>
-
     <div class="input-wrapper">
       <input
         :id="id"
@@ -176,28 +168,10 @@ const emit = defineEmits<{
 
       <Icon v-if="icon" :name="icon" />
     </div>
-
-    <InputError :id="id" :error-text="computedErrorMessage" />
-
-    <p v-if="instruction" :id="`instruction-${id}`" class="instruction">
-      {{ instruction }}
-    </p>
-  </div>
+  </FormField>
 </template>
 
 <style>
-:where(label) {
-  font-weight: var(--font-weight-medium);
-  -webkit-user-select: none;
-  user-select: none;
-  transition-property: opacity;
-  transition-duration: var(--duration-sm);
-
-  &.disabled {
-    opacity: 25%;
-  }
-}
-
 :where(input) {
   background-color: transparent;
   filter: none;
@@ -209,30 +183,6 @@ const emit = defineEmits<{
 }
 
 :where(.form-field-wrapper) {
-  position: relative;
-  display: inline-grid;
-  align-items: center;
-  align-content: start;
-  transition-property: opacity;
-  transition-duration: var(--duration-sm);
-
-  label,
-  .label {
-    display: inline-flex;
-    gap: 0.35rem;
-    min-height: 1.25rem;
-    align-items: center;
-    font-size: var(--font-size-sm);
-    margin-block-end: 0.25rem;
-    color: var(--color-text);
-  }
-
-  .instruction {
-    margin-block-start: 0.25rem;
-    margin-block-end: 0;
-    font-size: var(--font-size-xs);
-    color: var(--color-grey-text);
-  }
 
   &:has(.input:disabled) {
     opacity: 35%;

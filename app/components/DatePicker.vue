@@ -2,14 +2,19 @@
 import { VueDatePicker } from '@vuepic/vue-datepicker';
 import type { ModelValue, FormatsConfig } from '@vuepic/vue-datepicker';
 import { nl, enGB } from 'date-fns/locale';
+import type { Locale as DateFnsLocale } from 'date-fns';
 import '@vuepic/vue-datepicker/dist/main.css';
 
 const model = defineModel<ModelValue>();
 
-const { locale } = useI18n();
-const computedLocale = computed(() => {
-  return locale.value === 'nl' ? nl : enGB;
-});
+const { t, locale } = useI18n();
+
+// The date-fns locale of each i18n locale; a new language adds its pair here
+const dateFnsLocales: Record<string, DateFnsLocale> = { nl, en: enGB };
+
+const computedLocale = computed(
+  () => dateFnsLocales[locale.value] ?? enGB,
+);
 
 // https://vue3datepicker.com/props/modes/
 const {
@@ -98,38 +103,34 @@ onUnmounted(() => document.removeEventListener('keydown', preventEscape));
 
 const computedAriaLabels = computed(() => {
   return {
-    input: $t('datepicker.input'),
-    clearInput: $t('datepicker.clearInput'),
-    toggleOverlay: $t('datepicker.toggleOverlay'),
-    calendarWrap: $t('datepicker.calendarWrap'),
-    calendarDays: $t('datepicker.calendarDays'),
-    openTimePicker: $t('datepicker.openTimePicker'),
-    closeTimePicker: $t('datepicker.closeTimePicker'),
-    openYearsOverlay: $t('datepicker.openYearsOverlay'),
-    openMonthsOverlay: $t('datepicker.openMonthsOverlay'),
-    nextMonth: $t('datepicker.nextMonth'),
-    prevMonth: $t('datepicker.prevMonth'),
-    nextYear: $t('datepicker.nextYear'),
-    prevYear: $t('datepicker.prevYear'),
+    input: t('datepicker.input'),
+    clearInput: t('datepicker.clearInput'),
+    toggleOverlay: t('datepicker.toggleOverlay'),
+    calendarWrap: t('datepicker.calendarWrap'),
+    calendarDays: t('datepicker.calendarDays'),
+    openTimePicker: t('datepicker.openTimePicker'),
+    closeTimePicker: t('datepicker.closeTimePicker'),
+    openYearsOverlay: t('datepicker.openYearsOverlay'),
+    openMonthsOverlay: t('datepicker.openMonthsOverlay'),
+    nextMonth: t('datepicker.nextMonth'),
+    prevMonth: t('datepicker.prevMonth'),
+    nextYear: t('datepicker.nextYear'),
+    prevYear: t('datepicker.prevYear'),
     ...ariaLabels,
   };
 });
 </script>
 
 <template>
-  <div
-    :class="[
-      'form-field-wrapper',
-      'cardan-datepicker-container',
-      `datepicker-size--${size}`,
-    ]"
+  <FormField
+    :id="id"
+    :class="['cardan-datepicker-container', `datepicker-size--${size}`]"
+    :label="label"
+    :label-for="`dp-input-${id}`"
+    :required="required"
+    :disabled="disabled"
+    :error-text="required ? $t('form.missing-value', { item: label }) : undefined"
   >
-    <label :for="`dp-input-${id}`">
-      <span>{{ label }}</span>
-
-      <RequiredChip v-if="required" />
-    </label>
-
     <VueDatePicker
       :id="id"
       ref="datepicker"
@@ -166,49 +167,10 @@ const computedAriaLabels = computed(() => {
         <Icon name="material-symbols:calendar-month-outline-rounded" />
       </template>
     </VueDatePicker>
-
-    <InputError
-      v-if="required"
-      :id="id"
-      :error-text="$t('form.missing-value', { item: label })"
-    />
-  </div>
+  </FormField>
 </template>
 
 <style>
-:where(label) {
-  font-weight: var(--font-weight-medium);
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-:where(.form-field-wrapper) {
-  position: relative;
-  display: inline-grid;
-  align-items: center;
-  align-content: start;
-  transition-property: opacity;
-  transition-duration: var(--duration-sm);
-
-  label,
-  .label {
-    display: inline-flex;
-    gap: 0.35rem;
-    min-height: 1.25rem;
-    align-items: center;
-    font-size: var(--font-size-sm);
-    margin-block-end: 0.25rem;
-    color: var(--color-text);
-  }
-
-  .instruction {
-    margin-block-start: 0.25rem;
-    margin-block-end: 0;
-    font-size: var(--font-size-xs);
-    color: var(--color-grey-text);
-  }
-}
-
 .cardan-datepicker-container {
   display: grid;
   transition-property: opacity;

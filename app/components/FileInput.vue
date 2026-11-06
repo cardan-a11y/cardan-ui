@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import compressor from 'compressorjs';
 
+const { t } = useI18n();
+
 const model = defineModel<File>();
 
 const {
@@ -66,7 +68,6 @@ defineExpose({
 
 const emit = defineEmits<{
   paste: [file: File];
-  'update:model-value': [file: File];
 }>();
 
 const errorMessage = ref('');
@@ -79,11 +80,15 @@ function handleDragLeave() {
   dragover.value = false;
 }
 
+/**
+ * The chosen file is the value right away; a compressed image replaces it
+ * once compressorjs is done, so the value never goes empty in between and a
+ * parent that watches it sees a file at every step.
+ */
 function compressFile(file: File) {
-  if (!file?.type?.includes('image') || file?.type?.includes('gif')) {
-    emit('update:model-value', file);
-    return file;
-  }
+  model.value = file;
+
+  if (!file.type.includes('image') || file.type.includes('gif')) return;
 
   new compressor(file, {
     quality: quality,
@@ -92,12 +97,7 @@ function compressFile(file: File) {
     convertSize: convertSize,
 
     success(result: File) {
-      const compressedFile = new File([result], result.name, {
-        type: result.type,
-      });
-
-      emit('update:model-value', compressedFile);
-      return compressedFile;
+      model.value = new File([result], result.name, { type: result.type });
     },
   });
 }
@@ -116,13 +116,13 @@ function handleImagePreview(file: File) {
 function validateFile(file: File) {
   if (!file && required) {
     validity.value = false;
-    errorMessage.value = $t('form.missing-value', { item: label });
+    errorMessage.value = t('form.missing-value', { item: label });
     return;
   }
 
   if (file.size / 1000 > maxFileSize) {
     validity.value = false;
-    errorMessage.value = $t('files.too-big');
+    errorMessage.value = t('files.too-big');
     return;
   }
 
@@ -136,7 +136,7 @@ function handleFile(file?: File) {
 
   validateFile(file);
   handleImagePreview(file);
-  model.value = compressFile(file);
+  compressFile(file);
 }
 
 function handleFileInput(event: Event) {

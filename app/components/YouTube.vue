@@ -36,7 +36,7 @@ const youtubeKey = computed(() => {
             aria-hidden="true"
           />
         </svg>
-        <span class="visuallyhidden">Speel video af</span>
+        <span class="visuallyhidden">{{ $t('video.play') }}</span>
       </div>
     </template>
 

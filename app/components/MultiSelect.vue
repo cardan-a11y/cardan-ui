@@ -3,6 +3,8 @@ import Multiselect from '@vueform/multiselect';
 import type MultiselectProps from '@vueform/multiselect';
 import type { ComponentPublicInstance } from 'vue';
 
+const { t } = useI18n();
+
 const model = defineModel<MultiselectProps['modelValue']>();
 
 // https://github.com/vueform/multiselect#basic-props
@@ -57,7 +59,7 @@ function formatMultipleLabels(values: Record<string, string>[]) {
   if (values.length === 1) {
     return values[0]?.[labelKey];
   }
-  return `${values.length} ${itemsSelectedLabel || $t('multiselect.items-selected')}`;
+  return `${values.length} ${itemsSelectedLabel || t('multiselect.items-selected')}`;
 }
 
 function selectAll() {
@@ -138,12 +140,11 @@ function preventEscape(event: KeyboardEvent) {
 </script>
 
 <template>
-  <div
+  <FormField
+    :id="id"
     :class="[
-      'form-field-wrapper',
       'cardan-multiselect',
       `multi-select-size--${size}`,
-      showInvalid && 'show-invalid',
       showOptionIcons && 'show-option-icons',
     ]"
     :style="
@@ -151,16 +152,14 @@ function preventEscape(event: KeyboardEvent) {
         ? undefined
         : { '--ms-available-height': `${availableHeight}px` }
     "
+    :label="label"
+    :hide-label="hideLabel"
+    :required="required"
+    :disabled="disabled"
+    :instruction="instruction"
+    :error-text="required ? $t('form.missing-value', { item: label }) : undefined"
+    :show-invalid="showInvalid"
   >
-    <label
-      :for="id"
-      :class="[hideLabel && 'visuallyhidden', disabled && 'disabled']"
-    >
-      <span>{{ label }}</span>
-
-      <RequiredChip v-if="required" />
-    </label>
-
     <Multiselect
       v-bind="$attrs"
       :id="id"
@@ -250,60 +249,11 @@ function preventEscape(event: KeyboardEvent) {
         />
       </template>
     </Multiselect>
-
-    <InputError
-      v-if="required"
-      :id="id"
-      :error-text="$t('form.missing-value', { item: label })"
-    />
-
-    <p v-if="instruction" :id="`instruction-${id}`" class="instruction">
-      {{ instruction }}
-    </p>
-  </div>
+  </FormField>
 </template>
 
 <style>
 @import '@vueform/multiselect/themes/default.css';
-
-:where(label) {
-  font-weight: var(--font-weight-medium);
-  -webkit-user-select: none;
-  user-select: none;
-  transition-property: opacity;
-  transition-duration: var(--duration-sm);
-
-  &.disabled {
-    opacity: 25%;
-  }
-}
-
-:where(.form-field-wrapper) {
-  position: relative;
-  display: inline-grid;
-  align-items: center;
-  align-content: start;
-  transition-property: opacity;
-  transition-duration: var(--duration-sm);
-
-  label,
-  .label {
-    display: inline-flex;
-    gap: 0.35rem;
-    min-height: 1.25rem;
-    align-items: center;
-    font-size: var(--font-size-sm);
-    margin-block-end: 0.25rem;
-    color: var(--color-text);
-  }
-
-  .instruction {
-    margin-block-start: 0.25rem;
-    margin-block-end: 0;
-    font-size: var(--font-size-xs);
-    color: var(--color-grey-text);
-  }
-}
 
 :root {
   --ms-font-size: var(--font-size-md);

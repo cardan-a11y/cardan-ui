@@ -1,37 +1,72 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends GroupOption">
 const model = defineModel<string | number | boolean>();
 
 const {
-  valueKey = 'value',
-  labelKey = 'label',
+  valueKey = 'value' as keyof T & string,
+  labelKey = 'label' as keyof T & string,
   variant = 'default',
   id = useId(),
   name = undefined,
   tooltip = undefined,
   tabindex = undefined,
   titleKey = undefined,
+  errorMessage = undefined,
+  label,
   disabled,
+  required,
 } = defineProps<{
-  options: any[];
+  /** Any objects; the keys name the value, label and title fields */
+  options: T[];
   label: string;
   name?: string;
   tooltip?: string;
   tabindex?: string;
-  valueKey?: string;
-  labelKey?: string;
-  titleKey?: string;
+  valueKey?: keyof T & string;
+  labelKey?: keyof T & string;
+  titleKey?: keyof T & string;
   id?: string;
   hideLegend?: boolean;
   required?: boolean;
   disabled?: boolean;
   inline?: boolean;
+  showInvalid?: boolean;
+  /** Under the group when it is required and no option is chosen; "<label> is missing" by default */
+  errorMessage?: string;
   variant?: 'default' | '3d' | 'outline';
 }>();
+
+const { t } = useI18n();
+
+/** The value of an option, as the radio's `value` */
+function optionValue(option: T) {
+  return option[valueKey] as string | number | boolean;
+}
+
+/** A text field of an option, for a prop that takes a string */
+function text(option: T, key?: keyof T & string) {
+  const value = key === undefined ? undefined : option[key];
+
+  return value === undefined ? undefined : String(value);
+}
+
+const message = computed(
+  () => errorMessage ?? t('form.missing-value', { item: label }),
+);
+
+// A v-model passes undefined until a choice is made. Without any v-model, Vue
+// casts the absent value to false, since the type allows a boolean, and that
+// would count as a choice; a group that posts natively still shows its error.
+const hasChoice = computed(
+  () => model.value !== undefined && model.value !== '',
+);
 </script>
 
 <template>
-  <div class="radios-wrapper">
-    <fieldset v-if="options?.length">
+  <div :class="['radios-wrapper', showInvalid && 'show-invalid']">
+    <fieldset
+      v-if="options?.length"
+      :aria-describedby="required && !hasChoice ? `error-${id}` : undefined"
+    >
       <legend
         v-if="label || tooltip"
         :class="[hideLegend && 'visuallyhidden', disabled && 'disabled']"
@@ -50,13 +85,13 @@ const {
       </legend>
 
       <ul role="list" :class="['radio-list', inline && 'inline']">
-        <li v-for="option in options" :key="'radio-' + option.value">
+        <li v-for="option in options" :key="`radio-${String(option[valueKey])}`">
           <Radio
             v-model="model"
-            :value="option[valueKey]"
-            :label="option[labelKey]"
-            :disabled="disabled || option.disabled"
-            :title="titleKey ? option[titleKey] : undefined"
+            :value="optionValue(option)"
+            :label="text(option, labelKey)"
+            :disabled="disabled || !!option.disabled"
+            :title="text(option, titleKey)"
             :lang="option.lang"
             :name="name"
             :tabindex="tabindex"
@@ -68,10 +103,7 @@ const {
       </ul>
     </fieldset>
 
-    <InputError
-      :id="id"
-      :error-text="$t('form.missing-value', { item: label })"
-    />
+    <InputError v-if="required" :id="id" :error-text="message" />
   </div>
 </template>
 
@@ -123,14 +155,17 @@ const {
     }
   }
 
-  &:has(input[type='radio']:invalid) {
-    legend {
-      color: var(--color-red-text);
-    }
+}
 
-    .error-wrapper .error {
-      display: flex;
-    }
+/* A required group without a chosen option, once the form reports its state */
+:where(.radios-wrapper.show-invalid:has(:invalid)),
+:where(.show-invalid) .radios-wrapper:has(:invalid) {
+  legend {
+    color: var(--color-red-text);
+  }
+
+  .error-wrapper .error {
+    display: flex;
   }
 }
 </style>

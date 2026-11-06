@@ -46,12 +46,9 @@ const ticksList = computed(() =>
 </script>
 
 <template>
-  <div
-    :class="[
-      'form-field-wrapper',
-      'range-input-wrapper',
-      `range-input-variant--${variant}`,
-    ]"
+  <FormField
+    :id="id"
+    :class="['range-input-wrapper', `range-input-variant--${variant}`]"
     :style="[
       `--min: ${min}`,
       `--max: ${max}`,
@@ -59,16 +56,11 @@ const ticksList = computed(() =>
       `--ratio: ${ratio}`,
       `--value: ${model}`,
     ]"
+    :label="label"
+    :hide-label="hideLabel"
+    :required="required"
+    :disabled="disabled"
   >
-    <label
-      :for="id"
-      :class="[hideLabel && 'visuallyhidden', disabled && 'disabled']"
-    >
-      <span>{{ label }}</span>
-
-      <RequiredChip v-if="required" />
-    </label>
-
     <input
       :id="id"
       ref="input"
@@ -99,49 +91,10 @@ const ticksList = computed(() =>
         {{ model }}
       </output>
     </ClientOnly>
-  </div>
+  </FormField>
 </template>
 
 <style>
-:where(label) {
-  font-weight: var(--font-weight-medium);
-  -webkit-user-select: none;
-  user-select: none;
-  transition-property: opacity;
-  transition-duration: var(--duration-sm);
-
-  &.disabled {
-    opacity: 25%;
-  }
-}
-
-:where(.form-field-wrapper) {
-  position: relative;
-  display: inline-grid;
-  align-items: center;
-  align-content: start;
-  transition-property: opacity;
-  transition-duration: var(--duration-sm);
-
-  label,
-  .label {
-    display: inline-flex;
-    gap: 0.35rem;
-    min-height: 1.25rem;
-    align-items: center;
-    font-size: var(--font-size-sm);
-    margin-block-end: 0.25rem;
-    color: var(--color-text);
-  }
-
-  .instruction {
-    margin-block-start: 0.25rem;
-    margin-block-end: 0;
-    font-size: var(--font-size-xs);
-    color: var(--color-grey-text);
-  }
-}
-
 .range-input-wrapper {
   --thumb-color: var(--color-accent-graphic);
   --thumb-width: 1.5rem;

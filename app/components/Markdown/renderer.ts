@@ -64,6 +64,8 @@ export type MarkdownRenderOptions = {
   headingOffset?: number;
   /** Accessible name of the scroll region around a table. */
   tableLabel?: string;
+  /** Hidden text and title of a link, which opens in a new window. */
+  newWindowLabel?: string;
 };
 
 /** A piece of the text as HTML, or a video to render with VideoPlayer. */
@@ -74,10 +76,11 @@ function select({
   trusted = false,
   headingOffset = 0,
   tableLabel = 'Table',
+  newWindowLabel = 'open in new window',
 }: MarkdownRenderOptions) {
   return {
     md: trusted ? renderers.trusted : renderers.safe,
-    env: { headingOffset, tableLabel },
+    env: { headingOffset, tableLabel, newWindowLabel },
   };
 }
 

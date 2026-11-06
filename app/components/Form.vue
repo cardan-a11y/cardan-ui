@@ -38,8 +38,11 @@ function handleSubmit(event: Event) {
     emit('invalid', event);
     if (invalidFocusFn) invalidFocusFn();
     else {
-      const firstInvalidElement: HTMLElement | null =
-        target.querySelector(':invalid');
+      // Not a fieldset: it matches `:invalid` before the control in it that
+      // is, as in a required RadioGroup or CheckboxGroup, and cannot take focus
+      const firstInvalidElement: HTMLElement | null = target.querySelector(
+        ':invalid:not(fieldset)',
+      );
       firstInvalidElement?.focus();
     }
   }

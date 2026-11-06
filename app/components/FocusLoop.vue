@@ -33,7 +33,10 @@ const focusLoopContentRef = ref<InstanceType<any>>(null);
 const alreadyFocused = ref(false);
 const getTabindex = computed(() => (disabled ? '-1' : '0'));
 
-watch([() => disabled, () => isVisible], init);
+// Synchronous, so the rest of the page is no longer inert the moment the
+// loop closes: the browser's own focus restore when a dialog closes, and a
+// component that focuses its trigger, then work at once
+watch([() => disabled, () => isVisible], init, { flush: 'sync' });
 
 onMounted(init);
 
@@ -48,15 +51,18 @@ onBeforeUnmount(() => {
 });
 
 function init() {
+  const active = isVisible && !disabled;
+
+  if (!active) {
+    lockForSwipeScreenReader(false);
+    ariaHiddenElements = [];
+    return;
+  }
+
+  // The content renders in the next tick
   nextTick(() => {
-    const active = isVisible && !disabled;
-    if (!disabled) {
-      focusFirst(active && autoFocus);
-    }
-    lockForSwipeScreenReader(active);
-    if (!active) {
-      ariaHiddenElements = [];
-    }
+    focusFirst(autoFocus);
+    lockForSwipeScreenReader(true);
   });
 }
 
@@ -92,15 +98,19 @@ function lockForSwipeScreenReader(active: boolean = true) {
   });
 }
 
+/**
+ * Runs from `init`, after the tick that renders the content, so the elements
+ * are in the DOM; an opening animation does not keep an element from taking
+ * focus.
+ */
 function focusFirst(isAutoFocus: boolean) {
   if (!isAutoFocus) return;
 
-  setTimeout(() => {
-    const elements = Array.from(getFocusableElements());
-    const autofocusElement = elements?.find((x) => x?.autofocus === true);
-    if (autofocusElement) autofocusElement?.focus();
-    else if (elements.length) elements[0]?.focus();
-  }, 200);
+  const elements = Array.from(getFocusableElements());
+  const autofocusElement = elements.find((x) => x?.autofocus === true);
+
+  if (autofocusElement) autofocusElement.focus();
+  else elements[0]?.focus();
 }
 
 function getFocusableElements(): HTMLElement[] {

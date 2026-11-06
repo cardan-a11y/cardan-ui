@@ -1,4 +1,6 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends SelectOption">
+
+const { t } = useI18n();
 const model = defineModel<string | number | boolean>();
 
 const {
@@ -16,20 +18,21 @@ const {
   variant = 'default',
   placeholderValue = '',
   size = 'md',
-  valueKey = 'value',
-  labelKey = 'label',
-  disabledKey = 'disabled',
+  valueKey = 'value' as keyof T & string,
+  labelKey = 'label' as keyof T & string,
+  disabledKey = 'disabled' as keyof T & string,
   id = useId(),
 } = defineProps<{
   label?: string;
   name?: string;
-  options?: any[];
+  /** Any objects; the keys name the value, label and disabled fields */
+  options?: T[];
   placeholder?: string;
   placeholderValue?: string | number;
   size?: InputSize;
-  valueKey?: string;
-  labelKey?: string;
-  disabledKey?: string;
+  valueKey?: keyof T & string;
+  labelKey?: keyof T & string;
+  disabledKey?: keyof T & string;
   hideLabel?: boolean;
   showInvalid?: boolean;
   required?: boolean;
@@ -49,9 +52,9 @@ const {
 const computedErrorMessage = computed(() => {
   if (errorMessage) return errorMessage;
   if (required && !model.value) {
-    return $t('form.missing-value', { item: label });
+    return t('form.missing-value', { item: label });
   }
-  return $t('form.invalid-value');
+  return t('form.invalid-value');
 });
 
 const computedAriaDescribedby = computed(() =>
@@ -66,24 +69,21 @@ const computedAriaDescribedby = computed(() =>
 </script>
 
 <template>
-  <div
+  <FormField
+    :id="id"
     :class="[
-      'form-field-wrapper',
       `select-size--${size}`,
       `select-variant--${variant}`,
       color && `select-color--${color}`,
-      showInvalid && 'show-invalid',
     ]"
+    :label="label"
+    :hide-label="hideLabel"
+    :required="required"
+    :disabled="disabled"
+    :instruction="instruction"
+    :error-text="required ? computedErrorMessage : undefined"
+    :show-invalid="showInvalid"
   >
-    <label
-      :for="id"
-      :class="[hideLabel && 'visuallyhidden', disabled && 'disabled']"
-    >
-      <span>{{ label }}</span>
-
-      <RequiredChip v-if="required" />
-    </label>
-
     <div class="select-wrapper">
       <select
         :id="id"
@@ -113,9 +113,9 @@ const computedAriaDescribedby = computed(() =>
         <template v-else>
           <option
             v-for="option in options"
-            :key="option[valueKey] + '-' + id"
+            :key="`${String(option[valueKey])}-${id}`"
             :value="option[valueKey]"
-            :disabled="option[disabledKey]"
+            :disabled="!!option[disabledKey]"
             :lang="option.lang"
           >
             {{ option[labelKey] }}
@@ -128,53 +128,11 @@ const computedAriaDescribedby = computed(() =>
         class="select-arrow"
       />
     </div>
-
-    <p v-if="instruction" :id="`instruction-${id}`" class="instruction">
-      {{ instruction }}
-    </p>
-
-    <InputError v-if="required" :id="id" :error-text="computedErrorMessage" />
-  </div>
+  </FormField>
 </template>
 
 <style>
-:where(label) {
-  font-weight: var(--font-weight-medium);
-  -webkit-user-select: none;
-  user-select: none;
-  transition-property: opacity;
-  transition-duration: var(--duration-sm);
-
-  &.disabled {
-    opacity: 25%;
-  }
-}
-
 :where(.form-field-wrapper) {
-  position: relative;
-  display: inline-grid;
-  align-items: center;
-  align-content: start;
-  transition-property: opacity;
-  transition-duration: var(--duration-sm);
-
-  label,
-  .label {
-    display: inline-flex;
-    gap: 0.35rem;
-    min-height: 1.25rem;
-    align-items: center;
-    font-size: var(--font-size-sm);
-    margin-block-end: 0.25rem;
-    color: var(--color-text);
-  }
-
-  .instruction {
-    margin-block-start: 0.25rem;
-    margin-block-end: 0;
-    font-size: var(--font-size-xs);
-    color: var(--color-grey-text);
-  }
 
   &:has(.select:disabled) {
     opacity: 35%;

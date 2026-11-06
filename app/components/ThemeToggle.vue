@@ -25,10 +25,27 @@ defineProps<{ fontSize?: FontSize }>();
       />
       <span class="visuallyhidden">{{ $t('theme.sr.dark') }}</span>
     </button>
+
+    <!-- The color mode is only known in the browser: on the server an empty
+         box of the toggle's size keeps the header from moving, as in
+         ThemeSwitch. It takes the attributes the toggle gets. -->
+    <template #fallback>
+      <span v-bind="$attrs" class="theme-toggle-placeholder" />
+    </template>
   </ClientOnly>
 </template>
 
 <style>
+.theme-toggle-button,
+.theme-toggle-placeholder {
+  width: 2rem;
+  height: 2rem;
+}
+
+.theme-toggle-placeholder {
+  display: block;
+}
+
 .theme-toggle-button {
   --color-shape: var(--color-text);
   background-color: transparent;
@@ -36,8 +53,6 @@ defineProps<{ fontSize?: FontSize }>();
   place-content: center;
   border: 4px solid transparent;
   border-radius: 100vw;
-  width: 2rem;
-  height: 2rem;
   outline: 2px solid transparent;
   outline-offset: 2px;
   transition-property: color, background-color;
