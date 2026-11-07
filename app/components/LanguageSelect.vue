@@ -97,7 +97,7 @@ const emit = defineEmits<{
       padding-inline: 0.5rem 0.65rem;
       min-width: 75px;
       justify-content: center;
-      border: 1px solid var(--color-accent-bg);
+      border: 1px solid var(--color-grey-light);
       border-radius: var(--radius-md);
       color: var(--color-grey-text);
 

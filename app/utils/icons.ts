@@ -7,6 +7,7 @@
  * out: they show after a file is chosen.
  */
 const componentIcons = [
+  'material-symbols:add-photo-alternate-outline-rounded',
   'material-symbols:add-to-home-screen-outline-rounded',
   'material-symbols:arrow-left-alt',
   'material-symbols:arrow-right-alt',

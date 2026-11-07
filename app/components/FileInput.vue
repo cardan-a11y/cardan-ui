@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import compressor from 'compressorjs';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const model = defineModel<File>();
 
 const {
   label,
   required,
+  showInvalid,
+  mode = 'image',
+  shape = 'default',
   maxFileSize = 5000,
   convertSize = 500000,
   quality = 0.9,
@@ -19,10 +22,26 @@ const {
   id = useId(),
 } = defineProps<{
   label: string;
+  /**
+   * `image` keeps the chosen file as the value, and previews and compresses
+   * an image. `document` is for a file that is uploaded as it is, such as a
+   * PDF: the field lists the types in `accept` and checks a file against
+   * them, hands each valid file to `select` and is empty again, so the parent
+   * shows what was uploaded. No preview, no compression and no pasting, and
+   * an error shows right away; `required` only shows the chip, as the field
+   * is empty.
+   */
+  mode?: 'image' | 'document';
+  /** `circle`: a pill led by a round preview, for an avatar */
+  shape?: 'default' | 'circle';
   name?: string;
   placeholderUrl?: string;
   id?: string;
+  /** In document mode, the extensions: `.pdf,.docx` or `pdf,docx` */
   accept?: string;
+  hideLabel?: boolean;
+  /** Shows only the error; `open()` opens the picker, e.g. for "Replace" */
+  hideZone?: boolean;
   showInvalid?: boolean;
   required?: boolean;
   disabled?: boolean;
@@ -34,12 +53,44 @@ const {
   maxHeight?: number;
 }>();
 
+/** Until a file is chosen, a picture in image mode */
+const icon = computed(() =>
+  !model.value && mode === 'image'
+    ? 'material-symbols:add-photo-alternate-outline-rounded'
+    : fileTypeIcon(model.value),
+);
+
 const fileInputRef = ref<HTMLInputElement>();
 const imagePreview = ref(placeholderUrl);
 const dragover = ref(false);
 const validity = ref(true);
 
-function handlePaste(event: ClipboardEvent) {
+/** The extensions in `accept` in document mode, without the dot */
+const extensions = computed(() =>
+  mode === 'document' && accept
+    ? accept
+        .split(',')
+        .map((type) => type.trim().replace(/^\./, '').toLowerCase())
+        .filter(Boolean)
+    : [],
+);
+
+/** "PDF, DOCX or ODT" */
+const typesLabel = computed(() =>
+  new Intl.ListFormat(locale.value, { type: 'disjunction' }).format(
+    extensions.value.map((extension) => extension.toUpperCase()),
+  ),
+);
+
+const maxSizeLabel = computed(() => formatFileSize(maxFileSize * 1000));
+
+const showError = computed(
+  () => !validity.value && (showInvalid || mode === 'document'),
+);
+
+async function handlePaste(event: ClipboardEvent) {
+  if (mode === 'document') return;
+
   const file = event.clipboardData?.files?.[0];
 
   if (fileInputRef.value?.files && event.clipboardData?.files) {
@@ -47,7 +98,8 @@ function handlePaste(event: ClipboardEvent) {
   }
 
   if (file) {
-    handleFile(file);
+    // A parent reads `validity` on paste, so the check goes first
+    await handleFile(file);
     emit('paste', file);
   }
 }
@@ -60,14 +112,22 @@ onUnmounted(() => {
   window.removeEventListener('paste', handlePaste);
 });
 
+/** Opens the file picker, e.g. from a "Replace" button */
+function open() {
+  fileInputRef.value?.click();
+}
+
 defineExpose({
   validity,
   imagePreview,
   handleFile,
+  open,
 });
 
 const emit = defineEmits<{
   paste: [file: File];
+  /** In document mode, a file that passed the checks */
+  select: [file: File];
 }>();
 
 const errorMessage = ref('');
@@ -120,9 +180,16 @@ function validateFile(file: File) {
     return;
   }
 
+  const extension = getFileExtension(file.name)?.toLowerCase() ?? '';
+  if (extensions.value.length && !extensions.value.includes(extension)) {
+    validity.value = false;
+    errorMessage.value = t('files.wrong-type', { types: typesLabel.value });
+    return;
+  }
+
   if (file.size / 1000 > maxFileSize) {
     validity.value = false;
-    errorMessage.value = t('files.too-big');
+    errorMessage.value = t('files.too-big', { size: maxSizeLabel.value });
     return;
   }
 
@@ -131,10 +198,25 @@ function validateFile(file: File) {
   return;
 }
 
-function handleFile(file?: File) {
+/** Empties the input, so choosing the same file again is a change too */
+function clearInput() {
+  if (fileInputRef.value) fileInputRef.value.value = '';
+}
+
+async function handleFile(file?: File) {
   if (!file) return;
 
+  // Empty first: the same message as before would not be announced again
+  errorMessage.value = '';
+  await nextTick();
   validateFile(file);
+
+  if (mode === 'document') {
+    if (validity.value) emit('select', file);
+    clearInput();
+    return;
+  }
+
   handleImagePreview(file);
   compressFile(file);
 }
@@ -146,27 +228,41 @@ function handleFileInput(event: Event) {
   handleFile(file);
 }
 
-function removeFile() {
+/** Back to no file: the current picture, if there is one, and no error */
+function reset() {
   validity.value = true;
-  model.value = undefined;
   errorMessage.value = '';
+  clearInput();
 
-  if (fileInputRef.value) {
-    fileInputRef.value.files = null;
-  }
-
-  if (imagePreview.value) {
+  if (imagePreview.value?.startsWith('blob:')) {
     URL.revokeObjectURL(imagePreview.value);
-    imagePreview.value = placeholderUrl;
   }
+  imagePreview.value = placeholderUrl;
+}
 
+/*
+ * While no file is chosen, the preview follows `placeholderUrl`, which the
+ * parent may only have after mount, and a value the parent clears resets the
+ * field, as when a dialog with it closes.
+ */
+watch([() => placeholderUrl, model], ([, file]) => {
+  if (!file) reset();
+});
+
+function removeFile() {
+  model.value = undefined;
+  reset();
   fileInputRef.value?.focus();
 }
 </script>
 
 <template>
-  <div class="file-input-wrapper">
-    <label :for="id" class="file-input-label">
+  <div :class="['file-input-wrapper', `file-input-shape--${shape}`]">
+    <label
+      v-show="!hideZone"
+      :for="id"
+      :class="['file-input-label', hideLabel && 'visuallyhidden']"
+    >
       <span>
         {{ label || $t('files.browse') }}
       </span>
@@ -174,18 +270,25 @@ function removeFile() {
       <RequiredChip v-if="required" />
     </label>
 
-    <div class="file-input">
+    <div v-show="!hideZone" class="file-input">
       <input
         :id="id"
         ref="fileInputRef"
         type="file"
         :name="name"
-        :required="required"
+        :required="required && mode !== 'document'"
         :autofocus="autofocus"
-        :accept="accept"
+        :accept="
+          extensions.length
+            ? extensions.map((extension) => `.${extension}`).join(',')
+            : accept
+        "
         :disabled="disabled"
-        :aria-describedby="id && !validity ? `error-${id}` : ''"
-        :class="[showInvalid && !validity && 'show-invalid']"
+        :aria-describedby="
+          validity ? `instruction-${id}` : `instruction-${id} error-${id}`
+        "
+        :aria-invalid="showError || undefined"
+        :class="[showError && 'show-invalid']"
         @dragover="handleDragOver"
         @dragleave="handleDragLeave"
         @drop="handleDragLeave"
@@ -203,21 +306,23 @@ function removeFile() {
         ]"
       >
         <span class="file-input-icon-wrapper">
-          <Icon :name="fileTypeIcon(model)" />
+          <Icon :name="icon" />
         </span>
 
         <span class="button-text">
           <span>
             {{ $t('files.button-text') }}
           </span>
-          <span>(max. {{ formatFileSize(maxFileSize * 1000) }}) </span>
+          <span :id="`instruction-${id}`">
+            <template v-if="extensions.length">{{ typesLabel }} </template>
+            (max. {{ maxSizeLabel }})
+          </span>
         </span>
 
         <img
           v-if="imagePreview"
           :src="imagePreview"
-          alt=""
-          :aria-label="$t('files.example', { file: model?.name || label })"
+          :alt="$t('files.example', { file: model?.name || label })"
           class="preview-image"
         />
       </button>
@@ -317,23 +422,6 @@ function removeFile() {
     }
   }
 
-  .preview-image {
-    object-fit: contain;
-    min-width: 5rem;
-  }
-
-  &.has-image-preview {
-    max-width: max-content;
-    border: none;
-    padding-block: 0;
-    border-radius: 0;
-
-    .file-input-icon-wrapper,
-    .button-text {
-      display: none;
-    }
-  }
-
   &.dragover {
     background-color: var(--color-accent-bg);
     border-color: var(--color-accent-graphic);
@@ -404,17 +492,76 @@ function removeFile() {
         }
       }
     }
-
-    &:hover:not(:disabled) + .has-image-preview {
-      outline: 1.5px dashed var(--color-black);
-      outline-offset: 1.5px;
-    }
   }
 }
 
-.file-input-wrapper:has(.has-image-preview) {
-  .file-input {
+/* The preview replaces the zone, at its own size */
+.file-input-shape--default {
+  .file-input-button {
+    .preview-image {
+      object-fit: contain;
+      min-width: 5rem;
+    }
+
+    &.has-image-preview {
+      max-width: max-content;
+      border: none;
+      padding-block: 0;
+      border-radius: 0;
+
+      .file-input-icon-wrapper,
+      .button-text {
+        display: none;
+      }
+    }
+  }
+
+  .file-input input[type='file']:hover:not(:disabled) + .has-image-preview {
+    outline: 1.5px dashed var(--color-black);
+    outline-offset: 1.5px;
+  }
+
+  &:has(.has-image-preview) .file-input {
     max-width: max-content;
+  }
+}
+
+/* An avatar: a pill led by the picture, or by the upload icon until there is
+   one, so it sits in a form like any other field */
+.file-input-shape--circle .file-input-button {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem;
+  padding-inline-end: 1.25rem;
+  border-radius: var(--radius-full);
+
+  .file-input-icon-wrapper,
+  .preview-image {
+    flex-shrink: 0;
+    width: 3rem;
+    height: 3rem;
+    border-radius: var(--radius-full);
+  }
+
+  .file-input-icon-wrapper {
+    margin: 0;
+  }
+
+  .preview-image {
+    order: -1;
+    object-fit: cover;
+    background-color: var(--color-grey-bg);
+  }
+
+  &.has-image-preview .file-input-icon-wrapper {
+    display: none;
+  }
+
+  .button-text {
+    padding-inline: 0;
+    text-align: start;
+    font-size: var(--font-size-sm);
   }
 }
 

@@ -6,7 +6,7 @@ const {
   position = 'center',
   closeButtonVariant = 'ghost',
   closeButtonRadius = 'full',
-  closeButtonIconSize = 'md',
+  closeButtonIconSize = undefined,
   label = undefined,
   ariaLabel = undefined,
   role = undefined,
