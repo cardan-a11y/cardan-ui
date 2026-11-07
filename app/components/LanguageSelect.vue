@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { Locale } from '#i18n';
 
-const { locale, setLocale } = useI18n();
+// The locales of the i18n config, with their names: a language is added there
+const { locale, locales, setLocale } = useI18n();
 
 const userLang = computed({
   get: () => locale.value,
@@ -22,26 +23,24 @@ const emit = defineEmits<{
       <legend>{{ $t('general.language') }}</legend>
 
       <ul role="list" class="language-options-list">
-        <li class="language-option">
+        <li
+          v-for="option in locales"
+          :key="option.code"
+          class="language-option"
+        >
           <input
-            id="language-option-english"
+            :id="`language-option-${option.code}`"
             v-model="userLang"
             name="i18n"
-            value="en"
+            :value="option.code"
             type="radio"
           />
-          <label for="language-option-english" lang="en">English</label>
-        </li>
-
-        <li class="language-option">
-          <input
-            id="language-option-dutch"
-            v-model="userLang"
-            name="i18n"
-            value="nl"
-            type="radio"
-          />
-          <label for="language-option-dutch" lang="nl">Nederlands</label>
+          <label
+            :for="`language-option-${option.code}`"
+            :lang="option.language ?? option.code"
+          >
+            {{ option.name ?? option.code }}
+          </label>
         </li>
       </ul>
     </fieldset>

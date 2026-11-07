@@ -14,31 +14,6 @@ export function getFileExtension(filename?: string) {
   return filename?.split('.')?.pop();
 }
 
-export function downloadFile({ url, name }: { url: string; name: string }) {
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${name}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-export function downloadCSV({ data, name }: { data: any[]; name: string }) {
-  let csvContent = 'data:text/csv;charset=utf-8,';
-
-  if (!data?.length) return;
-
-  csvContent += [
-    Object.keys(data[0]).join(';'),
-    ...data.map((item) => Object.values(item).join(';')),
-  ]
-    .join('\n')
-    .replace(/(^\[)|(\]$)/gm, '');
-
-  const csvData = encodeURI(csvContent);
-  downloadFile({ url: csvData, name });
-}
-
 export function fileTypeIcon(file?: File) {
   if (!file) return 'material-symbols:upload-file-outline';
   if (getFileExtension(file?.name) === 'vue')

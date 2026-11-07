@@ -31,24 +31,66 @@ export function swatchExtension(md: MarkdownIt) {
   };
 }
 
-export function targetBlankExtension(md: MarkdownIt) {
-  const defaultRender =
+export type TargetBlankOptions = {
+  /**
+   * Hidden text and title of a link, "open in new window" in the reader's
+   * language. A function is called at every render, so it follows a locale
+   * switch.
+   */
+  label?: string | (() => string);
+};
+
+/**
+ * Every link opens in a new window and says so: hidden text at its end and,
+ * when the link has no title of its own, a title. The text comes from
+ * `env.newWindowLabel` (MarkdownPreview, per render) or the `label` option
+ * (MarkdownEditor, whose preview renders without an env).
+ */
+export function targetBlankExtension(
+  md: MarkdownIt,
+  { label = 'open in new window' }: TargetBlankOptions = {},
+) {
+  const defaultOpen =
     md.renderer.rules.link_open ||
     function (tokens, idx, options, env, self) {
       return self.renderToken(tokens, idx, options);
     };
+  const defaultClose =
+    md.renderer.rules.link_close ||
+    function (tokens, idx, options, env, self) {
+      return self.renderToken(tokens, idx, options);
+    };
+
+  const text = (env: unknown) => {
+    const fromEnv = (env as { newWindowLabel?: unknown } | undefined)
+      ?.newWindowLabel;
+
+    if (typeof fromEnv === 'string') return fromEnv;
+
+    return typeof label === 'function' ? label() : label;
+  };
 
   md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
     const token = tokens[idx];
 
     if (token?.attrIndex('target') === -1) {
       token.attrPush(['target', '_blank']);
-      token.attrPush(['title', 'opent in nieuw venster']);
     } else {
       token?.attrSet('target', '_blank');
     }
 
-    return defaultRender(tokens, idx, options, env, self);
+    if (token?.attrIndex('title') === -1) {
+      token.attrPush(['title', text(env)]);
+    }
+
+    return defaultOpen(tokens, idx, options, env, self);
+  };
+
+  md.renderer.rules.link_close = function (tokens, idx, options, env, self) {
+    return (
+      `<span class="visuallyhidden"> (${md.utils.escapeHtml(text(env))})</span>` +
+      defaultClose(tokens, idx, options, env, self)
+    );
   };
 }
 

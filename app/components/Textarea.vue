@@ -1,4 +1,6 @@
 <script setup lang="ts">
+
+const { t } = useI18n();
 const model = defineModel<string | number>();
 
 const {
@@ -35,9 +37,9 @@ const {
 const computedErrorMessage = computed(() => {
   if (errorMessage) return errorMessage;
   if (required && !model.value) {
-    return $t('form.missing-value', { item: label });
+    return t('form.missing-value', { item: label });
   }
-  return $t('form.invalid-value');
+  return t('form.invalid-value');
 });
 
 const computedAriaDescribedby = computed(() =>
@@ -94,25 +96,20 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div
-    :class="[
-      'form-field-wrapper',
-      'textarea-wrapper',
-      `textarea-variant--${variant}`,
-      showInvalid && 'show-invalid',
-    ]"
+  <FormField
+    :id="id"
+    :class="['textarea-wrapper', `textarea-variant--${variant}`]"
+    :label="label"
+    :hide-label="hideLabel"
+    :required="required"
+    :disabled="disabled"
+    :instruction="instruction"
+    :error-text="required ? computedErrorMessage : undefined"
+    :show-invalid="showInvalid"
   >
-    <label
-      v-if="label"
-      :for="id"
-      :class="[hideLabel && 'visuallyhidden', disabled && 'disabled']"
-    >
-      <span>{{ label }}</span>
-
-      <RequiredChip v-if="required" />
-    </label>
-
-    <slot name="label" />
+    <template #label>
+      <slot name="label" />
+    </template>
 
     <textarea
       :id="id"
@@ -131,58 +128,16 @@ const emit = defineEmits<{
       @blur="emit('blur', $event)"
       @paste="emit('paste', $event)"
     />
-
-    <p v-if="instruction" :id="`instruction-${id}`" class="instruction">
-      {{ instruction }}
-    </p>
-
-    <InputError v-if="required" :id="id" :error-text="computedErrorMessage" />
-  </div>
+  </FormField>
 </template>
 
 <style>
-:where(label) {
-  font-weight: var(--font-weight-medium);
-  -webkit-user-select: none;
-  user-select: none;
-  transition-property: opacity;
-  transition-duration: var(--duration-sm);
-
-  &.disabled {
-    opacity: 25%;
-  }
-}
-
 :where(textarea) {
   padding: 0.5rem;
   resize: vertical;
 }
 
 :where(.form-field-wrapper) {
-  position: relative;
-  display: inline-grid;
-  align-items: center;
-  align-content: start;
-  transition-property: opacity;
-  transition-duration: var(--duration-sm);
-
-  label,
-  .label {
-    display: inline-flex;
-    gap: 0.35rem;
-    min-height: 1.25rem;
-    align-items: center;
-    font-size: var(--font-size-sm);
-    margin-block-end: 0.25rem;
-    color: var(--color-text);
-  }
-
-  .instruction {
-    margin-block-start: 0.25rem;
-    margin-block-end: 0;
-    font-size: var(--font-size-xs);
-    color: var(--color-grey-text);
-  }
 
   &:has(.textarea:disabled) {
     opacity: 35%;

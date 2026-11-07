@@ -35,4 +35,25 @@ describe('Input', () => {
     }
     expect(await checkA11y()).toHaveNoViolations();
   });
+
+  it('lets a number outside min and max reach the model', async () => {
+    let value: unknown;
+    const wrapper = await mountSuspended(Input, {
+      props: {
+        label: 'Participants',
+        type: 'number',
+        min: 1,
+        max: 10,
+        modelValue: 1,
+        'onUpdate:modelValue': (newValue: unknown) => {
+          value = newValue;
+        },
+      },
+      attachTo: document.body,
+    });
+
+    await wrapper.get('input').setValue('15');
+
+    expect(value).toBe('15');
+  });
 });

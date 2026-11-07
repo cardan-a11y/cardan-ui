@@ -73,7 +73,9 @@
     "invalid-url": "Website URL is invalid",
     "invalid-value": "Value invalid",
     "missing-value": "{item} is missing",
-    "required": "required"
+    "required": "required",
+    "checkbox-required": "Tick this box to continue",
+    "checkbox-group-required": "Tick at least one option"
   },
   "files": {
     "browse": "Browse files",

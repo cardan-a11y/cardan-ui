@@ -24,6 +24,26 @@ describe('Dialog', () => {
     expect(await checkA11y()).toHaveNoViolations();
   });
 
+  it('keeps its content when a file picker in it is dismissed', async () => {
+    const wrapper = await mountSuspended(Dialog, {
+      props: { label: 'Avatar' },
+      slots: { default: '<input type="file" aria-label="Avatar" />' },
+      attachTo: document.body,
+    });
+
+    (wrapper.vm as unknown as { openDialog: () => void }).openDialog();
+    await wrapper.vm.$nextTick();
+
+    // A dismissed picker fires a cancel that bubbles from the input
+    const cancel = new Event('cancel', { bubbles: true, cancelable: true });
+    wrapper.get('input[type="file"]').element.dispatchEvent(cancel);
+    await wrapper.vm.$nextTick();
+
+    expect(cancel.defaultPrevented).toBe(false);
+    expect(wrapper.find('input[type="file"]').exists()).toBe(true);
+    expect(wrapper.find('.close-button').exists()).toBe(true);
+  });
+
   it('stops Escape from closing it only with disable-escape', async () => {
     for (const disableEscape of [false, true]) {
       const wrapper = await mountSuspended(Dialog, {

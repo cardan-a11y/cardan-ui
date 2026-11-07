@@ -26,17 +26,44 @@ const {
 const {
   cookieConsent,
   consentCookie,
-  cookiesDialogRef,
+  cookiesDialogOpen,
   acceptCookies,
   denyCookies,
 } = useCookiesDialog();
 
-const consentTrigger = useScriptTriggerConsent();
+const dialogRef = useTemplateRef<DialogComponent>('dialog');
+
+// The dialog follows the shared flag, which a CookiesButton anywhere can set
+watch(cookiesDialogOpen, (open) => {
+  if (open) dialogRef.value?.openDialog();
+  else dialogRef.value?.closeDialog();
+});
+
+/**
+ * The parts of @nuxt/scripts this dialog uses. In a project without the
+ * module, Nuxt's stubs type its composables as `void`, and they throw when
+ * called: the dialog needs the module, which the layer says at startup. Typed
+ * here, the dialog type-checks in every project that extends the layer.
+ */
+type ConsentCommand = [
+  command: 'consent',
+  type: 'default' | 'update',
+  params: Record<string, 'granted' | 'denied'>,
+];
+interface ConsentTrigger extends Promise<void> {
+  accept: () => void;
+}
+interface GoogleTagManager {
+  proxy: { dataLayer: { push: (command: IArguments) => void } };
+  remove: () => void;
+}
+
+const consentTrigger = useScriptTriggerConsent() as unknown as ConsentTrigger;
 
 const gtm = useScriptGoogleTagManager({
-  id: useRuntimeConfig().public.gtmId as string,
+  id: useRuntimeConfig().public.gtmId,
 
-  onBeforeGtmStart: (gtag) => {
+  onBeforeGtmStart: (gtag: (...command: ConsentCommand) => void) => {
     gtag('consent', 'default', {
       ad_storage: 'denied',
       ad_user_data: 'denied',
@@ -50,18 +77,12 @@ const gtm = useScriptGoogleTagManager({
   scriptOptions: {
     trigger: consentTrigger,
   },
-});
+}) as unknown as GoogleTagManager;
 
 // GTM only reads gtag commands from an Arguments object, not from an array
-function gtag(
-  ..._args: [
-    command: 'consent',
-    type: 'default' | 'update',
-    params: Record<string, 'granted' | 'denied'>,
-  ]
-) {
+function gtag(..._command: ConsentCommand) {
   // eslint-disable-next-line prefer-rest-params
-  gtm.proxy.dataLayer.push(arguments as unknown as unknown[]);
+  gtm.proxy.dataLayer.push(arguments);
 }
 
 function updateConsent(value: 'granted' | 'denied') {
@@ -106,20 +127,32 @@ onMounted(() => {
   }
 
   if (!isChoice(cookieConsent.value)) {
-    cookiesDialogRef.value?.openDialog();
+    cookiesDialogOpen.value = true;
   }
+
+  // The watcher sees changes only: a flag that is already set opens it here
+  if (cookiesDialogOpen.value) {
+    dialogRef.value?.openDialog();
+  }
+});
+
+// A dialog unmounted while open, as on the way to a page in another layout,
+// fires no close event: reset the flag, or the next dialog never opens
+onUnmounted(() => {
+  cookiesDialogOpen.value = false;
 });
 </script>
 
 <template>
   <Dialog
-    ref="cookiesDialogRef"
+    ref="dialog"
     class="cookies-dialog"
     :position="position"
     :click-outside="clickOutside"
     :aria-label="ariaLabel || $t('cookies.heading')"
     :close-button-variant="closeButtonVariant"
     :close-button-radius="closeButtonRadius"
+    @close="cookiesDialogOpen = false"
   >
     <template #header>
       <div class="cookies-dialog-content">

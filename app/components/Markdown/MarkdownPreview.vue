@@ -52,6 +52,7 @@ const options = computed(() => ({
   trusted,
   headingOffset,
   tableLabel: t('aria.table'),
+  newWindowLabel: t('aria.open-new-window'),
 }));
 
 /**
@@ -244,8 +245,9 @@ watch(segments, highlightCode, { flush: 'post' });
   a {
     overflow-wrap: anywhere;
 
+    /* Decorative: the link says "(open in new window)" in hidden text */
     &[target='_blank']::after {
-      content: '' / '(open in nieuw venster)';
+      content: '' / '';
       display: inline-block;
       vertical-align: middle;
       width: 1em;

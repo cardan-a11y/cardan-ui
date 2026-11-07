@@ -73,8 +73,8 @@ const emit = defineEmits<{
             <Icon
               :name="
                 feature.value
-                  ? 'solar:check-circle-line-duotone'
-                  : 'solar:minus-circle-line-duotone'
+                  ? 'material-symbols:check-circle-outline-rounded'
+                  : 'material-symbols:do-not-disturb-on-outline-rounded'
               "
               :class="feature.value && 'has-feature'"
             />

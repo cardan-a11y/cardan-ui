@@ -1,5 +1,5 @@
 export function useToast() {
-  const toasts = useState<(Toast & { id: string })[]>('toasts', () => []);
+  const toasts = useState<(Toast & { id: string })[]>('cardan-ui:toasts', () => []);
 
   function createToast(toast: Toast) {
     const id = toast.id ?? crypto.randomUUID();

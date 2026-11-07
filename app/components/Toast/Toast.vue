@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { useWindowFocus } from '@vueuse/core';
-const focused = useWindowFocus();
+import { useFocusWithin, useMounted, useWindowFocus } from '@vueuse/core';
+const windowFocused = useWindowFocus();
+/** The server cannot know the window's focus, so it counts only after hydration. */
+const mounted = useMounted();
 
 const {
   color = 'accent',
@@ -8,16 +10,29 @@ const {
   icon = undefined,
   label = undefined,
   id = undefined,
+  role = undefined,
 } = defineProps<{
   color?: ToastColor;
   timeout?: number;
   icon?: string;
   label?: string;
   id?: string;
+  /** `alert` for a message that interrupts, `status` or none for the rest */
+  role?: 'status' | 'alert';
 }>();
 
+const toastElementRef = useTemplateRef('toastElement');
 const timerElementRef = useTemplateRef('timerElement');
 const toastHover = ref(false);
+const { focused: toastFocused } = useFocusWithin(toastElementRef);
+
+/** The timer waits while the pointer or keyboard focus is on the toast, or the window is in the background. */
+const timerPaused = computed(
+  () =>
+    toastHover.value ||
+    toastFocused.value ||
+    (mounted.value && !windowFocused.value),
+);
 
 const computedIcon = computed(() => {
   if (icon) return icon;
@@ -58,6 +73,7 @@ const emit = defineEmits<{
 <template>
   <section
     ref="toastElement"
+    :role="role"
     :class="[
       'toast',
       `toast-color--${color}`,
@@ -81,7 +97,7 @@ const emit = defineEmits<{
       class="toast__timer"
       :style="[
         `--animation-duration: ${timeout}ms`,
-        `--animation-play-state: ${toastHover || !focused ? 'paused' : 'running'}`,
+        `--animation-play-state: ${timerPaused ? 'paused' : 'running'}`,
       ]"
     />
 
@@ -137,13 +153,6 @@ const emit = defineEmits<{
   animation-delay: var(--duration-xl);
   animation-duration: var(--animation-duration);
   animation-play-state: var(--animation-play-state);
-}
-
-.toast__message {
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
 }
 
 .toast__icon {

@@ -1,5 +1,3 @@
-import { defaultIcons } from './utils/defaultIcons.ts';
-
 export default defineNuxtConfig({
   // Cardan UI and the Cardan Auth UI layer, which is demoed on the Auth UI pages
   extends: ['..', '../auth'],
@@ -80,7 +78,6 @@ export default defineNuxtConfig({
     clientBundle: {
       scan: true,
       sizeLimitKb: 256,
-      icons: defaultIcons,
     },
   },
 

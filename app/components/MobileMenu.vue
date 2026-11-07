@@ -2,7 +2,6 @@
 const { isLargeScreen } = useScreenSize();
 
 const {
-  teleportTo = '#teleports',
   width = 360,
   position = 'inline-start',
   buttonVariant = 'ghost',
@@ -27,7 +26,6 @@ const {
   hideCloseButton = false,
   closeOnDesktop = true,
 } = defineProps<{
-  teleportTo?: string;
   width?: number;
   position?: MobileMenuPosition;
   buttonVariant?: ButtonVariant;
@@ -56,9 +54,6 @@ const {
 const dialogTriggerRef = useTemplateRef<ButtonComponent>('dialogTrigger');
 const dialogElementRef = useTemplateRef<HTMLDialogElement>('dialogElement');
 const isVisible = ref(false);
-const isMounted = ref(false);
-
-onMounted(() => (isMounted.value = true));
 
 function handleDialogClick(event: MouseEvent) {
   if (!clickOutside) return;
@@ -71,18 +66,24 @@ function handleDialogClick(event: MouseEvent) {
 }
 
 function closeDialog() {
-  if (!isVisible.value) return;
+  const dialog = dialogElementRef.value;
 
-  dialogElementRef.value?.setAttribute('closing', '');
+  // As in Dialog: the DOM is the state, and the exit animation is awaited
+  // through the Web Animations API, which also settles when the animation is
+  // cancelled, where a single `animationend` listener never fires and leaves
+  // the menu open and the page behind it inert.
+  if (!dialog?.open || dialog.hasAttribute('closing')) return;
 
-  dialogElementRef.value?.addEventListener(
-    'animationend',
-    () => {
-      dialogElementRef.value?.removeAttribute('closing');
-      dialogElementRef.value?.close();
-    },
-    { once: true },
-  );
+  dialog.setAttribute('closing', '');
+
+  Promise.allSettled(dialog.getAnimations().map((a) => a.finished)).then(() => {
+    dialog.removeAttribute('closing');
+    // FocusLoop gets this state as a prop on the next render, after close(),
+    // so the page is still inert when the browser restores focus;
+    // focusDialogTrigger, on the close event, waits for it and moves focus
+    isVisible.value = false;
+    dialog.close();
+  });
 }
 
 function openDialog() {
@@ -92,10 +93,23 @@ function openDialog() {
   isVisible.value = true;
 }
 
-function focusDialogTrigger() {
-  setTimeout(() => {
-    dialogTriggerRef.value?.focusElement();
-  }, mdTransition);
+/**
+ * On the native close event, after the exit animation. The tick lets the
+ * closed state reach FocusLoop, which lifts the `inert` on the page first.
+ */
+async function focusDialogTrigger() {
+  await nextTick();
+  dialogTriggerRef.value?.focusElement();
+}
+
+/**
+ * Escape closes the dialog right after this event: the loop closes first.
+ * Only the dialog's own cancel: a file input fires one that bubbles here.
+ */
+function handleCancel(event: Event) {
+  if (event.target !== event.currentTarget) return;
+
+  isVisible.value = false;
 }
 
 defineExpose({
@@ -143,7 +157,8 @@ const emit = defineEmits<{
       @click="openDialog"
     />
 
-    <Teleport v-if="isMounted" :to="teleportTo">
+    <!-- Nuxt renders a teleport to #teleports on the server too -->
+    <Teleport to="#teleports">
       <dialog
         :id="id"
         ref="dialogElement"
@@ -152,6 +167,7 @@ const emit = defineEmits<{
         :aria-label="label || $t('aria.mobile-menu')"
         :style="`--width: ${width}px`"
         @click="handleDialogClick"
+        @cancel="handleCancel"
         @close="
           () => {
             isVisible = false;

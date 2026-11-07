@@ -52,11 +52,11 @@
     width: 1.5rem;
     height: 1.5rem;
 
-    &[class*='solar:close-circle-line-duotone'] {
+    &[class*='cancel-outline-rounded'] {
       color: var(--color-grey-graphic);
     }
 
-    &[class*='solar:check-circle-line-duotone'] {
+    &[class*='check-circle-outline-rounded'] {
       color: var(--color-green-graphic);
     }
   }

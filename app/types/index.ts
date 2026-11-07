@@ -12,19 +12,31 @@ import type Tabs from '../components/Tabs.vue';
 import type UserMenu from '../components/UserMenu.vue';
 
 declare global {
+  /** A toast for `useToast().createToast()`: the props of Toast, with an id of its own or a generated one */
   type Toast = {
     role?: 'status' | 'alert';
     color?: ToastColor;
     icon?: string;
     label?: string;
-    text?: string;
     id?: string;
     timeout?: number;
-    lines?: number;
-    hideTimer?: boolean;
   };
 
   type ToastColor = 'blue' | 'green' | 'red' | 'orange' | 'accent';
+
+  /**
+   * An option of Select: any object, whose fields the `value-key`, `label-key`
+   * and `disabled-key` props name; `lang` marks a label in another language.
+   */
+  type SelectOption = { lang?: string; [key: string]: unknown };
+
+  /** An option of CheckboxGroup and RadioGroup, as SelectOption with `disabled` and `hideLabel` fields */
+  type GroupOption = {
+    lang?: string;
+    disabled?: boolean;
+    hideLabel?: boolean;
+    [key: string]: unknown;
+  };
 
   type TabOption = {
     value: string;

@@ -146,33 +146,33 @@ useHead({ title: 'Pricing' });
             </tr>
             <tr>
               <th scope="row">Continue WCAG monitoring</th>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
             </tr>
             <tr>
               <th scope="row">Accessibility dashboard</th>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
             </tr>
             <tr>
               <th scope="row">Inzicht in toegankelijkheidsstatus</th>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
             </tr>
             <tr>
               <th scope="row">Overzicht toegankelijkheidsproblemen</th>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
             </tr>
             <tr>
               <th scope="row">Release monitoring (na updates)</th>
-              <td><Icon name="solar:close-circle-line-duotone" /></td>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
+              <td><Icon name="material-symbols:cancel-outline-rounded" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
             </tr>
           </tbody>
 
@@ -188,21 +188,21 @@ useHead({ title: 'Pricing' });
             </tr>
             <tr>
               <th scope="row">Concrete verbeter-roadmap</th>
-              <td><Icon name="solar:close-circle-line-duotone" /></td>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
+              <td><Icon name="material-symbols:cancel-outline-rounded" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
             </tr>
             <tr>
               <th scope="row">Strategische toegankelijkheidsplanning</th>
-              <td><Icon name="solar:close-circle-line-duotone" /></td>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
+              <td><Icon name="material-symbols:cancel-outline-rounded" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
             </tr>
             <tr>
               <th scope="row">Executive rapportages (management niveau)</th>
-              <td><Icon name="solar:close-circle-line-duotone" /></td>
-              <td><Icon name="solar:close-circle-line-duotone" /></td>
-              <td><Icon name="solar:check-circle-line-duotone" /></td>
+              <td><Icon name="material-symbols:cancel-outline-rounded" /></td>
+              <td><Icon name="material-symbols:cancel-outline-rounded" /></td>
+              <td><Icon name="material-symbols:check-circle-outline-rounded" /></td>
             </tr>
           </tbody>
         </PricingTable>

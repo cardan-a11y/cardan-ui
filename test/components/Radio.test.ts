@@ -34,4 +34,33 @@ describe('RadioGroup', () => {
     expect(wrapper.findAll('input[type="radio"]')).toHaveLength(2);
     expect(await checkA11y()).toHaveNoViolations();
   });
+
+  it('keeps its error for the form to reveal when required', async () => {
+    const wrapper = await mountSuspended(RadioGroup, {
+      props: {
+        label: 'Answer',
+        required: true,
+        options: [
+          { value: 'yes', label: 'Yes' },
+          { value: 'no', label: 'No' },
+        ],
+        // As a v-model passes it before a choice
+        modelValue: undefined,
+      },
+      attachTo: document.body,
+    });
+
+    const error = document.getElementById(
+      wrapper.get('fieldset').attributes('aria-describedby') ?? '',
+    );
+    expect(error?.textContent).toContain('Answer is missing');
+    expect(wrapper.get('.radios-wrapper').classes()).not.toContain(
+      'show-invalid',
+    );
+
+    await wrapper.setProps({ showInvalid: true });
+
+    expect(wrapper.get('.radios-wrapper').classes()).toContain('show-invalid');
+    expect(await checkA11y()).toHaveNoViolations();
+  });
 });

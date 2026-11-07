@@ -1,3 +1,5 @@
+import { bundledIcons } from './app/utils/icons.ts';
+
 export default defineNuxtConfig({
   $development: {
     modules: ['@nuxtjs/html-validator'],
@@ -44,6 +46,22 @@ export default defineNuxtConfig({
 
   colorMode: {
     classSuffix: '-mode',
+  },
+
+  // The icons the components show on first paint, in every project's client
+  // bundle; a project's own list is merged with it
+  icon: {
+    clientBundle: {
+      icons: bundledIcons,
+    },
+  },
+
+  runtimeConfig: {
+    public: {
+      // The Google Tag Manager container of CookiesDialog, NUXT_PUBLIC_GTM_ID
+      // in a project's environment
+      gtmId: '',
+    },
   },
 
   i18n: {

@@ -67,6 +67,24 @@ describe('MarkdownPreview', () => {
     expect(await checkA11y()).toHaveNoViolations();
   });
 
+  it('says in hidden text that a link opens in a new window', async () => {
+    const wrapper = await mountSuspended(MarkdownPreview, {
+      props: {
+        content:
+          'The [guide](https://example.com/guide "The guide") and the [docs](https://example.com/docs).',
+      },
+      attachTo: document.body,
+    });
+
+    const [guide, docs] = wrapper.findAll('a');
+    expect(guide?.attributes('target')).toBe('_blank');
+    expect(guide?.attributes('title')).toBe('The guide');
+    expect(docs?.attributes('title')).toBe('open in new window');
+    expect(guide?.get('.visuallyhidden').text()).toBe('(open in new window)');
+    expect(docs?.get('.visuallyhidden').text()).toBe('(open in new window)');
+    expect(await checkA11y()).toHaveNoViolations();
+  });
+
   it('leaves a code block in an unknown language plain and escaped', async () => {
     const wrapper = await mountSuspended(MarkdownPreview, {
       props: { content: '```brainfuck\n<b>+[-]</b>\n```' },

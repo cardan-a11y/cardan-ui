@@ -21,6 +21,8 @@
   --cardan-beige: #f7f5f2;
   --cardan-beige-mid: #ebe6e0;
   --cardan-beige-sand: #e8e1d9;
+  /* Kaart: the card surface of the brand book */
+  --cardan-card: #fbfaf9;
 
   --cardan-error: #cc2828;
   --cardan-error-text: #ad2222;
@@ -95,7 +97,7 @@
     var(--cardan-error) 65%,
     var(--cardan-white)
   );
-  --color-red-graphic: var(--cardan-error-text);
+  --color-red-graphic: var(--cardan-error);
 
   /* Ochre: data and status only */
   --color-orange: var(--cardan-ochre-on-dark);
@@ -191,7 +193,7 @@
   --color-grey-light: var(--cardan-beige-sand);
   --color-grey-bg: var(--cardan-beige-mid);
   --color-bg: var(--cardan-beige);
-  --color-card-bg: var(--cardan-white);
+  --color-card-bg: var(--cardan-card);
   --color-white: var(--cardan-white);
   --color-track: var(--cardan-beige-sand);
 
@@ -215,7 +217,7 @@
   --color-yellow: hsl(50 100% 46%);
   --color-yellow-bg: hsl(50 80% 80%);
   --color-yellow-text: hsl(50 100% 24%);
-  --color-yellow-graphic: hsl(45 80% 40%);
+  --color-yellow-graphic: hsl(45 80% 36%);
 
   --color-green: var(--cardan-green);
   --color-green-bg: var(--cardan-green-light);
@@ -294,6 +296,14 @@
   @media (min-width: 480px) {
     --app-padding-inline: 1.5rem;
   }
+
+  /* The brand gradient, from the accent to the green surface: once per page,
+     under a card. Also in dark mode, where the brand book has a solid surface */
+  --gradient-bg: linear-gradient(
+    in srgb 110.32deg,
+    var(--color-accent-bg) 0%,
+    var(--color-green-bg) 76.34%
+  );
 
   /* Backdrop behind Dialog and MobileMenu */
   --color-backdrop: rgb(20 20 19 / 60%);

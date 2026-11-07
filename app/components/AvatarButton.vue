@@ -18,7 +18,7 @@ const {
 const avatarButtonRef = useTemplateRef<HTMLButtonElement>('avatarButton');
 
 function focusElement() {
-  setTimeout(() => avatarButtonRef.value?.focus());
+  avatarButtonRef.value?.focus();
 }
 
 defineExpose({

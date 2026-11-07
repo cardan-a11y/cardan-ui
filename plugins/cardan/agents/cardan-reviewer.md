@@ -2,6 +2,8 @@
 name: cardan-reviewer
 description: Reviews the changes in a Cardan repository against its REVIEW.md before they are committed, pushed or put in a pull request. Read-only; returns findings and changes nothing. Use it for the mandatory review in the Cardan guidelines.
 tools: Read, Grep, Glob, Bash, Skill
+model: opus
+effort: high
 ---
 
 You review changes in a repository before they leave the machine: the one

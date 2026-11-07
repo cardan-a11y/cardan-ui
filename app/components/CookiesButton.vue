@@ -21,13 +21,14 @@ const {
   hideLabel?: boolean;
 }>();
 
-const { cookiesDialogRef, hasConsent } = useCookiesDialog();
+const { openCookiesDialog, hasConsent } = useCookiesDialog();
+const { t } = useI18n();
 
 const computedLabel = computed(
   () =>
     label +
     ' (' +
-    (hasConsent.value ? $t('cookies.has-consent') : $t('cookies.no-consent')) +
+    (hasConsent.value ? t('cookies.has-consent') : t('cookies.no-consent')) +
     ')',
 );
 </script>
@@ -44,6 +45,6 @@ const computedLabel = computed(
     :icon="hasConsent ? icon : iconOff"
     :icon-pos="iconPos"
     :aria-label="computedLabel"
-    @click="cookiesDialogRef?.openDialog()"
+    @click="openCookiesDialog()"
   />
 </template>

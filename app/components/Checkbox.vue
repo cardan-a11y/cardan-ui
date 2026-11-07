@@ -9,6 +9,8 @@ const {
   name = undefined,
   value = undefined,
   tabindex = undefined,
+  errorMessage = undefined,
+  required,
 } = defineProps<{
   label?: string;
   title?: string;
@@ -17,10 +19,30 @@ const {
   required?: boolean;
   disabled?: boolean;
   hideLabel?: boolean;
+  showInvalid?: boolean;
+  /** Under the box when it is required and not ticked; "Tick this box to continue" by default */
+  errorMessage?: string;
   tabindex?: string;
   id?: string;
   variant?: 'default' | '3d';
 }>();
+
+const { t } = useI18n();
+
+const computedErrorMessage = computed(
+  () => errorMessage ?? t('form.checkbox-required'),
+);
+
+const isTicked = computed(() =>
+  Array.isArray(model.value)
+    ? value !== undefined && model.value.includes(value)
+    : !!model.value,
+);
+
+// The error text describes the box only while it applies
+const describedBy = computed(() =>
+  required && !isTicked.value ? `error-${id}` : undefined,
+);
 </script>
 
 <template>
@@ -28,6 +50,7 @@ const {
     :class="[
       'checkbox-wrapper',
       disabled && 'disabled',
+      showInvalid && 'show-invalid',
       `checkbox-variant--${variant}`,
     ]"
   >
@@ -37,7 +60,9 @@ const {
       :name="name"
       :value="value"
       :disabled="disabled"
+      :required="required"
       :tabindex="tabindex"
+      :aria-describedby="describedBy"
       type="checkbox"
     />
 
@@ -54,6 +79,8 @@ const {
     </label>
 
     <slot name="default" />
+
+    <InputError v-if="required" :id="id" :error-text="computedErrorMessage" />
   </div>
 </template>
 
@@ -72,6 +99,7 @@ const {
 
 .checkbox-wrapper {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   transition-property: opacity;
   transition-duration: var(--duration-sm);
@@ -81,6 +109,11 @@ const {
   }
 
   label {
+    /* Wraps its text beside the box instead of dropping under it: the row
+       wraps for the error text */
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: max-content;
     font-size: var(--font-size-sm);
     padding-inline-start: 0.5rem;
   }
@@ -168,6 +201,22 @@ const {
       width: 1.25rem;
       height: 1.25rem;
     }
+  }
+}
+
+.checkbox-wrapper > .error-wrapper {
+  flex-basis: 100%;
+}
+
+/* A required box that is not ticked, once the form reports its state */
+:where(.checkbox-wrapper.show-invalid:has(:invalid)),
+:where(.show-invalid) .checkbox-wrapper:has(:invalid) {
+  input[type='checkbox']::before {
+    border-color: var(--color-red-graphic);
+  }
+
+  .error-wrapper .error {
+    display: flex;
   }
 }
 </style>

@@ -73,7 +73,9 @@
     "invalid-url": "Geen geldige URL",
     "invalid-value": "Waarde ongeldig",
     "missing-value": "{item} ontbreekt",
-    "required": "vereist"
+    "required": "vereist",
+    "checkbox-required": "Vink dit vakje aan om verder te gaan",
+    "checkbox-group-required": "Vink minstens één optie aan"
   },
   "files": {
     "browse": "Selecteer bestand",

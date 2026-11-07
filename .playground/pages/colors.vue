@@ -21,6 +21,7 @@ useHead({ title: 'Colors' });
       <h2>Neutral</h2>
       <div class="color-swatches-grid">
         <ColorSwatch color="white" />
+        <ColorSwatch color="card-bg" />
         <ColorSwatch color="bg" />
         <ColorSwatch color="grey-bg" />
         <ColorSwatch color="grey-light" />
@@ -74,6 +75,17 @@ useHead({ title: 'Colors' });
         <ColorSwatch color="pink-graphic" />
       </div>
     </Card>
+
+    <section class="gradient-demo" aria-labelledby="gradient-title">
+      <Card>
+        <h2 id="gradient-title">Gradient</h2>
+        <p>
+          The brand gradient, <code>--gradient-bg</code>, from
+          <code>--color-accent-bg</code> to <code>--color-green-bg</code>:
+          once per page, under a card, in both modes.
+        </p>
+      </Card>
+    </section>
   </div>
 </template>
 
@@ -85,5 +97,20 @@ useHead({ title: 'Colors' });
   gap: 0.5rem;
 
   padding-inline: 1rem;
+}
+
+.gradient-demo {
+  padding-block: 2.5rem;
+  padding-inline: 1rem;
+  border-radius: var(--radius-lg);
+  background: var(--gradient-bg);
+
+  @media (min-width: 480px) {
+    padding: 3rem;
+  }
+
+  .card {
+    margin-block-end: 0;
+  }
 }
 </style>

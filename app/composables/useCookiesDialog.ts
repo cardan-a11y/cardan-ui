@@ -7,18 +7,22 @@ type CookieConsent = {
 // Shared consent state. CookiesDialog loads GTM and applies the choice, so
 // any number of components can call this without repeating that work.
 export function useCookiesDialog() {
-  const cookiesDialogRef = useState<DialogComponent | null>(
-    'cookiesDialogRef',
-    () => null,
+  /** Whether CookiesDialog is open: set it and the dialog follows */
+  const cookiesDialogOpen = useState<boolean>(
+    'cardan-ui:cookies-dialog-open',
+    () => false,
   );
 
-  const cookieConsent = useState<CookieConsent>('cookieConsent', () => ({
-    necessary: false,
-    analytics: false,
-    marketing: false,
-  }));
+  const cookieConsent = useState<CookieConsent>(
+    'cardan-ui:cookie-consent',
+    () => ({
+      necessary: false,
+      analytics: false,
+      marketing: false,
+    }),
+  );
 
-  // The choice is remembered for a year
+  // The choice is remembered for a year; the cookie keeps its name
   const consentCookie = useCookie<CookieConsent | null>('cookieConsent', {
     maxAge: 60 * 60 * 24 * 365,
   });
@@ -27,13 +31,17 @@ export function useCookiesDialog() {
     () => cookieConsent.value?.analytics && cookieConsent.value?.marketing,
   );
 
+  function openCookiesDialog() {
+    cookiesDialogOpen.value = true;
+  }
+
   function saveConsent(granted: boolean) {
     const consent = { necessary: true, analytics: granted, marketing: granted };
 
     consentCookie.value = consent;
     cookieConsent.value = { ...consent };
 
-    cookiesDialogRef.value?.closeDialog();
+    cookiesDialogOpen.value = false;
   }
 
   function acceptCookies() {
@@ -47,8 +55,9 @@ export function useCookiesDialog() {
   return {
     cookieConsent,
     consentCookie,
-    cookiesDialogRef,
+    cookiesDialogOpen,
     hasConsent,
+    openCookiesDialog,
     acceptCookies,
     denyCookies,
   };

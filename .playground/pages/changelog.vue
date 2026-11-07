@@ -7,6 +7,178 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.3.7" date="2026-11-06">
+      <ul>
+        <li>
+          The <code>main.css</code> template: the light card surface is Kaart
+          from the brand book, <code>#FBFAF9</code> (the new
+          <code>--cardan-card</code>), where cards were white; text on it is
+          14.6:1, and every text and graphic token still passes
+        </li>
+        <li>
+          Tabs: the selected tab of <code>color="green"</code> has
+          <code>--color-green-text</code> text (5.97:1 on the new card
+          surface, where the base green is 4.43:1) and a
+          <code>--color-green-graphic</code> border
+        </li>
+        <li>
+          The <code>main.css</code> template has the brand gradient,
+          <code>--gradient-bg</code>: Lavender to Mint from
+          <code>--color-accent-bg</code> and <code>--color-green-bg</code>, in
+          both modes (the brand book has a solid surface in dark mode), once
+          per page under a card. The colors page shows it, in place of the playground's
+          unused accent gradients
+        </li>
+        <li>
+          The layer also bundles the 17 icons that two or more projects use
+        </li>
+        <li>
+          The <code>main.css</code> template: the dark
+          <code>--color-red-graphic</code> is the error colour (3.42:1, was
+          2.66:1) and the light <code>--color-yellow-graphic</code> is darker
+          (3.37:1, was 2.77:1), so error borders and icons and yellow
+          indicators reach 3:1; projects paste the two values
+        </li>
+        <li>
+          Toast pauses its timer while keyboard focus is in it, not only while
+          the pointer is on it or the window is in the background
+        </li>
+        <li>
+          Toast declares its <code>role</code> prop (<code>status</code> or
+          <code>alert</code>); the <code>Toast</code> type no longer lists
+          <code>text</code>, <code>lines</code> and <code>hideTimer</code>,
+          which the component never showed
+        </li>
+        <li>
+          A link in MarkdownPreview and in the MarkdownEditor preview says
+          "(open in new window)" in hidden text, in the current language, and
+          gets that title only when it has none of its own; the alternative
+          text of the icon after it was Dutch on every page
+        </li>
+        <li>
+          YouTube: the label of the play button is translated (was Dutch)
+        </li>
+        <li>
+          Checkbox sets <code>required</code> on its input, so a Form no longer
+          submits with a required box unticked, and shows "Tick this box to
+          continue" under the box once the form reports it; CheckboxGroup has
+          a <code>required</code> prop that asks for at least one box, through
+          the validity of its boxes, with "Tick at least one option" under the
+          group. Both take an <code>error-message</code> and
+          <code>show-invalid</code>, like Input
+        </li>
+        <li>
+          Tabs: an attribute on the component lands on the wrapper only (was
+          also on the tablist); the arrow keys act on keydown instead of keyup
+          and no longer scroll the page, and Home and End go to the first and
+          last tab
+        </li>
+        <li>
+          RadioGroup shows its error only once the form reports it, as the
+          other fields do (a required group showed it from the start), and
+          takes <code>error-message</code> and <code>show-invalid</code>
+        </li>
+        <li>
+          Select, CheckboxGroup and RadioGroup type their options: the
+          <code>value-key</code>, <code>label-key</code> and the other key
+          props must name a field of the option (the new
+          <code>SelectOption</code> and <code>GroupOption</code> types)
+        </li>
+        <li>
+          Focus moves on Vue's next tick instead of a timer: into a Dialog or
+          MobileMenu (FocusLoop), back to the trigger of UserMenu and
+          MobileMenu, and into a MarkdownEditor with <code>autofocus</code>
+        </li>
+        <li>
+          Focus returns to the element that opened a Dialog when it closes,
+          also with Escape: FocusLoop lifts the <code>inert</code> it put on
+          the page the moment it closes, before the browser restores focus,
+          where it used to lift it a tick later and the restore failed
+        </li>
+        <li>
+          Form focuses the first invalid control also when it is in a
+          fieldset, as in a required RadioGroup or CheckboxGroup: until now
+          the fieldset got the focus call, which does nothing, and focus
+          stayed on the submit button
+        </li>
+        <li>
+          LanguageSelect and LanguageSwitcher list the locales of the i18n
+          config, and DatePicker maps its date-fns locale by locale code, so a
+          language is added in the config only
+        </li>
+        <li>
+          The layer bundles the icons its components show on first paint
+          (<code>bundledIcons</code> in <code>app/utils/icons.ts</code>) for
+          every project, declares <code>runtimeConfig.public.gtmId</code> for
+          CookiesDialog, and says at startup which components need
+          <code>@nuxt/image</code> or <code>@nuxt/scripts</code> when a
+          project does not register them
+        </li>
+        <li>
+          <code>useCookiesDialog()</code> holds an open flag
+          (<code>cookiesDialogOpen</code>, <code>openCookiesDialog()</code>)
+          instead of the dialog instance, and the shared state keys of
+          <code>useToast()</code> and <code>useCookiesDialog()</code> are
+          prefixed <code>cardan-ui:</code>
+        </li>
+        <li>
+          The field components (Input, Select, Textarea, MultiSelect,
+          DatePicker, RangeInput) render through the new FormField component,
+          so the label, chip, error and instruction they share are one piece
+          of markup and CSS; the error text sits directly under the field in
+          every field, above the instruction
+        </li>
+        <li>
+          FileInput keeps the chosen file as its value while an image is
+          compressed, instead of an empty value until the compressed file
+          arrives
+        </li>
+        <li>
+          PricingCard draws its feature list with Material Symbols instead of
+          the <code>solar</code> icons
+        </li>
+        <li>
+          MobileMenu renders its dialog on the server through Nuxt's
+          <code>#teleports</code>, always: the <code>teleport-to</code> prop is
+          removed; VideoPlayer prefixes its data key;
+          <code>useScreenSize()</code> is a shared composable made on first
+          use; the components read <code>t()</code> from
+          <code>useI18n()</code> in script instead of the global
+          <code>$t</code>
+        </li>
+        <li>
+          Input: a number outside <code>min</code> and <code>max</code> reaches
+          the model and the field reports it as invalid, instead of the field
+          showing a number the model did not have
+        </li>
+        <li>
+          MobileMenu closes the way Dialog does, through the Web Animations
+          API, so a cancelled animation no longer leaves it open
+        </li>
+        <li>
+          ThemeToggle keeps its place on the server with an empty box of its
+          size, as ThemeSwitch does
+        </li>
+        <li>
+          UserMenu names its menu with a generated id, so two menus on a page
+          no longer share one
+        </li>
+        <li>
+          <code>downloadFile()</code> and <code>downloadCSV()</code> are removed
+          from the utilities: no project used them, and
+          <code>downloadFile()</code> saved every file with a <code>.pdf</code>
+          extension
+        </li>
+        <li>
+          The cardan Claude Code plugin: work in cardan-ui starts on the
+          release branch of the next version, so fixes ship together; the
+          release skill and the migration guide give the plugin update with
+          <code>--scope user</code>; the guidelines ask browser checks to
+          snapshot the element under test rather than the whole page
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.3.6" date="2026-11-06">
       <ul>
         <li>

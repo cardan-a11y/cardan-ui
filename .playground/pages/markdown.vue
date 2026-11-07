@@ -4,6 +4,8 @@ import md from '~/data/demo.md?raw';
 useHead({ title: 'Markdown components' });
 
 const content = ref(md);
+// autofocus works on mount: the switch remounts the editor
+const editorAutofocus = ref(false);
 
 // Text that may come from anyone: raw HTML, attributes and CSS stay out
 // unless the text is trusted.
@@ -191,8 +193,18 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
     </Card>
 
     <Card class="mbs-2">
-      <h2>Markdown Editor</h2>
-      <MarkdownEditor v-model="content" label="Markdown Editor" hide-label />
+      <div class="section-topbar">
+        <h2>Markdown Editor</h2>
+
+        <Switch v-model="editorAutofocus" label="autofocus (remounts)" />
+      </div>
+      <MarkdownEditor
+        :key="String(editorAutofocus)"
+        v-model="content"
+        :autofocus="editorAutofocus"
+        label="Markdown Editor"
+        hide-label
+      />
     </Card>
   </div>
 </template>

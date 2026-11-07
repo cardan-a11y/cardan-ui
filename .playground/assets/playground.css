@@ -11,57 +11,6 @@
 
 /* Playground */
 
-:root {
-  --color-accent-darker: color-mix(
-    in srgb,
-    var(--color-accent) 20%,
-    var(--color-black)
-  );
-
-  --color-accent-lighter: color-mix(
-    in srgb,
-    var(--color-accent) 20%,
-    var(--color-white)
-  );
-
-  --gradient-accent-bg: linear-gradient(
-    to bottom in oklch,
-    var(--color-accent-bg),
-    var(--color-accent-lighter)
-  );
-
-  --gradient-accent-text: linear-gradient(
-    to right in oklch,
-    var(--color-accent),
-    var(--color-accent-bg)
-  );
-
-  --gradient-accent-graphic: linear-gradient(
-    to right in oklch,
-    var(--color-accent),
-    var(--color-accent-bg)
-  );
-
-  .gradient-text {
-    color: transparent;
-    background-clip: text;
-    background-image: var(--gradient-accent-text);
-  }
-
-  .gradient-link {
-    text-decoration: none;
-    background-image: var(--gradient-accent-graphic);
-    background-repeat: no-repeat;
-    background-position: left bottom;
-    background-size: 0% 2px;
-    transition: background-size var(--duration-md);
-
-    &:hover {
-      background-size: 100% 2px;
-    }
-  }
-}
-
 .c-grey-bg {
   color: var(--color-grey-bg);
 }
