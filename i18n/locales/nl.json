@@ -85,8 +85,9 @@
     "or-drop-file": "of sleep een bestand",
     "open": "Bestand openen",
     "thumb": "Thumbnail van {file}",
-    "too-big": "Bestand is te groot",
-    "button-text": "Klik om te uploaden of sleep een bestand"
+    "too-big": "Dit bestand is groter dan {size}. Kies een kleiner bestand.",
+    "button-text": "Klik om te uploaden of sleep een bestand",
+    "wrong-type": "Dit bestandstype wordt niet ondersteund. Kies een bestand van het type {types}."
   },
   "filters": {
     "apply": "Filters toepassen",
