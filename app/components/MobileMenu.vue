@@ -22,7 +22,7 @@ const {
   closeButtonVariant = 'ghost',
   closeButtonRadius = 'full',
   closeButtonSize = 'md',
-  closeButtonIconSize = 'md',
+  closeButtonIconSize = undefined,
   hideCloseButton = false,
   closeOnDesktop = true,
 } = defineProps<{
