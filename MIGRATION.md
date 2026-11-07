@@ -103,3 +103,7 @@ A release that needs nothing from projects has a one-line section that says so; 
 - **FileInput keeps the chosen file as its value** while an image is compressed, and the compressed file replaces it; the value no longer goes empty in between. A watcher on the value sees the chosen file first and then the compressed one.
 - **A link in a markdown text ends in hidden text "(open in new window)"** in the current language, and gets that title only when it has none of its own. The icon after the link is decorative now; CSS that changed its alternative text can go.
 - **The cardan plugin**: run `claude plugin update cardan@cardan-ui --scope user`. The reviewer runs on Opus at high effort, work in cardan-ui starts on a `release/<version>` branch, and this file keeps only what projects must do.
+
+### 2.3.8
+
+2.3.8 needs nothing from projects.

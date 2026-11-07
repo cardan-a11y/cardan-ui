@@ -7,6 +7,47 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.3.8" date="2026-11-07">
+      <ul>
+        <li>
+          FileInput has <code>mode="document"</code>, for a file that is
+          uploaded as it is, such as a PDF: it checks the file against the
+          extensions in <code>accept</code> (<code>pdf,docx</code>), lists them
+          in its instruction ("PDF or DOCX"), and hands a file that passes to
+          the parent with <code>select</code>, uncompressed. With
+          <code>hide-zone</code> only the error shows, and
+          <code>open()</code> opens the picker, for a "Replace" button. The
+          default, <code>mode="image"</code>, keeps the file as the value, as
+          before
+        </li>
+        <li>
+          FileInput has <code>shape="circle"</code>, for an avatar: a pill led
+          by the current picture, or by the upload icon until there is one
+        </li>
+        <li>
+          FileInput in image mode shows a picture icon until a file is chosen
+        </li>
+        <li>
+          FileInput shows the picture of <code>placeholder-url</code> also when
+          it arrives after mount, and goes back to it when the parent clears
+          the value (it read the prop once)
+        </li>
+        <li>
+          FileInput: the preview's text is its <code>alt</code> (was an empty
+          <code>alt</code> with an <code>aria-label</code>); a pasted file is
+          checked before <code>paste</code> fires; the same error again is
+          announced again; a file that is too big gets "This file is larger
+          than 5 MB. Choose a smaller file."
+        </li>
+        <li>
+          Dialog and MobileMenu: the icon of the close button has the size of
+          the Button's icons, unless <code>close-button-icon-size</code> sets
+          one (was <code>md</code>)
+        </li>
+        <li>LanguageSelect: the options have a grey border (was the accent)</li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.3.7" date="2026-11-07">
       <ul>
         <li>
