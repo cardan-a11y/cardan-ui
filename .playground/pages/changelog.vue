@@ -7,7 +7,7 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
-    <ChangelogEntry v="2.3.7" date="2026-11-06">
+    <ChangelogEntry v="2.3.7" date="2026-11-07">
       <ul>
         <li>
           The <code>main.css</code> template: the light card surface is Kaart
