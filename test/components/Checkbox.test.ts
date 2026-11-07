@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { nextTick, reactive } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Checkbox, CheckboxGroup } from '#components';
 import { checkA11y } from '../a11y';
@@ -86,5 +87,22 @@ describe('CheckboxGroup', () => {
 
     expect(boxes.every((box) => box.checkValidity())).toBe(true);
     expect(await checkA11y()).toHaveNoViolations();
+  });
+
+  it('asks for one box also of a box added to the options in place', async () => {
+    const options = reactive([{ value: 'cheese', label: 'Cheese' }]);
+    const wrapper = await mountSuspended(CheckboxGroup, {
+      props: { label: 'Toppings', required: true, options, modelValue: [] },
+      attachTo: document.body,
+    });
+
+    options.push({ value: 'ham', label: 'Ham' });
+    await nextTick();
+
+    const boxes = wrapper
+      .findAll('input[type="checkbox"]')
+      .map((box) => box.element as HTMLInputElement);
+    expect(boxes).toHaveLength(2);
+    expect(boxes[1]?.validationMessage).toBe('Tick at least one option');
   });
 });

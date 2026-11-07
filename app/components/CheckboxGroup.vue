@@ -77,7 +77,9 @@ function applyValidity() {
 
 onMounted(applyValidity);
 
+// Deep, so a box added to the options in place gets its validity too
 watch([hasSelection, message, () => required, () => options], applyValidity, {
+  deep: true,
   flush: 'post',
 });
 </script>

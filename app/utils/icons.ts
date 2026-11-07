@@ -56,7 +56,7 @@ const componentIcons = [
 
 /**
  * The icons that two or more of the Cardan projects use (cardan-lms-nuxt,
- * cardan-auditor-nuxt, cardan-cms-nuxt and cardan-support, November 2026).
+ * cardan-auditor-nuxt, cardan-cms-nuxt and cardan-support-nuxt, November 2026).
  */
 const projectIcons = [
   'material-symbols:arrow-downward',

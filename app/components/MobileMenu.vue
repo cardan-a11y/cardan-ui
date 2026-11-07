@@ -78,7 +78,9 @@ function closeDialog() {
 
   Promise.allSettled(dialog.getAnimations().map((a) => a.finished)).then(() => {
     dialog.removeAttribute('closing');
-    // The loop first, so the page is not inert when the trigger takes focus
+    // FocusLoop gets this state as a prop on the next render, after close(),
+    // so the page is still inert when the browser restores focus;
+    // focusDialogTrigger, on the close event, waits for it and moves focus
     isVisible.value = false;
     dialog.close();
   });
