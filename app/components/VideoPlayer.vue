@@ -28,7 +28,7 @@ const metadataUrl = computed(() => {
 
 const { data: videoData } = await useAsyncData<VideoMetaData>(
   `video:${props.url ?? ''}`,
-  () => $fetch(metadataUrl.value),
+  () => $fetch<VideoMetaData>(metadataUrl.value),
   {
     lazy: true,
   },

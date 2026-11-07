@@ -39,12 +39,31 @@ watch(cookiesDialogOpen, (open) => {
   else dialogRef.value?.closeDialog();
 });
 
-const consentTrigger = useScriptTriggerConsent();
+/**
+ * The parts of @nuxt/scripts this dialog uses. In a project without the
+ * module, Nuxt's stubs type its composables as `void`, and they throw when
+ * called: the dialog needs the module, which the layer says at startup. Typed
+ * here, the dialog type-checks in every project that extends the layer.
+ */
+type ConsentCommand = [
+  command: 'consent',
+  type: 'default' | 'update',
+  params: Record<string, 'granted' | 'denied'>,
+];
+interface ConsentTrigger extends Promise<void> {
+  accept: () => void;
+}
+interface GoogleTagManager {
+  proxy: { dataLayer: { push: (command: IArguments) => void } };
+  remove: () => void;
+}
+
+const consentTrigger = useScriptTriggerConsent() as unknown as ConsentTrigger;
 
 const gtm = useScriptGoogleTagManager({
   id: useRuntimeConfig().public.gtmId,
 
-  onBeforeGtmStart: (gtag) => {
+  onBeforeGtmStart: (gtag: (...command: ConsentCommand) => void) => {
     gtag('consent', 'default', {
       ad_storage: 'denied',
       ad_user_data: 'denied',
@@ -58,18 +77,12 @@ const gtm = useScriptGoogleTagManager({
   scriptOptions: {
     trigger: consentTrigger,
   },
-});
+}) as unknown as GoogleTagManager;
 
 // GTM only reads gtag commands from an Arguments object, not from an array
-function gtag(
-  ..._args: [
-    command: 'consent',
-    type: 'default' | 'update',
-    params: Record<string, 'granted' | 'denied'>,
-  ]
-) {
+function gtag(..._command: ConsentCommand) {
   // eslint-disable-next-line prefer-rest-params
-  gtm.proxy.dataLayer.push(arguments as unknown as unknown[]);
+  gtm.proxy.dataLayer.push(arguments);
 }
 
 function updateConsent(value: 'granted' | 'denied') {
