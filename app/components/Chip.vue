@@ -46,6 +46,7 @@ const formattedLabel = computed(() =>
     :style="computedStyle"
   >
     <slot name="inline-start" />
+
     <Icon v-if="icon" :name="icon" />
 
     <span v-if="label !== undefined" class="chip-text">{{

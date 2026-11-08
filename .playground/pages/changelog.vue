@@ -7,6 +7,52 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.3.8" date="2026-11-08">
+      <ul>
+        <li>
+          Added props to FileInput component:
+          <ul>
+            <li>
+              Add <code>mode</code> prop. Set to <code>document</code> for files
+              that are uploaded as they are, such as a PDF: the file is checked
+              against the extensions in <code>accept</code> and passed to the
+              parent with the <code>select</code> event. Defaults to
+              <code>image</code>.
+            </li>
+            <li>
+              Add <code>shape</code> prop. Set to <code>circle</code> for avatar
+              upload buttons.
+            </li>
+            <li>
+              Add <code>hide-zone</code> prop. Shows only the error, for a
+              "Replace" button that opens the picker with <code>open()</code>.
+            </li>
+          </ul>
+        </li>
+        <li>
+          Fixed in FileInput component:
+          <ul>
+            <li>
+              The preview follows <code>placeholder-url</code> when it changes
+              after mount, and returns to it when the parent clears the value.
+            </li>
+            <li>
+              The preview image has a real <code>alt</code> text, instead of an
+              empty <code>alt</code> with an <code>aria-label</code>.
+            </li>
+            <li>
+              A pasted file is checked before the <code>paste</code> event
+              fires, so the parent reads the right <code>validity</code>.
+            </li>
+            <li>
+              The error for a file that is too big names the limit: "This file
+              is larger than 5 MB. Choose a smaller file."
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.3.7" date="2026-11-07">
       <ul>
         <li>
@@ -17,17 +63,17 @@ useHead({ title: 'Changelog' });
         </li>
         <li>
           Tabs: the selected tab of <code>color="green"</code> has
-          <code>--color-green-text</code> text (5.97:1 on the new card
-          surface, where the base green is 4.43:1) and a
+          <code>--color-green-text</code> text (5.97:1 on the new card surface,
+          where the base green is 4.43:1) and a
           <code>--color-green-graphic</code> border
         </li>
         <li>
           The <code>main.css</code> template has the brand gradient,
           <code>--gradient-bg</code>: Lavender to Mint from
           <code>--color-accent-bg</code> and <code>--color-green-bg</code>, in
-          both modes (the brand book has a solid surface in dark mode), once
-          per page under a card. The colors page shows it, in place of the playground's
-          unused accent gradients
+          both modes (the brand book has a solid surface in dark mode), once per
+          page under a card. The colors page shows it, in place of the
+          playground's unused accent gradients
         </li>
         <li>
           The layer also bundles the 17 icons that two or more projects use
@@ -36,8 +82,8 @@ useHead({ title: 'Changelog' });
           The <code>main.css</code> template: the dark
           <code>--color-red-graphic</code> is the error colour (3.42:1, was
           2.66:1) and the light <code>--color-yellow-graphic</code> is darker
-          (3.37:1, was 2.77:1), so error borders and icons and yellow
-          indicators reach 3:1; projects paste the two values
+          (3.37:1, was 2.77:1), so error borders and icons and yellow indicators
+          reach 3:1; projects paste the two values
         </li>
         <li>
           Toast pauses its timer while keyboard focus is in it, not only while
@@ -52,18 +98,16 @@ useHead({ title: 'Changelog' });
         <li>
           A link in MarkdownPreview and in the MarkdownEditor preview says
           "(open in new window)" in hidden text, in the current language, and
-          gets that title only when it has none of its own; the alternative
-          text of the icon after it was Dutch on every page
+          gets that title only when it has none of its own; the alternative text
+          of the icon after it was Dutch on every page
         </li>
-        <li>
-          YouTube: the label of the play button is translated (was Dutch)
-        </li>
+        <li>YouTube: the label of the play button is translated (was Dutch)</li>
         <li>
           Checkbox sets <code>required</code> on its input, so a Form no longer
           submits with a required box unticked, and shows "Tick this box to
-          continue" under the box once the form reports it; CheckboxGroup has
-          a <code>required</code> prop that asks for at least one box, through
-          the validity of its boxes, with "Tick at least one option" under the
+          continue" under the box once the form reports it; CheckboxGroup has a
+          <code>required</code> prop that asks for at least one box, through the
+          validity of its boxes, with "Tick at least one option" under the
           group. Both take an <code>error-message</code> and
           <code>show-invalid</code>, like Input
         </li>
@@ -74,15 +118,15 @@ useHead({ title: 'Changelog' });
           last tab
         </li>
         <li>
-          RadioGroup shows its error only once the form reports it, as the
-          other fields do (a required group showed it from the start), and
-          takes <code>error-message</code> and <code>show-invalid</code>
+          RadioGroup shows its error only once the form reports it, as the other
+          fields do (a required group showed it from the start), and takes
+          <code>error-message</code> and <code>show-invalid</code>
         </li>
         <li>
           Select, CheckboxGroup and RadioGroup type their options: the
-          <code>value-key</code>, <code>label-key</code> and the other key
-          props must name a field of the option (the new
-          <code>SelectOption</code> and <code>GroupOption</code> types)
+          <code>value-key</code>, <code>label-key</code> and the other key props
+          must name a field of the option (the new <code>SelectOption</code> and
+          <code>GroupOption</code> types)
         </li>
         <li>
           Focus moves on Vue's next tick instead of a timer: into a Dialog or
@@ -90,16 +134,16 @@ useHead({ title: 'Changelog' });
           MobileMenu, and into a MarkdownEditor with <code>autofocus</code>
         </li>
         <li>
-          Focus returns to the element that opened a Dialog when it closes,
-          also with Escape: FocusLoop lifts the <code>inert</code> it put on
-          the page the moment it closes, before the browser restores focus,
-          where it used to lift it a tick later and the restore failed
+          Focus returns to the element that opened a Dialog when it closes, also
+          with Escape: FocusLoop lifts the <code>inert</code> it put on the page
+          the moment it closes, before the browser restores focus, where it used
+          to lift it a tick later and the restore failed
         </li>
         <li>
-          Form focuses the first invalid control also when it is in a
-          fieldset, as in a required RadioGroup or CheckboxGroup: until now
-          the fieldset got the focus call, which does nothing, and focus
-          stayed on the submit button
+          Form focuses the first invalid control also when it is in a fieldset,
+          as in a required RadioGroup or CheckboxGroup: until now the fieldset
+          got the focus call, which does nothing, and focus stayed on the submit
+          button
         </li>
         <li>
           LanguageSelect and LanguageSwitcher list the locales of the i18n
@@ -107,12 +151,13 @@ useHead({ title: 'Changelog' });
           language is added in the config only
         </li>
         <li>
-          The layer bundles the icons its components show on first paint
-          (<code>bundledIcons</code> in <code>app/utils/icons.ts</code>) for
-          every project, declares <code>runtimeConfig.public.gtmId</code> for
-          CookiesDialog, and says at startup which components need
-          <code>@nuxt/image</code> or <code>@nuxt/scripts</code> when a
-          project does not register them
+          The layer bundles the icons its components show on first paint (<code
+            >bundledIcons</code
+          >
+          in <code>app/utils/icons.ts</code>) for every project, declares
+          <code>runtimeConfig.public.gtmId</code> for CookiesDialog, and says at
+          startup which components need <code>@nuxt/image</code> or
+          <code>@nuxt/scripts</code> when a project does not register them
         </li>
         <li>
           <code>useCookiesDialog()</code> holds an open flag
@@ -123,10 +168,10 @@ useHead({ title: 'Changelog' });
         </li>
         <li>
           The field components (Input, Select, Textarea, MultiSelect,
-          DatePicker, RangeInput) render through the new FormField component,
-          so the label, chip, error and instruction they share are one piece
-          of markup and CSS; the error text sits directly under the field in
-          every field, above the instruction
+          DatePicker, RangeInput) render through the new FormField component, so
+          the label, chip, error and instruction they share are one piece of
+          markup and CSS; the error text sits directly under the field in every
+          field, above the instruction
         </li>
         <li>
           FileInput keeps the chosen file as its value while an image is
@@ -141,9 +186,9 @@ useHead({ title: 'Changelog' });
           MobileMenu renders its dialog on the server through Nuxt's
           <code>#teleports</code>, always: the <code>teleport-to</code> prop is
           removed; VideoPlayer prefixes its data key;
-          <code>useScreenSize()</code> is a shared composable made on first
-          use; the components read <code>t()</code> from
-          <code>useI18n()</code> in script instead of the global
+          <code>useScreenSize()</code> is a shared composable made on first use;
+          the components read <code>t()</code> from <code>useI18n()</code> in
+          script instead of the global
           <code>$t</code>
         </li>
         <li>
@@ -152,16 +197,16 @@ useHead({ title: 'Changelog' });
           showing a number the model did not have
         </li>
         <li>
-          MobileMenu closes the way Dialog does, through the Web Animations
-          API, so a cancelled animation no longer leaves it open
+          MobileMenu closes the way Dialog does, through the Web Animations API,
+          so a cancelled animation no longer leaves it open
         </li>
         <li>
           ThemeToggle keeps its place on the server with an empty box of its
           size, as ThemeSwitch does
         </li>
         <li>
-          UserMenu names its menu with a generated id, so two menus on a page
-          no longer share one
+          UserMenu names its menu with a generated id, so two menus on a page no
+          longer share one
         </li>
         <li>
           <code>downloadFile()</code> and <code>downloadCSV()</code> are removed
@@ -170,9 +215,9 @@ useHead({ title: 'Changelog' });
           extension
         </li>
         <li>
-          The cardan Claude Code plugin: work in cardan-ui starts on the
-          release branch of the next version, so fixes ship together; the
-          release skill and the migration guide give the plugin update with
+          The cardan Claude Code plugin: work in cardan-ui starts on the release
+          branch of the next version, so fixes ship together; the release skill
+          and the migration guide give the plugin update with
           <code>--scope user</code>; the guidelines ask browser checks to
           snapshot the element under test rather than the whole page
         </li>
@@ -182,11 +227,11 @@ useHead({ title: 'Changelog' });
     <ChangelogEntry v="2.3.6" date="2026-11-06">
       <ul>
         <li>
-          FocusLoop lifts the <code>inert</code> it put on the rest of the
-          page when it is unmounted while still open, as when a link in
-          MobileMenu leads to a page in another layout: until now nothing on
-          the new page could be clicked or focused. Dialog and UserMenu, which
-          use FocusLoop too, get the same fix
+          FocusLoop lifts the <code>inert</code> it put on the rest of the page
+          when it is unmounted while still open, as when a link in MobileMenu
+          leads to a page in another layout: until now nothing on the new page
+          could be clicked or focused. Dialog and UserMenu, which use FocusLoop
+          too, get the same fix
         </li>
       </ul>
     </ChangelogEntry>
@@ -194,15 +239,15 @@ useHead({ title: 'Changelog' });
     <ChangelogEntry v="2.3.5" date="2026-11-06">
       <ul>
         <li>
-          MarkdownPreview loads highlight.js only when a text has a code
-          block, and with six grammars (HTML, CSS, JavaScript, TypeScript,
-          JSON and bash) instead of 38: its chunk is half the size, and a
-          page without code never loads highlight.js
+          MarkdownPreview loads highlight.js only when a text has a code block,
+          and with six grammars (HTML, CSS, JavaScript, TypeScript, JSON and
+          bash) instead of 38: its chunk is half the size, and a page without
+          code never loads highlight.js
         </li>
         <li>
           A code block is a dark block with plain text first and gets its
-          colours a moment later; its <code>&lt;code&gt;</code> element
-          carries the language in <code>data-lang</code>
+          colours a moment later; its <code>&lt;code&gt;</code> element carries
+          the language in <code>data-lang</code>
         </li>
         <li>
           The header cells of a markdown table have
@@ -213,8 +258,8 @@ useHead({ title: 'Changelog' });
           block without a language
         </li>
         <li>
-          The cardan Claude Code plugin: the release skill keeps the five
-          most recent releases in MIGRATION.md
+          The cardan Claude Code plugin: the release skill keeps the five most
+          recent releases in MIGRATION.md
         </li>
       </ul>
     </ChangelogEntry>
@@ -236,17 +281,15 @@ useHead({ title: 'Changelog' });
           word in it no longer makes the page scroll sideways at 320px
         </li>
         <li>
-          Button: the outline variant has a grey-light border, so it stands
-          out from the background
+          Button: the outline variant has a grey-light border, so it stands out
+          from the background
         </li>
         <li>
           MobileMenu pads its content with the project's
           <code>--app-padding-inline</code> (was 1.25rem), a token that is now
           in the <code>main.css</code> template
         </li>
-        <li>
-          LogoutDialog has more room above its buttons
-        </li>
+        <li>LogoutDialog has more room above its buttons</li>
         <li>
           <code>formatFileSize()</code> counts in decimal units and formats in
           the current locale ("2,4 MB" in Dutch); a file just over 1 MB no
@@ -257,19 +300,19 @@ useHead({ title: 'Changelog' });
           i18n strategy and passes the typecheck with typed routes
         </li>
         <li>
-          MarkdownEditor and MarkdownPreview no longer break a server build
-          that inlines styles
+          MarkdownEditor and MarkdownPreview no longer break a server build that
+          inlines styles
         </li>
         <li>
           The Dutch label of a trigger without text is "Uitklappen" (was
           "Expand")
         </li>
         <li>
-          The cardan Claude Code plugin: a review counts for the repository
-          the reviewer names, the release skill runs a project's own release
-          steps and trims MIGRATION.md, the Playwright browser has its own
-          profile per session, and the guidelines describe the Netlify build
-          skip for documentation, AI and CI changes
+          The cardan Claude Code plugin: a review counts for the repository the
+          reviewer names, the release skill runs a project's own release steps
+          and trims MIGRATION.md, the Playwright browser has its own profile per
+          session, and the guidelines describe the Netlify build skip for
+          documentation, AI and CI changes
         </li>
       </ul>
     </ChangelogEntry>
@@ -277,13 +320,10 @@ useHead({ title: 'Changelog' });
     <ChangelogEntry v="2.3.3" date="2026-11-04">
       <ul>
         <li>
-          CardanLogo: a product lockup takes the room it gets in a flex row
-          from the narrow width up at every screen width, no longer only from
-          320px
+          CardanLogo: a product lockup takes the room it gets in a flex row from
+          the narrow width up at every screen width, no longer only from 320px
         </li>
-        <li>
-          MobileMenu: the close button is md by default (was sm)
-        </li>
+        <li>MobileMenu: the close button is md by default (was sm)</li>
         <li>
           Dialog: the new <code>--dialog-max-width</code> on a dialog's class
           sets its width (800px for one at the side by default; a centered one
@@ -307,8 +347,8 @@ useHead({ title: 'Changelog' });
           reader no longer announces a button whose text changes
         </li>
         <li>
-          Button: no extra padding around its text, so a button with a label
-          is a little narrower
+          Button: no extra padding around its text, so a button with a label is
+          a little narrower
         </li>
         <li>
           CopyButton announces "Copied" through a status message of its own,
@@ -692,8 +732,8 @@ useHead({ title: 'Changelog' });
     }
 
     ul {
-      font-size: var(--font-size-sm);
       margin-block-end: 0.25rem;
+      padding-inline-start: 1rem;
     }
   }
 }

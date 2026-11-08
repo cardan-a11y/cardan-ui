@@ -1,5 +1,4 @@
 <script setup lang="ts" generic="T extends SelectOption">
-
 const { t } = useI18n();
 const model = defineModel<string | number | boolean>();
 
@@ -133,7 +132,6 @@ const computedAriaDescribedby = computed(() =>
 
 <style>
 :where(.form-field-wrapper) {
-
   &:has(.select:disabled) {
     opacity: 35%;
   }
@@ -166,7 +164,7 @@ const computedAriaDescribedby = computed(() =>
   .select {
     -webkit-appearance: none;
     appearance: none;
-    margin-inline-end: 1em;
+    margin-inline-end: 1.25em;
     grid-row: 1;
     grid-column: 1 / -1;
     accent-color: var(--color-text);

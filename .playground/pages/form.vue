@@ -19,6 +19,7 @@ const disabled = ref(false);
 const readonly = ref(false);
 const required = ref(false);
 const checked = ref(false);
+const avatar = ref<File>();
 
 const multiselectMode = ref<'single' | 'multiple' | 'tags'>('multiple');
 const inputSize = ref<InputSize>('md');
@@ -457,6 +458,24 @@ function handleSubmit(formData: FormData) {
       <h2>File Input</h2>
       <DemoFileForm :disabled="disabled" :required="required" />
     </Card>
+
+    <Card>
+      <h2>File Input with a circle</h2>
+      <FileInput
+        v-model="avatar"
+        shape="circle"
+        name="avatar"
+        accept="image/*"
+        :label="$t('general.avatar')"
+        :disabled="disabled"
+        :required="required"
+        class="demo-avatar-input"
+      />
+    </Card>
+
+    <Card>
+      <DemoDocumentUpload :disabled="disabled" />
+    </Card>
   </div>
 </template>
 
@@ -478,6 +497,10 @@ function handleSubmit(formData: FormData) {
 
 .demo-multiselect {
   min-width: 240px;
+}
+
+.demo-avatar-input {
+  max-width: 400px;
 }
 
 .demo-datepicker {

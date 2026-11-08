@@ -11,9 +11,13 @@ defineProps<{
   <Card class="changelog-entry">
     <h2>{{ v }}</h2>
 
-    <time :datetime="date">
-      {{ d(date, 'long', locale) }}
-    </time>
+    <NuxtTime
+      :datetime="date"
+      :locale="locale"
+      day="numeric"
+      month="long"
+      year="numeric"
+    />
 
     <slot />
   </Card>

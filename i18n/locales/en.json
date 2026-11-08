@@ -85,8 +85,9 @@
     "or-drop-file": "or drop a file here",
     "open": "Open file",
     "thumb": "Thumbnail of {file}",
-    "too-big": "File size is too big",
-    "button-text": "Click to upload or drop a file"
+    "too-big": "This file is larger than {size}. Choose a smaller file.",
+    "button-text": "Click to upload or drop a file",
+    "wrong-type": "This file type is not supported. Choose a file of type {types}."
   },
   "filters": {
     "apply": "Apply filters",
