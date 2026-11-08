@@ -418,7 +418,7 @@ function removeFile() {
 
     .iconify {
       display: block;
-      font-size: var(--font-size-lg);
+      font-size: var(--font-size-xl);
     }
   }
 
