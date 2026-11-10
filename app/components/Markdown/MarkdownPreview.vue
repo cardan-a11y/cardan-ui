@@ -120,6 +120,9 @@ watch(segments, highlightCode, { flush: 'post' });
 </script>
 
 <template>
+  <!-- The renderer escapes raw HTML unless `trusted`, and `{…}` sets only
+       lang, dir and class: the HTML is markdown-it's own -->
+  <!-- eslint-disable vue/no-v-html -->
   <span
     v-if="inline"
     ref="root"
@@ -149,6 +152,7 @@ watch(segments, highlightCode, { flush: 'post' });
       <div v-else class="markdown-chunk" v-html="segment.html" />
     </template>
   </div>
+  <!-- eslint-enable vue/no-v-html -->
 </template>
 
 <style>
