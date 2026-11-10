@@ -69,22 +69,6 @@ const focusableTab = computed(() => {
   return (selected ?? tabs.find((tab) => !tab.disabled))?.value;
 });
 
-/**
- * A panel without focusable content is in the tab order itself, so Tab from
- * the tab list reaches it (APG)
- */
-const panelHasFocusable = ref(true);
-
-function updatePanelTabindex() {
-  const panel = document.getElementById(`${id}-tabpanel-${activeTab.value}`);
-  panelHasFocusable.value = !panel || !!panel.querySelector(focusableSelector);
-}
-
-onMounted(updatePanelTabindex);
-watch(activeTab, updatePanelTabindex, { flush: 'post' });
-// Also content that arrives after the tab was selected
-onUpdated(updatePanelTabindex);
-
 function focusTabpanel() {
   tabpanelRef.value?.focus();
 }
@@ -141,6 +125,9 @@ defineExpose({
       class="tabpanel-wrapper"
       tabindex="-1"
     >
+      <!-- The open panel is always in the tab order, as in the APG example:
+           a check for focusable content would go stale when content loads
+           inside a child component -->
       <template v-for="tab in tabs" :key="tab.value">
         <div
           v-show="tab.value === activeTab"
@@ -148,7 +135,7 @@ defineExpose({
           :aria-labelledby="`${id}-tab-${tab.value}`"
           role="tabpanel"
           class="tabpanel"
-          :tabindex="tab.value === activeTab && !panelHasFocusable ? '0' : '-1'"
+          :tabindex="tab.value === activeTab ? '0' : '-1'"
         >
           <slot :name="tab.value" />
         </div>

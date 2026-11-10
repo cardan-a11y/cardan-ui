@@ -60,13 +60,16 @@ onMounted(() => getQrCode());
              not exposed by assistive technology. The wrapper renders before the
              code arrives so its minimum size holds the space; it only becomes
              an image once there is one. The markup is the API's, reduced to
-             the elements of a QR code by `sanitizeQrSvg()` in `getQrCode()`. -->
+             the elements of a QR code by `sanitizeQrSvg()` in `getQrCode()`;
+             inline, not an <img>, so the CSS can recolour it in dark mode. -->
+        <!-- eslint-disable vue/no-v-html -->
         <div
           :role="qrCode ? 'img' : undefined"
           :aria-label="qrCode ? $t('mfa.qr-code-alt') : undefined"
           class="qr-code-wrapper"
           v-html="qrCode"
         />
+        <!-- eslint-enable vue/no-v-html -->
 
         <div class="qr-code-description">
           <component :is="`h${headingLevel}`" class="qr-code-heading">

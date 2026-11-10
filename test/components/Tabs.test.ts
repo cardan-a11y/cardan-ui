@@ -80,7 +80,7 @@ describe('Tabs', () => {
     expect(tabindexes).toEqual(['0', '-1', '-1']);
   });
 
-  it('puts a panel without focusable content in the tab order', async () => {
+  it('puts the open panel in the tab order, with or without focusable content', async () => {
     const wrapper = await mountTabs();
     await nextTick();
 
@@ -89,10 +89,11 @@ describe('Tabs', () => {
         .findAll('[role="tabpanel"]')
         .find((panel) => panel.attributes('id')?.endsWith(`-${value}`))!;
     expect(panel('a').attributes('tabindex')).toBe('0');
+    expect(panel('c').attributes('tabindex')).toBe('-1');
 
     await wrapper.setProps({ modelValue: 'c' });
     await nextTick();
-    expect(panel('c').attributes('tabindex')).toBe('-1');
+    expect(panel('c').attributes('tabindex')).toBe('0');
     expect(panel('a').attributes('tabindex')).toBe('-1');
   });
 });

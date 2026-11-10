@@ -105,8 +105,7 @@ useHead({ title: 'Changelog' });
             <li>
               Tabs: ids per instance, the arrow keys move in page order also
               after a re-render, the tab list is reachable while nothing is
-              selected, and a panel without focusable content is in the tab
-              order.
+              selected, and the open panel is in the tab order.
             </li>
             <li>
               Pagination moves focus on when the button under it is disabled on
