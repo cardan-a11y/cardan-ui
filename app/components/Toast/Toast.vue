@@ -10,15 +10,12 @@ const {
   icon = undefined,
   label = undefined,
   id = undefined,
-  role = undefined,
 } = defineProps<{
   color?: ToastColor;
   timeout?: number;
   icon?: string;
   label?: string;
   id?: string;
-  /** `alert` for a message that interrupts, `status` or none for the rest */
-  role?: 'status' | 'alert';
 }>();
 
 const toastElementRef = useTemplateRef('toastElement');
@@ -73,7 +70,6 @@ const emit = defineEmits<{
 <template>
   <section
     ref="toastElement"
-    :role="role"
     :class="[
       'toast',
       `toast-color--${color}`,
@@ -96,8 +92,8 @@ const emit = defineEmits<{
       ref="timerElement"
       class="toast__timer"
       :style="[
-        `--animation-duration: ${timeout}ms`,
-        `--animation-play-state: ${timerPaused ? 'paused' : 'running'}`,
+        `--toast-animation-duration: ${timeout}ms`,
+        `--toast-animation-play-state: ${timerPaused ? 'paused' : 'running'}`,
       ]"
     />
 
@@ -151,8 +147,8 @@ const emit = defineEmits<{
   transform-origin: left;
   animation: scale-x linear 1 forwards;
   animation-delay: var(--duration-xl);
-  animation-duration: var(--animation-duration);
-  animation-play-state: var(--animation-play-state);
+  animation-duration: var(--toast-animation-duration);
+  animation-play-state: var(--toast-animation-play-state);
 }
 
 .toast__icon {

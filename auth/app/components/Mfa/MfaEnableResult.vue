@@ -9,12 +9,22 @@ const { recoveryCodes, mfaError } = useMfa();
 
 <template>
   <div class="mfa-enable-result-content">
-    <AuthError v-if="mfaError" :data="mfaError" />
+    <ErrorMessage v-if="mfaError" :data="mfaError" />
 
     <MfaRecoveryCodeList
       v-else-if="recoveryCodes.length"
       :heading-level="headingLevel"
     />
+
+    <!-- MFA is on, but the codes did not come: a flow of an app's own that
+         confirmed without reading them. New ones replace them. -->
+    <p v-else class="mfa-recovery-codes-missing">
+      {{
+        $t('mfa.recovery-codes-missing', {
+          action: $t('mfa.recovery-codes-regenerate'),
+        })
+      }}
+    </p>
   </div>
 </template>
 

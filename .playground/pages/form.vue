@@ -21,6 +21,9 @@ const required = ref(false);
 const checked = ref(false);
 const avatar = ref<File>();
 
+/** As a 422 from the API after a submit: the field shows it until its value changes */
+const serverError = ref<string>();
+
 const multiselectMode = ref<'single' | 'multiple' | 'tags'>('multiple');
 const inputSize = ref<InputSize>('md');
 
@@ -141,9 +144,18 @@ const inputVariants = [
   },
 ];
 
-function handleSubmit(formData: FormData) {
+async function handleSubmit(formData: FormData) {
   console.log(formData);
   raw.value = Object.fromEntries(formData);
+
+  // The API's answer: a name that is taken, as long as the field says "Ada".
+  // Cleared first, so the same answer shows again after the user typed
+  serverError.value = undefined;
+  await nextTick();
+  serverError.value =
+    formData.get('input') === 'Ada'
+      ? 'This name is taken. Choose another one.'
+      : undefined;
 }
 </script>
 
@@ -223,6 +235,8 @@ function handleSubmit(formData: FormData) {
           :required="required"
           name="input"
           label="Input"
+          instruction="Submit the name Ada for an error from the server"
+          :custom-error="serverError"
           :variant="inputVariant"
           :disabled="disabled"
           :readonly="readonly"
@@ -476,6 +490,38 @@ function handleSubmit(formData: FormData) {
     <Card>
       <DemoDocumentUpload :disabled="disabled" />
     </Card>
+
+    <!-- What the two APIs answer, as extractApiError() reads it -->
+    <Card class="demo-error-messages">
+      <h2>ErrorMessage</h2>
+
+      <h3>Laravel validation (422)</h3>
+      <ErrorMessage
+        :data="{
+          message: 'The name field is required. (and 1 more error)',
+          errors: {
+            name: ['The name field is required.'],
+            email: ['The email field must be a valid email address.'],
+          },
+          language: 'en',
+        }"
+      />
+
+      <h3>CSRF mismatch (419) or a 500</h3>
+      <ErrorMessage :data="{ message: 'CSRF token mismatch.', language: 'en' }" />
+
+      <h3>JSON:API, with a summary of the page's own</h3>
+      <ErrorMessage
+        text="Check your order."
+        :data="{ message: 'De offerte is niet meer geldig.', language: 'nl' }"
+      />
+
+      <h3>An HTML error page, or a server that did not answer</h3>
+      <ErrorMessage :data="{}" />
+
+      <h3>No answer: the browser was offline</h3>
+      <ErrorMessage :data="{ offline: true }" />
+    </Card>
   </div>
 </template>
 
@@ -483,6 +529,11 @@ function handleSubmit(formData: FormData) {
 .demo-page.form-page {
   .button[type='submit'] {
     flex-basis: auto;
+  }
+
+  /* ErrorMessage takes no margin: the page places it */
+  .demo-error-messages [role='alert'] + h3 {
+    margin-block-start: 1.5rem;
   }
 
   section {

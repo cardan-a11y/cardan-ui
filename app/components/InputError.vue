@@ -36,6 +36,7 @@ const { id = undefined, errorText = undefined } = defineProps<{
 }
 
 :where(.form-field-wrapper.show-invalid:has(:invalid)),
+:where(.form-field-wrapper.custom-error),
 :where(.show-invalid) .form-field-wrapper:has(:invalid) {
   .select,
   .textarea,
@@ -50,9 +51,10 @@ const { id = undefined, errorText = undefined } = defineProps<{
 
 :where(.show-invalid) .input-variant--3d:has(:invalid) .input:not(:focus),
 :where(.show-invalid) .select-variant--3d:has(:invalid) .select:not(:focus),
-:where(.show-invalid)
-  .textarea-variant--3d:has(:invalid)
-  .textarea:not(:focus) {
+:where(.show-invalid) .textarea-variant--3d:has(:invalid) .textarea:not(:focus),
+:where(.custom-error.input-variant--3d) .input:not(:focus),
+:where(.custom-error.select-variant--3d) .select:not(:focus),
+:where(.custom-error.textarea-variant--3d) .textarea:not(:focus) {
   box-shadow: 0 1.5px 0 0 var(--color-red);
 }
 </style>

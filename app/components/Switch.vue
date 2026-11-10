@@ -39,7 +39,7 @@ const computedAriaDescribedby = computed(() =>
       type="button"
       role="switch"
       :class="['switch-button', `switch-button-variant--${variant}`]"
-      :aria-checked="model"
+      :aria-checked="!!model"
       :aria-describedby="computedAriaDescribedby"
       :disabled="disabled"
       @click="handleClick"

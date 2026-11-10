@@ -25,9 +25,6 @@ export default defineNuxtConfig({
     head: {
       title: 'Cardan UI',
       link: [{ rel: 'icon', href: 'favicon.svg', type: 'image/svg+xml' }],
-      htmlAttrs: {
-        lang: 'en',
-      },
     },
   },
 

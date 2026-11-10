@@ -31,15 +31,7 @@ The submit buttons on the login form and sign-in challenge are `--font-size-md`,
 
 ### Overriding styles
 
-The layer's own class names are stable hooks you can restyle from your app: `.login-form`, `.auth-error`, `.mfa-dialog`, `.mfa-setup`, `.mfa-challenge-wrapper`, `.mfa-code-input`, `.mfa-recovery-codes-card`.
-
-`.auth-error` is deliberately _not_ your app's `.error-message`. Reusing that class would mean two global definitions of one selector resolving by source order, and your error component's CSS chunk is not necessarily loaded on the page a login form sits on. `.auth-error` is written purely in tokens, so it picks up your palette and dark mode; restyle it if your errors look different elsewhere:
-
-```css
-.login-form .auth-error {
-  min-width: 100%;
-}
-```
+The layer's own class names are stable hooks you can restyle from your app: `.login-form`, `.mfa-dialog`, `.mfa-setup`, `.mfa-challenge-wrapper`, `.mfa-code-input`, `.mfa-recovery-codes-card`. The errors show in Cardan UI's ErrorMessage, `.error-message`, as everywhere else in your app.
 
 ## How to extend from Cardan Auth UI in your project
 
@@ -76,24 +68,24 @@ export default defineNuxtConfig({
 
 The layer calls these endpoints, relative to your configured `sanctum.baseUrl`: Fortify's own for sign-in and MFA, and the Cardan API's `/api/v1` paths for passwords. These are the defaults, the Cardan Academy API's; [Configuration](#configuration) shows how an app points them elsewhere.
 
-| Endpoint                                        | Method                           | Config key                | Used for                                                               |
-| ----------------------------------------------- | -------------------------------- | ------------------------- | ---------------------------------------------------------------------- |
-| `/api/user/two-factor-authentication`           | `POST` / `DELETE`                | `twoFactorAuthentication` | Enable / disable MFA                                                   |
-| `/api/user/two-factor-qr-code`                  | `GET`                            | `twoFactorQrCode`         | The setup QR code (inline SVG) and its `otpauth://` link               |
-| `/api/user/confirmed-two-factor-authentication` | `POST`                           | `twoFactorConfirmation`   | Confirm the first code                                                 |
-| `/api/user/two-factor-recovery-codes`           | `GET` / `POST`                   | `twoFactorRecoveryCodes`  | Read recovery codes once after setup or regenerating / regenerate them |
-| `/api/two-factor-challenge`                     | `POST`                           | `twoFactorChallenge`      | Second factor at sign-in                                               |
-| `/api/user/confirmed-password-status`           | `GET`                            | `confirmedPasswordStatus` | Whether the password was confirmed recently                            |
-| `/api/user/confirm-password`                    | `POST`                           | `confirmPassword`         | Confirm the password                                                   |
-| your `sanctum.endpoints.login`                  | `POST`                           |                           | Sign in (path taken from your Sanctum config)                          |
-| `/api/v1/auth/forgot-password`                  | `POST`                           | `forgotPassword`          | Request a reset link (`email`)                                         |
-| `/api/v1/auth/reset-password`                   | `POST`                           | `resetPassword`           | Set a new password from the reset link                                 |
-| `/api/v1/profile/password`                      | `PATCH` (`updatePasswordMethod`) | `updatePassword`          | Change the password while signed in                                    |
-| `/api/v1/password-policy`                       | `GET`                            | `passwordPolicy`          | `{ data: { min_length, max_length } }`, or `false` without one         |
+| Endpoint                                        | Method                           | Config key                | Used for                                                                                                   |
+| ----------------------------------------------- | -------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `/api/user/two-factor-authentication`           | `POST` / `DELETE`                | `twoFactorAuthentication` | Enable / disable MFA                                                                                       |
+| `/api/user/two-factor-qr-code`                  | `GET`                            | `twoFactorQrCode`         | The setup QR code (an SVG, inlined once reduced to a code) and its `otpauth://` link                       |
+| `/api/user/confirmed-two-factor-authentication` | `POST`                           | `twoFactorConfirmation`   | Confirm the first code                                                                                     |
+| `/api/user/two-factor-recovery-codes`           | `GET` / `POST`                   | `twoFactorRecoveryCodes`  | Read recovery codes once after setup or regenerating / regenerate them                                     |
+| `/api/two-factor-challenge`                     | `POST`                           | `twoFactorChallenge`      | Second factor at sign-in                                                                                   |
+| `/api/user/confirmed-password-status`           | `GET`                            | `confirmedPasswordStatus` | Whether the password was confirmed recently                                                                |
+| `/api/user/confirm-password`                    | `POST`                           | `confirmPassword`         | Confirm the password                                                                                       |
+| your `sanctum.endpoints.login`                  | `POST`                           |                           | Sign in (path taken from your Sanctum config)                                                              |
+| `/api/v1/auth/forgot-password`                  | `POST`                           | `forgotPassword`          | Request a reset link (`email`)                                                                             |
+| `/api/v1/auth/reset-password`                   | `POST`                           | `resetPassword`           | Set a new password from the reset link                                                                     |
+| `/api/v1/profile/password`                      | `PATCH` (`updatePasswordMethod`) | `updatePassword`          | Change the password while signed in                                                                        |
+| `/api/v1/password-policy`                       | `GET`                            | `passwordPolicy`          | `{ data: { min_length, max_length } }`, or `false` without one. Public: the reset form reads it as a guest |
 
-Enable Fortify's `two-factor-authentication` feature with `confirm: true`. Leave Fortify's `resetPasswords` feature off: its routes tell a known address from an unknown one. The password endpoints take Fortify's fields (`token`, `email`, `password`, `password_confirmation`, `current_password`) and answer a known and an unknown address identically. Errors may come in Laravel's shape (`{ message, errors: { field: [...] } }`) or as a JSON:API envelope (`{ errors: [{ detail, source: { parameter } }] }`); `extractAuthError()` reads both. Point the reset email at your app's `/reset-password` page with `?token=…&email=…`; a mail without the `email`, such as Fortify's own, gets a visible email field on that page.
+Enable Fortify's `two-factor-authentication` feature with `confirm: true`. Leave Fortify's `resetPasswords` feature off: its routes tell a known address from an unknown one. The password endpoints take Fortify's fields (`token`, `email`, `password`, `password_confirmation`, `current_password`) and answer a known and an unknown address identically. Errors may come in Laravel's shape (`{ message, errors: { field: [...] } }`) or as a JSON:API envelope (`{ errors: [{ detail, source: { parameter } }] }`); Cardan UI's `extractApiError()` reads both. Point the reset email at your app's `/reset-password` page with `?token=…&email=…`; a mail without the `email`, such as Fortify's own, gets a visible email field on that page.
 
-The user payload tells the layer whether MFA is on: `mfa_enabled`, plus `mfa_required` (a role or organization requires it) and `mfa_exempt` (never remind this account). Without `mfa_enabled` the setup reminder stays off.
+The user payload tells the layer whether MFA is on: `mfa_enabled`, plus `mfa_required` (a role or organization requires it) and `mfa_exempt` (never remind this account, nor require it, whatever the role says). Without `mfa_enabled` the setup reminder stays off.
 
 ### Configuration
 
@@ -115,12 +107,12 @@ export default defineAppConfig({
 });
 ```
 
-| Key                                     | Default         |                                                                                                                                                 |
-| --------------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `endpoints.*`                           | the paths above | Relative to `sanctum.baseUrl`. Sign-in, sign-out, the identity and the CSRF cookie stay in the `sanctum` config                                 |
-| `updatePasswordMethod`                  | `'PATCH'`       | `'PUT'` for Fortify's own `/user/password` route                                                                                                |
-| `passwordPolicy.minLength`, `maxLength` | `14`, `128`     | Shown until the policy endpoint answers, or as the policy when `endpoints.passwordPolicy` is `false`. `maxLength: null` sets no maximum         |
-| `passwordPolicy.serverChecks`           | `true`          | Whether the API also refuses breached and common passwords and ones with personal information on save; the forms list those checks when it does |
+| Key                                     | Default         |                                                                                                                                                                                                                                         |
+| --------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `endpoints.*`                           | the paths above | Relative to `sanctum.baseUrl`. Sign-in, sign-out, the identity and the CSRF cookie stay in the `sanctum` config                                                                                                                         |
+| `updatePasswordMethod`                  | `'PATCH'`       | `'PUT'` for Fortify's own `/user/password` route                                                                                                                                                                                        |
+| `passwordPolicy.minLength`, `maxLength` | `14`, `128`     | Shown until the policy endpoint answers, or as the policy when `endpoints.passwordPolicy` is `false` or the endpoint answers with anything but a policy (a 401 from a route that is not public, say). `maxLength: null` sets no maximum |
+| `passwordPolicy.serverChecks`           | `true`          | Whether the API also refuses breached and common passwords and ones with personal information on save; the forms list those checks when it does                                                                                         |
 
 ## Usage
 
@@ -171,7 +163,7 @@ Everything variable is a small prop. The Cardan Academy form remembers the sessi
 <LoginForm
   remember
   error-position="below-submit"
-  :loading-delay="lgTransition"
+  :loading-delay="transitionDuration('lg')"
 />
 ```
 
@@ -193,7 +185,7 @@ The buttons of every form and dialog in this layer have the Cardan look: `black`
 
 | Slot     | Scope       |                                                              |
 | -------- | ----------- | ------------------------------------------------------------ |
-| `error`  | `{ error }` | The error region                                             |
+| `error`  | `{ error }` | The error region, ErrorMessage with the API's error          |
 | `fields` |             | Extra fields after the password, e.g. a remember-me checkbox |
 | `footer` |             | Anything at the end of the form                              |
 
@@ -210,9 +202,11 @@ The layer registers the page **`/two-factor-authentication`** for you, and `Logi
 
 To give the challenge your own frame, create `pages/two-factor-authentication.vue` in your app (a page in your app wins over the layer's) and render `<MfaChallenge />` in it. Pass `:card="false"` when your frame already surrounds the form. Copy the page meta `sanctum: { guestOnly: true }` from the layer's page: the user is not signed in until the code is accepted. To use another route, also point `LoginForm`'s `twoFactorPath` at it.
 
+When the sign-in behind the challenge has expired by the time the code is sent (the API answers 401), the user goes back to `/login`, with the `?redirect=` they came with and a toast saying why (`mfa.session-expired`); mount Cardan UI's `ToastManager` for that toast, as for the one the password form shows.
+
 ### Enabling, disabling and recovery codes
 
-Mount the two dialogs once on the page that holds your account settings, and drive them from `useMfaDialog()`:
+Mount the two dialogs once on the page that holds your account settings, with the password confirmation dialog they ask through (see [Password confirmation](#password-confirmation)), and drive them from `useMfaDialog()`:
 
 ```vue
 <script setup lang="ts">
@@ -250,6 +244,8 @@ const {
   <MfaDialog @refresh="refreshUser()" />
 
   <MfaRecoveryCodesDialog />
+
+  <PasswordConfirmationDialog />
 </template>
 ```
 
@@ -263,7 +259,7 @@ Whether MFA is currently on stays your app's call — the flag lives in your `/a
 
 ### Setting up MFA on a page
 
-`MfaSetup` walks the same enable flow as `MfaDialog` — intro → QR code → confirm code → recovery codes — inline, for a page instead of a dialog: a prompt after sign-in, or a step in onboarding. Its step headings are `h2`, so give the page its own `h1`; `mfa.setup-title` and `mfa.setup-description` are there for it. To free up the room once the flow is underway, drop that title and pass `:heading-level="1"`: the step heading becomes the page's `h1`, in the app's own `h1` style, and the headings inside the steps move up with it. When the page's own title and description already introduce MFA, pass `:show-intro="false"` so the intro step does not repeat it with a heading and description of its own.
+`MfaSetup` walks the same enable flow as `MfaDialog` — intro → QR code → confirm code → recovery codes — inline, for a page instead of a dialog: a prompt after sign-in, or a step in onboarding. It mounts the password confirmation dialog it needs. Its step headings are `h2`, so give the page its own `h1`; `mfa.setup-title` and `mfa.setup-description` are there for it. To free up the room once the flow is underway, drop that title and pass `:heading-level="1"`: the step heading becomes the page's `h1`, in the app's own `h1` style, and the headings inside the steps move up with it. When the page's own title and description already introduce MFA, pass `:show-intro="false"` so the intro step does not repeat it with a heading and description of its own.
 
 ```vue
 <template>
@@ -293,13 +289,13 @@ The buttons follow the [button variants](#button-variants) of your app config.
 
 ### Passwords
 
-`/forgot-password` and `/reset-password` use `PasswordForgotForm` and `PasswordResetForm`. The forgot form starts from the address typed on the login page (`useLoginEmail()`). After a reset the user is signed in: straight on, or through the sign-in challenge when the account has MFA.
+`/forgot-password` and `/reset-password` use `PasswordForgotForm` and `PasswordResetForm`. The forgot form starts from the address typed on the login page (`useLoginEmail()`). After a reset the user is signed in: straight on, or through the sign-in challenge when the account has MFA; when that sign-in fails, the password is set all the same, so the login page takes over with the address filled in. A reset link that was sent once can be asked for again for another address.
 
 `PasswordUpdateForm` changes the password while signed in, for an account settings page, and shows a toast when it is saved. Both password forms list the requirements with `PasswordRequirements` and check the length while the user types, read from the policy endpoint, or from the `passwordPolicy` settings for an API without one (see [Configuration](#configuration)). Every password field has a reveal button (`PasswordReveal`); in the reset and update forms the one beside the last field reveals them all. When the reset link carries no `?email=`, the reset form asks for the address.
 
 ### Account settings for MFA
 
-`<MfaSettings />` shows whether MFA is on and offers to enable it, regenerate the recovery codes, or disable it, with the two dialogs mounted for you. It says that lost recovery codes are replaced that way, and the recovery codes step of the setup says the codes are shown only this once. For an account that requires MFA, disabling becomes "set up MFA again": the dialog skips its "MFA is off" step and sends the user to `/mfa-setup`.
+`<MfaSettings />` shows whether MFA is on and offers to enable it, regenerate the recovery codes, or disable it, with the dialogs mounted for you, the password confirmation included. It says that lost recovery codes are replaced that way, and the recovery codes step of the setup says the codes are shown only this once. For an account that requires MFA, disabling becomes "set up MFA again": the dialog skips its "MFA is off" step and sends the user to `/mfa-setup`.
 
 ### Setup reminder
 
@@ -307,11 +303,13 @@ When the user payload has `mfa_enabled: false`, a sign-in on `/login` detours pa
 
 ### Signing out
 
-Mount `<LogoutDialog />` once, in your layout, and open it with `useLogoutDialog().logoutDialogRef.value?.openDialog()`. It asks before signing out.
+Mount `<LogoutDialog />` once, in your layout, and open it with `useLogoutDialog().logoutDialogRef.value?.openDialog()`. It asks before signing out, keeps its button loading while the API answers, and closes once the user is signed out; a refusal shows in the dialog (`handleLogout()` throws it), so the user knows they are still signed in.
 
 ### Password confirmation
 
-With `confirmPassword` on in Fortify's `twoFactorAuthentication` feature (recommended, and Fortify's default), every two-factor settings route sits behind `password.confirm` and answers **423** until the user has re-entered their password. The layer handles that for you: mount `<PasswordConfirmationDialog />` once, in your layout (it names the account to password managers with a hidden `autocomplete="username"` field, the `email` of your user payload unless you pass `username`), and every MFA call asks for the password when Fortify does and then retries. `openMfaDisableDialog()` asks up front instead, before the MFA dialog opens. `openMfaEnableDialog()` opens the intro straight away; its Enable button asks for the password, on top of the MFA dialog, and cancelling that keeps the intro open.
+With `confirmPassword` on in Fortify's `twoFactorAuthentication` feature (recommended, and Fortify's default), every two-factor settings route sits behind `password.confirm` and answers **423** until the user has re-entered their password. The layer handles that for you: every MFA call asks for the password through `<PasswordConfirmationDialog />` when Fortify does and then retries. `MfaSettings` and `MfaSetup` (so the layer's `/mfa-setup` page) mount that dialog with their flows; mount it yourself next to `MfaDialog` when you mount that one on its own, and once in your layout for flows of your own. A dialog in a layout and one with a flow can be mounted at the same time: the one mounted last answers, and unmounting it hands back to the other. Without any, a request for the password rejects with an error that says so, rather than wait forever. The dialog names the account to password managers with a hidden `autocomplete="username"` field, the `email` of your user payload unless you pass `username`.
+
+`openMfaDisableDialog()` asks up front instead, before the MFA dialog opens. `openMfaEnableDialog()` opens the intro straight away; its Enable button asks for the password, on top of the MFA dialog, and cancelling that keeps the intro open.
 
 The confirmation holds for your app's `auth.password_timeout`. For a sensitive change, keep that short: Laravel's default is three hours.
 
@@ -330,7 +328,7 @@ await withPasswordConfirmation(() =>
 );
 ```
 
-`requestPasswordConfirmation(afterConfirm)` takes an optional function that runs once the password is accepted, before the dialog closes, with its Confirm button still loading. `openMfaRecoveryCodesDialog()` uses it to load the codes, so the user sees one action in progress from Confirm until the codes appear.
+`requestPasswordConfirmation(afterConfirm)` takes an optional function that runs once the password is accepted, before the dialog closes, with its Confirm button still loading: for the request the confirmation was for, so the user sees one action in progress from Confirm until its result appears. Either way the promise settles once the dialog has closed, so what you do next, such as moving focus, lands on a page that is no longer behind a modal.
 
 ### Changing the authenticator app
 
@@ -362,13 +360,13 @@ Every `useAuth().user` in your app is then typed against your own payload, with 
 
 ### Other composables
 
-|                         |                                                                                    |
-| ----------------------- | ---------------------------------------------------------------------------------- |
-| `useLoginEmail()`       | The address typed on the login page, shared with the forgot-password page          |
-| `usePasswordPolicy()`   | `minLength`, `maxLength` and `serverChecks` of new passwords                       |
-| `useCardanAuthConfig()` | The `cardanAuth` settings of the app config, see [Configuration](#configuration)   |
-| `useLogoutDialog()`     | `logoutDialogRef` to open `LogoutDialog`, and `handleLogout()`                     |
-| `useMfaSetupReminder()` | `mfaEnabled`, `mfaRequired`, `needsMfaSetup` and the reminder used by `/mfa-setup` |
+|                                    |                                                                                                                                                                     |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useLoginEmail()`                  | The address typed on the login page, shared with the forgot-password page                                                                                           |
+| `usePasswordPolicy()`              | `minLength`, `maxLength` and `serverChecks` of new passwords                                                                                                        |
+| `useCardanAuthConfig()`            | The `cardanAuth` settings of the app config, see [Configuration](#configuration)                                                                                    |
+| `useLogoutDialog()`                | `logoutDialogRef` to open `LogoutDialog`, and `handleLogout()`, which throws a refusal                                                                              |
+| `useMfaSetupReminder()`            | `mfaEnabled`, `mfaRequired`, `needsMfaSetup` and the reminder used by `/mfa-setup`                                                                                  |
 
 ### `useMfaDialog()`
 
@@ -384,7 +382,7 @@ Every `useAuth().user` in your app is then typed against your own payload, with 
 
 ### `useMfa()`
 
-The state and endpoint calls behind the components: `mfaStep`, `mfaCredentials`, `mfaError`, `qrCode`, `qrCodeUrl` (the `otpauth://` link in the QR code), `setupKey` (its secret), `recoveryCodes`, the `loading*` flags, and `enableMfa()`, `disableMfa()`, `getQrCode()`, `enterCode()`, `getRecoveryCodes()`, `generateRecoveryCodes()`, `solveMfaChallenge()`, `resetMfa()`.
+The state and endpoint calls behind the components: `mfaStep`, `mfaCredentials`, `mfaError`, `qrCode` (the SVG, reduced to the elements of a QR code), `qrCodeUrl` (the `otpauth://` link in the QR code), `setupKey` (its secret), `recoveryCodes`, the `loading*` flags, and `enableMfa()`, `disableMfa()`, `getQrCode()`, `enterCode()` (which reads the recovery codes first, and stops on the code step when they do not come), `getRecoveryCodes()` (the codes, or null when the request failed), `generateRecoveryCodes()`, `solveMfaChallenge()` and `resetMfa()`, which clears all of it: the dialogs call it when they close, `MfaSetup` on leaving, the challenge once it is solved.
 
 Reach for it to build your own flow. For the standard one, `useMfaDialog()` plus the two dialogs is all you need.
 
@@ -407,7 +405,6 @@ Reach for it to build your own flow. For the standard one, `useMfaDialog()` plus
 | `MfaCode`, `MfaRecoveryCode`                                          | The two inputs, with their validation and error region       |
 | `MfaQr`, `MfaEnableResult`, `MfaDisableResult`, `MfaRecoveryCodeList` | Steps of the flow, reusable on their own                     |
 | `MfaSetupKey`                                                         | The setup key as text, with a copy button                    |
-| `AuthError`                                                           | Renders a Fortify error or validation payload                |
 | `PasswordConfirmationDialog`                                          | Asks for the password when Fortify's `password.confirm` does |
 
 `MfaQr` connects the authenticator app two ways. On a desktop the QR code leads, with the setup key behind a "can't scan?" toggle. On a phone (a coarse pointer below 480px), where the app is usually on the same device, a link that opens the app leads (the `otpauth://` link Fortify's QR code endpoint returns next to the SVG), with two fallbacks behind toggles: the setup key, for apps that do not open from the link, and the QR code, for another device.
@@ -424,16 +421,16 @@ The `password` namespace holds every password string: the field labels, the forg
 
 The layer also uses `general.back`, `general.continue`, `general.confirm`, `general.done`, `general.sign-in` and `general.email` from Cardan UI.
 
-`AuthError` shows the API's validation messages as the backend sends them. Send `Accept-Language` from your app's locale and translate Laravel's messages in the backend; when the API answers with a `Content-Language` header, `AuthError` marks the messages with that `lang`, so screen readers announce them in the right voice (WCAG 3.1.2).
+The forms show the API's errors in Cardan UI's ErrorMessage, as the backend sends them. Send `Accept-Language` from your app's locale and translate Laravel's messages in the backend; ErrorMessage marks the messages with the `lang` of the API's `Content-Language` header, or English without one, so screen readers announce them in the right voice (WCAG 3.1.2).
 
 ## Accessibility
 
 Built to WCAG 2.2 AA, like everything at Cardan:
 
 - Following a link between the sign-in pages (back to login, forgot password) puts focus at the top of the new page, in the `AuthPage` frame, so keyboard and screen reader users start reading from the top. On a fresh load, `LoginForm` focuses the email field instead.
-- Each step moves focus deliberately — into the code input when the confirm step opens, and onto the other input when the user switches between an app code and a recovery code.
-- The confirm button stays disabled until six digits are entered; the input declares `inputmode="numeric"`, `pattern`, `autocomplete="one-time-code"` and its own error message.
-- Errors render in a `role="alert"` region.
+- Each step moves focus deliberately — into the code input when the confirm step opens, onto the step's heading (`MfaSetup`) or content (`MfaDialog`) otherwise, once the password dialog has closed, and onto the other input when the user switches between an app code and a recovery code.
+- The confirm button stays disabled until six digits are entered, so Enter in the field submits nothing before that; the input declares `inputmode="numeric"`, `pattern`, `autocomplete="one-time-code"` (the phone fills a code from SMS or mail, a password manager that holds the secret fills the app's) and its own error message. The recovery code field is `autocomplete="off"`: nothing fills that.
+- An error the browser finds (a required field left empty, an email address that is not one) shows on its field, which is `aria-invalid` and described by it, and focus moves to the first such field after a failed submit. An error from the server renders in the base layer's ErrorMessage, a `role="alert"` region that a screen reader announces as it appears; focus stays where it was.
 - The QR code is exposed as `role="img"` with a translated name, and the written setup instructions sit beside it rather than only inside the image.
 - Dialogs are native `<dialog>` elements from Cardan UI: modal focus trapping, `Escape` to close, and a labelled heading.
 - The reveal-password button beside every password field (`PasswordReveal`) is a real toggle button carrying `aria-pressed`, not an icon that silently swaps meaning, and the fields declare `autocomplete="username"` / `"current-password"` (WCAG 1.3.5).
@@ -446,4 +443,4 @@ This layer lives in the `auth/` directory of the Cardan UI repository. From the 
 - Run `pnpm run dev` and open the Auth UI pages of the playground on [localhost:3003/auth](http://localhost:3003/auth)
 - Run `pnpm run lint` before opening a pull request
 
-The Cardan UI playground extends this layer and demoes it under `/auth`. It talks to mock Fortify endpoints in `.playground/server/routes`: the password is always confirmed, any password signs in except `wrong`, and any MFA code is accepted except `000000`, which shows the validation error. The pages render client-side only, like the single-page apps that use the layer.
+The Cardan UI playground extends this layer and demoes it under `/auth`. It talks to mock Fortify endpoints in `.playground/server/routes`: any password is confirmed and any MFA code accepted except `000000`, and any password signs in except `wrong`; those show the validation error. The pages render client-side only, like the single-page apps that use the layer.

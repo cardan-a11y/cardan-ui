@@ -33,6 +33,8 @@
     "recovery-codes-regenerate": "Herstelcodes vernieuwen",
     "recovery-codes-regenerate-description": "Nieuwe herstelcodes vervangen je huidige codes, die meteen niet meer werken. Je ziet de nieuwe codes maar één keer, dus houd een veilige plek klaar om ze te bewaren.",
     "recovery-codes-show": "Herstelcodes tonen",
+    "recovery-codes-unavailable": "Je herstelcodes konden niet worden geladen, dus de code is nog niet bevestigd. Probeer het opnieuw.",
+    "recovery-codes-missing": "Je herstelcodes konden niet worden getoond. Maak nieuwe aan in je accountinstellingen met ‘{action}’.",
     "use-code": "Gebruik een verificatiecode",
     "use-recovery-code": "Gebruik een herstelcode",
     "reset": "MFA opnieuw instellen",
@@ -47,7 +49,8 @@
     "organization-required-description": "Iedereen in je organisatie moet multi-factor authenticatie instellen voordat ze het platform kunnen gebruiken. Voor managers is het altijd verplicht.",
     "organization-required-on": "Multi-factor authenticatie is nu verplicht voor je organisatie.",
     "organization-required-off": "Multi-factor authenticatie is niet langer verplicht voor je organisatie.",
-    "change-app-description": "Om over te stappen op een nieuwe authenticatie-app of telefoon wordt multi-factor authenticatie uitgeschakeld en stel je het meteen opnieuw in. Tot die tijd kun je alleen de instelpagina gebruiken."
+    "change-app-description": "Om over te stappen op een nieuwe authenticatie-app of telefoon wordt multi-factor authenticatie uitgeschakeld en stel je het meteen opnieuw in. Tot die tijd kun je alleen de instelpagina gebruiken.",
+    "session-expired": "Je sessie is verlopen. Log opnieuw in om verder te gaan."
   },
   "password-confirmation": {
     "title": "Bevestig je wachtwoord",
@@ -56,8 +59,7 @@
   "auth": {
     "login-title": "Welkom terug",
     "login-description": "Log in om verder te gaan.",
-    "confirm-logout": "Weet je zeker dat je wilt uitloggen?",
-    "error-generic": "Er ging iets mis. Controleer je verbinding en probeer het opnieuw."
+    "confirm-logout": "Weet je zeker dat je wilt uitloggen?"
   },
   "password": {
     "back-to-login": "Terug naar",

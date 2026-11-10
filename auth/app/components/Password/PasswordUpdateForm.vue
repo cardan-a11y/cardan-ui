@@ -15,7 +15,7 @@ const password = ref('');
 const passwordConfirmation = ref('');
 const showPassword = ref(false);
 const loading = ref(false);
-const error = ref<AuthErrorData | null>(null);
+const error = ref<ApiErrorData | null>(null);
 const requirementsId = useId();
 /** The "saved" toast, hidden again on the next submit */
 let savedToastId: string | undefined;
@@ -42,7 +42,7 @@ async function updatePassword() {
 
     savedToastId = createToast({ label: t('password.saved'), color: 'green' });
   } catch (e) {
-    error.value = extractAuthError(e);
+    error.value = extractApiError(e);
   } finally {
     loading.value = false;
   }
@@ -105,7 +105,7 @@ async function updatePassword() {
       :loading="loading"
     />
 
-    <AuthError :data="error" />
+    <ErrorMessage :data="error" />
   </Form>
 </template>
 

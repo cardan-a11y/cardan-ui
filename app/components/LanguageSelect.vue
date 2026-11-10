@@ -4,6 +4,9 @@ import type { Locale } from '#i18n';
 // The locales of the i18n config, with their names: a language is added there
 const { locale, locales, setLocale } = useI18n();
 
+// Per instance, as the component can be in a footer and a dialog at once
+const id = useId();
+
 const userLang = computed({
   get: () => locale.value,
   set: (value: Locale) => {
@@ -29,14 +32,14 @@ const emit = defineEmits<{
           class="language-option"
         >
           <input
-            :id="`language-option-${option.code}`"
+            :id="`${id}-${option.code}`"
             v-model="userLang"
-            name="i18n"
+            :name="id"
             :value="option.code"
             type="radio"
           />
           <label
-            :for="`language-option-${option.code}`"
+            :for="`${id}-${option.code}`"
             :lang="option.language ?? option.code"
           >
             {{ option.name ?? option.code }}

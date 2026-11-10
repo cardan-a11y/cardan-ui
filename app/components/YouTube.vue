@@ -1,18 +1,16 @@
 <script setup lang="ts">
+import { parseVideoUrl } from '../utils/video';
+
 const { url } = defineProps<{
   url: string;
   aboveTheFold?: boolean;
 }>();
 
+/** The id in any YouTube URL the player can play (watch, short, live, embed, youtu.be). */
 const youtubeKey = computed(() => {
-  const match: string[] | null = url?.match(
-    /:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/)?([a-zA-Z0-9-_]+)(?:(?:&t=|\?t=|\?start=)(\d+))?/,
-  );
+  const video = parseVideoUrl(url);
 
-  if (match?.length === 3) {
-    return match[1];
-  }
-  return '';
+  return video?.provider === 'youtube' ? video.id : '';
 });
 </script>
 

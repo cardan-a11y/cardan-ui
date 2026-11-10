@@ -1,6 +1,6 @@
 ---
 name: guidelines
-description: The shared frontend guidelines of the Cardan Nuxt projects (architecture, the review before every commit, CSS, code quality, WCAG 2.2). Claude Code adds them to every session in a Cardan repository; the cardan:cardan-reviewer agent loads them itself.
+description: The shared frontend guidelines of the Cardan Nuxt projects (the review before every commit, CSS, dependencies, browser checks, WCAG 2.2). Claude Code adds them to every session in a Cardan repository.
 ---
 
 # Cardan frontend guidelines
@@ -8,35 +8,9 @@ description: The shared frontend guidelines of the Cardan Nuxt projects (archite
 These guidelines apply in every Cardan Nuxt repository. They come from the
 `cardan` plugin (`plugins/cardan` in cardan-ui); edit them there only.
 
-## Frontend architecture
-
-- **Framework**: Nuxt.js with Vue Composition API
-- **Language**: TypeScript strict mode
-- **Build Tool**: Vite
-- **Package Manager**: pnpm
-- **Linting**: ESLint
-- **Styling**: CSS with custom design system
-- **Features**: i18n (EN/NL), dark mode, responsive design, MCP server
-- **Focus**: Accessibility-first modern UI design for evergreen browsers
-
-## Development Commands
-
-```bash
-pnpm dev            # Start development server
-pnpm run lint       # Run ESLint
-pnpm run typecheck  # Run vue-tsc, where the project has the script
-pnpm test           # Run the tests, where the project has the script
-pnpm run build      # Build the application for production
-```
-
----
-
 ## Branches and releases
 
-- **cardan-ui**: work starts on the release branch of the next patch version, `release/<version>`, cut from `main`, so several fixes ship together in one release; `/cardan:release` makes the branch a version with a pull request against `main`, and after the merge the next release branch is cut. A change that must reach the projects before the rest gets its own branch and pull request. A merge reaches every project at its next production build.
-- **cardan-cms-nuxt** (no `develop` branch): cut a branch from `main` and open the pull request against `main`.
-- **cardan-lms-nuxt and cardan-auditor-nuxt release from `develop`**: `main` is production, `develop` is staging, which Netlify builds on every merge. It is also the default branch on GitHub, so `gh pr create` targets it without `--base`. One branch per issue, cut from `develop`, with a pull request against `develop`. Merging into `develop` is not a production deploy, so an issue never waits for another one on its branch. A release is one pull request from `develop` into `main` without code of its own, merged with a merge commit; `/cardan:release` opens it with the merged PRs as its description. A hotfix is cut from `main` with a pull request against `main` (`gh pr create --base main`, since the default is `develop`); after its merge, `main` is brought into `develop` (`/cardan:release`, step 4), so staging matches production again.
-- A release, and `main` brought back into `develop`, needs no review: see the exceptions under "Review Before Commit, Push and PR".
+- Each repository's CLAUDE.md says which branch work starts from and which branch a pull request targets; `/cardan:release` makes a release. A release, and `main` brought back into `develop`, needs no review: see the exceptions under "Review Before Commit, Push and PR".
 - **Netlify skips a build** when a push changes only documentation, AI or CI setup: the `ignore` command in each project's `netlify.toml` lists those paths (`CLAUDE.md`, `REVIEW.md`, `AGENTS.md`, `README.md`, `MIGRATION.md`, `docs/`, `.claude/`, `.cursor/`, `.mcp.json`, `.github/`, and in cardan-ui `plugins/` and `.claude-plugin/`, but not its `README.md`, which the playground shows). A merge of only those does not deploy, and does not pick up a newer Cardan UI either. A new file or folder of that kind goes on the list in every project.
 
 ---
@@ -51,95 +25,54 @@ Run a review **before every `git commit`, `git push` and `gh pr create`** in a C
 - A PR from a branch with nothing uncommitted and nothing unpushed: its commits are already on the remote, through the push gate or a push the user made outside it.
 - A push that sends only commits already on `origin/main` or `origin/develop`, which arrived through reviewed pull requests. This covers bringing `main` back into `develop`; the release PR is the case above.
 
-The `cardan` plugin's hook enforces it: it blocks those commands until the `cardan:cardan-reviewer` agent has reviewed the files exactly as they are now. When that agent finishes, the hook records the state of the working tree; any change after that, a fix included, needs a new review. Never record that state yourself. A review counts for the repository the reviewer names on its last line (`Reviewed repository: <path>`): the session's own, or a Cardan repository (one with a REVIEW.md) in the same parent folder, so one session can work across the checkouts that sit side by side. Skip the review only when the user explicitly says to skip it for this change, by putting `SKIP_REVIEW=1` in front of the command; "commit this" or "push" is not a skip. The hook only sees the commands Claude runs: a push from the user's own terminal is not gated.
+The `cardan` plugin's hook enforces it: it blocks those commands until the `cardan:cardan-reviewer` agent, or the `cardan:plugin-reviewer` for a change to the Claude Code setup alone, has reviewed the files exactly as they are now. When that agent finishes, the hook records the state of the working tree; any change after that, a fix included, needs a new review. Never record that state yourself. A review counts for the repository the reviewer names on its last line (`Reviewed repository: <path>`): the session's own, or a Cardan repository (one with a REVIEW.md) in the same parent folder, so one session can work across the checkouts that sit side by side. Skip the review only when the user explicitly says to skip it for this change, by putting `SKIP_REVIEW=1` in front of the command; "commit this" or "push" is not a skip. The hook only sees the commands Claude runs: a push from the user's own terminal is not gated. Every commit is a review round, so commit a finished piece of work, not each step of it.
 
 1. **Run the checks first**: `pnpm run lint`, plus `pnpm run typecheck` and `pnpm test` where the project has those scripts. REVIEW.md leaves out what ESLint enforces, so lint must pass on its own.
-2. **Start the reviewer**: launch the `cardan:cardan-reviewer` agent with the Agent tool (`subagent_type: "cardan:cardan-reviewer"`). Never review your own changes in your own context, and never use a `fork` (it inherits your context).
+2. **Start the reviewer**: launch the `cardan:cardan-reviewer` agent with the Agent tool (`subagent_type: "cardan:cardan-reviewer"`). When every uncommitted change is to the Claude Code setup (`plugins/`, `.claude-plugin/`, `.claude/`) or documentation, launch `cardan:plugin-reviewer` instead: it checks the hook, the instructions and their references rather than components, and skips the browser check. Never review your own changes in your own context, and never use a `fork` (it inherits your context).
 3. **Brief it** (except in the three cases above) with only the repository's absolute path, the diff command and the target branch, never your own reasoning or what you think is fine:
    - Before a commit: every uncommitted change (`git diff HEAD`, plus untracked files). The hook records the whole working tree as reviewed, so review all of it, not only what is staged.
-   - Before a push or PR: the whole branch against the branch it will merge into (`git diff origin/<base>`, which includes uncommitted changes). That is the branch the PR targets: `main`, or `develop` in cardan-auditor-nuxt and cardan-lms-nuxt ("Branches and releases" above). If every commit on the branch was already reviewed this way and nothing changed since, the commit review covers it and the hook lets the push through.
-4. **Act on the findings**:
+   - Before a push or PR: the whole branch against the branch it will merge into (`git diff origin/<base>`, which includes uncommitted changes), the one the repository's CLAUDE.md names. If every commit on the branch was already reviewed this way and nothing changed since, the commit review covers it and the hook lets the push through.
+4. **Test in Chrome, Firefox and WebKit** while the reviewer runs, when the change alters what a page shows or how it behaves (a component, page, style or composable; not documentation, tests, configuration or the plugin). The reviewer reads code only: this is the review round's browser check, and the only time a change runs in all three browsers. On the project's dev server (`pnpm dev` when it is not running), run for each page that shows the changed code:
+
+   `node "${CLAUDE_PLUGIN_ROOT}/scripts/cross-browser.mjs" <url> [--focus <css>] [--steps Tab,Enter,click:<css>,hover:<css>,…] [--snapshot <css>] [--login <email>:<password>] [--browsers firefox,…]`
+
+   It opens the page in the three browsers at once, runs the steps (ten Tabs by default; `--focus` starts at the changed element) and prints one table: console errors, horizontal scroll at 320px and 1280px, and after each step where focus is and what is open, with the side of its trigger a popover sits on. `--snapshot` adds the accessibility tree of the changed element. A row marked ≠ differs between browsers, and is a finding handled like the reviewer's in the next step: 🔴 Important when the change does not work in a browser (a control that cannot be reached or used, focus lost or trapped, a console error, content cut off), 🟡 Nit when it works but looks or sits differently. A page behind sign-in takes `--login` with the project's local development account (ask the user for it once; never a real one): it signs in once and shares the session with the three browsers. `--browsers` reruns only the browser that failed. Focus that differs after a click in WebKit is Safari's own behaviour, which the script explains when it happens. Read a screenshot it saved only to see a layout difference. After a fix, run it again. When it says a browser is not installed, run the install command it prints once.
+
+   When a difference needs a closer look than the table and screenshots give, ask the user to switch on the `cardan-browsers` plugin with `/plugin` (installing it there first from the `cardan-ui` marketplace when it is not listed): it adds the `playwright-firefox` and `playwright-webkit` MCP servers. Ask them to switch it off again afterwards, so it costs nothing in other sessions.
+5. **Act on the findings**:
    - 🔴 Important: fix it. If after checking the code you think the finding is wrong, tell the user why instead of fixing it. After fixes, run the reviewer again on the changes since, saying in the brief that it is a re-review (Important findings only). Never commit or push with an open Important finding unless the user decides to.
    - 🟡 Nit: fix the clear ones before the re-review and list the rest for the user.
-5. **Report**: before the re-review, and before you commit, push or open the PR, show the user the tally and every finding with what you did with it and why: fixed (and how), not fixed (and the reason), or left for the user to decide. The user can veto a decision only when they see the reasoning. Put a one-line summary of the local review in the PR description (the `cardan:pr-body` skill has the format).
+6. **Report**: before the re-review, and before you commit, push or open the PR, show the user the tally, the browser check (the browsers it ran in, or why it was skipped) and every finding with what you did with it and why: fixed (and how), not fixed (and the reason), or left for the user to decide. The user can veto a decision only when they see the reasoning. Put a one-line summary of the local review in the PR description (the `cardan:pr-body` skill has the format).
 
 The reviewer's report arrives a moment before the hook records it: when a commit right after the report is blocked as "not reviewed", wait a few seconds and try once more before anything else.
 
 ---
 
-## Core Development Principles
+## CSS
 
-### Custom CSS Design System
+- Nested classes, not classes on the root element; mobile-first; logical properties and values.
+- The CSS variables of Cardan UI for colors, spacing, typography and the rest.
+- Think through class placement, order, priority and defaults: remove redundant classes, put a class on the parent or the child so it repeats least, group elements logically. Offer to extract a repeated pattern into a utility class or a Vue component, depending on the project's conventions.
 
-- Write custom CSS for the project, avoid using Tailwind classes
-- Use CSS nested classes for styling, avoid adding classes to the root element
-- Write mobile-first CSS, ensure the design is responsive and works on all devices
-- Use logical properties and values
-- Use CSS variables from Cardan UI for colors, spacing, typography, etc.
-- Think through class placement, order, priority, and defaults - remove redundant classes, add classes to parent or child carefully to limit repetition, group elements logically
-- Offer to extract repeated patterns into utility classes or Vue components, depending on the project's conventions
+## Dependencies
 
-### Code Quality Standards
-- Use TypeScript strict mode
-- Follow Vue 3 Composition API patterns
-- Implement comprehensive TypeScript types
-- Write intuitive component APIs
-- Implement proper error handling
-- Use semantic naming conventions
-- Organize code in logical file structures
-- Prefer composition over inheritance
+Avoid a new external dependency unless it is necessary. A dependency that Cardan UI already lists is not a new one: reusing it in a project is fine, especially a Nuxt module, and better than writing your own version.
 
-### Testing & Quality
-- Use ESLint for code quality
-- Test keyboard navigation
-- Verify screen reader compatibility
-- Check a change in the browser while you work on it: the plugin's Playwright MCP server loads the dev server, walks a page with the keyboard, reads the console and screenshots at 320px. The reviewer does not do this; the working session does
-- A browser check reads what it needs, not the whole page: `browser_snapshot` with `target` or `depth` for the element under test, `browser_evaluate` for a value, a screenshot only for layout. A snapshot or screenshot of the whole page at every step is what makes these checks expensive
+## Browser checks while you work
 
-### Performance
-- Implement tree-shaking for components
-- Use lazy loading where appropriate
-- Optimize bundle size
-- Monitor performance metrics
-
-### Dependencies
-- **Preference**: Avoid adding new external dependencies unless absolutely necessary
-- **Reuse**: A dependency that Cardan UI already lists is not a new dependency. Reusing it in a project is fine, especially a Nuxt module: prefer it over writing your own version
-- **Version Control**: Keep dependencies up to date and secure
-
-### Project Planning
-
-When working on new features or components:
-1. **Outline a plan** before making code changes
-2. Consider accessibility requirements from the start
-3. Follow established patterns and conventions
-4. Test thoroughly before implementation
-5. Document any new patterns or utilities
+- Check a change in the browser while you work on it: the plugin's `playwright` MCP server (Chrome) loads the dev server, walks a page with the keyboard, reads the console and screenshots at 320px. Firefox and WebKit join in the review round (step 4 above).
+- A browser check reads what it needs, not the whole page: `browser_snapshot` with `target` or `depth` for the element under test, `browser_evaluate` for a value, a screenshot only for layout. A snapshot or screenshot of the whole page at every step is what makes these checks expensive.
 
 ---
 
-## Web Content Accessibility Guidelines
+## 🚨 Accessibility first: WCAG 2.2 A and AA
 
-### 🚨 ACCESSIBILITY FIRST - MANDATORY REQUIREMENT
+Cardan is an accessibility-first company: every frontend change must meet all 55 WCAG 2.2 level A and AA success criteria. In particular:
 
-**CRITICAL**: Since we are an accessibility first company, every frontend change MUST comply with all 55 WCAG 2.2 level A and AA success criteria. This is non-negotiable.
+- Semantic HTML, full keyboard access, visible focus and a logical focus order.
+- Labels, roles and descriptions for screen readers, and labelled forms with announced errors.
+- Contrast of 4.5:1 for normal text and 3:1 for large text and graphical UI elements.
+- Empty alt text for decorative images, descriptive alt text for the rest.
+- Reflow from 320px wide, in every orientation.
 
-### Accessibility Requirements for ALL Changes:
-
-- **WCAG 2.2 Compliance**: Must meet all Level A and AA success criteria
-- **Semantic HTML**: Use proper HTML elements and structure
-- **Keyboard Navigation**: Ensure full keyboard accessibility
-- **Screen Reader Support**: Provide proper labels, roles, and descriptions
-- **Color Contrast**: Meet minimum contrast ratios (4.5:1 for normal text, 3:1 for large text and graphical UI elements)
-- **Focus Management**: Visible focus indicators and logical focus order
-- **Alternative Text**: Empty alt text for decorative images and descriptive alt text for all other images
-- **Form Labels**: Proper labeling and error handling for forms
-- **Responsive Design**: Accessible across all device sizes and orientations, support viewport width from 320px and up
-
-### Testing Accessibility Changes:
-
-- Test with keyboard navigation only
-- Verify with screen readers (built-in or extensions)
-- Check color contrast ratios
-- Validate HTML semantics
-- Run the automated accessibility tests where the project has them (`pnpm test`, with vitest-axe)
+Test with the keyboard alone and with a screen reader, and run the automated accessibility tests where the project has them (`pnpm test`, with vitest-axe).

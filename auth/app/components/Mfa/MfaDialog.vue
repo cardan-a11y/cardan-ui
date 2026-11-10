@@ -31,6 +31,11 @@ const dialogLabel = computed(() => {
   return 'mfa.heading';
 });
 
+// A step replaces the content focus was in (the Enable button, the code form)
+// with the next step's, so focus moves to that content
+const stepRef = useTemplateRef<HTMLDivElement>('step');
+useMfaStepFocus(stepRef);
+
 /**
  * Asks for the password once the user chooses to enable MFA on the intro, so
  * that dialog opens on top of this one. Cancelling it keeps the intro open.
@@ -74,36 +79,39 @@ const emit = defineEmits<{
     :click-outside="false"
     @close="resetMfa()"
   >
-    <div v-if="mfaStep === 1" class="mfa-content">
-      <p>{{ $t('mfa.description') }}</p>
+    <!-- The step's content takes focus, as the dialog's title cannot -->
+    <div ref="step" class="mfa-dialog-step" tabindex="-1">
+      <div v-if="mfaStep === 1" class="mfa-content">
+        <p>{{ $t('mfa.description') }}</p>
 
-      <AuthError :data="mfaError" />
+        <ErrorMessage :data="mfaError" />
+      </div>
+
+      <template v-if="mfaStep === 2">
+        <MfaQr />
+
+        <ErrorMessage :data="mfaError" />
+      </template>
+
+      <Form
+        v-if="mfaStep === 3"
+        id="mfa-code-confirmation-form"
+        :autofocus-fn="() => codeInputRef?.focusElement()"
+        @submit="handleEnterCode"
+      >
+        <MfaCode />
+      </Form>
+
+      <MfaEnableResult v-if="mfaStep === 4" />
+
+      <div v-if="mfaStep === 5" class="mfa-content">
+        <p>{{ $t('mfa.disable-description') }}</p>
+
+        <ErrorMessage :data="mfaError" />
+      </div>
+
+      <MfaDisableResult v-if="mfaStep === 6" />
     </div>
-
-    <template v-if="mfaStep === 2">
-      <MfaQr />
-
-      <AuthError :data="mfaError" />
-    </template>
-
-    <Form
-      v-if="mfaStep === 3"
-      id="mfa-code-confirmation-form"
-      :autofocus-fn="() => codeInputRef?.focusElement()"
-      @submit="handleEnterCode"
-    >
-      <MfaCode />
-    </Form>
-
-    <MfaEnableResult v-if="mfaStep === 4" />
-
-    <div v-if="mfaStep === 5" class="mfa-content">
-      <p>{{ $t('mfa.disable-description') }}</p>
-
-      <AuthError :data="mfaError" />
-    </div>
-
-    <MfaDisableResult v-if="mfaStep === 6" />
 
     <hr class="mfa-dialog-divider" />
 
@@ -159,6 +167,12 @@ const emit = defineEmits<{
 <style>
 .mfa-dialog {
   --dialog-max-width: 480px;
+
+  /* Focused by script only, so no ring around the whole step; a ring in
+     forced-colors mode still, as on AuthPage */
+  .mfa-dialog-step {
+    outline: 1px solid transparent;
+  }
 
   .mfa-dialog-divider {
     block-size: 1px;

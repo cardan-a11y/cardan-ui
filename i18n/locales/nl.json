@@ -1,5 +1,6 @@
 {
   "aria": {
+    "breadcrumb": "Kruimelpad",
     "callout-error": "Foutmelding",
     "callout-info": "Ter informatie",
     "callout-success": "Succes",
@@ -36,7 +37,9 @@
     "just-now": "zojuist",
     "seconds-ago": "{n} seconde geleden | {n} seconden geleden",
     "minutes-ago": "{n} minuut geleden | {n} minuten geleden",
-    "hours-ago": "{n} uur geleden | {n} uur geleden"
+    "hours-ago": "{n} uur geleden | {n} uur geleden",
+    "in-minutes": "over {n} minuut | over {n} minuten",
+    "in-hours": "over {n} uur | over {n} uur"
   },
   "datepicker": {
     "input": "Datumveld",
@@ -62,7 +65,9 @@
   "error": {
     "403": "Geen toegang",
     "404": "Niet gevonden",
+    "general": "Er is iets misgegaan. Probeer het later opnieuw.",
     "heading": "Foutmelding",
+    "offline": "Je bent offline. Controleer je verbinding en probeer het opnieuw.",
     "page-not-found": "Pagina niet gevonden",
     "unauthorized": "Je hebt geen rechten om deze pagina te openen.",
     "youtube": "YouTube player is niet geladen"
@@ -121,6 +126,7 @@
     "clear": "Wissen",
     "copied": "Gekopieerd",
     "copy": "Kopiëren",
+    "copy-failed": "Kopiëren mislukt",
     "copy-url": "Link kopiëren",
     "create": "Aanmaken",
     "created": "Aangemaakt",
@@ -270,6 +276,7 @@
     }
   },
   "video": {
+    "heading": "Video",
     "play": "Video afspelen"
   }
 }

@@ -7,6 +7,8 @@ const props = defineProps<{
   loading?: 'lazy' | 'eager';
 }>();
 
+const { t } = useI18n();
+
 const started = ref(false);
 
 /** A URL that is no video keeps the YouTube embed with a dummy id, so the figure still renders. */
@@ -26,8 +28,9 @@ const metadataUrl = computed(() => {
   return `https://youtube.com/oembed?url=https://youtube.com/watch?v=${id}&format=json`;
 });
 
+// The key follows the URL, so a new video gets its own metadata
 const { data: videoData } = await useAsyncData<VideoMetaData>(
-  `video:${props.url ?? ''}`,
+  () => `video:${props.url ?? ''}`,
   () => $fetch<VideoMetaData>(metadataUrl.value),
   {
     lazy: true,
@@ -57,12 +60,45 @@ const embedUrl = computed(() => {
   return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&disablekb=1`;
 });
 
+/** How many thumbnails of the video failed to load. */
+const thumbFailures = ref(0);
+
+/**
+ * YouTube's hq720.webp is the sharpest, but not every video has one: after a
+ * failure the one its metadata names, then hqdefault.jpg, which every video
+ * has. Vimeo only names one.
+ */
 const thumbUrl = computed(() => {
-  if (video.value.provider === 'vimeo') {
-    return videoData.value?.thumbnail_url;
-  }
-  return `https://i.ytimg.com/vi_webp/${video.value.id}/hq720.webp`;
+  const { provider, id } = video.value;
+  const fromMetadata = videoData.value?.thumbnail_url;
+
+  if (provider === 'vimeo') return fromMetadata;
+
+  const candidates = [
+    `https://i.ytimg.com/vi_webp/${id}/hq720.webp`,
+    fromMetadata,
+    `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+  ].filter((url) => typeof url === 'string');
+
+  return candidates[Math.min(thumbFailures.value, candidates.length - 1)];
 });
+
+function nextThumb() {
+  thumbFailures.value += 1;
+}
+
+watch(
+  () => props.url,
+  () => {
+    thumbFailures.value = 0;
+  },
+);
+
+const iframeTitle = computed(() =>
+  videoData.value?.title
+    ? `Video: ${videoData.value.title}`
+    : t('video.heading'),
+);
 
 function playVideo() {
   started.value = true;
@@ -79,6 +115,7 @@ function playVideo() {
       :preload="loading === 'eager' ? { fetchPriority: 'high' } : undefined"
       format="webp"
       @click="playVideo"
+      @error="nextThumb"
     />
 
     <button v-if="!started" type="button" @click="playVideo">
@@ -94,9 +131,10 @@ function playVideo() {
         />
       </svg>
 
-      <span class="visuallyhidden"
-        >{{ $t('video.play') }}: {{ videoData?.title }}</span
-      >
+      <span class="visuallyhidden">
+        {{ $t('video.play')
+        }}{{ videoData?.title ? `: ${videoData.title}` : '' }}
+      </span>
     </button>
 
     <figcaption v-if="!started && caption">{{ caption }}</figcaption>
@@ -104,7 +142,7 @@ function playVideo() {
     <div v-if="started" class="iframe-wrapper">
       <iframe
         :src="embedUrl"
-        :title="`Video: ${videoData?.title}`"
+        :title="iframeTitle"
         allow="autoplay *; fullscreen *; encrypted-media *"
         allowfullscreen
       />

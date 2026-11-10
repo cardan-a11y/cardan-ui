@@ -9,13 +9,17 @@ export function useMfa() {
   const { client, refreshIdentity, loginRedirectTarget } = useAuth();
   const { withPasswordConfirmation } = usePasswordConfirmation();
   const { endpoints } = useCardanAuthConfig();
+  const { createToast } = useToast();
+  // Not `useI18n()`: that needs a component, and the challenge and setup
+  // pages are not the only callers
+  const { $i18n } = useNuxtApp();
 
   const mfaStep = useState<MfaStep>('mfaStep', () => 1);
   const qrCode = useState('qrCode', () => '');
   /** The `otpauth://` link the QR code holds: opens an authenticator app. */
   const qrCodeUrl = useState('qrCodeUrl', () => '');
   const recoveryCodes = useState<string[]>('recoveryCodes', () => []);
-  const mfaError = useState<AuthErrorData | null>('mfaError', () => null);
+  const mfaError = useState<ApiErrorData | null>('mfaError', () => null);
 
   const mfaCredentials = useState<MfaCredentials>('mfaCredentials', () => ({
     code: '',
@@ -52,7 +56,7 @@ export function useMfa() {
   function setMfaError(error: unknown) {
     // A password confirmation the user closed is their choice, not an error.
     if (isPasswordConfirmationRequired(error)) return;
-    mfaError.value = extractAuthError(error);
+    mfaError.value = extractApiError(error);
   }
 
   /**
@@ -66,30 +70,44 @@ export function useMfa() {
     return withPasswordConfirmation(() => client<T>(url, options));
   }
 
+  /**
+   * Clears every trace of a flow: on closing a dialog, on leaving the setup
+   * page and once the challenge is solved, so nothing of an abandoned
+   * enrolment, its recovery codes above all, survives into the next one.
+   */
   function resetMfa() {
     mfaStep.value = 1;
     qrCode.value = '';
     qrCodeUrl.value = '';
+    recoveryCodes.value = [];
     mfaError.value = null;
     loadingConfirmationCode.value = false;
     loadingSolveMfaChallenge.value = false;
     loadingDisableMfa.value = false;
+    loadingGenerateRecoveryCodes.value = false;
     mfaCredentials.value = {
       code: '',
       recovery_code: '',
     };
   }
 
-  async function getRecoveryCodes() {
+  /**
+   * Reads the codes: the list the API serves, empty once it no longer does.
+   * Null when the request failed, with the error set, unless the user closed
+   * the password dialog, which is their choice.
+   */
+  async function getRecoveryCodes(): Promise<string[] | null> {
     mfaError.value = null;
 
     try {
-      const codes = await settingsRequest<string[]>(
-        endpoints.twoFactorRecoveryCodes,
-      );
-      if (codes?.length) recoveryCodes.value = codes;
+      const codes =
+        (await settingsRequest<string[]>(endpoints.twoFactorRecoveryCodes)) ??
+        [];
+      if (codes.length) recoveryCodes.value = codes;
+      return codes;
     } catch (error) {
       setMfaError(error);
+      return null;
     }
   }
 
@@ -156,7 +174,8 @@ export function useMfa() {
       const data = await settingsRequest<{ svg?: string; url?: string }>(
         endpoints.twoFactorQrCode,
       );
-      if (data?.svg) qrCode.value = data.svg;
+      // Inlined as markup by `MfaQr`, so only a QR code gets through
+      if (data?.svg) qrCode.value = sanitizeQrSvg(data.svg);
       if (data?.url) qrCodeUrl.value = data.url;
     } catch (error) {
       setMfaError(error);
@@ -173,7 +192,19 @@ export function useMfa() {
       // confirmation that only covered setting MFA up (one that came from
       // signing in) once it is confirmed, and the codes still belong to this
       // enrolment. This is the one read of the codes that the setup gets.
-      await getRecoveryCodes();
+      const codes = await getRecoveryCodes();
+
+      // Without them the enrolment stops here, on the code step: confirming
+      // would turn MFA on with codes the user never gets to see. A failed
+      // request has set the error already; an empty answer gets one here.
+      if (!codes?.length) {
+        if (codes) {
+          mfaError.value = {
+            message: $i18n.t('mfa.recovery-codes-unavailable'),
+          };
+        }
+        return false;
+      }
 
       await settingsRequest(endpoints.twoFactorConfirmation, {
         method: 'POST',
@@ -197,7 +228,8 @@ export function useMfa() {
     mfaError.value = null;
     loadingSolveMfaChallenge.value = true;
 
-    const redirect = loginRedirectTarget();
+    const route = useRoute();
+    const redirect = loginRedirectTarget(route);
 
     try {
       await client(endpoints.twoFactorChallenge, {
@@ -207,7 +239,25 @@ export function useMfa() {
       await refreshIdentity();
 
       if (redirect !== false) await navigateTo(redirect);
+      resetMfa();
     } catch (error) {
+      if (isUnauthenticated(error)) {
+        // The sign-in this challenge belonged to has expired: Fortify no
+        // longer knows whose code this is. Back to the login page, with where
+        // the user was headed and a word on why. nuxt-auth-sanctum's own 401
+        // handling only knows to go to `redirect.onAuthOnly`, without either.
+        resetMfa();
+        createToast({
+          label: $i18n.t('mfa.session-expired'),
+          color: 'orange',
+        });
+        await navigateTo({
+          path: '/login',
+          query: { redirect: route.query.redirect },
+        });
+        return;
+      }
+
       setMfaError(error);
     } finally {
       loadingSolveMfaChallenge.value = false;

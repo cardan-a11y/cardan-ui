@@ -11,10 +11,14 @@ const { locale, locales, setLocale } = useI18n();
         :key="option.code"
         :class="`list-item--${option.code}`"
       >
+        <!-- The home page of the language: a page's address in another
+             language is not its own with another prefix (cardan.com has
+             /diensten and /en/services) -->
         <NuxtLinkLocale
           :to="{ path: '/' }"
           :locale="option.code"
           :lang="option.language ?? option.code"
+          :aria-current="locale === option.code ? 'true' : undefined"
           :class="locale === option.code ? 'active' : ''"
           @click="setLocale(option.code)"
         >

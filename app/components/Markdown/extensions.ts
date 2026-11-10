@@ -41,10 +41,34 @@ export type TargetBlankOptions = {
 };
 
 /**
- * Every link opens in a new window and says so: hidden text at its end and,
- * when the link has no title of its own, a title. The text comes from
- * `env.newWindowLabel` (MarkdownPreview, per render) or the `label` option
- * (MarkdownEditor, whose preview renders without an env).
+ * Whether a link leaves the site: an absolute http(s) URL on another origin
+ * than `origin` (from the env), or else the browser's. A route, an anchor or
+ * a mailto link stays in the window. Without either origin, on a server that
+ * was given none, every absolute link counts as external.
+ */
+function isExternal(href: string, origin?: unknown) {
+  if (!/^https?:\/\//i.test(href)) return false;
+  const site =
+    typeof origin === 'string'
+      ? origin
+      : typeof window === 'undefined'
+        ? undefined
+        : window.location.origin;
+  if (!site) return true;
+
+  try {
+    return new URL(href).origin !== site;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * A link to another site opens in a new window and says so: hidden text at
+ * its end and, when the link has no title of its own, a title. The text comes
+ * from `env.newWindowLabel` (MarkdownPreview, per render) or the `label`
+ * option (MarkdownEditor, whose preview renders without an env). A link that
+ * already has `target="_blank"` (a trusted text) gets the hidden text too.
  */
 export function targetBlankExtension(
   md: MarkdownIt,
@@ -72,24 +96,36 @@ export function targetBlankExtension(
 
   md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
     const token = tokens[idx];
+    const href = token?.attrGet('href');
 
-    if (token?.attrIndex('target') === -1) {
-      token.attrPush(['target', '_blank']);
-    } else {
-      token?.attrSet('target', '_blank');
-    }
+    if (
+      token &&
+      typeof href === 'string' &&
+      isExternal(href, (env as { origin?: unknown } | undefined)?.origin)
+    ) {
+      token.attrSet('target', '_blank');
 
-    if (token?.attrIndex('title') === -1) {
-      token.attrPush(['title', text(env)]);
+      if (token.attrIndex('title') === -1) {
+        token.attrPush(['title', text(env)]);
+      }
     }
 
     return defaultOpen(tokens, idx, options, env, self);
   };
 
   md.renderer.rules.link_close = function (tokens, idx, options, env, self) {
+    // Links do not nest, so the nearest link_open before the close is its own
+    const open = tokens
+      .slice(0, idx)
+      .reverse()
+      .find((token) => token.type === 'link_open');
+    const closed = defaultClose(tokens, idx, options, env, self);
+
+    if (open?.attrGet('target') !== '_blank') return closed;
+
     return (
       `<span class="visuallyhidden"> (${md.utils.escapeHtml(text(env))})</span>` +
-      defaultClose(tokens, idx, options, env, self)
+      closed
     );
   };
 }

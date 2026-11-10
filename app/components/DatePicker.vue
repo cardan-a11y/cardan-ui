@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { VueDatePicker } from '@vuepic/vue-datepicker';
-import type { ModelValue, FormatsConfig } from '@vuepic/vue-datepicker';
+import type {
+  ModelValue,
+  FormatsConfig,
+  CalendarDay,
+} from '@vuepic/vue-datepicker';
 import { nl, enGB } from 'date-fns/locale';
-import type { Locale as DateFnsLocale } from 'date-fns';
+import { format } from 'date-fns';
+import type { Day, Locale as DateFnsLocale } from 'date-fns';
 import '@vuepic/vue-datepicker/dist/main.css';
 
 const model = defineModel<ModelValue>();
@@ -12,9 +17,7 @@ const { t, locale } = useI18n();
 // The date-fns locale of each i18n locale; a new language adds its pair here
 const dateFnsLocales: Record<string, DateFnsLocale> = { nl, en: enGB };
 
-const computedLocale = computed(
-  () => dateFnsLocales[locale.value] ?? enGB,
-);
+const computedLocale = computed(() => dateFnsLocales[locale.value] ?? enGB);
 
 // https://vue3datepicker.com/props/modes/
 const {
@@ -33,11 +36,14 @@ const {
   hideInputIcon = false,
   alwaysClearable = false,
   escClose = false,
+  showInvalid = false,
 } = defineProps<{
   label: string;
   formats?: Partial<FormatsConfig>;
   disabled?: boolean;
   required?: boolean;
+  /** Shows the error now; a Form shows it after a failed submit */
+  showInvalid?: boolean;
   name?: string;
   autocomplete?: string;
   clearable?: boolean;
@@ -58,10 +64,12 @@ const {
   ariaLabels?: DatePickerAriaLabels;
 }>();
 
+const inputId = `dp-input-${id}`;
+
 const computedInputAttrs = computed(() => {
   return {
     // The label points to this id
-    id: `dp-input-${id}`,
+    id: inputId,
     required: required,
     name: name,
     autocomplete: autocomplete,
@@ -75,6 +83,32 @@ const datepickerRef = useTemplateRef('datepicker');
 const colorMode = useColorMode();
 const isMounted = ref(false);
 const isDark = computed(() => isMounted.value && colorMode.value === 'dark');
+
+const formShowInvalid = inject(formShowInvalidKey, ref(false));
+
+/** The error text shows after a failed submit */
+const errorShown = computed(
+  () => required && !model.value && (showInvalid || formShowInvalid.value),
+);
+
+/**
+ * The library puts an attribute given to the component on its wrapper, so
+ * the error is attached to the input itself, only while it shows
+ */
+function describeInput() {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  if (errorShown.value) {
+    input.setAttribute('aria-describedby', `error-${id}`);
+    input.setAttribute('aria-invalid', 'true');
+  } else {
+    input.removeAttribute('aria-describedby');
+    input.removeAttribute('aria-invalid');
+  }
+}
+
+watch(errorShown, describeInput, { flush: 'post' });
 
 const isExpanded = ref(false);
 
@@ -96,13 +130,32 @@ function preventEscape(event: KeyboardEvent) {
 
 onMounted(() => {
   isMounted.value = true;
+  describeInput();
   document.addEventListener('keydown', preventEscape);
 });
 
 onUnmounted(() => document.removeEventListener('keydown', preventEscape));
 
+const attrs = useAttrs();
+
+/** The first day of the week as the library takes it: the `week-start` attribute, else the locale's, else date-fns's Sunday */
+const weekStart = computed(() => {
+  const given = attrs['week-start'] ?? attrs.weekStart;
+  if (given !== undefined) return Number(given);
+  return computedLocale.value.options?.weekStartsOn ?? 0;
+});
+
+// Each day with its weekday, and the full weekday on the abbreviated headers,
+// so assistive technology can tell which day a date is (Cardan Auditor
+// finding CAN-11.F48)
 const computedAriaLabels = computed(() => {
   return {
+    day: (day: CalendarDay) =>
+      format(day.value, 'EEEE d MMMM yyyy', { locale: computedLocale.value }),
+    weekDay: (day: number) =>
+      computedLocale.value.localize.day(((day + weekStart.value) % 7) as Day, {
+        width: 'wide',
+      }),
     input: t('datepicker.input'),
     clearInput: t('datepicker.clearInput'),
     toggleOverlay: t('datepicker.toggleOverlay'),
@@ -126,10 +179,13 @@ const computedAriaLabels = computed(() => {
     :id="id"
     :class="['cardan-datepicker-container', `datepicker-size--${size}`]"
     :label="label"
-    :label-for="`dp-input-${id}`"
+    :label-for="inputId"
     :required="required"
     :disabled="disabled"
-    :error-text="required ? $t('form.missing-value', { item: label }) : undefined"
+    :error-text="
+      required ? $t('form.missing-value', { item: label }) : undefined
+    "
+    :show-invalid="showInvalid"
   >
     <VueDatePicker
       :id="id"
@@ -156,8 +212,6 @@ const computedAriaLabels = computed(() => {
       }"
       :dark="isDark"
       :locale="computedLocale"
-      aria-live="polite"
-      :aria-describedby="id && required ? `error-${id}` : ''"
       :aria-labels="computedAriaLabels"
       class="cardan-datepicker"
       @open="handleOpen"

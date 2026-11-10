@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { MarkdownPreview } from '#components';
+import { renderMarkdown } from '../../app/components/Markdown/renderer';
 import { checkA11y } from '../a11y';
 
 // Counts every use of highlight.js (the component reads `hljs` once per
@@ -83,6 +84,54 @@ describe('MarkdownPreview', () => {
     expect(guide?.get('.visuallyhidden').text()).toBe('(open in new window)');
     expect(docs?.get('.visuallyhidden').text()).toBe('(open in new window)');
     expect(await checkA11y()).toHaveNoViolations();
+  });
+
+  it('renders a bare video link as a player, or as a link with videos-as-links', async () => {
+    const content = 'Watch this:\n\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    const player = await mountSuspended(MarkdownPreview, { props: { content } });
+    const link = await mountSuspended(MarkdownPreview, {
+      props: { content, videosAsLinks: true },
+    });
+
+    expect(player.find('a[href*="youtube.com"]').exists()).toBe(false);
+    expect(link.get('a[href*="youtube.com"]').attributes('target')).toBe(
+      '_blank',
+    );
+    expect(link.text()).toContain('Watch this:');
+  });
+
+  it('keeps a link to the site itself in the window', async () => {
+    const { origin } = window.location;
+    const wrapper = await mountSuspended(MarkdownPreview, {
+      props: {
+        content: `The [course](${origin}/courses/1), the [route](/courses/2) and the [guide](https://example.com/guide).`,
+      },
+      attachTo: document.body,
+    });
+
+    const [course, route, guide] = wrapper.findAll('a');
+    for (const link of [course, route]) {
+      expect(link?.attributes('target')).toBeUndefined();
+      expect(link?.attributes('title')).toBeUndefined();
+      expect(link?.find('.visuallyhidden').exists()).toBe(false);
+    }
+    expect(guide?.attributes('target')).toBe('_blank');
+    expect(guide?.get('.visuallyhidden').text()).toBe('(open in new window)');
+    expect(await checkA11y()).toHaveNoViolations();
+  });
+
+  it('judges a link by the origin it is given, as on the server', () => {
+    const html = renderMarkdown(
+      'The [course](https://cardan.academy/courses/1) and the [guide](https://example.com/guide).',
+      { origin: 'https://cardan.academy' },
+    );
+    const page = document.createElement('div');
+    page.innerHTML = html;
+
+    const [course, guide] = page.querySelectorAll('a');
+    expect(course?.hasAttribute('target')).toBe(false);
+    expect(course?.querySelector('.visuallyhidden')).toBeNull();
+    expect(guide?.getAttribute('target')).toBe('_blank');
   });
 
   it('leaves a code block in an unknown language plain and escaped', async () => {

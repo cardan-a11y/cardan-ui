@@ -7,13 +7,13 @@ const { size = 'md' } = defineProps<{
 <template>
   <span
     :class="['spacer', `spacer-size--${size}`]"
-    :style="`--size: var(--size-${size})`"
+    :style="`--spacer-size: var(--size-${size})`"
   />
 </template>
 
 <style>
 .spacer {
   display: block;
-  height: var(--size);
+  height: var(--spacer-size);
 }
 </style>

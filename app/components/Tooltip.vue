@@ -5,7 +5,6 @@ const {
   iconSize = undefined,
   iconColor = undefined,
   tabindex = undefined,
-  title = undefined,
   maxWidth = 400,
   placement = 'top',
   span = undefined,
@@ -22,7 +21,6 @@ const {
   icon?: string;
   hideLabel?: boolean;
   tabindex?: string;
-  title?: string;
   maxWidth?: number | 'none';
   id?: string;
 }>();
@@ -30,11 +28,11 @@ const {
 const computedStyle = computed(() => ({
   '--tooltip-font-size': fontSize && `var(--font-size-${fontSize})`,
   '--tooltip-icon-size': iconSize && `var(--font-size-${iconSize})`,
-  '--icon-color': iconColor && `var(--color-${iconColor})`,
+  '--tooltip-icon-color': iconColor && `var(--color-${iconColor})`,
 }));
 
 const contentStyle = computed(() => ({
-  '--max-width':
+  '--tooltip-max-width':
     maxWidth === undefined
       ? undefined
       : maxWidth === 'none'
@@ -71,7 +69,6 @@ function onTriggerBlur() {
       :popovertarget="id"
       :style="computedStyle"
       :tabindex="tabindex"
-      :title="title"
       @blur="onTriggerBlur"
     >
       <span
@@ -111,9 +108,9 @@ function onTriggerBlur() {
 
 <style>
 .tooltip-content-wrapper {
-  --gap: 1rem;
+  --tooltip-gap: 1rem;
 
-  position-area: var(--placement, block-start);
+  position-area: var(--tooltip-placement, block-start);
   position-try-fallbacks:
     flip-block,
     flip-inline,
@@ -121,7 +118,7 @@ function onTriggerBlur() {
   position-try-order: most-block-size;
   margin: 0;
   inset: auto;
-  max-inline-size: var(--max-width, none);
+  max-inline-size: var(--tooltip-max-width, none);
   border: 1px solid var(--popover-border-color);
   border-radius: var(--radius-md);
   color: var(--color-text);
@@ -157,8 +154,8 @@ function onTriggerBlur() {
 }
 
 .tooltip-content-wrapper[data-placement='top'] {
-  --placement: block-start;
-  margin-block-end: var(--gap);
+  --tooltip-placement: block-start;
+  margin-block-end: var(--tooltip-gap);
 
   &:popover-open {
     @starting-style {
@@ -167,16 +164,16 @@ function onTriggerBlur() {
   }
 
   &[data-span='left'] {
-    position-area: var(--placement) span-inline-start;
+    position-area: var(--tooltip-placement) span-inline-start;
   }
   &[data-span='right'] {
-    position-area: var(--placement) span-inline-end;
+    position-area: var(--tooltip-placement) span-inline-end;
   }
 }
 
 .tooltip-content-wrapper[data-placement='bottom'] {
-  --placement: block-end;
-  margin-block-start: var(--gap);
+  --tooltip-placement: block-end;
+  margin-block-start: var(--tooltip-gap);
 
   &:popover-open {
     @starting-style {
@@ -185,16 +182,16 @@ function onTriggerBlur() {
   }
 
   &[data-span='left'] {
-    position-area: var(--placement) span-inline-start;
+    position-area: var(--tooltip-placement) span-inline-start;
   }
   &[data-span='right'] {
-    position-area: var(--placement) span-inline-end;
+    position-area: var(--tooltip-placement) span-inline-end;
   }
 }
 
 .tooltip-content-wrapper[data-placement='left'] {
-  --placement: inline-start;
-  margin-inline-end: var(--gap);
+  --tooltip-placement: inline-start;
+  margin-inline-end: var(--tooltip-gap);
 
   &:popover-open {
     @starting-style {
@@ -203,16 +200,16 @@ function onTriggerBlur() {
   }
 
   &[data-span='top'] {
-    position-area: var(--placement) span-block-start;
+    position-area: var(--tooltip-placement) span-block-start;
   }
   &[data-span='bottom'] {
-    position-area: var(--placement) span-block-end;
+    position-area: var(--tooltip-placement) span-block-end;
   }
 }
 
 .tooltip-content-wrapper[data-placement='right'] {
-  --placement: inline-end;
-  margin-inline-start: var(--gap);
+  --tooltip-placement: inline-end;
+  margin-inline-start: var(--tooltip-gap);
 
   &:popover-open {
     @starting-style {
@@ -221,10 +218,10 @@ function onTriggerBlur() {
   }
 
   &[data-span='top'] {
-    position-area: var(--placement) span-block-start;
+    position-area: var(--tooltip-placement) span-block-start;
   }
   &[data-span='bottom'] {
-    position-area: var(--placement) span-block-end;
+    position-area: var(--tooltip-placement) span-block-end;
   }
 }
 
@@ -264,7 +261,7 @@ function onTriggerBlur() {
 
   .iconify {
     flex-shrink: 0;
-    color: var(--icon-color, var(--color-grey-text));
+    color: var(--tooltip-icon-color, var(--color-grey-text));
     font-size: var(--tooltip-icon-size, inherit);
     transition: color var(--duration-sm);
   }

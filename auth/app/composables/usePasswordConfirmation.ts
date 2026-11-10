@@ -1,6 +1,7 @@
 /**
  * Settles the confirmation the dialog is open for. Module scope rather than
- * `useState`: a function is not state, and there is only ever one dialog.
+ * `useState`: a function is not state, and only one confirmation is open at
+ * a time.
  */
 let settlePending: ((confirmed: boolean) => void) | null = null;
 
@@ -11,11 +12,25 @@ let settlePending: ((confirmed: boolean) => void) | null = null;
 let pendingAfterConfirm: (() => Promise<unknown>) | null = null;
 
 /**
+ * Whether the password was accepted for the confirmation the dialog is
+ * closing for, see `confirmPassword`.
+ */
+let confirmedPending = false;
+
+/**
+ * The mounted dialogs, the last one on top. `MfaSettings` and `MfaSetup`
+ * bring their own, and an app mounts one in its layout for its own flows, so
+ * two can be mounted at once: the one mounted last answers, and unmounting it
+ * hands back to the other. Only the client mounts.
+ */
+const mountedDialogs: DialogComponent[] = [];
+
+/**
  * Fortify's password confirmation (`confirmPassword` on a feature): routes
  * behind `password.confirm` answer 423 until the user has re-entered their
  * password, which then holds for the app's `auth.password_timeout`.
  *
- * Mount `PasswordConfirmationDialog` once, then either check up front with
+ * With `PasswordConfirmationDialog` mounted, either check up front with
  * `ensurePasswordConfirmed()` before opening a flow, or wrap a request in
  * `withPasswordConfirmation()` to ask only when Fortify does.
  */
@@ -23,12 +38,13 @@ export function usePasswordConfirmation() {
   const { client } = useAuth();
   const { endpoints } = useCardanAuthConfig();
 
+  /** The dialog that answers: the one mounted last */
   const passwordConfirmationDialogRef = useState<DialogComponent | null>(
     'passwordConfirmationDialogRef',
     () => null,
   );
 
-  const passwordConfirmationError = useState<AuthErrorData | null>(
+  const passwordConfirmationError = useState<ApiErrorData | null>(
     'passwordConfirmationError',
     () => null,
   );
@@ -49,16 +65,29 @@ export function usePasswordConfirmation() {
     () => 0,
   );
 
+  function registerPasswordConfirmationDialog(dialog: DialogComponent) {
+    mountedDialogs.push(dialog);
+    passwordConfirmationDialogRef.value = dialog;
+  }
+
+  function unregisterPasswordConfirmationDialog(dialog: DialogComponent) {
+    const index = mountedDialogs.lastIndexOf(dialog);
+    if (index !== -1) mountedDialogs.splice(index, 1);
+    passwordConfirmationDialogRef.value = mountedDialogs.at(-1) ?? null;
+  }
+
   function settle(confirmed: boolean) {
     const settlePendingConfirmation = settlePending;
     settlePending = null;
     pendingAfterConfirm = null;
+    confirmedPending = false;
     settlePendingConfirmation?.(confirmed);
   }
 
   /**
    * Opens the dialog and resolves once the user confirmed (true) or closed it
-   * (false).
+   * (false), with the dialog closed either way. Rejects when no dialog is
+   * mounted: a caller that would otherwise wait forever.
    *
    * `afterConfirm` runs once the password is accepted, before the dialog
    * closes, with its Confirm button still loading: for the request the
@@ -71,10 +100,22 @@ export function usePasswordConfirmation() {
     // Only one confirmation is open at a time: an earlier one that is still
     // waiting is answered as cancelled.
     settle(false);
+
+    if (!passwordConfirmationDialogRef.value) {
+      // A mistake in the app, loud in the console: nothing can ask for the
+      // password, so the flow that needs it stops with an error instead of
+      // hanging on a loading button
+      const error = new Error(
+        'No PasswordConfirmationDialog is mounted: mount it once, in the layout or with the flow that needs the password',
+      );
+      console.error(error);
+      return Promise.reject(error);
+    }
+
     pendingAfterConfirm = afterConfirm ?? null;
     passwordConfirmationError.value = null;
     passwordConfirmationRequest.value++;
-    passwordConfirmationDialogRef.value?.openDialog();
+    passwordConfirmationDialogRef.value.openDialog();
 
     return new Promise((resolve) => {
       settlePending = resolve;
@@ -100,7 +141,7 @@ export function usePasswordConfirmation() {
 
   /**
    * Posts the password. On success it runs the request's `afterConfirm`, then
-   * closes the dialog and lets the waiting caller continue.
+   * closes the dialog, and the waiting caller continues once it has closed.
    */
   async function confirmPassword(password: string) {
     passwordConfirmationError.value = null;
@@ -112,7 +153,7 @@ export function usePasswordConfirmation() {
         body: { password },
       });
     } catch (error) {
-      passwordConfirmationError.value = extractAuthError(error);
+      passwordConfirmationError.value = extractApiError(error);
       loadingPasswordConfirmation.value = false;
       return false;
     }
@@ -123,7 +164,11 @@ export function usePasswordConfirmation() {
     } catch {
       // Nothing to show here: the password itself was accepted.
     } finally {
-      settle(true);
+      // Settled from the dialog's close event, once it is gone: the page
+      // behind a modal is inert, so what the caller does next, such as moving
+      // focus to the step the password was for, would not land while the
+      // dialog is still closing
+      confirmedPending = true;
       passwordConfirmationDialogRef.value?.closeDialog();
       loadingPasswordConfirmation.value = false;
     }
@@ -131,9 +176,9 @@ export function usePasswordConfirmation() {
     return true;
   }
 
-  /** The dialog closed without a confirmation. */
-  function cancelPasswordConfirmation() {
-    settle(false);
+  /** The dialog has closed: answers the confirmation it was open for. */
+  function passwordConfirmationDialogClosed() {
+    settle(confirmedPending);
   }
 
   /**
@@ -159,11 +204,13 @@ export function usePasswordConfirmation() {
     passwordConfirmationError,
     loadingPasswordConfirmation,
     passwordConfirmationRequest,
+    registerPasswordConfirmationDialog,
+    unregisterPasswordConfirmationDialog,
     isPasswordConfirmed,
     ensurePasswordConfirmed,
     requestPasswordConfirmation,
     confirmPassword,
-    cancelPasswordConfirmation,
+    passwordConfirmationDialogClosed,
     withPasswordConfirmation,
   };
 }

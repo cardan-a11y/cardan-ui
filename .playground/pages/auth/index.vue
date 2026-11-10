@@ -24,8 +24,8 @@ const { logoutDialogRef } = useLogoutDialog();
       <h2>Logout dialog</h2>
 
       <p>
-        Asks before signing out. An app mounts it once, in its layout. In this
-        demo, Sign out only closes the dialog.
+        Asks before signing out. An app mounts it once, in its layout. Sign out
+        ends the session, or only closes the dialog without one.
       </p>
 
       <Button

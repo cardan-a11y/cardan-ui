@@ -1,4 +1,9 @@
 <script setup lang="ts" generic="T extends SelectOption">
+import type { StyleValue } from 'vue';
+
+// An attribute goes to the control; `class` and `style` stay on the wrapper
+defineOptions({ inheritAttrs: false });
+
 const { t } = useI18n();
 const model = defineModel<string | number | boolean>();
 
@@ -6,6 +11,7 @@ const {
   label = undefined,
   name = undefined,
   errorMessage = undefined,
+  customError = undefined,
   placeholder = undefined,
   options = undefined,
   noOptionsLabel = undefined,
@@ -17,6 +23,7 @@ const {
   variant = 'default',
   placeholderValue = '',
   size = 'md',
+  showInvalid = false,
   valueKey = 'value' as keyof T & string,
   labelKey = 'label' as keyof T & string,
   disabledKey = 'disabled' as keyof T & string,
@@ -33,20 +40,35 @@ const {
   labelKey?: keyof T & string;
   disabledKey?: keyof T & string;
   hideLabel?: boolean;
+  /** Shows the error now; a Form shows it after a failed submit */
   showInvalid?: boolean;
   required?: boolean;
   disabled?: boolean;
   autofocus?: boolean;
-  multiple?: boolean;
   noOptionsLabel?: string;
   ariaDescribedby?: string;
   instruction?: string;
+  /** The error text when the browser finds the field invalid; "<label> is missing" by default */
   errorMessage?: string;
+  /**
+   * An error the browser cannot find, such as one from the server: the field
+   * shows this text and is described by it until its value changes
+   */
+  customError?: string;
   tabindex?: string;
   color?: BaseColor;
   id?: string;
   variant?: InputVariant;
 }>();
+
+const attrs = useAttrs();
+
+/** The attributes for the control, without the wrapper's `class` and `style` */
+function controlAttrs() {
+  return Object.fromEntries(
+    Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'),
+  );
+}
 
 const computedErrorMessage = computed(() => {
   if (errorMessage) return errorMessage;
@@ -56,15 +78,65 @@ const computedErrorMessage = computed(() => {
   return t('form.invalid-value');
 });
 
-const computedAriaDescribedby = computed(() =>
-  [
-    ariaDescribedby,
-    instruction && `instruction-${id}`,
-    id && required && `error-${id}`,
-  ]
-    .filter(Boolean)
-    .join(' '),
+const selectRef = useTemplateRef<HTMLSelectElement>('select');
+const formShowInvalid = inject(formShowInvalidKey, ref(false));
+const isValid = ref(true);
+const customErrorActive = ref(false);
+
+function updateValidity() {
+  isValid.value = selectRef.value?.validity.valid ?? true;
+}
+
+/**
+ * The custom error shows like the browser's own, and describes the field,
+ * but does not keep the form from submitting again: the server judges the
+ * next attempt, and the parent moves focus to the field (`focusElement()`)
+ */
+function applyCustomError() {
+  customErrorActive.value = !!customError;
+}
+
+onMounted(() => {
+  applyCustomError();
+  updateValidity();
+});
+watch(() => customError, applyCustomError, { flush: 'post' });
+watch([model, () => required, () => options], updateValidity, {
+  flush: 'post',
+});
+
+/** The error text shows after a failed submit, or for a custom error */
+const errorShown = computed(
+  () =>
+    customErrorActive.value ||
+    ((showInvalid || formShowInvalid.value) && !isValid.value),
 );
+
+// The error describes the field only while it shows
+const computedAriaDescribedby = computed(
+  () =>
+    [
+      ariaDescribedby,
+      instruction && `instruction-${id}`,
+      errorShown.value && `error-${id}`,
+    ]
+      .filter(Boolean)
+      .join(' ') || undefined,
+);
+
+// A new choice clears the custom error, until the parent sets one again
+function handleChange() {
+  customErrorActive.value = false;
+  updateValidity();
+}
+
+function focusElement() {
+  selectRef.value?.focus();
+}
+
+defineExpose({
+  focusElement,
+});
 </script>
 
 <template>
@@ -74,29 +146,35 @@ const computedAriaDescribedby = computed(() =>
       `select-size--${size}`,
       `select-variant--${variant}`,
       color && `select-color--${color}`,
+      $attrs.class,
     ]"
+    :style="$attrs.style as StyleValue"
     :label="label"
     :hide-label="hideLabel"
     :required="required"
     :disabled="disabled"
     :instruction="instruction"
-    :error-text="required ? computedErrorMessage : undefined"
+    :error-text="customErrorActive ? customError : computedErrorMessage"
     :show-invalid="showInvalid"
+    :custom-error="customErrorActive"
   >
     <div class="select-wrapper">
       <select
         :id="id"
-        ref="elementRef"
+        ref="select"
         v-model="model"
         class="select"
+        v-bind="controlAttrs()"
         :name="name"
         :required="required"
         :disabled="disabled"
         :autofocus="autofocus"
-        :multiple="multiple"
         :tabindex="tabindex"
         :aria-describedby="computedAriaDescribedby"
+        :aria-invalid="errorShown || undefined"
         size="1"
+        @change="handleChange"
+        @invalid="updateValidity"
       >
         <template v-if="!options?.length">
           <option selected disabled :value="placeholderValue">

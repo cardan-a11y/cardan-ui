@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * Text clamped to `lines` lines, with an ellipsis at the end. The clipped
+ * part is only hidden visually: a link or button in it stays in the tab order
+ * and a screen reader reads all of it. So keep interactive content out of a
+ * clamped text, or give the reader a way to the whole text.
+ */
 const { is = 'span', lines = 1 } = defineProps<{
   lines?: number;
   is?: string;

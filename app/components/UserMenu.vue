@@ -12,7 +12,7 @@ const triggerRef = useTemplateRef<ButtonComponent>('menuTrigger');
 const contentRef = useTemplateRef<HTMLElement>('menuContent');
 const dialogRef = useTemplateRef<DialogComponent>('logoutDialog');
 
-const showMenu = defineModel<boolean>();
+const showMenu = defineModel<boolean>({ default: false });
 const menuId = useId();
 
 onClickOutside(contentRef, () => (showMenu.value = false));
@@ -28,7 +28,10 @@ function handleLogout() {
   }
 }
 
-function openLogoutDialog() {
+/** The menu closes first: its loop makes the rest of the page inert, the dialog included */
+async function openLogoutDialog() {
+  showMenu.value = false;
+  await nextTick();
   dialogRef.value?.openDialog();
 }
 
@@ -69,11 +72,7 @@ defineExpose({
     />
 
     <Transition name="stretch-fade">
-      <FocusLoop
-        :id="menuId"
-        :is-visible="showMenu"
-        class="user-menu-popover"
-      >
+      <FocusLoop :id="menuId" :is-visible="showMenu" class="user-menu-popover">
         <div v-if="showMenu" ref="menuContent">
           <div class="user-menu-content">
             <slot name="default" v-bind="{ hideMenu }" />

@@ -2,66 +2,92 @@
 
 This guide is for developers of projects that extend the layer. Each section says what a project must do or check for a release: new tokens for its `main.css`, renamed props or classes, modules or CSP hosts. The components read their design tokens from the project's own `main.css`, a copy of the template in [`app/assets/main.css`](app/assets/main.css), so a token a release adds has to be pasted there.
 
-A release that needs nothing from projects has a one-line section that says so; what it changed is in the playground's changelog ([`.playground/pages/changelog.vue`](.playground/pages/changelog.vue)). The projects are kept up to date, so the file only holds the five most recent releases that ask something of them, with the one-line sections in between: each release that asks something removes the notes older than that. Older notes are in the history of this file (`git log -p MIGRATION.md`).
+A release that needs nothing from projects has a one-line section that says so; what it changed is in the playground's changelog ([`.playground/pages/changelog.vue`](.playground/pages/changelog.vue)). The newest release is at the top. The projects are kept up to date, so the file only holds the five most recent releases that ask something of them, with the one-line sections in between: each release that asks something removes the notes older than that. Older notes are in the history of this file (`git log -p MIGRATION.md`).
 
-## Upgrading to 2.3
+## Upgrading to 2.4
 
-### 2.3.1
+2.4.0 is the accessibility release after the audit of November 2026: 98 findings in the form fields, the overlays, the display components and the auth layer. Most of it keeps working in a project that does nothing; the items below rename or remove something.
 
-2.3.1 lets a markdown text show a video: a bare YouTube or Vimeo link in a paragraph of its own renders as a **VideoPlayer**, so authors paste the link where the video belongs, in any markdown editor.
+### Form fields
 
-- **A bare YouTube or Vimeo link in a paragraph of its own renders as a VideoPlayer** in MarkdownPreview: the thumbnail, the play button and the video's title, and the player after a click. Also without `trusted`: the link only ever becomes a video id, so a text cannot embed anything else. A link with its own text (`[Watch the recording](https://…)`), a link inside a sentence, a list or a quote, and a link in an `inline` or clamped (`ellipsis-lines`) text stay links. In a `trusted` text, keep a video link out of raw HTML blocks: a player between a `<div>` and its `</div>` ends up outside them. Check your stored markdown for a video link alone in a paragraph that should stay a link, and give it a text.
-- **The text around a video is in chunks** (`.markdown-chunk`), with the players between them. CSS on `.cardan-markdown-preview > p` or another direct child does not reach a text with videos; select `.cardan-markdown-preview p` instead.
-- **VideoPlayer needs `@nuxt/image`** for the thumbnail. A project that shows markdown from others and does not have it yet (cardan-auditor-nuxt) adds it to its modules (`pnpm add -D @nuxt/image`), and allows the thumbnail hosts in production, like the playground does: `image: { domains: ['i.ytimg.com', 'i.vimeocdn.com'] }`.
-- **A strict Content Security Policy** on a page that shows markdown needs the player's hosts, as a page with a VideoPlayer does: `connect-src` for `youtube.com` and `vimeo.com` (the video's title), `img-src` for `i.ytimg.com` and `i.vimeocdn.com` (the thumbnail) and `frame-src` for `www.youtube-nocookie.com` and `player.vimeo.com` (the player).
-- **VideoPlayer's URL parsing is shared**: `parseVideoUrl()` in `app/utils/video.ts` tells which URLs the player plays, for MarkdownPreview and your own code. It now also recognises YouTube `shorts` and `live` URLs, and `m.youtube.com`.
+- **A field is described by its error only while the error shows**: after a failed submit of its Form, or with `show-invalid`. Until now every Input, Textarea, Select, MultiSelect and DatePicker pointed `aria-describedby` at its hidden error text, so a screen reader read "Value invalid" on a valid field. The control also gets `aria-invalid="true"` while the error shows. A test that read the error through `aria-describedby` before a submit sets `show-invalid` first.
+- **An error from the server goes in `custom-error`**, not in `error-message`. `error-message` is the text for a constraint the browser checks (`required`, `type`, `pattern`); it was never shown for a message the browser had no reason to show, such as a 422 after a submit. `custom-error` shows that text under the field, marks the field `aria-invalid` and describes it by the text until the user changes the value; it does not hold the form back, the server judges the next submit, so the parent moves focus to the field itself (`focusElement()`). Give it the message, or `undefined` for none; set it to `undefined` before a new request, since the same text again would not show after the user has typed. cardan-lms-nuxt passed the server's errors as `error-message` in its request form and checkout, where they never showed; both list them in the alert above the button now, as the auth forms do.
+- **An attribute on Input, Textarea or Select goes to the control**, not to the wrapper: `inputmode`, `data-*`, `aria-*` and every other attribute land on the `<input>`, `<textarea>` or `<select>`, and `class` and `style` stay on the wrapper. CSS that matched an attribute on `.form-field-wrapper` selects the control instead. Input also has an `inputmode` prop, for the virtual keyboard; the auth layer's code fields use it.
+- **Removed props**: `multiple` on Select (it could not work; use MultiSelect) and `pattern` on Textarea (a textarea has no pattern). The default `pattern` of an Input with `type="tel"` is gone: it rejected every real phone number. A project that needs a format passes its own `pattern`; the field's error text is "Phone number is invalid".
+- **RangeInput's custom properties are its own**: `--range-input-thumb-color`, `--range-input-thumb-width`, `--range-input-thumb-height`, `--range-input-thumb-border-size`, `--range-input-thumb-border-color`, `--range-input-thumb-radius`, `--range-input-track-bg-color`, `--range-input-track-progress-color`, `--range-input-track-radius`, `--range-input-track-height`, `--range-input-track-width` and `--range-input-output-bg-color` (were `--thumb-*`, `--track-*` and `--output-bg-color`). The styles are scoped to the component and no longer reach another `input[type="range"]`. cardan-auditor-nuxt's review form overrides four of them and is updated.
+- **MultiSelect names its combobox by the field label and the selection** ("Cheese, Ham Toppings" once something is selected, as @vueform/multiselect puts the selection first): the label was out of the name as soon as something was selected (Cardan Auditor findings CAN-11.F8 and F9). The error text and instruction now reach the combobox through the library's `aria` prop. `items-selected-label` is the text after the count. A `required` MultiSelect passes the focus a Form gives its hidden input on to the combobox.
+- **FileInput takes a paste from anywhere on the page, except from a text field, an editor or another FileInput**, and with several FileInputs on a page the one with focus takes it, or the first one. A file it rejects (too big, wrong type) is no longer the value: the field keeps what it had, in the native input too, so a form that posts the input sends the file the field shows; it shows the error at once (no `show-invalid` needed) and the same file can be chosen again. `show-invalid`, or a failed submit of the Form, shows "<label> is missing" for a required image field without a file. A parent that read `validity` after a rejected file to show its own error can keep doing so; `update:modelValue` is not emitted for a rejected file.
+- **DatePicker has `show-invalid`**, like the other fields, and no longer wraps its calendar in a live region. Each day of its calendar is named with its weekday ("Monday 9 November 2026") and the header's abbreviations carry the full weekday names (Cardan Auditor finding CAN-11.F48). The keyboard access of the calendar (CAN-11.F47: focus stays in the input when the menu opens, so Tab closes it) is the library's to fix, Vuepic/vue-datepicker#1283, still open; nothing in its props, events or slots changes it.
+- **The radios of a RadioGroup share a `name`** (the group's id by default), so the arrow keys move between them also without a `name` prop.
 
-### 2.3.2
+### Overlays and navigation
 
-2.3.2 is a security update: Nuxt 4.6.4, and the latest versions of the other dependencies except TypeScript.
+- **Popover is an APG disclosure, with the focus handling of a menu button**: its content is a list of links or buttons without menu roles; when it opens, focus moves to its first item; Tab past the last item leaves and closes it; Shift+Tab before the first returns focus to the trigger, and leaving the trigger for the page closes it; Escape and a choice close it and give focus back to the trigger (which fell to the page until now). Keyboard focus is no longer trapped in it, and its content is no longer in a `.vue-focus-loop` element: CSS that selected it inside `.popover-content` selects `.popover-content` itself. Its custom properties are `--popover-radius` and `--popover-max-width` (were `--radius` and `--max-width`), and the trigger's radius no longer needs `!important`.
+- **Tooltip**: the `title` prop is removed (a native title bubble cannot be dismissed or hovered, WCAG 1.4.13; no project passed it). Its custom properties are `--tooltip-gap`, `--tooltip-max-width` and `--tooltip-icon-color` (were `--gap`, `--max-width` and `--icon-color`).
+- **Dialog**: the `modal` prop is removed; it did nothing (the native dialog is modal). `disable-escape` is best effort: a browser lets a second Escape without a click or keypress in between close the dialog anyway, so a step that must be completed also handles `close`.
+- **MobileMenu** puts an attribute on its dialog only, no longer on its wrapper too; its navigation label is an `h2` that renders only with `nav-label` (was an empty `h1` without it); its width is `--mobile-menu-width` (was `--width`). Focus returns to a trigger in the `trigger` slot when the menu closes.
+- **A tab icon is an icon name**: a `TabOption.icon` that started with `<svg` was injected as HTML, an XSS surface for an icon from an API; that branch is removed (no project used it) and `icon` is a Material Symbols name as everywhere else.
+- **Tabs ids are per instance**: `<id>-tab-<value>` and `<id>-tabpanel-<value>` (were `tab-<value>` and `tabpanel-<value>`), so two Tabs on a page with the same values no longer share ids. CSS or a test that selected `#tab-<value>` selects `[id$="-tab-<value>"]` or the role instead. The tab list is reachable while nothing is selected (the first tab is in the tab order), and a panel without focusable content is in the tab order itself.
+- **A MenuList inside a MenuList is a plain `div`**, not a `nav` landmark of its own; the menu has one. CSS that selected the nested `nav.menu-list-nav` selects `.menu-list-nav`. A nested list emits the sub-item that was clicked (it emitted its parent item).
+- **Accordion emits `update:open`** when the user opens or closes it, so `v-model:open` keeps the parent's state in step; a one-way `:open` keeps working. Its custom properties are `--accordion-overflow` and `--accordion-min-height` (were `--overflow` and `--min-height`).
+- **Toast has no `role` prop**; a toast is announced by the one polite live region of ToastManager, which is teleported to `#teleports` (was `body`), so it also renders on the server. A project that wrapped `<ToastManager>` in `<ClientOnly>` can drop the wrapper. The timer's custom properties are `--toast-animation-duration` and `--toast-animation-play-state`.
+- **UserMenu closes its menu before it opens the sign-out dialog**, and its `aria-expanded` is `false` from the start.
+- **FocusLoop** keeps the page it made inert in step with its own state: a loop that closes in the same tick it opened, or unmounts while open, releases the page; what another loop made inert stays inert. Tab and Shift+Tab at its edges go by where focus came from, so the loop wraps the same way every time it opens. The playground's popover page and README's new "Browser support" section say what Tooltip and Popover need from a browser.
 
-- **Update Nuxt to 4.6.4** in every project, first of all in the ones that render on the server (Cardan LMS's public pages, Cardan Support, the websites): `pnpm update --latest '!typescript'`, then `pnpm run build`. Keep TypeScript on 6.
-- **A project on `compatibilityVersion: 5`** (cardan-lms-nuxt, cardan-auditor-nuxt) sets `experimental: { nitroAutoImports: true }` in its `nuxt.config.ts`. With version 5, Nuxt 4.6 turns off the auto-imports of the server bundle, which the server runtime of `@nuxtjs/i18n` and `@nuxt/image` still relies on; without them the build fails with `"useRuntimeConfig" is not exported by "#imports"`.
-- **The cardan plugin**: run `claude plugin update cardan@cardan-ui --scope user`. In cardan-lms-nuxt and cardan-auditor-nuxt, work goes into `develop` and reaches `main` through one release pull request (`/cardan:release`), from the releases of 3 November 2026 on.
+### Display components and utilities
 
-### 2.3.3
+- **ErrorMessage, `useErrorMessage()` and `extractApiError()` are in the layer**: the error box of a form or a page, for both API shapes (Laravel's `{ message, errors: { field: [...] } }` and the JSON:API envelope of `/api/v1`), with the API's `Content-Language` (English without one) and, when the request got no usable answer, a message in the page's language that tells an offline browser (`error.offline`) from a server error such as an HTML error page (`error.general`). Both keys are in the layer: drop your own `error.general` where it says the same. The `text` prop holds the page's own text, before the API's messages (it has no slot). Delete your own `app/components/ErrorMessage.vue` and `app/composables/useErrorMessage.ts`: the layer's take the same `:data="errorData"` and `handleError(error)`. `errorData` is in Laravel's shape now, also from a JSON:API answer: read a message for a toast with `apiErrorMessages(errorData.value)[0]`, not `errors[0].detail`. The box takes no outer margin; give it one in your `main.css` where your layout needs it. cardan-lms-nuxt and cardan-auditor-nuxt are updated on their branches, which can only merge after this release is on `main`.
+- **Breadcrumbs is in the layer**: `<Breadcrumbs :items="[{ label: 'Home', to: '/' }, { label: 'Webinars' }]" />` renders the trail to the current page, in the look of Cardan Academy's catalogue trail. The project decides what the trail is, a home link included; the last item is the current page and renders as text with `aria-current="page"`, an item without `to` as text, and `lang` marks a label in another language. The landmark is named by the new key `aria.breadcrumb` ("Breadcrumb" / "Kruimelpad"), or by the `label` prop where a page has two trails. The slash between the items is not read by a screen reader. It needs no new token. Nothing breaks for a project that keeps its own trail. The three projects with one render it through the layer on their branches, each as a thin wrapper that only builds the items: cardan-cms-nuxt's TheBreadcrumbs (the trail comes from Statamic), cardan-lms-nuxt's CatalogBreadcrumbs (its `catalog.breadcrumb` key is gone) and cardan-support-nuxt's BreadCrumbs (which now shows the category's and the article's own titles).
+- **A Button that opens a new window says so in its name**: hidden "(open in new window)" text after the label, also in an `aria-label`, as a link in a markdown text has since 2.3.7; the `title` that said the same is gone, since a title is read once more as the description. A test that matched the link's name exactly includes it.
+- **A loading Button is not `disabled`**: it keeps focus, with `aria-disabled="true"`, `aria-busy="true"` and the `disabled` look, and swallows its clicks itself (no `click`, no navigation, no submit) until it is done; until now the `disabled` attribute dropped focus to the page the moment a submit started. Code that checked `:disabled` while loading looks at `aria-busy`. Its radius custom property is `--button-radius` (was `--radius`; MenuList is updated, no project set it), and `.button-variant--link` no longer needs `!important`. The `topbar` variant shows its current page and hover underline also with reduced motion.
+- **A link in a markdown text opens in a new window only when it goes to another origin**; a route, an anchor, a `mailto:` and a same-origin link stay in the tab. On the server every absolute link counts as external. MarkdownPreview's `ellipsis-lines` prop is removed: a clamped markdown text keeps its links in the tab order. A text that must be clamped goes in `<Ellipsis is="div" :lines>` (cardan-auditor-nuxt's project and default-finding tables, for the user's number of lines, are updated), whose doc says that interactive content belongs outside a clamped text.
+- **VideoPlayer** refetches when its `url` changes, falls back from `hq720.webp` to the oEmbed thumbnail and then to `hqdefault.jpg` when YouTube has no large thumbnail, and titles its frame "Video" when the metadata fails. The project's `@nuxt/image` config needs `image: { domains: ['i.ytimg.com', 'i.vimeocdn.com'] }` (CLAUDE.md says so now): cardan-cms-nuxt has only `i.ytimg.com`, cardan-lms-nuxt neither, so their thumbnails fall through to the error path.
+- **PricingCard** formats the price in the app's locale as a currency ("€ 76" in Dutch, "€76" in English, thousands per locale), so the server and the browser agree. The "(Recommended)" `aria-label` on its chip is gone (prohibited on a `span`; the text is in the heading).
+- **AvatarButton** has a name without `aria-label`: the initials, or "Profile picture" (`general.avatar`). **CopyButton** says "Copied" or "Copy failed" (new key `general.copy-failed`) and goes back to "Copy" after two seconds, announced each time.
+- **LanguageSwitcher** marks the active language with `aria-current`; it still links to the home page of each language. **ThemeSelect, ThemeSwitch and ThemeToggle** generate their ids and radio name: `#theme-switch` and `#theme-toggle` no longer exist (nothing used them), and ThemeSelect's label rules are scoped to it.
+- **MarkdownEditor** applies the same `{…}` attribute allowlist as MarkdownPreview, configures md-editor-v3 once per app, trims its value on blur instead of on every keystroke, and keeps its hidden required textarea out of the tab order. Its label is still not associated with the editor's textbox: md-editor-v3 has no way in, and the editor is to be replaced.
+- **`d()` is `formatDateTime(date, format, locale)`**, with the locale required (the one-letter global collided with vue-i18n's `d`, and defaulted to Dutch). cardan-auditor-nuxt's 22 call sites and cardan-support-nuxt's ReleaseDate are renamed on their branches; `useDate().formatDate` keeps its name and now also reads a future date ("in 5 minutes"), with two new keys, `date.in-minutes` and `date.in-hours`, that an app overriding `date.*` copies.
+- **`xsTransition`…`xxlTransition` are `transitionDuration('xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl')`**, which reads the `--duration-*` token from the page, so a timer follows the tokens and is 0 with reduced motion (a timeout that must still run should not treat 0 as "never"); on the server it is 0. cardan-auditor-nuxt's six timers are updated on its branch.
+- **ProgressCircle has a `label` prop** for its accessible name ("Progress" / "Voortgang" by default, visually hidden); its name was its own value. Pass `label` where "Progress" is not the meaning: cardan-support-nuxt's HealthStatusCards (disk space), cardan-lms-nuxt's QuizScoreBadge (score; it also passes a `display-percentage` prop that does not exist, `show-value` is the one). `aria-valuetext` says what the ring shows ("42%", "7 of 10"); the value's class is `.progress-circle-value` (was `.progress-circle-label`). ProgressMeter has the same `aria-valuetext`. Both count from `min`: a meter from 50 to 100 at 75 is half, not 150%.
+- **Skeleton is decorative** (`aria-hidden`): the element it stands in for carries `aria-busy="true"` while it loads, as Table does.
+- **Custom properties set from props are the component's own**: `--progress-circle-size`, `--progress-circle-radius`, `--progress-meter-width`, `--skeleton-size`, `--skeleton-width`, `--skeleton-radius`, `--spacer-size` (were `--size`, `--radius`, `--width`). No project overrode the old names.
+- **`sort()`** takes `T[] | undefined` and no longer throws on a missing nested key. **`formatFileSize()`** falls back to Dutch outside a Nuxt context instead of throwing.
+- **ESLint**: `@typescript-eslint/no-explicit-any` is an error and `vue/no-v-html` a warning in the layer again.
 
-2.3.3 needs nothing from projects.
+### Cardan Auth UI
 
-### 2.3.4
+- **AuthError is gone**: the forms show their errors in the base layer's ErrorMessage. `extractAuthError()` is `extractApiError()`, the `AuthErrorData` type is `ApiErrorData`, the class `.auth-error` is `.error-message` and the message key `auth.error-generic` is `error.general`, or `error.offline` when the browser was offline. No project used them.
+- **The code fields** have `inputmode="numeric"` and the TOTP code `autocomplete="one-time-code"` (iOS and Android fill a code from SMS or mail, and a password manager that holds the TOTP secret fills that), without `data-1p-ignore`.
+- **`requestPasswordConfirmation()` rejects when no PasswordConfirmationDialog is mounted** (it hung forever), and resolves only once the dialog has closed, so focus moves can follow it. MfaSettings and MfaSetup mount the dialog themselves; a layout-level mount keeps working next to it (the last one mounted answers). An app that mounts MfaDialog on its own mounts PasswordConfirmationDialog next to it. `cancelPasswordConfirmation` is gone.
+- **`useMfa()`**: `resetMfa()` clears everything, recovery codes and credentials included, and runs on every exit; `getRecoveryCodes()` returns `string[] | null`; `enterCode()` stops on the code step when the codes could not be fetched (`mfa.recovery-codes-unavailable`), instead of enabling MFA with codes nobody saw; a 401 on the challenge resets, shows a toast (`mfa.session-expired`, so ToastManager must be mounted) and sends the user to /login with the original `redirect`. MfaDialog focuses the step on every step change (`useMfaStepFocus()`), as MfaSetup did. The API's QR SVG is reduced to `svg`, `rect`, `g` and `path` before it is inlined.
+- **`useMfaSetupReminder()`** no longer requires setup from an account with `mfa_exempt` (the global middleware looped between every page and /mfa-setup), and reads its sessionStorage flag on the client after hydration.
+- **`useLogoutDialog().handleLogout()`** awaits the sign-out, shows a refusal in the dialog and closes only on success; it returns a promise and throws on failure.
+- **The password reset form** sends a user whose password was reset but whose sign-in failed to /login with the address prefilled, instead of a reset error. **The forgot-password form** accepts another address after a success. **The password-policy route must be public**: a guest on the reset form reads it, and a 401 no longer redirects (the configured policy stays).
+- New message keys an app may override: `mfa.recovery-codes-unavailable`, `mfa.recovery-codes-missing`, `mfa.session-expired`. The layer needs the base layer at the same version (`transitionDuration`).
 
-2.3.4 brings **Accordion** closer to the APG accordion pattern. It looks the same in a project that does nothing, but its panel is no longer a landmark.
+### The cardan plugin
 
-- **New `h-tag` prop** wraps the trigger button in a heading (`h-tag="h3"`), at the level the section's title has in the page, as the pattern asks. Set it on every Accordion whose trigger is a title. A heading inside the `trigger` slot moves out: `<Accordion h-tag="h3"><template #trigger>Transcript</template>` instead of an `<h3>` in the slot, since a button may not contain a heading.
-- **The panel is a plain `div`** and a `region` landmark only with the new **`region` prop**, with `aria-labelledby` to its trigger. Until now every panel was a `<section aria-labelledby>`, a landmark, and the pattern warns against a page full of them. Add `region` to a panel with headings or nested accordions of its own.
-- **The trigger is in a wrapper** (`.accordion-header`, the heading or a `div`), so it is no longer a sibling of the panel. A selector such as `.accordion-trigger[aria-expanded='true'] ~ .accordion-panel-wrapper` in a project matches nothing now; the wrapper carries `.accordion-wrapper--open` instead.
-- **The panel's overflow follows its state** also without a transition (reduced motion): a closing panel no longer paints over what follows, an opening one no longer clips focus outlines. Remove a workaround that set `overflow` on `.accordion-panel` from `aria-expanded`.
-- **MobileMenu** pads the start of its content with `--app-padding-inline`, the project's own inline padding, as its navigation already did, instead of a fixed 1.25rem. In cardan-auditor-nuxt that is 0.75rem below 480px, in cardan-lms-nuxt below 768px. The token is now in the `main.css` template (0.75rem, 1.5rem from 480px). A project without it has no padding there and adds it to its `main.css`. cardan-support-nuxt names its padding `--padding-inline`, so it pastes:
+- Run `claude plugin update cardan@cardan-ui --scope user`. The review round now runs a cross-browser check in Chrome, Firefox and WebKit (`scripts/cross-browser.mjs`) for a change to what a page shows; the first run prints the command that installs Firefox and WebKit, once per machine. A change to the Claude Code setup alone is reviewed by the new `cardan:plugin-reviewer`. The `cardan-browsers` plugin in the same marketplace adds Firefox and WebKit MCP servers, off by default: switch it on with `/plugin` only to look into a difference the check found. The release skill puts the newest release at the top of this file, as it is now ordered.
+
+### Tokens
+
+- **Paste these token values into your `main.css`** (cardan-cms-nuxt keeps its own tokens until its rebrand): the dark-mode red graphic is the mix the red text uses, so a red meter fill reaches 3:1 on its track (was 2.2:1) and the danger button's hover border 3:1 on the red surface (was 2.8:1); and the header height UserMenu positions itself with, which every project already declares with its own value, is in the template now.
 
   ```css
-  :where(:root) {
-    --app-padding-inline: var(--padding-inline);
+  :where(.dark-mode) {
+    --color-red-graphic: color-mix(
+      in srgb,
+      var(--cardan-error) 65%,
+      var(--cardan-white)
+    );
   }
   ```
 
-- **The outline Button** has a `--color-grey-light` border (was `--color-grey-bg`), which stands out from the background. Check a place where your own CSS changed that border.
-- **`formatFileSize(bytes, locale?)`** counts in decimal units and formats in the app's locale unless you give another ("2,4 MB" in Dutch). A call with one argument keeps working.
-- **`toolbars` and `footers`**, MarkdownEditor's toolbar settings, are no longer auto-imported from `app/utils/markdown.ts`; they moved into the component. No project used them.
-- **The cardan plugin**: run `claude plugin update cardan@cardan-ui --scope user`. A review now counts for the repository the reviewer names, also from a session started in another repository, and the Playwright MCP server gives each session its own browser profile, so sessions no longer block each other. The guidelines now say that every project's `netlify.toml` skips builds of documentation, AI and CI changes (cardan-ui#32 and the matching PRs in each project; check that yours has the `ignore` command), and that `develop` is the default branch on GitHub of cardan-lms-nuxt and cardan-auditor-nuxt, so a hotfix PR passes `--base main`.
+## Upgrading to 2.3
 
-### 2.3.5
+### 2.3.8
 
-2.3.5 makes **MarkdownPreview** lighter: highlight.js loads only when a text has a code block, with six grammars instead of 38. In Cardan Academy that takes about 150 KB raw (50 KB gzipped) out of the chunk every course page executes, and keeps highlight.js out of pages without code.
-
-- **A code block is coloured after the text is in the page**: it is a dark block with plain text first and its tokens get their colours a moment later, also in a server-rendered page. The HTML of a block is unchanged except for a `data-lang` attribute on the `<code>` element (`<pre><code class="hljs" data-lang="css">`), and the theme still ships with the component, so styles on `.hljs` keep working. A test that reads a block's spans right after mount waits for them (`vi.waitFor`).
-- **Six grammars**: `xml` (also `html` and `svg`), `css`, `javascript`, `typescript`, `json` and `bash`, with the aliases highlight.js gives them (`js`, `ts`, `sh`, …). A fence in another language stays plain, where `highlight.js/lib/common` coloured 38 languages. Check your stored markdown for fences in another language (PHP, Python, SQL, YAML, …); when Cardan content needs one, add it to `app/components/Markdown/highlight.ts` in cardan-ui, so every project gets it. The playground's markdown page lists the set.
-- **`vite.optimizeDeps.include`** in a project's `nuxt.config.ts`: replace `highlight.js/lib/common` with the six `highlight.js/lib/languages/*` entries, as the playground does (`.playground/nuxt.config.ts`); cardan-lms-nuxt has them.
-- **The header cells of a markdown table** carry `scope="col"`, which WCAG H63 asks for. Nothing to do, unless your CSS selects `th[scope]`.
-- **The cardan plugin**: run `claude plugin update cardan@cardan-ui --scope user`. The release skill now keeps the five most recent releases in this file.
-
-### 2.3.6
-
-2.3.6 needs nothing from projects.
+2.3.8 needs nothing from projects. See changelog for details.
 
 ### 2.3.7
 
@@ -104,6 +130,49 @@ A release that needs nothing from projects has a one-line section that says so; 
 - **A link in a markdown text ends in hidden text "(open in new window)"** in the current language, and gets that title only when it has none of its own. The icon after the link is decorative now; CSS that changed its alternative text can go.
 - **The cardan plugin**: run `claude plugin update cardan@cardan-ui --scope user`. The reviewer runs on Opus at high effort, work in cardan-ui starts on a `release/<version>` branch, and this file keeps only what projects must do.
 
-### 2.3.8
+### 2.3.6
 
-2.3.8 needs nothing from projects.
+2.3.6 needs nothing from projects. See changelog for details.
+
+### 2.3.5
+
+2.3.5 makes **MarkdownPreview** lighter: highlight.js loads only when a text has a code block, with six grammars instead of 38. In Cardan Academy that takes about 150 KB raw (50 KB gzipped) out of the chunk every course page executes, and keeps highlight.js out of pages without code.
+
+- **A code block is coloured after the text is in the page**: it is a dark block with plain text first and its tokens get their colours a moment later, also in a server-rendered page. The HTML of a block is unchanged except for a `data-lang` attribute on the `<code>` element (`<pre><code class="hljs" data-lang="css">`), and the theme still ships with the component, so styles on `.hljs` keep working. A test that reads a block's spans right after mount waits for them (`vi.waitFor`).
+- **Six grammars**: `xml` (also `html` and `svg`), `css`, `javascript`, `typescript`, `json` and `bash`, with the aliases highlight.js gives them (`js`, `ts`, `sh`, …). A fence in another language stays plain, where `highlight.js/lib/common` coloured 38 languages. Check your stored markdown for fences in another language (PHP, Python, SQL, YAML, …); when Cardan content needs one, add it to `app/components/Markdown/highlight.ts` in cardan-ui, so every project gets it. The playground's markdown page lists the set.
+- **`vite.optimizeDeps.include`** in a project's `nuxt.config.ts`: replace `highlight.js/lib/common` with the six `highlight.js/lib/languages/*` entries, as the playground does (`.playground/nuxt.config.ts`); cardan-lms-nuxt has them.
+- **The header cells of a markdown table** carry `scope="col"`, which WCAG H63 asks for. Nothing to do, unless your CSS selects `th[scope]`.
+- **The cardan plugin**: run `claude plugin update cardan@cardan-ui --scope user`. The release skill now keeps the five most recent releases in this file.
+
+### 2.3.4
+
+2.3.4 brings **Accordion** closer to the APG accordion pattern. It looks the same in a project that does nothing, but its panel is no longer a landmark.
+
+- **New `h-tag` prop** wraps the trigger button in a heading (`h-tag="h3"`), at the level the section's title has in the page, as the pattern asks. Set it on every Accordion whose trigger is a title. A heading inside the `trigger` slot moves out: `<Accordion h-tag="h3"><template #trigger>Transcript</template>` instead of an `<h3>` in the slot, since a button may not contain a heading.
+- **The panel is a plain `div`** and a `region` landmark only with the new **`region` prop**, with `aria-labelledby` to its trigger. Until now every panel was a `<section aria-labelledby>`, a landmark, and the pattern warns against a page full of them. Add `region` to a panel with headings or nested accordions of its own.
+- **The trigger is in a wrapper** (`.accordion-header`, the heading or a `div`), so it is no longer a sibling of the panel. A selector such as `.accordion-trigger[aria-expanded='true'] ~ .accordion-panel-wrapper` in a project matches nothing now; the wrapper carries `.accordion-wrapper--open` instead.
+- **The panel's overflow follows its state** also without a transition (reduced motion): a closing panel no longer paints over what follows, an opening one no longer clips focus outlines. Remove a workaround that set `overflow` on `.accordion-panel` from `aria-expanded`.
+- **MobileMenu** pads the start of its content with `--app-padding-inline`, the project's own inline padding, as its navigation already did, instead of a fixed 1.25rem. In cardan-auditor-nuxt that is 0.75rem below 480px, in cardan-lms-nuxt below 768px. The token is now in the `main.css` template (0.75rem, 1.5rem from 480px). A project without it has no padding there and adds it to its `main.css`. cardan-support-nuxt names its padding `--padding-inline`, so it pastes:
+
+  ```css
+  :where(:root) {
+    --app-padding-inline: var(--padding-inline);
+  }
+  ```
+
+- **The outline Button** has a `--color-grey-light` border (was `--color-grey-bg`), which stands out from the background. Check a place where your own CSS changed that border.
+- **`formatFileSize(bytes, locale?)`** counts in decimal units and formats in the app's locale unless you give another ("2,4 MB" in Dutch). A call with one argument keeps working.
+- **`toolbars` and `footers`**, MarkdownEditor's toolbar settings, are no longer auto-imported from `app/utils/markdown.ts`; they moved into the component. No project used them.
+- **The cardan plugin**: run `claude plugin update cardan@cardan-ui --scope user`. A review now counts for the repository the reviewer names, also from a session started in another repository, and the Playwright MCP server gives each session its own browser profile, so sessions no longer block each other. The guidelines now say that every project's `netlify.toml` skips builds of documentation, AI and CI changes (cardan-ui#32 and the matching PRs in each project; check that yours has the `ignore` command), and that `develop` is the default branch on GitHub of cardan-lms-nuxt and cardan-auditor-nuxt, so a hotfix PR passes `--base main`.
+
+### 2.3.3
+
+2.3.3 needs nothing from projects. See changelog for details.
+
+### 2.3.2
+
+2.3.2 is a security update: Nuxt 4.6.4, and the latest versions of the other dependencies except TypeScript.
+
+- **Update Nuxt to 4.6.4** in every project, first of all in the ones that render on the server (Cardan LMS's public pages, Cardan Support, the websites): `pnpm update --latest '!typescript'`, then `pnpm run build`. Keep TypeScript on 6.
+- **A project on `compatibilityVersion: 5`** (cardan-lms-nuxt, cardan-auditor-nuxt) sets `experimental: { nitroAutoImports: true }` in its `nuxt.config.ts`. With version 5, Nuxt 4.6 turns off the auto-imports of the server bundle, which the server runtime of `@nuxtjs/i18n` and `@nuxt/image` still relies on; without them the build fails with `"useRuntimeConfig" is not exported by "#imports"`.
+- **The cardan plugin**: run `claude plugin update cardan@cardan-ui --scope user`. In cardan-lms-nuxt and cardan-auditor-nuxt, work goes into `develop` and reaches `main` through one release pull request (`/cardan:release`), from the releases of 3 November 2026 on.

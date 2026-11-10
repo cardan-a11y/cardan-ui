@@ -9,7 +9,13 @@ watch(
   },
 );
 
-useHead({ titleTemplate: '%s | Cardan UI' });
+// The <html lang> follows the locale, as in the projects
+const head = useLocaleHead();
+
+useHead(() => ({
+  titleTemplate: '%s | Cardan UI',
+  htmlAttrs: head.value.htmlAttrs,
+}));
 
 // The Auth UI layer's own pages, demoed full page
 const authPages = [

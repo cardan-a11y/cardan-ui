@@ -14,6 +14,7 @@ const { client, loginWithoutRedirect, refreshIdentity, loginRedirectTarget } =
   useAuth();
 const { endpoints } = useCardanAuthConfig();
 const { minLength, maxLength } = usePasswordPolicy();
+const loginEmail = useLoginEmail();
 
 /** The address in the reset link, when the mail carries one. */
 const linkEmail = computed(() => String(route.query.email ?? ''));
@@ -24,7 +25,7 @@ const password = ref('');
 const passwordConfirmation = ref('');
 const showPassword = ref(false);
 const loading = ref(false);
-const error = ref<AuthErrorData | null>(null);
+const error = ref<ApiErrorData | null>(null);
 const requirementsId = useId();
 
 async function resetPassword() {
@@ -41,7 +42,15 @@ async function resetPassword() {
         password_confirmation: passwordConfirmation.value,
       },
     });
+  } catch (e) {
+    error.value = extractApiError(e);
+    loading.value = false;
+    return;
+  }
 
+  // The password is set. A sign-in that fails now is no reason to say the
+  // reset failed: the login page takes over, with the address filled in.
+  try {
     const response = await loginWithoutRedirect({
       email: email.value,
       password: password.value,
@@ -57,15 +66,18 @@ async function resetPassword() {
       const target = loginRedirectTarget();
       if (target !== false) await navigateTo(target);
     }
-
-    // Keeps the spinner up while the page transition plays.
-    setTimeout(() => {
-      loading.value = false;
-    }, lgTransition);
-  } catch (e) {
-    error.value = extractAuthError(e);
-    loading.value = false;
+  } catch {
+    loginEmail.value = email.value;
+    await navigateTo({
+      path: '/login',
+      query: { redirect: route.query.redirect },
+    });
   }
+
+  // Keeps the spinner up while the page transition plays.
+  setTimeout(() => {
+    loading.value = false;
+  }, transitionDuration('lg'));
 }
 </script>
 
@@ -140,6 +152,6 @@ async function resetPassword() {
       :loading="loading"
     />
 
-    <AuthError :data="error" />
+    <ErrorMessage :data="error" />
   </Form>
 </template>

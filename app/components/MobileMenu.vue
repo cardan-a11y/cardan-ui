@@ -1,4 +1,7 @@
 <script setup lang="ts">
+// The attributes go to the dialog, not to the wrapper too
+defineOptions({ inheritAttrs: false });
+
 const { isLargeScreen } = useScreenSize();
 
 const {
@@ -76,14 +79,17 @@ function closeDialog() {
 
   dialog.setAttribute('closing', '');
 
-  Promise.allSettled(dialog.getAnimations().map((a) => a.finished)).then(() => {
-    dialog.removeAttribute('closing');
-    // FocusLoop gets this state as a prop on the next render, after close(),
-    // so the page is still inert when the browser restores focus;
-    // focusDialogTrigger, on the close event, waits for it and moves focus
-    isVisible.value = false;
-    dialog.close();
-  });
+  Promise.allSettled(dialog.getAnimations().map((a) => a.finished)).then(
+    async () => {
+      dialog.removeAttribute('closing');
+      // The loop first, and its render, so the page is not inert when the
+      // browser gives focus back to the element that opened the menu: also
+      // one in the `trigger` slot, which focusDialogTrigger does not know
+      isVisible.value = false;
+      await nextTick();
+      dialog.close();
+    },
+  );
 }
 
 function openDialog() {
@@ -165,7 +171,7 @@ const emit = defineEmits<{
         :class="['mobile-dialog', `mobile-dialog-position--${position}`]"
         v-bind="$attrs"
         :aria-label="label || $t('aria.mobile-menu')"
-        :style="`--width: ${width}px`"
+        :style="`--mobile-menu-width: ${width}px`"
         @click="handleDialogClick"
         @cancel="handleCancel"
         @close="
@@ -191,7 +197,7 @@ const emit = defineEmits<{
             />
 
             <template v-if="list?.length">
-              <h1 class="nav-label">{{ navLabel }}</h1>
+              <h2 v-if="navLabel" class="nav-label">{{ navLabel }}</h2>
 
               <MenuList
                 :list="list"
@@ -223,11 +229,13 @@ body:has(.mobile-dialog[open]) {
 }
 
 .mobile-dialog {
+  --mobile-menu-padding-inline: var(--app-padding-inline);
+
   padding: 0;
   overscroll-behavior: contain;
   min-height: 100dvh;
   width: 100%;
-  max-width: var(--width, 360px);
+  max-width: var(--mobile-menu-width, 360px);
   border: none;
   background-color: var(--color-dialog-bg);
 
@@ -254,7 +262,7 @@ body:has(.mobile-dialog[open]) {
   }
 
   .mobile-nav {
-    padding-inline: var(--app-padding-inline);
+    padding-inline: var(--mobile-menu-padding-inline);
   }
 
   .nav-label {
@@ -287,7 +295,7 @@ body:has(.mobile-dialog[open]) {
   .dialog-content {
     display: grid;
     padding-inline-start: calc(
-      var(--app-padding-inline) + env(safe-area-inset-left)
+      var(--mobile-menu-padding-inline) + env(safe-area-inset-left)
     );
   }
 }
@@ -316,7 +324,9 @@ body:has(.mobile-dialog[open]) {
 
   .dialog-content {
     display: grid;
-    padding-inline-end: calc(1.25rem + env(safe-area-inset-right));
+    padding-inline-end: calc(
+      var(--mobile-menu-padding-inline) + env(safe-area-inset-right)
+    );
   }
 }
 

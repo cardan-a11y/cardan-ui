@@ -19,63 +19,71 @@ const {
   ariaLabel?: string;
 }>();
 
-const tabElements = ref<HTMLButtonElement[]>([]);
+// Two Tabs on a page may share tab values: the ids are per instance
+const id = useId();
+const tablistRef = useTemplateRef<HTMLElement>('tablist');
 const tabpanelRef = useTemplateRef('tabpanel');
 
-function handlePrevTab(tab: TabOption) {
-  tabElements.value = tabElements.value.filter((x) => !x.disabled);
-  const enabledTabs = tabs.filter((x) => !x.disabled);
-  const currentIndex: number = enabledTabs.findIndex((x) => x === tab);
-  let prevIndex: number;
-
-  if (currentIndex === 0) {
-    prevIndex = enabledTabs.length - 1;
-  } else {
-    prevIndex = currentIndex - 1;
-  }
-
-  const prevTab = tabElements.value[prevIndex];
-  prevTab?.focus();
-  prevTab?.click();
-}
-
-function handleNextTab(tab: TabOption) {
-  tabElements.value = tabElements.value.filter((x) => !x.disabled);
-  const enabledTabs = tabs.filter((x) => !x.disabled);
-  const currentIndex: number = enabledTabs.findIndex((x) => x === tab);
-  let nextIndex: number;
-
-  if (currentIndex === enabledTabs.length - 1) {
-    nextIndex = 0;
-  } else {
-    nextIndex = currentIndex + 1;
-  }
-
-  const nextTab = tabElements.value[nextIndex];
-  nextTab?.focus();
-  nextTab?.click();
-}
-
-/** The enabled tabs in their order, for Home and End */
+/** The enabled tabs in the order they are on the page */
 function enabledTabElements() {
-  return tabElements.value.filter((x) => !x.disabled);
+  return Array.from(
+    tablistRef.value?.querySelectorAll<HTMLButtonElement>(
+      '[role="tab"]:not(:disabled)',
+    ) ?? [],
+  );
+}
+
+/** Focus and select: the tabs activate automatically */
+function activate(tab?: HTMLButtonElement) {
+  tab?.focus();
+  tab?.click();
+}
+
+/** The tab before or after the one with focus, around the ends */
+function handleStep(event: KeyboardEvent, step: 1 | -1) {
+  const tabs = enabledTabElements();
+  const index = tabs.indexOf(event.currentTarget as HTMLButtonElement);
+  activate(tabs.at((index + step) % tabs.length));
 }
 
 function handleFirstTab() {
-  const first = enabledTabElements()[0];
-  first?.focus();
-  first?.click();
+  activate(enabledTabElements()[0]);
 }
 
 function handleLastTab() {
-  const last = enabledTabElements().at(-1);
-  last?.focus();
-  last?.click();
+  activate(enabledTabElements().at(-1));
 }
 
 function setActiveTab(tab: TabOption) {
   activeTab.value = tab.value;
 }
+
+/**
+ * The tab that is in the tab order: the selected one, or the first enabled
+ * one while nothing is selected, so the tab list can be reached
+ */
+const focusableTab = computed(() => {
+  const selected = tabs.find(
+    (tab) => tab.value === activeTab.value && !tab.disabled,
+  );
+  return (selected ?? tabs.find((tab) => !tab.disabled))?.value;
+});
+
+/**
+ * A panel without focusable content is in the tab order itself, so Tab from
+ * the tab list reaches it (APG)
+ */
+const panelHasFocusable = ref(true);
+
+function updatePanelTabindex() {
+  const panel = document.getElementById(`${id}-tabpanel-${activeTab.value}`);
+  panelHasFocusable.value = !panel || !!panel.querySelector(focusableSelector);
+}
+
+onMounted(updatePanelTabindex);
+watch(activeTab, updatePanelTabindex, { flush: 'post' });
+// Also content that arrives after the tab was selected
+onUpdated(updatePanelTabindex);
 
 function focusTabpanel() {
   tabpanelRef.value?.focus();
@@ -100,31 +108,24 @@ defineExpose({
       '--tabs-icon-size': iconSize && `var(--font-size-${iconSize})`,
     }"
   >
-    <div class="tablist" role="tablist" :aria-label="ariaLabel">
+    <div ref="tablist" class="tablist" role="tablist" :aria-label="ariaLabel">
       <template v-for="tab in tabs" :key="'tab-' + tab.value">
         <button
-          :id="`tab-${tab.value}`"
-          ref="tabElements"
+          :id="`${id}-tab-${tab.value}`"
           type="button"
           class="tab"
           role="tab"
           :aria-selected="tab.value === activeTab"
-          :tabindex="tab.value === activeTab ? '0' : '-1'"
-          :aria-controls="`tabpanel-${tab.value}`"
+          :tabindex="tab.value === focusableTab ? '0' : '-1'"
+          :aria-controls="`${id}-tabpanel-${tab.value}`"
           :disabled="tab.disabled"
-          @keydown.left.prevent="handlePrevTab(tab)"
-          @keydown.right.prevent="handleNextTab(tab)"
+          @keydown.left.prevent="handleStep($event, -1)"
+          @keydown.right.prevent="handleStep($event, 1)"
           @keydown.home.prevent="handleFirstTab()"
           @keydown.end.prevent="handleLastTab()"
           @click="setActiveTab(tab)"
         >
-          <span
-            v-if="tab.icon?.startsWith('<svg')"
-            class="html-icon"
-            aria-hidden="true"
-            v-html="tab.icon"
-          />
-          <Icon v-else-if="tab.icon" :name="tab.icon" />
+          <Icon v-if="tab.icon" :name="tab.icon" />
           <span class="tab-text">{{ tab.label }}</span>
         </button>
       </template>
@@ -143,11 +144,11 @@ defineExpose({
       <template v-for="tab in tabs" :key="tab.value">
         <div
           v-show="tab.value === activeTab"
-          :id="`tabpanel-${tab.value}`"
-          :aria-labelledby="`tab-${tab.value}`"
+          :id="`${id}-tabpanel-${tab.value}`"
+          :aria-labelledby="`${id}-tab-${tab.value}`"
           role="tabpanel"
           class="tabpanel"
-          tabindex="-1"
+          :tabindex="tab.value === activeTab && !panelHasFocusable ? '0' : '-1'"
         >
           <slot :name="tab.value" />
         </div>
@@ -203,16 +204,6 @@ defineExpose({
       color: var(--color-grey-text);
       font-size: var(--tabs-icon-size, larger);
       margin-inline-end: 0.125rem;
-    }
-
-    .html-icon {
-      display: grid;
-      margin-inline-end: 0.5rem;
-
-      svg {
-        width: 1.25rem;
-        height: 1.25rem;
-      }
     }
 
     &:hover:not(:disabled, [aria-selected='true']) {

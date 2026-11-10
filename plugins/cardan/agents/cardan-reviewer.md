@@ -1,7 +1,7 @@
 ---
 name: cardan-reviewer
-description: Reviews the changes in a Cardan repository against its REVIEW.md before they are committed, pushed or put in a pull request. Read-only; returns findings and changes nothing. Use it for the mandatory review in the Cardan guidelines.
-tools: Read, Grep, Glob, Bash, Skill
+description: Reviews the changes in a Cardan repository against its REVIEW.md before they are committed, pushed or put in a pull request. Read-only; returns findings and changes nothing. Use it for the mandatory review in the Cardan guidelines, except for a change to the Claude Code setup alone, which cardan:plugin-reviewer reviews.
+tools: Read, Grep, Glob, Bash
 model: opus
 effort: high
 ---
@@ -12,8 +12,9 @@ your brief names, or else the one you start in. Run every command in it
 you get no opinion of the author's about them: judge the code, not the
 intent.
 
-1. Read `REVIEW.md` and `CLAUDE.md`, and load the `cardan:guidelines` skill
-   for the shared Cardan guidelines.
+1. Read `REVIEW.md` and `CLAUDE.md`. REVIEW.md holds what to check; the
+   shared Cardan guidelines are for the session that writes the code, so
+   you don't need them.
 2. Read the changes. Use the diff command and target branch from your brief.
    Without one, review every uncommitted change: `git diff HEAD`, plus the
    untracked files that `git status --short` lists.

@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import type { StyleValue } from 'vue';
+
+// An attribute goes to the control; `class` and `style` stay on the wrapper
+defineOptions({ inheritAttrs: false });
 
 const { t } = useI18n();
 const model = defineModel<string | number>();
@@ -6,12 +10,13 @@ const model = defineModel<string | number>();
 const {
   label = undefined,
   placeholder = undefined,
-  pattern = undefined,
   ariaDescribedby = undefined,
   name = undefined,
   instruction = undefined,
   errorMessage = undefined,
+  customError = undefined,
   variant = 'default',
+  showInvalid = false,
   required,
   autoresize,
   id = useId(),
@@ -20,10 +25,16 @@ const {
   placeholder?: string;
   id?: string;
   name?: string;
-  pattern?: string;
   ariaDescribedby?: string;
   instruction?: string;
+  /** The error text when the browser finds the field invalid; "<label> is missing" or "Value invalid" by default */
   errorMessage?: string;
+  /**
+   * An error the browser cannot find, such as one from the server: the field
+   * shows this text and is described by it until its value changes
+   */
+  customError?: string;
+  /** Shows the error now; a Form shows it after a failed submit */
   showInvalid?: boolean;
   hideLabel?: boolean;
   required?: boolean;
@@ -34,6 +45,15 @@ const {
   variant?: InputVariant;
 }>();
 
+const attrs = useAttrs();
+
+/** The attributes for the control, without the wrapper's `class` and `style` */
+function controlAttrs() {
+  return Object.fromEntries(
+    Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'),
+  );
+}
+
 const computedErrorMessage = computed(() => {
   if (errorMessage) return errorMessage;
   if (required && !model.value) {
@@ -42,23 +62,58 @@ const computedErrorMessage = computed(() => {
   return t('form.invalid-value');
 });
 
-const computedAriaDescribedby = computed(() =>
-  [
-    ariaDescribedby,
-    instruction && `instruction-${id}`,
-    id && required && `error-${id}`,
-  ]
-    .filter(Boolean)
-    .join(' '),
+const textareaRef = useTemplateRef<HTMLTextAreaElement>('textarea');
+const formShowInvalid = inject(formShowInvalidKey, ref(false));
+const isValid = ref(true);
+const customErrorActive = ref(false);
+
+function updateValidity() {
+  isValid.value = textareaRef.value?.validity.valid ?? true;
+}
+
+/**
+ * The custom error shows like the browser's own, and describes the field,
+ * but does not keep the form from submitting again: the server judges the
+ * next attempt, and the parent moves focus to the field (`focusElement()`)
+ */
+function applyCustomError() {
+  customErrorActive.value = !!customError;
+}
+
+onMounted(() => {
+  applyCustomError();
+  updateValidity();
+});
+watch(() => customError, applyCustomError, { flush: 'post' });
+watch([model, () => required], updateValidity, { flush: 'post' });
+
+/** The error text shows after a failed submit, or for a custom error */
+const errorShown = computed(
+  () =>
+    customErrorActive.value ||
+    ((showInvalid || formShowInvalid.value) && !isValid.value),
 );
 
-const textareaInput = ref('');
-const textareaRef = useTemplateRef<HTMLTextAreaElement>('textarea');
+// The error describes the field only while it shows
+const computedAriaDescribedby = computed(
+  () =>
+    [
+      ariaDescribedby,
+      instruction && `instruction-${id}`,
+      errorShown.value && `error-${id}`,
+    ]
+      .filter(Boolean)
+      .join(' ') || undefined,
+);
 
 function handleInput(event: Event) {
   const target = event.target as HTMLTextAreaElement;
-  textareaInput.value = target.value;
+
+  // A new value clears the custom error, until the parent sets one again
+  customErrorActive.value = false;
+
   model.value = target.value;
+  updateValidity();
 }
 
 function focusElement() {
@@ -79,9 +134,8 @@ onMounted(() => {
   resizeTextarea();
 });
 
-watch(textareaInput, () => {
-  resizeTextarea();
-});
+// Also a value the parent loads after mount, as in an edit form
+watch(model, resizeTextarea, { flush: 'post' });
 
 onUnmounted(() => window.removeEventListener('resize', resizeTextarea));
 
@@ -98,14 +152,16 @@ const emit = defineEmits<{
 <template>
   <FormField
     :id="id"
-    :class="['textarea-wrapper', `textarea-variant--${variant}`]"
+    :class="['textarea-wrapper', `textarea-variant--${variant}`, $attrs.class]"
+    :style="$attrs.style as StyleValue"
     :label="label"
     :hide-label="hideLabel"
     :required="required"
     :disabled="disabled"
     :instruction="instruction"
-    :error-text="required ? computedErrorMessage : undefined"
+    :error-text="customErrorActive ? customError : computedErrorMessage"
     :show-invalid="showInvalid"
+    :custom-error="customErrorActive"
   >
     <template #label>
       <slot name="label" />
@@ -114,17 +170,20 @@ const emit = defineEmits<{
     <textarea
       :id="id"
       ref="textarea"
-      v-model="model"
       :class="['textarea', autoresize && 'autoresize']"
+      v-bind="controlAttrs()"
+      :value="model"
       :placeholder="placeholder"
       :disabled="disabled"
       :readonly="readonly"
       :required="required"
-      :pattern="pattern"
       :autofocus="autofocus"
       :name="name"
       :aria-describedby="computedAriaDescribedby"
+      :aria-invalid="errorShown || undefined"
       @input="handleInput"
+      @change="updateValidity"
+      @invalid="updateValidity"
       @blur="emit('blur', $event)"
       @paste="emit('paste', $event)"
     />
@@ -138,7 +197,6 @@ const emit = defineEmits<{
 }
 
 :where(.form-field-wrapper) {
-
   &:has(.textarea:disabled) {
     opacity: 35%;
   }

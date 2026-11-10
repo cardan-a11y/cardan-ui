@@ -93,20 +93,17 @@ function finish() {
   emit('done');
 }
 
-/**
- * Each step replaces the content focus was in, so move it to the new heading.
- * The confirm step is the exception: its form focuses the code input.
- */
-watch(mfaStep, async (step) => {
-  if (step === 3) return;
-  await nextTick();
-  headingRef.value?.focus();
-});
+// Each step replaces the content focus was in, so it moves to the new heading
+useMfaStepFocus(headingRef);
 
+// A fresh flow on arrival, and nothing of this one left behind on leaving:
+// done, skipped or signed out
 onMounted(() => {
   resetMfa();
   if (autofocus) headingRef.value?.focus();
 });
+
+onUnmounted(resetMfa);
 </script>
 
 <template>
@@ -130,13 +127,13 @@ onMounted(() => {
         {{ $t('mfa.description') }}
       </p>
 
-      <AuthError :data="mfaError" />
+      <ErrorMessage :data="mfaError" />
     </div>
 
     <template v-else-if="mfaStep === 2">
       <MfaQr :heading-level="subheadingLevel" />
 
-      <AuthError :data="mfaError" />
+      <ErrorMessage :data="mfaError" />
     </template>
 
     <Form
@@ -214,6 +211,9 @@ onMounted(() => {
         @click="finish"
       />
     </div>
+
+    <!-- Asked for by Fortify's `password.confirm` when MFA is enabled -->
+    <PasswordConfirmationDialog />
   </div>
 </template>
 
@@ -222,8 +222,8 @@ onMounted(() => {
   width: 100%;
   margin-inline: auto;
 
-  /* The setup's own text; AuthError keeps its error colour and size */
-  p:not(.auth-error p) {
+  /* The setup's own text; ErrorMessage keeps its error colour and size */
+  p:not(.error-message p) {
     color: var(--color-grey-text);
     font-size: var(--font-size-md);
   }

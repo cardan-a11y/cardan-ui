@@ -1,7 +1,10 @@
-/** "2,4 MB" or "480 KB", in the current locale unless another is given */
+/**
+ * "2,4 MB" or "480 KB", in the app's locale unless another is given. Outside
+ * a Nuxt context (a plain script, a test) there is no app locale: Dutch then.
+ */
 export function formatFileSize(
   bytes: number,
-  locale = useNuxtApp().$i18n.locale.value,
+  locale = tryUseNuxtApp()?.$i18n.locale.value ?? 'nl',
 ) {
   const kilobytes = Math.max(1, Math.round(bytes / 1000));
   if (kilobytes < 1000) return `${kilobytes.toLocaleString(locale)} KB`;

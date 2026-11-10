@@ -21,18 +21,49 @@ const {
   disabled?: boolean;
 }>();
 
+const { t } = useI18n();
+
 const copied = ref(false);
+const failed = ref(false);
+let reset: ReturnType<typeof setTimeout> | undefined;
 
 async function handleClick() {
   if (!text) return;
-  await navigator.clipboard.writeText(String(text));
-  copied.value = true;
+
+  // Back to "copy" first, so the status is announced again on a second copy
+  copied.value = false;
+  failed.value = false;
+  await nextTick();
+
+  try {
+    await navigator.clipboard.writeText(String(text));
+    copied.value = true;
+  } catch {
+    // The page may not have the clipboard (no focus, no permission)
+    failed.value = true;
+  }
+
+  clearTimeout(reset);
+  reset = setTimeout(() => {
+    copied.value = false;
+    failed.value = false;
+  }, 2000);
 }
+
+onUnmounted(() => clearTimeout(reset));
+
+/** "Copied" or "Copy failed" for a moment after a click, "Copy" otherwise */
+const label = computed(() => {
+  if (copied.value) return t('general.copied');
+  if (failed.value) return t('general.copy-failed');
+
+  return t('general.copy');
+});
 </script>
 
 <template>
   <Button
-    :label="copied ? $t('general.copied') : $t('general.copy')"
+    :label="label"
     :icon="
       copied
         ? 'material-symbols:inventory-rounded'
@@ -53,6 +84,6 @@ async function handleClick() {
   <!-- A screen reader announces a change in a live region that is already on
        the page, not in the focused button's own name -->
   <span role="status" class="visuallyhidden">
-    {{ copied ? $t('general.copied') : '' }}
+    {{ copied || failed ? label : '' }}
   </span>
 </template>

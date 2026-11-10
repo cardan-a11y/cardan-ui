@@ -50,4 +50,65 @@ describe('Textarea', () => {
     );
     expect(await checkA11y()).toHaveNoViolations();
   });
+
+  it('describes the field by its error only while the error shows', async () => {
+    const wrapper = await mountSuspended(Textarea, {
+      props: {
+        label: 'Message',
+        modelValue: '',
+        required: true,
+        errorMessage: 'Write a message',
+      },
+      attachTo: document.body,
+    });
+
+    // Invalid, but not shown yet: a valid-looking field is not described by it
+    const textarea = wrapper.get('textarea');
+    expect(textarea.attributes('aria-describedby')).toBeUndefined();
+    expect(textarea.attributes('aria-invalid')).toBeUndefined();
+
+    await wrapper.setProps({ showInvalid: true });
+
+    expect(
+      document.getElementById(textarea.attributes('aria-describedby') ?? '')
+        ?.textContent,
+    ).toContain('Write a message');
+    expect(textarea.attributes('aria-invalid')).toBe('true');
+    expect(await checkA11y()).toHaveNoViolations();
+
+    // Valid: not described, whatever the form shows
+    await wrapper.setProps({ modelValue: 'Hello' });
+    expect(textarea.attributes('aria-describedby')).toBeUndefined();
+  });
+
+  it('shows a custom error, and is described by it, until its value changes', async () => {
+    const wrapper = await mountSuspended(Textarea, {
+      props: { label: 'Message', modelValue: 'Buy now' },
+      attachTo: document.body,
+    });
+    const textarea = wrapper.get('textarea');
+
+    await wrapper.setProps({ customError: 'Looks like spam' });
+
+    const describedBy = textarea.attributes('aria-describedby') ?? '';
+    expect(describedBy).toMatch(/^error-/);
+    expect(document.getElementById(describedBy)?.textContent).toContain(
+      'Looks like spam',
+    );
+    expect(textarea.attributes('aria-invalid')).toBe('true');
+    expect(wrapper.get('.form-field-wrapper').classes()).toContain(
+      'custom-error',
+    );
+    // The server judges the next submit: the browser does not hold it back
+    expect((textarea.element as HTMLTextAreaElement).checkValidity()).toBe(
+      true,
+    );
+
+    await textarea.setValue('Hello, a question about the course');
+
+    expect(textarea.attributes('aria-describedby')).toBeUndefined();
+    expect(wrapper.get('.form-field-wrapper').classes()).not.toContain(
+      'custom-error',
+    );
+  });
 });

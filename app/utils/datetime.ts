@@ -1,7 +1,12 @@
-export function d(
+/**
+ * A date in a named format ('long': "9 november 2026"; 'short', 'numeric',
+ * 'datetime' and 'datetimeLong') or in the given Intl options, in the given
+ * locale; undefined for no date.
+ */
+export function formatDateTime(
   date: number | string | Date,
-  format: string | Intl.DateTimeFormatOptions = 'long',
-  locale = 'nl',
+  format: string | Intl.DateTimeFormatOptions,
+  locale: string,
 ) {
   if (!date) return;
 

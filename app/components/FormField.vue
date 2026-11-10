@@ -5,7 +5,8 @@
  * Select, Textarea, MultiSelect, DatePicker and RangeInput render through
  * it, so the layout and styles they share live here once. A field points its
  * control at the texts with `aria-describedby`: `error-<id>` and
- * `instruction-<id>`.
+ * `instruction-<id>`, the error only while it shows, and the label is
+ * `label-<id>` for a control that must name itself with `aria-labelledby`.
  */
 const {
   id,
@@ -28,13 +29,22 @@ const {
   /** In the document for `show-invalid` to reveal; no error element without it */
   errorText?: string;
   showInvalid?: boolean;
+  /** The error shows now, for a reason the browser cannot check */
+  customError?: boolean;
 }>();
 </script>
 
 <template>
-  <div :class="['form-field-wrapper', showInvalid && 'show-invalid']">
+  <div
+    :class="[
+      'form-field-wrapper',
+      showInvalid && 'show-invalid',
+      customError && 'custom-error',
+    ]"
+  >
     <label
       v-if="label"
+      :id="`label-${id}`"
       :for="labelFor ?? id"
       :class="[hideLabel && 'visuallyhidden', disabled && 'disabled']"
     >

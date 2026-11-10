@@ -24,6 +24,18 @@ const {
 const emit = defineEmits<{
   click: [];
 }>();
+
+const { locale } = useI18n();
+
+/** Whole euros in the app's language, the same on the server as in the browser */
+const formattedPrice = computed(() =>
+  price?.toLocaleString(locale.value, {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }),
+);
 </script>
 
 <template>
@@ -39,7 +51,6 @@ const emit = defineEmits<{
         <Chip
           v-if="recommended"
           :label="$t('general.recommended')"
-          :aria-label="`(${$t('general.recommended')})`"
           size="md"
           color="accent"
           class="recommended-chip"
@@ -50,9 +61,7 @@ const emit = defineEmits<{
 
       <div class="price">
         <template v-if="price || priceText">
-          <span v-if="price" class="price">
-            {{ `€ ${Math.round(price).toLocaleString()}` }}
-          </span>
+          <span v-if="price" class="price">{{ formattedPrice }}</span>
 
           <span v-else-if="priceText" class="price-text">{{ priceText }}</span>
 

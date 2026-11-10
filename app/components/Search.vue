@@ -119,7 +119,7 @@ const emit = defineEmits<{
     width: 100%;
   }
 
-  input[type='search'] ::-webkit-search-cancel-button {
+  input[type='search']::-webkit-search-cancel-button {
     appearance: none;
   }
 

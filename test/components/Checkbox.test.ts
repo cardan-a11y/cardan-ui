@@ -29,7 +29,10 @@ describe('Checkbox', () => {
     expect(checkbox.required).toBe(true);
     expect(wrapper.get('label').text()).toContain('required');
 
-    // The error text is in the document for the form to reveal, and named
+    // The error text describes the box once it shows
+    expect(checkbox.getAttribute('aria-describedby')).toBeNull();
+    await wrapper.setProps({ showInvalid: true });
+
     const error = document.getElementById(
       checkbox.getAttribute('aria-describedby') ?? '',
     );
@@ -62,6 +65,7 @@ describe('CheckboxGroup', () => {
       props: {
         label: 'Toppings',
         required: true,
+        showInvalid: true,
         options: [
           { value: 'cheese', label: 'Cheese' },
           { value: 'ham', label: 'Ham' },
@@ -86,6 +90,9 @@ describe('CheckboxGroup', () => {
     await wrapper.setProps({ modelValue: ['cheese'] });
 
     expect(boxes.every((box) => box.checkValidity())).toBe(true);
+    expect(
+      wrapper.get('fieldset').attributes('aria-describedby'),
+    ).toBeUndefined();
     expect(await checkA11y()).toHaveNoViolations();
   });
 

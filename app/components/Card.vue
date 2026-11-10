@@ -42,9 +42,12 @@ const computedStyle = computed(() => ({
   padding-block: var(--card-padding-block);
   padding-inline: var(--card-padding-inline);
 
+  /* On a narrow screen the padding props give way. The padding itself is
+     set, not the custom properties: those come from the inline style, which
+     would win. */
   @media (max-width: 479px) {
-    --card-padding-block: 1.25rem !important;
-    --card-padding-inline: 1rem !important;
+    padding-block: 1.25rem;
+    padding-inline: 1rem;
   }
 
   h1,

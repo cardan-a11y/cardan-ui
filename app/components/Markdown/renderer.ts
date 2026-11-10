@@ -20,7 +20,7 @@ import { escapeHTML } from '../../utils/markdown';
  * A class runs no script, but it can apply any class of the page, such as one
  * that hides text visually.
  */
-const SAFE_ATTRIBUTES = ['lang', 'dir', 'class'];
+export const SAFE_ATTRIBUTES = ['lang', 'dir', 'class'];
 
 /**
  * A fenced block, escaped, with its language on the element: markdown-it's
@@ -66,6 +66,11 @@ export type MarkdownRenderOptions = {
   tableLabel?: string;
   /** Hidden text and title of a link, which opens in a new window. */
   newWindowLabel?: string;
+  /**
+   * The site's origin, which a link must leave to open in a new window. The
+   * browser's own by default; the server has none, so pass it there.
+   */
+  origin?: string;
 };
 
 /** A piece of the text as HTML, or a video to render with VideoPlayer. */
@@ -77,10 +82,11 @@ function select({
   headingOffset = 0,
   tableLabel = 'Table',
   newWindowLabel = 'open in new window',
+  origin,
 }: MarkdownRenderOptions) {
   return {
     md: trusted ? renderers.trusted : renderers.safe,
-    env: { headingOffset, tableLabel, newWindowLabel },
+    env: { headingOffset, tableLabel, newWindowLabel, origin },
   };
 }
 

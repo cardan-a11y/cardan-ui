@@ -1,5 +1,6 @@
-// Any password confirms. The dialog does not submit an empty one, but an empty
-// password still gets the validation error Laravel sends
+// Any password confirms, except 000000, which shows the validation error. The
+// dialog does not submit an empty one, but an empty password still gets the
+// validation error Laravel sends
 export default defineEventHandler(async (event) => {
   const { password } = await readBody<{ password?: string }>(event);
 
@@ -9,6 +10,14 @@ export default defineEventHandler(async (event) => {
     return {
       message: 'The password field is required.',
       errors: { password: ['The password field is required.'] },
+    };
+  }
+
+  if (password === '000000') {
+    setResponseStatus(event, 422);
+    return {
+      message: 'The provided password is incorrect.',
+      errors: { password: ['The provided password is incorrect.'] },
     };
   }
 

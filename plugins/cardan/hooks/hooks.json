@@ -1,5 +1,5 @@
 {
-  "description": "The Cardan local review: git commit, git push and gh pr create are blocked until the cardan:cardan-reviewer agent has reviewed the working tree as it is, and the shared guidelines are added to every session.",
+  "description": "The Cardan local review: git commit, git push and gh pr create are blocked until the cardan:cardan-reviewer agent (or the cardan:plugin-reviewer, for a change to the Claude Code setup alone) has reviewed the working tree as it is, and the shared guidelines are added to every session.",
   "hooks": {
     "SessionStart": [
       {
@@ -28,7 +28,7 @@
     ],
     "SubagentStart": [
       {
-        "matcher": "^cardan:cardan-reviewer$",
+        "matcher": "^cardan:(cardan|plugin)-reviewer$",
         "hooks": [
           {
             "type": "command",
@@ -40,7 +40,7 @@
     ],
     "SubagentStop": [
       {
-        "matcher": "^cardan:cardan-reviewer$",
+        "matcher": "^cardan:(cardan|plugin)-reviewer$",
         "hooks": [
           {
             "type": "command",

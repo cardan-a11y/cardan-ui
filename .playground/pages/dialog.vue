@@ -31,11 +31,12 @@ function makeToast() {
 
       <p class="fs-sm mbe-2 c-grey-text">
         Source:
-        <NuxtLink
+        <Button
+          label="ARIA Design Patterns"
           to="https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal"
+          variant="link"
           target="_blank"
-          >ARIA Design Patterns</NuxtLink
-        >
+        />
       </p>
     </blockquote>
 
@@ -154,11 +155,12 @@ function makeToast() {
           If your dialog should divert users' attention to a brief, important
           message, you can set <code>role="alertdialog"</code>. Its usage is
           described in the
-          <NuxtLink
+          <Button
+            label="Alert and Message Dialog Pattern"
             to="https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog"
+            variant="link"
             target="_blank"
-            >Alert and Message Dialog Pattern</NuxtLink
-          >.
+          />.
         </li>
       </ul>
     </Card>

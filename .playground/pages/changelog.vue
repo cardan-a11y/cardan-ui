@@ -7,6 +7,252 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.4.0" date="2026-11-10">
+      <p>
+        The accessibility release after the audit of November 2026: 98 findings
+        in the form fields, the overlays, the display components and the auth
+        layer. <code>MIGRATION.md</code> has what a project must do.
+      </p>
+      <ul>
+        <li>
+          Form fields:
+          <ul>
+            <li>
+              A field is described by its error only while the error shows, with
+              <code>aria-invalid</code>; a valid field no longer reads "Value
+              invalid" to a screen reader. Form provides the state to its
+              fields.
+            </li>
+            <li>
+              New <code>custom-error</code> prop on Input, Textarea and Select
+              for an error the browser cannot find, such as one from the server:
+              the field shows that text and is described by it until its value
+              changes, without holding the form back.
+            </li>
+            <li>
+              An attribute on Input, Textarea or Select goes to the control,
+              <code>class</code> and <code>style</code> to the wrapper; Input
+              has an <code>inputmode</code> prop.
+            </li>
+            <li>
+              Removed <code>multiple</code> on Select and <code>pattern</code>
+              on Textarea, which could not work, and the default
+              <code>tel</code> pattern, which rejected every real phone number;
+              a phone field's error is "Phone number is invalid".
+            </li>
+            <li>
+              MultiSelect keeps the field label in the combobox's name once
+              something is selected, passes its error and instruction to the
+              combobox, passes the focus a Form gives its hidden required input
+              on to the combobox, and counts in the Dutch "items geselecteerd".
+            </li>
+            <li>
+              DatePicker attaches its error to its input, has
+              <code>show-invalid</code>, and no longer announces its calendar
+              through a live region. Every day of its calendar is named with its
+              weekday, and the headers carry the full weekday names (Auditor
+              finding CAN-11.F48); the keyboard access of the calendar waits on
+              vue-datepicker#1283.
+            </li>
+            <li>
+              FileInput: a paste into a text field, an editor or another
+              FileInput is left to that field, and one FileInput per paste; a
+              rejected file is not the value and shows its error at once; a
+              required field without a file says so after a failed submit; a
+              compressed result for a file that was replaced is dropped; the
+              drop zone is a picture of the control for screen readers.
+            </li>
+            <li>
+              RangeInput reads the label of the tick at its value as
+              <code>aria-valuetext</code>, starts at <code>min</code> without a
+              value, and has custom properties of its own
+              (<code>--range-input-*</code>) with styles scoped to the
+              component.
+            </li>
+            <li>
+              The radios of a RadioGroup share a name by default; Switch has an
+              <code>aria-checked</code> state also without a model; Textarea
+              resizes to a value loaded after mount; Search's clear button is
+              the only one (the native one was still there in Chrome and
+              Safari); LanguageSelect has ids per instance; Form's exposed
+              <code>submit()</code> reports and focuses like the submit button.
+            </li>
+          </ul>
+        </li>
+        <li>
+          Overlays and navigation:
+          <ul>
+            <li>
+              FocusLoop releases the page it made inert in every case: a loop
+              that closes in the tick it opened, or unmounts while open, and
+              leaves what another loop made inert; Tab and Shift+Tab at its
+              edges go by where focus came from. Extensive tests.
+            </li>
+            <li>
+              Popover: focus moves to the first item when it opens, Tab past the
+              last item or leaving the trigger for the page closes it, Escape
+              and a choice return focus to the trigger (it fell to the page).
+              Its content is no longer in a FocusLoop; it is a disclosure, not a
+              menu.
+            </li>
+            <li>
+              MobileMenu returns focus to a trigger in the
+              <code>trigger</code> slot, puts attributes on its dialog only, and
+              its navigation label is an <code>h2</code> only with
+              <code>nav-label</code>; its content is padded with
+              <code>--app-padding-inline</code> on both sides.
+            </li>
+            <li>
+              Tabs: ids per instance, the arrow keys move in page order also
+              after a re-render, the tab list is reachable while nothing is
+              selected, and a panel without focusable content is in the tab
+              order.
+            </li>
+            <li>
+              Pagination moves focus on when the button under it is disabled on
+              the first or last page; Accordion emits <code>update:open</code>;
+              a MenuList in a MenuList is no landmark of its own and emits the
+              clicked sub-item; UserMenu closes before its sign-out dialog opens
+              and is collapsed from the start.
+            </li>
+            <li>
+              Toast has no <code>role</code>: ToastManager's polite live region
+              announces every toast once, and it is teleported to
+              <code>#teleports</code>; a toast id no longer needs a secure
+              context. Table is <code>aria-busy</code> while it loads. Tooltip
+              drops its <code>title</code> prop; Dialog its <code>modal</code>
+              prop.
+            </li>
+            <li>
+              Custom properties set from props are prefixed with the component
+              (<code>--popover-*</code>, <code>--tooltip-*</code>,
+              <code>--mobile-menu-width</code>, <code>--accordion-*</code>,
+              <code>--toast-animation-*</code>), so they no longer leak into
+              nested components, and Popover needs no <code>!important</code>.
+            </li>
+            <li>
+              README has a "Browser support" section for the Popover API and CSS
+              anchor positioning.
+            </li>
+          </ul>
+        </li>
+        <li>
+          Display components and utilities:
+          <ul>
+            <li>
+              A Button that opens a new window says so in its name, as a
+              markdown link does. A loading Button keeps focus
+              (<code>aria-disabled</code>, <code>aria-busy</code>) and swallows
+              its clicks, instead of dropping focus to the page through
+              <code>disabled</code>; the <code>topbar</code> variant shows the
+              current page also with reduced motion; its radius property is
+              <code>--button-radius</code>.
+            </li>
+            <li>
+              Markdown links open in a new window only for another origin;
+              MarkdownPreview drops the unused <code>ellipsis-lines</code> and
+              gains <code>videos-as-links</code>, which keeps a video link a
+              link where a player does not fit, such as a table cell;
+              MarkdownEditor uses the same attribute allowlist as the preview,
+              configures md-editor-v3 once and trims on blur. YouTube parses
+              every URL form through <code>parseVideoUrl()</code>; VideoPlayer
+              refetches on a URL change, falls back to the oEmbed thumbnail and
+              <code>hqdefault.jpg</code>, and never titles a frame "undefined".
+            </li>
+            <li>
+              PricingCard formats the price per locale; AvatarButton always has
+              a name; CopyButton announces "Copied" or "Copy failed" each time
+              and resets; LanguageSwitcher marks the current language with
+              <code>aria-current</code>; the theme controls generate their ids;
+              the playground sets <code>lang</code> from the locale.
+            </li>
+            <li>
+              ProgressCircle has a <code>label</code> prop for its name
+              ("Progress" by default) and says its value in
+              <code>aria-valuetext</code>, as ProgressMeter does; both count
+              from <code>min</code>. Skeleton is decorative
+              (<code>aria-hidden</code>); the element it stands in for is
+              <code>aria-busy</code>.
+            </li>
+            <li>
+              <code>d()</code> is <code>formatDateTime()</code> with a required
+              locale; <code>useDate().formatDate()</code> reads a future date
+              too. The transition constants are
+              <code>transitionDuration()</code>, which reads the
+              <code>--duration-*</code> token from the page and is 0 with
+              reduced motion.
+            </li>
+            <li>
+              <code>sort()</code> no longer throws on a missing nested key;
+              <code>formatFileSize()</code> no longer throws outside a Nuxt
+              context; ProgressCircle, ProgressMeter, Skeleton and Spacer prefix
+              their custom properties; the <code>no-explicit-any</code> and
+              <code>no-v-html</code> lint rules are on.
+            </li>
+            <li>
+              New ErrorMessage, <code>useErrorMessage()</code> and
+              <code>extractApiError()</code>: one error box for Laravel's error
+              shape and the JSON:API envelope, in the API's language; without a
+              usable answer it tells an offline browser from a server error. It
+              replaces the boxes of Cardan Academy, Cardan Auditor and the auth
+              layer.
+            </li>
+            <li>
+              New Breadcrumbs component: the trail to the current page as a
+              named <code>nav</code> with an ordered list, the last item as text
+              with <code>aria-current="page"</code>. The slash between the items
+              is CSS generated content with an empty alternative text, so a
+              screen reader does not read it.
+            </li>
+          </ul>
+        </li>
+        <li>
+          Cardan Auth UI:
+          <ul>
+            <li>
+              The forms show their errors in ErrorMessage; AuthError and
+              <code>extractAuthError()</code> are gone. The code fields have
+              <code>inputmode="numeric"</code>, the TOTP code
+              <code>autocomplete="one-time-code"</code>.
+            </li>
+            <li>
+              <code>requestPasswordConfirmation()</code> rejects without a
+              mounted dialog and settles once the dialog has closed; MfaSettings
+              and MfaSetup mount the dialog; MfaDialog focuses every step
+              (<code>useMfaStepFocus()</code>).
+            </li>
+            <li>
+              <code>useMfa()</code>: one <code>resetMfa()</code> clears codes
+              and credentials on every exit; enabling stops when the recovery
+              codes could not be fetched; a 401 on the challenge sends the user
+              to /login with a toast; the QR SVG is reduced before it is
+              inlined. An exempt account no longer loops to /mfa-setup; the
+              reminder reads sessionStorage after hydration.
+            </li>
+            <li>
+              Sign-out is awaited and a refusal shown; a reset whose sign-in
+              fails goes to /login with the address; the forgot form accepts
+              another address; the policy fetch no longer redirects a guest. Six
+              auth tests.
+            </li>
+          </ul>
+        </li>
+        <li>
+          Tokens: the dark-mode <code>--color-red-graphic</code> is the mix the
+          red text uses (3.8:1 on the meter track, was 2.2:1), and
+          <code>--app-header-height</code> is in the template.
+        </li>
+        <li>
+          The cardan Claude Code plugin: the review round checks a changed page
+          in Chrome, Firefox and WebKit with one script; a change to the plugin
+          alone has its own reviewer, <code>cardan:plugin-reviewer</code>; the
+          new <code>cardan-browsers</code> plugin adds Firefox and WebKit MCP
+          servers, off by default; the guidelines are shorter, without what each
+          project's CLAUDE.md says
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.3.8" date="2026-11-08">
       <ul>
         <li>

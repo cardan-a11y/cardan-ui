@@ -3,9 +3,19 @@ import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { FileInput } from '#components';
 import { checkA11y } from '../a11y';
 
-/** Chooses a file the way the picker does: the input's files, then change */
+/**
+ * Chooses a file the way the picker does: the input's files, then change. The
+ * files stay settable, as in a browser, for the field to put a value back.
+ */
 async function choose(input: HTMLInputElement, file: File) {
-  Object.defineProperty(input, 'files', { value: [file], configurable: true });
+  let files: ArrayLike<File> = [file];
+  Object.defineProperty(input, 'files', {
+    get: () => files,
+    set: (value: ArrayLike<File>) => {
+      files = value;
+    },
+    configurable: true,
+  });
   input.dispatchEvent(new Event('change'));
   await nextTick();
 }
@@ -24,9 +34,9 @@ describe('FileInput with a circle', () => {
 
     const input = wrapper.get('input');
     expect(wrapper.classes()).toContain('file-input-shape--circle');
-    expect(wrapper.get('.file-input-icon-wrapper .iconify').classes()).toContain(
-      'i-material-symbols:add-photo-alternate-outline-rounded',
-    );
+    expect(
+      wrapper.get('.file-input-icon-wrapper .iconify').classes(),
+    ).toContain('i-material-symbols:add-photo-alternate-outline-rounded');
     expect(wrapper.get('.preview-image').attributes('src')).toBe(
       '/favicon.svg',
     );
@@ -75,13 +85,11 @@ describe('FileInput in document mode', () => {
     });
 
     const input = wrapper.get('input');
-    const instruction = wrapper.get(
-      `#${input.attributes('aria-describedby')}`,
-    );
+    const instruction = wrapper.get(`#${input.attributes('aria-describedby')}`);
     expect(input.attributes('accept')).toBe('.pdf,.docx');
-    expect(wrapper.get('.file-input-icon-wrapper .iconify').classes()).toContain(
-      'i-material-symbols:upload-file-outline',
-    );
+    expect(
+      wrapper.get('.file-input-icon-wrapper .iconify').classes(),
+    ).toContain('i-material-symbols:upload-file-outline');
     expect(instruction.text()).toContain('PDF or DOCX');
     expect(await checkA11y()).toHaveNoViolations();
   });
@@ -106,5 +114,85 @@ describe('FileInput in document mode', () => {
     expect(wrapper.emitted('select')).toEqual([[pdf]]);
     expect(input.hasAttribute('aria-invalid')).toBe(false);
     expect(await checkA11y()).toHaveNoViolations();
+  });
+});
+
+describe('FileInput in image mode', () => {
+  it('keeps a rejected file out of the value and shows the error', async () => {
+    let value: File | undefined;
+    const wrapper = await mountSuspended(FileInput, {
+      props: {
+        label: 'Picture',
+        maxFileSize: 1,
+        'onUpdate:modelValue': (file?: File) => (value = file),
+      },
+      attachTo: document.body,
+    });
+    const input = wrapper.get('input').element;
+
+    const big = new File([new Uint8Array(2000)], 'big.pdf', {
+      type: 'application/pdf',
+    });
+    await choose(input, big);
+
+    expect(value).toBeUndefined();
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('aria-describedby')).toContain('error-');
+    expect(wrapper.get('.error').text()).not.toBe('');
+    expect(input.value).toBe('');
+
+    const small = new File(['x'], 'small.pdf', { type: 'application/pdf' });
+    await choose(input, small);
+
+    expect(value).toBe(small);
+    expect(input.hasAttribute('aria-invalid')).toBe(false);
+
+    // Another rejected file: the field, and the input a form posts, keep it
+    await choose(input, big);
+    expect(value).toBe(small);
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.files?.[0]).toBe(small);
+  });
+
+  it('leaves a paste into a text field to that field', async () => {
+    const textarea = document.createElement('textarea');
+    document.body.append(textarea);
+    const wrapper = await mountSuspended(FileInput, {
+      props: { label: 'Picture' },
+      attachTo: document.body,
+    });
+
+    const paste = new Event('paste', { bubbles: true });
+    Object.defineProperty(paste, 'clipboardData', {
+      value: { files: [new File(['x'], 'shot.png', { type: 'image/png' })] },
+    });
+    textarea.focus();
+    textarea.dispatchEvent(paste);
+    await nextTick();
+
+    expect(wrapper.emitted('paste')).toBeUndefined();
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    textarea.remove();
+  });
+});
+
+describe('FileInput and a paste of text', () => {
+  it('leaves the field and the input as they are', async () => {
+    const wrapper = await mountSuspended(FileInput, {
+      props: { label: 'Picture' },
+      attachTo: document.body,
+    });
+    const input = wrapper.get('input').element;
+    // Not an image: the test runtime has no object URL for the preview
+    const picture = new File(['x'], 'cv.pdf', { type: 'application/pdf' });
+    await choose(input, picture);
+
+    const paste = new Event('paste', { bubbles: true });
+    Object.defineProperty(paste, 'clipboardData', { value: { files: [] } });
+    document.body.dispatchEvent(paste);
+    await nextTick();
+
+    expect(input.files?.[0]).toBe(picture);
+    expect(wrapper.emitted('paste')).toBeUndefined();
   });
 });

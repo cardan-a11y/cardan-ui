@@ -159,13 +159,6 @@ async function toggleUseRecoveryCode() {
     margin-inline: auto;
   }
 
-  .auth-error {
-    p,
-    ul {
-      font-size: var(--font-size-sm);
-    }
-  }
-
   .mfa-footer {
     font-size: var(--font-size-sm);
 

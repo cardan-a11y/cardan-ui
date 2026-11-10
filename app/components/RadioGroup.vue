@@ -11,6 +11,7 @@ const {
   tabindex = undefined,
   titleKey = undefined,
   errorMessage = undefined,
+  showInvalid = false,
   label,
   disabled,
   required,
@@ -18,6 +19,7 @@ const {
   /** Any objects; the keys name the value, label and title fields */
   options: T[];
   label: string;
+  /** Shared by the radios, so the arrow keys move between them; the group's id by default */
   name?: string;
   tooltip?: string;
   tabindex?: string;
@@ -59,14 +61,20 @@ const message = computed(
 const hasChoice = computed(
   () => model.value !== undefined && model.value !== '',
 );
+
+const formShowInvalid = inject(formShowInvalidKey, ref(false));
+
+// The error text describes the group only while it shows
+const describedBy = computed(() =>
+  required && !hasChoice.value && (showInvalid || formShowInvalid.value)
+    ? `error-${id}`
+    : undefined,
+);
 </script>
 
 <template>
   <div :class="['radios-wrapper', showInvalid && 'show-invalid']">
-    <fieldset
-      v-if="options?.length"
-      :aria-describedby="required && !hasChoice ? `error-${id}` : undefined"
-    >
+    <fieldset v-if="options?.length" :aria-describedby="describedBy">
       <legend
         v-if="label || tooltip"
         :class="[hideLegend && 'visuallyhidden', disabled && 'disabled']"
@@ -85,7 +93,10 @@ const hasChoice = computed(
       </legend>
 
       <ul role="list" :class="['radio-list', inline && 'inline']">
-        <li v-for="option in options" :key="`radio-${String(option[valueKey])}`">
+        <li
+          v-for="option in options"
+          :key="`radio-${String(option[valueKey])}`"
+        >
           <Radio
             v-model="model"
             :value="optionValue(option)"
@@ -93,7 +104,7 @@ const hasChoice = computed(
             :disabled="disabled || !!option.disabled"
             :title="text(option, titleKey)"
             :lang="option.lang"
-            :name="name"
+            :name="name ?? id"
             :tabindex="tabindex"
             :required="required"
             :variant="variant"
@@ -154,7 +165,6 @@ const hasChoice = computed(
       column-gap: 1rem;
     }
   }
-
 }
 
 /* A required group without a chosen option, once the form reports its state */

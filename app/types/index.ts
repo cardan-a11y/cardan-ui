@@ -14,7 +14,6 @@ import type UserMenu from '../components/UserMenu.vue';
 declare global {
   /** A toast for `useToast().createToast()`: the props of Toast, with an id of its own or a generated one */
   type Toast = {
-    role?: 'status' | 'alert';
     color?: ToastColor;
     icon?: string;
     label?: string;
@@ -23,6 +22,20 @@ declare global {
   };
 
   type ToastColor = 'blue' | 'green' | 'red' | 'orange' | 'accent';
+
+  /**
+   * An error from a Cardan API in Laravel's shape, `{ message, errors: { field:
+   * [...] } }`, whatever shape it came in: `extractApiError()` folds a JSON:API
+   * envelope into it, and ErrorMessage shows it.
+   */
+  type ApiErrorData = {
+    message?: string;
+    errors?: Record<string, string[]>;
+    /** The language the API wrote the messages in */
+    language?: string;
+    /** No answer came: the browser was offline when the request failed */
+    offline?: boolean;
+  };
 
   /**
    * An option of Select: any object, whose fields the `value-key`, `label-key`
@@ -43,6 +56,14 @@ declare global {
     label: string;
     disabled?: boolean;
     icon?: string;
+  };
+
+  /** An item of a Breadcrumbs trail; the last item is the current page and needs no `to` */
+  type BreadcrumbItem = {
+    label: string;
+    to?: RouteLocationRaw;
+    /** The language of the label, when it is not the page's */
+    lang?: string;
   };
 
   type MenuItem = {

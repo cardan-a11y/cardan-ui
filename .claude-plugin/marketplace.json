@@ -1,11 +1,19 @@
 {
   "name": "cardan-ui",
-  "owner": { "name": "Cardan", "url": "https://cardan.com" },
+  "owner": {
+    "name": "Cardan",
+    "url": "https://cardan.com"
+  },
   "plugins": [
     {
       "name": "cardan",
       "source": "./plugins/cardan",
-      "description": "The shared Claude Code setup of the Cardan Nuxt projects: the frontend guidelines, the local review before every commit (the cardan:cardan-reviewer agent and its hook), release and PR skills, and a Playwright MCP server for browser checks."
+      "description": "The shared Claude Code setup of the Cardan Nuxt projects: the frontend guidelines, the local review before every commit (the reviewer agents and their hook), release and PR skills, a Playwright MCP server for browser checks, and a cross-browser check in Chrome, Firefox and WebKit for the review round."
+    },
+    {
+      "name": "cardan-browsers",
+      "source": "./plugins/cardan-browsers",
+      "description": "Playwright MCP servers for Firefox and WebKit, off by default: switch it on with /plugin to look into a difference the cross-browser check found."
     }
   ]
 }

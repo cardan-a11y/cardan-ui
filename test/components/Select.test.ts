@@ -49,7 +49,9 @@ describe('Select', () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
 
-    const describedBy = (select.attributes('aria-describedby') ?? '').split(' ');
+    const describedBy = (select.attributes('aria-describedby') ?? '').split(
+      ' ',
+    );
     expect(describedBy).toEqual(
       expect.arrayContaining([error.id, instruction.id]),
     );
@@ -81,5 +83,66 @@ describe('Select', () => {
       { value: 'nl', label: 'Dutch', disabled: false },
       { value: 'en', label: 'English', disabled: true },
     ]);
+  });
+
+  it('describes the select by its error only while the error shows', async () => {
+    const wrapper = await mountSuspended(Select, {
+      props: {
+        label: 'Colour',
+        options,
+        placeholder: 'Choose',
+        modelValue: '',
+        required: true,
+        errorMessage: 'Choose a colour',
+      },
+      attachTo: document.body,
+    });
+
+    // Invalid, but not shown yet: a valid-looking field is not described by it
+    const select = wrapper.get('select');
+    expect(select.attributes('aria-describedby')).toBeUndefined();
+    expect(select.attributes('aria-invalid')).toBeUndefined();
+
+    await wrapper.setProps({ showInvalid: true });
+
+    expect(
+      document.getElementById(select.attributes('aria-describedby') ?? '')
+        ?.textContent,
+    ).toContain('Choose a colour');
+    expect(select.attributes('aria-invalid')).toBe('true');
+    expect(await checkA11y()).toHaveNoViolations();
+
+    // Valid: not described, whatever the form shows
+    await select.setValue('green');
+    expect(select.attributes('aria-describedby')).toBeUndefined();
+  });
+
+  it('shows a custom error, and is described by it, until its value changes', async () => {
+    const wrapper = await mountSuspended(Select, {
+      props: { label: 'Colour', options, modelValue: 'red' },
+      attachTo: document.body,
+    });
+    const select = wrapper.get('select');
+
+    await wrapper.setProps({ customError: 'Red is sold out' });
+
+    const describedBy = select.attributes('aria-describedby') ?? '';
+    expect(describedBy).toMatch(/^error-/);
+    expect(document.getElementById(describedBy)?.textContent).toContain(
+      'Red is sold out',
+    );
+    expect(select.attributes('aria-invalid')).toBe('true');
+    expect(wrapper.get('.form-field-wrapper').classes()).toContain(
+      'custom-error',
+    );
+    // The server judges the next submit: the browser does not hold it back
+    expect((select.element as HTMLSelectElement).checkValidity()).toBe(true);
+
+    await select.setValue('green');
+
+    expect(select.attributes('aria-describedby')).toBeUndefined();
+    expect(wrapper.get('.form-field-wrapper').classes()).not.toContain(
+      'custom-error',
+    );
   });
 });

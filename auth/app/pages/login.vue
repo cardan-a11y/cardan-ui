@@ -24,7 +24,7 @@ const { remindMfaSetup } = useMfaSetupReminder();
       v-model:email="email"
       remember
       error-position="below-submit"
-      :loading-delay="lgTransition"
+      :loading-delay="transitionDuration('lg')"
       @success="remindMfaSetup"
     />
 

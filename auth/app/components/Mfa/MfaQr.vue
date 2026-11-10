@@ -59,7 +59,8 @@ onMounted(() => getQrCode());
              of having its paths walked; a bare aria-label on a generic div is
              not exposed by assistive technology. The wrapper renders before the
              code arrives so its minimum size holds the space; it only becomes
-             an image once there is one. -->
+             an image once there is one. The markup is the API's, reduced to
+             the elements of a QR code by `sanitizeQrSvg()` in `getQrCode()`. -->
         <div
           :role="qrCode ? 'img' : undefined"
           :aria-label="qrCode ? $t('mfa.qr-code-alt') : undefined"

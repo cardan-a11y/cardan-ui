@@ -9,6 +9,10 @@ Cardan UI is a [Nuxt Layer](https://nuxt.com/docs/getting-started/layers) in a p
 - Run `pnpm i` to install dependencies
 - Run `pnpm run dev` to start the development server on [localhost:3003](http://localhost:3003)
 
+## Browser support
+
+Cardan UI targets evergreen browsers. Tooltip and Popover place their content with the Popover API and CSS anchor positioning through the implicit anchor of their `popovertarget` button, with `position-try-fallbacks` to flip when there is no room. A browser without anchor positioning (Safari before 26, Firefox without the `layout.css.anchor-positioning.enabled` flag) still opens and closes them, but shows the content at its static position, under the trigger, without `placement` and `span`.
+
 ## Cardan Auth UI
 
 The [`auth/`](auth/) directory holds Cardan Auth UI: a separate Nuxt layer with the sign-in and MFA forms for Nuxt SPAs backed by Laravel Fortify. Projects that need it extend it next to Cardan UI (`github:cardan-a11y/cardan-ui/auth`); see [auth/README.md](auth/README.md).

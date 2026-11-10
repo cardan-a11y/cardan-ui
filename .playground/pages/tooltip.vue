@@ -267,9 +267,24 @@ const popoverActions = [
               </ul>
             </li>
 
-            <li>Keyboard focus is trapped inside the menu.</li>
+            <li>
+              Keyboard focus is not trapped: <kbd>Tab</kbd> past the last item
+              leaves and closes the menu, and <kbd>Shift</kbd> + <kbd>Tab</kbd>
+              before the first item returns focus to the trigger, and leaving
+              the trigger for the page closes the menu. The content is a list of
+              links or buttons, a
+              <Button
+                label="disclosure"
+                to="https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/"
+                variant="link"
+                target="_blank"
+              />, not a menu with its roles and arrow keys.
+            </li>
 
-            <li>The menu can be closed with the <kbd>Escape</kbd> key.</li>
+            <li>
+              The menu can be closed with the <kbd>Escape</kbd> key, which
+              returns focus to the trigger.
+            </li>
           </ul>
         </div>
       </Card>
