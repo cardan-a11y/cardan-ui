@@ -1,6 +1,6 @@
 ---
 name: release
-description: Release in a Cardan repository. In cardan-ui, a new version: version, changelog, migration notes, the plugin, review and pull request. In a project that releases from develop (cardan-lms-nuxt, cardan-auditor-nuxt), the pull request from develop into main with the merged PRs as its description, and main back into develop after a merge.
+description: Release in a Cardan repository. In cardan-ui, a new version: version, changelog, migration notes, the plugin, review and pull request. In a project that releases from develop (cardan-lms-nuxt, cardan-auditor-nuxt), uncommitted work first through its own reviewed PR into develop, then the pull request from develop into main with the merged PRs as its description, and main back into develop after a merge.
 disable-model-invocation: true
 ---
 
@@ -62,17 +62,35 @@ projects. See changelog for details.`, without details: the changelog says what 
 
 ## Release a project
 
-`main` is production, `develop` is staging. Every change reached `develop`
+`main` is production, `develop` is staging. Every change reaches `develop`
 through a reviewed pull request, so a release is one pull request from
 `develop` into `main` with no code of its own, and it needs no review: the
 review hook lets a PR from a branch with nothing uncommitted or unpushed
 through, and a push that sends only commits already on `origin/main` or
-`origin/develop`, each as a command of its own. Start from a clean working
-tree.
+`origin/develop`, each as a command of its own. Work that has not reached
+`develop` yet goes there first, as part of the release (step 1).
 
-1. **Stand on develop**: `git fetch origin`, then `git checkout develop`
-   and `git pull --ff-only origin develop`. Stop when `git status` shows
-   uncommitted changes.
+1. **Stand on develop**: `git fetch origin`, then look at `git status`:
+   - On `develop` with uncommitted changes: they are the last work of this
+     release. `git switch -c <branch>`, named after what the changes do in
+     the style of the repository's branches (`git branch -a`), and follow
+     "Work for the release" below.
+   - On another branch with uncommitted changes, or with commits on
+     neither `origin/develop` nor `origin/main` (`git log
+     origin/develop..HEAD --not origin/main` lists them): git cannot tell
+     a branch cut from `develop` from a hotfix cut from `main`, so its pull
+     request does (`gh pr view --json baseRefName,state`). An open PR into
+     `develop`, or none when the user confirms the branch belongs to this
+     release: follow "Work for the release". An open PR into `main` is a
+     hotfix, not part of the release: ask the user whether to wait for it
+     and bring `main` into `develop` (step 4) first. A merged PR, also a
+     squash merge whose commits are on neither branch, is done: go on as
+     in the next bullet. Ask too when the work looks unfinished, such as
+     failing checks or a TODO in the diff.
+   - Otherwise (a clean `develop`, `main` after a hotfix, a branch that is
+     already merged): `git switch develop` and
+     `git pull --ff-only origin develop`. A hotfix on `main` reaches
+     `develop` through step 4, not as work of its own.
 2. **Collect the release**: `git log --first-parent --format=%s
 origin/main..origin/develop` lists one line per pull request merged into
    `develop` since the last release (a squash commit's subject, or a merge
@@ -104,3 +122,39 @@ origin/main..origin/develop` lists one line per pull request merged into
    check that `develop` already did it. Notes of older cardan-ui releases
    are removed from the file over time; find them with
    `git log -p MIGRATION.md` in cardan-ui.
+
+### Work for the release
+
+The work's own pull request into `develop`, and the release's own pull
+requests, before step 2. The user is asked once, in step 5, apart from the
+questions step 1 and the review round may raise.
+
+1. **Bring the branch up to date** before the review, so the reviewer
+   sees the tree that is pushed: `git stash --include-untracked`,
+   `git rebase origin/develop`
+   (a fast-forward for a branch without commits of its own), then
+   `git stash pop`, and resolve a conflict before going on.
+2. **Checks, review and browser check** as the Cardan guidelines describe
+   ("Review Before Commit, Push and PR"), against `origin/develop`, with
+   the fixes and the re-review they lead to. A finding outside the
+   change, such as one in Cardan UI or a third-party component, is
+   reported to the user, who decides whether and where it is fixed.
+3. **Commit, push and open the PR** into `develop` with the
+   `cardan:pr-body` skill, after the report of step 6 of those guidelines.
+   When `develop` moves on during the review, leave the branch as it is: a
+   rebase now changes the reviewed tree and needs another review round.
+4. **The release's own pull requests**: the ones the project's CLAUDE.md
+   lists for a release (see step 3 of "Release a project"), such as the
+   version bump and the release notes. Write them from the PRs that
+   step 2 lists plus this one, which is not merged yet. Each goes through
+   its own review round, as in step 2: a version bump changes
+   `package.json`, which the review hook does not count as documentation;
+   release notes in Markdown alone need none.
+5. **Merge into develop**: ask the user once whether to merge the PRs into
+   `develop`, this one and the version bump (a staging deploy, not
+   production), and merge them the way the repository's history does (a
+   merge commit when `git log` shows "Merge pull request"). Release notes
+   that are published when they merge wait for production, as the
+   project's CLAUDE.md says. Then `git switch develop`,
+   `git pull --ff-only origin develop`, and go on with step 2; step 3
+   then opens only the release PR.
