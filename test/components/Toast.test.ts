@@ -1,11 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
-import { Toast } from '#components';
+import { nextTick } from 'vue';
+import { Toast, ToastManager } from '#components';
+import { useToast } from '#imports';
 import { checkA11y } from '../a11y';
 
-function playState(wrapper: { find: (selector: string) => { element: Element } }) {
+function playState(wrapper: {
+  find: (selector: string) => { element: Element };
+}) {
   const timer = wrapper.find('.toast__timer').element as HTMLElement;
-  return timer.style.getPropertyValue('--animation-play-state').trim();
+  return timer.style.getPropertyValue('--toast-animation-play-state').trim();
 }
 
 describe('Toast', () => {
@@ -28,13 +32,19 @@ describe('Toast', () => {
     wrapper.unmount();
   });
 
-  it('takes the role of a status or alert message', async () => {
-    const wrapper = await mountSuspended(Toast, {
-      props: { label: 'Saved', role: 'alert' },
-      attachTo: document.body,
-    });
+  it('is announced by the live region of the manager, with no role of its own', async () => {
+    await mountSuspended(ToastManager, { attachTo: document.body });
+    useToast().createToast({ label: 'Saved' });
+    await nextTick();
 
-    expect(wrapper.get('.toast').attributes('role')).toBe('alert');
+    // Teleported to the #teleports element of the Nuxt app
+    const manager = document.querySelector('.toast-manager');
+    const toast = manager?.querySelector('.toast');
+    expect(manager?.getAttribute('aria-live')).toBe('polite');
+    expect(toast?.hasAttribute('role')).toBe(false);
+    expect(toast?.textContent).toContain('Saved');
     expect(await checkA11y()).toHaveNoViolations();
+
+    useToast().hideToast();
   });
 });

@@ -55,7 +55,13 @@ watch(
 
 function toggleAccordion() {
   isExpanded.value = !isExpanded.value;
+  emit('update:open', isExpanded.value);
 }
+
+const emit = defineEmits<{
+  /** With `v-model:open`, the parent's state follows the user's clicks */
+  'update:open': [open: boolean];
+}>();
 
 /**
  * Hidden while the panel is closed or still moving, so it never paints over
@@ -66,7 +72,7 @@ function updateOverflow() {
   const moving = !!panelWrapperRef.value?.getAnimations?.().length;
 
   panelRef.value?.style.setProperty(
-    '--overflow',
+    '--accordion-overflow',
     isExpanded.value && !moving ? 'visible' : 'hidden',
   );
 }
@@ -75,7 +81,7 @@ function updateOverflow() {
 // has started: without one (reduced motion makes the durations 0s) no
 // transitionend ever comes.
 watch(isExpanded, async () => {
-  panelRef.value?.style.setProperty('--overflow', 'hidden');
+  panelRef.value?.style.setProperty('--accordion-overflow', 'hidden');
   await nextTick();
   requestAnimationFrame(updateOverflow);
 });
@@ -142,7 +148,7 @@ defineExpose({ toggleAccordion });
       <div
         ref="panel"
         class="accordion-panel"
-        :style="`--min-height: ${minHeight}px`"
+        :style="`--accordion-min-height: ${minHeight}px`"
       >
         <slot name="content" />
       </div>
@@ -170,9 +176,9 @@ defineExpose({ toggleAccordion });
 /* min-width: 0, so an open panel, whose overflow is visible, keeps the width
    of the accordion instead of growing to its longest word (reflow at 320px). */
 .accordion-panel {
-  overflow: var(--overflow, hidden);
+  overflow: var(--accordion-overflow, hidden);
   min-width: 0;
-  min-height: var(--min-height);
+  min-height: var(--accordion-min-height);
 }
 
 .accordion-wrapper--open > .accordion-panel-wrapper {

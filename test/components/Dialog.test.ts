@@ -24,6 +24,27 @@ describe('Dialog', () => {
     expect(await checkA11y()).toHaveNoViolations();
   });
 
+  it('leaves the page to the native modal: nothing outside is made inert', async () => {
+    const outside = document.createElement('button');
+    outside.textContent = 'Outside';
+    document.body.append(outside);
+
+    const wrapper = await mountSuspended(Dialog, {
+      props: { label: 'Settings' },
+      attachTo: document.body,
+    });
+
+    (wrapper.vm as unknown as { openDialog: () => void }).openDialog();
+    // The loop would lock the page the tick after it opens
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(wrapper.get('dialog').attributes('open')).toBeDefined();
+    expect(outside.hasAttribute('inert')).toBe(false);
+
+    wrapper.unmount();
+    outside.remove();
+  });
+
   it('keeps its content when a file picker in it is dismissed', async () => {
     const wrapper = await mountSuspended(Dialog, {
       props: { label: 'Avatar' },

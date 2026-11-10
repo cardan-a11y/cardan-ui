@@ -13,6 +13,7 @@ const {
   tabindex = undefined,
   errorMessage = undefined,
   id = useId(),
+  showInvalid = false,
   disabled,
   required,
 } = defineProps<{
@@ -59,6 +60,15 @@ const hasSelection = computed(() =>
   Array.isArray(model.value) ? model.value.length > 0 : !!model.value,
 );
 
+const formShowInvalid = inject(formShowInvalidKey, ref(false));
+
+// The error text describes the group only while it shows
+const describedBy = computed(() =>
+  required && !hasSelection.value && (showInvalid || formShowInvalid.value)
+    ? `error-${id}`
+    : undefined,
+);
+
 const listRef = useTemplateRef<HTMLElement>('list');
 
 /**
@@ -87,9 +97,7 @@ watch([hasSelection, message, () => required, () => options], applyValidity, {
 <template>
   <div :class="['checkboxes-wrapper', showInvalid && 'show-invalid']">
     <template v-if="options?.length">
-      <fieldset
-        :aria-describedby="required && !hasSelection ? `error-${id}` : undefined"
-      >
+      <fieldset :aria-describedby="describedBy">
         <legend
           v-if="label"
           :class="[hideLegend && 'visuallyhidden', disabled && 'disabled']"

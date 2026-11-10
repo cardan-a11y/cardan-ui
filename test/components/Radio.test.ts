@@ -50,17 +50,31 @@ describe('RadioGroup', () => {
       attachTo: document.body,
     });
 
-    const error = document.getElementById(
-      wrapper.get('fieldset').attributes('aria-describedby') ?? '',
-    );
-    expect(error?.textContent).toContain('Answer is missing');
+    // In the document, for the form to reveal; not describing the group yet
+    expect(wrapper.text()).toContain('Answer is missing');
+    expect(
+      wrapper.get('fieldset').attributes('aria-describedby'),
+    ).toBeUndefined();
     expect(wrapper.get('.radios-wrapper').classes()).not.toContain(
       'show-invalid',
     );
 
+    // One name, so the arrow keys move between the radios
+    const names = new Set(
+      wrapper
+        .findAll('input[type="radio"]')
+        .map((radio) => radio.attributes('name')),
+    );
+    expect(names.size).toBe(1);
+    expect([...names][0]).toBeTruthy();
+
     await wrapper.setProps({ showInvalid: true });
 
     expect(wrapper.get('.radios-wrapper').classes()).toContain('show-invalid');
+    const error = document.getElementById(
+      wrapper.get('fieldset').attributes('aria-describedby') ?? '',
+    );
+    expect(error?.textContent).toContain('Answer is missing');
     expect(await checkA11y()).toHaveNoViolations();
   });
 });

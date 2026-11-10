@@ -96,11 +96,10 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
                 >
                 <code
                   >{{`<ProgressCircle
+                    label="Progress"
                     :value="${progress}"
                     :max="${max}"
                     :role="${role}"
-                    :hide-label="${hideLabel}"
-                    :show-percentage="${showPercentage}"
                   />`}}</code
                 >
               </div>
@@ -147,6 +146,7 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
 
         <div class="flex-wrapper" style="--gap: 1.5rem">
           <ProgressCircle
+            label="Progress"
             :value="progress"
             :max="max"
             :role="role"
@@ -154,6 +154,7 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
             font-size="xl"
           />
           <ProgressCircle
+            label="Progress"
             :value="progress"
             :max="max"
             :role="role"
@@ -161,6 +162,7 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
             font-size="lg"
           />
           <ProgressCircle
+            label="Progress"
             :value="progress"
             :max="max"
             :role="role"
@@ -168,6 +170,7 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
             font-size="md"
           />
           <ProgressCircle
+            label="Progress"
             :value="progress"
             :max="max"
             :role="role"
@@ -175,6 +178,7 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
             font-size="sm"
           />
           <ProgressCircle
+            label="Progress"
             :value="progress"
             :max="max"
             :role="role"

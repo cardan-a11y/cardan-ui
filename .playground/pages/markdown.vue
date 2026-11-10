@@ -48,7 +48,6 @@ const grammars = [
 ].join('\n');
 
 const title = 'Chapter with *emphasis* and `code`';
-const ellipsisLines = ref(0);
 const fontSize = ref<FontSize>('md');
 const fontSizeOptions: { value: FontSize; label: string }[] = [
   {
@@ -94,29 +93,14 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
                 label="fontSize"
                 size="sm"
               />
-              <Input
-                v-model.number="ellipsisLines"
-                type="number"
-                label="ellipsisLines"
-                :min="0"
-              />
 
-              <code
-                >{{`<MarkdownPreview
-                  :font-size="${fontSize}"
-                  :ellipsis-lines="${ellipsisLines}"
-                />`}}</code
-              >
+              <code>{{`<MarkdownPreview :font-size="${fontSize}" />`}}</code>
             </div>
           </div>
         </Popover>
       </div>
 
-      <MarkdownPreview
-        :content="content"
-        :font-size="fontSize"
-        :ellipsis-lines="ellipsisLines"
-      />
+      <MarkdownPreview :content="content" :font-size="fontSize" />
     </Card>
 
     <Card class="mbs-2">
@@ -149,10 +133,17 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
       <p class="mbe-1">
         A bare YouTube or Vimeo link in a paragraph of its own renders as a
         <NuxtLink to="/video">VideoPlayer</NuxtLink>, also without
-        <code>trusted</code>. A link with its own text stays a link.
+        <code>trusted</code>. A link with its own text stays a link, and with
+        <code>videos-as-links</code> every link does, for a place a player
+        does not fit, such as a table cell.
       </p>
 
       <MarkdownPreview :content="video" data-case="video" />
+      <MarkdownPreview
+        :content="video"
+        videos-as-links
+        data-case="videos-as-links"
+      />
     </Card>
 
     <Card class="mbs-2">
@@ -171,13 +162,13 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
       <h2>Code highlighting</h2>
       <p>
         A fenced code block (<code>```css</code>) is coloured with highlight.js
-        after the text is in the page: the block is a dark block with plain
-        text first and its tokens get their colours a moment later. A text
-        without a code block never loads highlight.js. The grammars are the
-        ones Cardan content uses, registered in
-        <code>app/components/Markdown/highlight.ts</code>, with the most
-        common fence names of each (highlight.js knows a few more aliases,
-        such as <code>mjs</code>, <code>xhtml</code> and <code>zsh</code>).
+        after the text is in the page: the block is a dark block with plain text
+        first and its tokens get their colours a moment later. A text without a
+        code block never loads highlight.js. The grammars are the ones Cardan
+        content uses, registered in
+        <code>app/components/Markdown/highlight.ts</code>, with the most common
+        fence names of each (highlight.js knows a few more aliases, such as
+        <code>mjs</code>, <code>xhtml</code> and <code>zsh</code>).
       </p>
 
       <MarkdownPreview :content="grammars" class="mbs-1" />
@@ -186,9 +177,9 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
         A fence in another language, or without one, stays plain text in the
         same dark block, with the name in <code>data-lang</code> on the
         <code>&lt;code&gt;</code> element. When Cardan content needs another
-        grammar, register it in that file, so every project gets it: the
-        layer has no per-project list. <code>MarkdownEditor</code> always
-        loads the same instance, so md-editor-v3 loads nothing from a CDN.
+        grammar, register it in that file, so every project gets it: the layer
+        has no per-project list. <code>MarkdownEditor</code> always loads the
+        same instance, so md-editor-v3 loads nothing from a CDN.
       </p>
     </Card>
 

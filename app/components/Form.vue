@@ -16,18 +16,18 @@ onMounted(() => {
 const formRef = useTemplateRef('form');
 const validity = ref(true);
 
+// The fields describe themselves by their error only while it shows
+provide(
+  formShowInvalidKey,
+  computed(() => !!showInvalid || !validity.value),
+);
+
+/** Submits as the submit button does: a failed check reports and focuses */
 function submit() {
-  if (!formRef.value) return;
-
-  validity.value = formRef.value?.checkValidity();
-
-  if (validity.value) {
-    const data = new FormData(formRef.value);
-    emit('submit', data);
-  }
+  formRef.value?.requestSubmit();
 }
 
-function handleSubmit(event: Event) {
+async function handleSubmit(event: Event) {
   const target = event.target as HTMLFormElement;
   validity.value = target?.checkValidity();
 
@@ -36,6 +36,9 @@ function handleSubmit(event: Event) {
     emit('submit', data, event);
   } else {
     emit('invalid', event);
+    // After the render in which the fields take their error, so a screen
+    // reader reads it with the field
+    await nextTick();
     if (invalidFocusFn) invalidFocusFn();
     else {
       // The first control that fails its constraints. Not `:invalid`, which

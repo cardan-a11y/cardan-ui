@@ -20,11 +20,12 @@ const emit = defineEmits<{
 <template>
   <ClientOnly>
     <button
-      id="theme-switch"
       type="button"
       class="theme-switch-button"
       :aria-pressed="colorMode.value === 'dark'"
-      :style="[fontSize && `--theme-switch-font-size: var(--font-size-${fontSize})`]"
+      :style="[
+        fontSize && `--theme-switch-font-size: var(--font-size-${fontSize})`,
+      ]"
       :disabled="disabled"
       @click.stop="handleClick"
     >

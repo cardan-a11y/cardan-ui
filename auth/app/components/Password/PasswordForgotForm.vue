@@ -10,7 +10,12 @@ const email = useLoginEmail();
 
 const loading = ref(false);
 const sent = ref(false);
-const error = ref<AuthErrorData | null>(null);
+const error = ref<ApiErrorData | null>(null);
+
+// The link went to the address as it was: another address can ask for one
+watch(email, () => {
+  sent.value = false;
+});
 
 async function requestResetLink() {
   sent.value = false;
@@ -24,7 +29,7 @@ async function requestResetLink() {
     });
     sent.value = true;
   } catch (e) {
-    error.value = extractAuthError(e);
+    error.value = extractApiError(e);
   } finally {
     loading.value = false;
   }
@@ -54,7 +59,7 @@ async function requestResetLink() {
       :disabled="sent"
     />
 
-    <AuthError :data="error" />
+    <ErrorMessage :data="error" />
 
     <div aria-live="polite" class="message-wrapper">
       <Callout v-if="sent" color="blue" class="password-forgot-sent">

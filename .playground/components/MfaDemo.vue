@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // The mock Fortify endpoints in server/routes never report the password as
 // confirmed, so every flow starts with the password dialog. Any password
-// confirms it.
+// confirms it, except 000000.
 const {
   openMfaEnableDialog,
   openMfaDisableDialog,
@@ -12,9 +12,9 @@ const {
 <template>
   <div class="mfa-demo">
     <p>
-      The dialogs talk to mock Fortify endpoints of this demo. Any password
-      confirms, and every code is accepted except <code>000000</code>, which
-      shows the validation error.
+      The dialogs talk to mock Fortify endpoints of this demo. Every password
+      and code is accepted except <code>000000</code>, which shows the
+      validation error.
     </p>
 
     <div class="mfa-demo-buttons">

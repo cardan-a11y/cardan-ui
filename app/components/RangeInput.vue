@@ -31,7 +31,10 @@ const {
 
 const range = computed(() => max - min);
 
-const ratio = computed(() => (Number(model.value) - min) / range.value);
+/** The value on the track; the minimum until there is one */
+const value = computed(() => Number(model.value ?? min));
+
+const ratio = computed(() => (value.value - min) / range.value);
 
 const ticksLength = computed(() => range.value / step + 1);
 
@@ -43,6 +46,14 @@ const ticksList = computed(() =>
     typeof tick === 'number' ? { value: tick, label: String(tick) } : tick,
   ),
 );
+
+/** The label of the tick at the value, when ticks have labels of their own */
+const computedAriaValuetext = computed(() => {
+  if (ariaValuetext) return ariaValuetext;
+
+  const tick = ticksList.value.find((tick) => tick.value === value.value);
+  return tick && tick.label !== String(tick.value) ? tick.label : undefined;
+});
 </script>
 
 <template>
@@ -50,11 +61,10 @@ const ticksList = computed(() =>
     :id="id"
     :class="['range-input-wrapper', `range-input-variant--${variant}`]"
     :style="[
-      `--min: ${min}`,
-      `--max: ${max}`,
-      `--range: ${range}`,
-      `--ratio: ${ratio}`,
-      `--value: ${model}`,
+      `--range-input-min: ${min}`,
+      `--range-input-range: ${range}`,
+      `--range-input-ratio: ${ratio}`,
+      `--range-input-value: ${value}`,
     ]"
     :label="label"
     :hide-label="hideLabel"
@@ -68,7 +78,7 @@ const ticksList = computed(() =>
       class="range-input"
       :name="name"
       :disabled="disabled"
-      :aria-valuetext="ariaValuetext"
+      :aria-valuetext="computedAriaValuetext"
       :min="min"
       :max="max"
       :step="step"
@@ -96,26 +106,26 @@ const ticksList = computed(() =>
 
 <style>
 .range-input-wrapper {
-  --thumb-color: var(--color-accent-graphic);
-  --thumb-width: 1.5rem;
-  --thumb-height: 1.5rem;
-  --thumb-border-size: 2px;
-  --thumb-border-color: var(--color-card-bg);
-  --thumb-radius: var(--radius-full);
+  --range-input-thumb-color: var(--color-accent-graphic);
+  --range-input-thumb-width: 1.5rem;
+  --range-input-thumb-height: 1.5rem;
+  --range-input-thumb-border-size: 2px;
+  --range-input-thumb-border-color: var(--color-card-bg);
+  --range-input-thumb-radius: var(--radius-full);
 
-  --track-bg-color: var(--color-track);
-  --track-progress-color: var(--color-accent-graphic);
-  --output-bg-color: var(--color-accent-bg);
-  --track-radius: var(--radius-full);
-  --track-height: 1rem;
-  --track-width: 100%;
+  --range-input-track-bg-color: var(--color-track);
+  --range-input-track-progress-color: var(--color-accent-graphic);
+  --range-input-output-bg-color: var(--color-accent-bg);
+  --range-input-track-radius: var(--radius-full);
+  --range-input-track-height: 1rem;
+  --range-input-track-width: 100%;
 
   &:has(:disabled) {
     opacity: 35%;
   }
 
   position: relative;
-  width: var(--track-width);
+  width: var(--range-input-track-width);
 
   label {
     margin-block-end: 0.5rem;
@@ -123,87 +133,90 @@ const ticksList = computed(() =>
   }
 }
 
-input[type='range'] {
+.range-input-wrapper .range-input {
   -webkit-appearance: none;
   appearance: none;
   border: none;
   background: transparent;
   margin: 0;
-  width: var(--track-width);
+  width: var(--range-input-track-width);
 
-  --sx: calc(
-    var(--thumb-width) / 2 + var(--ratio) * (100% - var(--thumb-width))
+  --range-input-sx: calc(
+    var(--range-input-thumb-width) / 2 + var(--range-input-ratio) *
+      (100% - var(--range-input-thumb-width))
   );
-  --progress-gradient: linear-gradient(
-      var(--track-progress-color),
-      var(--track-progress-color)
+  --range-input-progress-gradient: linear-gradient(
+      var(--range-input-track-progress-color),
+      var(--range-input-track-progress-color)
     )
-    0 / var(--sx) 100% no-repeat var(--track-bg-color);
+    0 / var(--range-input-sx) 100% no-repeat var(--range-input-track-bg-color);
 }
 
 /* slider track */
-input[type='range']::-webkit-slider-runnable-track {
-  background-color: var(--track-bg-color);
-  background: var(--progress-gradient);
-  border-radius: var(--track-radius);
-  height: var(--track-height);
+.range-input-wrapper .range-input::-webkit-slider-runnable-track {
+  background-color: var(--range-input-track-bg-color);
+  background: var(--range-input-progress-gradient);
+  border-radius: var(--range-input-track-radius);
+  height: var(--range-input-track-height);
 }
 
-input[type='range']::-moz-range-track {
-  background-color: var(--track-bg-color);
-  background: var(--progress-gradient);
-  border-radius: var(--track-radius);
-  height: var(--track-height);
+.range-input-wrapper .range-input::-moz-range-track {
+  background-color: var(--range-input-track-bg-color);
+  background: var(--range-input-progress-gradient);
+  border-radius: var(--range-input-track-radius);
+  height: var(--range-input-track-height);
 }
 
 /* slider thumb */
-input[type='range']::-webkit-slider-thumb {
+.range-input-wrapper .range-input::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   margin-block-start: calc(
-    (var(--track-height) / 2) - (var(--thumb-height) / 2)
+    (var(--range-input-track-height) / 2) -
+      (var(--range-input-thumb-height) / 2)
   );
   will-change: scale;
   transition: scale var(--duration-xs);
-  background-color: var(--thumb-color);
-  height: var(--thumb-height);
-  width: var(--thumb-width);
-  border-radius: var(--thumb-radius);
-  border: var(--thumb-border-size, 0px) solid
-    var(--thumb-border-color, transparent);
+  background-color: var(--range-input-thumb-color);
+  height: var(--range-input-thumb-height);
+  width: var(--range-input-thumb-width);
+  border-radius: var(--range-input-thumb-radius);
+  border: var(--range-input-thumb-border-size, 0px) solid
+    var(--range-input-thumb-border-color, transparent);
 }
 
-input[type='range']::-moz-range-thumb {
+.range-input-wrapper .range-input::-moz-range-thumb {
   will-change: scale;
   transition: scale var(--duration-xs);
-  background-color: var(--thumb-color);
-  height: calc(var(--thumb-height) - (var(--thumb-border-size, 0px) * 2));
-  width: calc(var(--thumb-width) - (var(--thumb-border-size, 0px) * 2));
+  background-color: var(--range-input-thumb-color);
+  height: calc(
+    var(--range-input-thumb-height) -
+      (var(--range-input-thumb-border-size, 0px) * 2)
+  );
+  width: calc(
+    var(--range-input-thumb-width) -
+      (var(--range-input-thumb-border-size, 0px) * 2)
+  );
 
-  border-radius: var(--thumb-radius);
-  border: var(--thumb-border-size, 0px) solid
-    var(--thumb-border-color, transparent);
-}
-
-input[type='range']:hover::-webkit-slider-thumb {
-  scale: 1.2;
-}
-input[type='range']:hover::-moz-range-thumb {
-  scale: 1.2;
-}
-input[type='range']:active::-webkit-slider-thumb {
-  scale: 1.2;
-}
-input[type='range']:active::-moz-range-thumb {
-  scale: 1.2;
+  border-radius: var(--range-input-thumb-radius);
+  border: var(--range-input-thumb-border-size, 0px) solid
+    var(--range-input-thumb-border-color, transparent);
 }
 
-/* slider focus */
-input[type='range']:focus {
-  outline: none;
+.range-input-wrapper .range-input:hover::-webkit-slider-thumb {
+  scale: 1.2;
+}
+.range-input-wrapper .range-input:hover::-moz-range-thumb {
+  scale: 1.2;
+}
+.range-input-wrapper .range-input:active::-webkit-slider-thumb {
+  scale: 1.2;
+}
+.range-input-wrapper .range-input:active::-moz-range-thumb {
+  scale: 1.2;
 }
 
-input[type='range']:focus-visible {
+.range-input-wrapper .range-input:focus-visible {
   &::-webkit-slider-thumb {
     outline: 2px solid var(--focus-color);
     outline-offset: 0.125rem;
@@ -215,10 +228,10 @@ input[type='range']:focus-visible {
   }
 }
 
-.range-input-variant--hue input[type='range'] {
-  --track-height: 0.25rem;
-  --thumb-color: hsl(var(--value) 100% 65%);
-  --progress-gradient: linear-gradient(
+.range-input-variant--hue .range-input {
+  --range-input-track-height: 0.25rem;
+  --range-input-thumb-color: hsl(var(--range-input-value) 100% 65%);
+  --range-input-progress-gradient: linear-gradient(
     to right,
     #ff0000 0%,
     #ffff00 16.667%,
@@ -230,6 +243,11 @@ input[type='range']:focus-visible {
   );
 }
 
+/* slider focus: the ring is on the thumb */
+.range-input-wrapper .range-input:focus {
+  outline: none;
+}
+
 /* slider ticks */
 .range-input-ticks {
   width: 100%;
@@ -237,7 +255,7 @@ input[type='range']:focus-visible {
   color: var(--color-grey-text);
   display: flex;
   justify-content: space-between;
-  padding-inline: calc((var(--thumb-width) / 2) - 1px);
+  padding-inline: calc((var(--range-input-thumb-width) / 2) - 1px);
 
   .tick {
     position: relative;
@@ -254,7 +272,7 @@ input[type='range']:focus-visible {
       bottom: 100%;
       width: 1px;
       height: 0.5rem;
-      background-color: var(--track-bg-color);
+      background-color: var(--range-input-track-bg-color);
     }
 
     &.active {
@@ -262,7 +280,7 @@ input[type='range']:focus-visible {
       color: var(--color-accent-text);
 
       &::before {
-        background-color: var(--thumb-color);
+        background-color: var(--range-input-thumb-color);
       }
     }
   }
@@ -271,14 +289,22 @@ input[type='range']:focus-visible {
 /* slider output */
 .range-input-wrapper {
   output {
-    --perc: calc((var(--value) - var(--min)) / var(--range));
-    --offset: calc((var(--thumb-width) / 2) - var(--thumb-width) * var(--perc));
-    --left: calc((var(--perc) * 100%) + var(--offset));
+    --range-input-perc: calc(
+      (var(--range-input-value) - var(--range-input-min)) /
+        var(--range-input-range)
+    );
+    --range-input-offset: calc(
+      (var(--range-input-thumb-width) / 2) - var(--range-input-thumb-width) *
+        var(--range-input-perc)
+    );
+    --range-input-left: calc(
+      (var(--range-input-perc) * 100%) + var(--range-input-offset)
+    );
 
     z-index: 1;
     position: absolute;
     top: calc(100% + 0.5rem);
-    left: var(--left);
+    left: var(--range-input-left);
     padding-block: 0.125rem;
     padding-inline: 0.25rem;
     min-width: 1.5rem;
@@ -288,7 +314,7 @@ input[type='range']:focus-visible {
     font-weight: var(--font-weight-semibold);
     border-radius: var(--radius-sm);
     color: var(--color-accent-text);
-    background-color: var(--output-bg-color);
+    background-color: var(--range-input-output-bg-color);
 
     &::before {
       content: '';
@@ -296,7 +322,7 @@ input[type='range']:focus-visible {
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
-      border-bottom: 5px solid var(--output-bg-color);
+      border-bottom: 5px solid var(--range-input-output-bg-color);
       border-top: 5px solid transparent;
       border-left: 5px solid transparent;
       border-right: 5px solid transparent;

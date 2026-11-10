@@ -51,6 +51,11 @@ export const navList: MenuItem[] = [
     label: 'Tooltip & Popover',
   },
   {
+    id: 'breadcrumbs',
+    to: '/breadcrumbs',
+    label: 'Breadcrumbs',
+  },
+  {
     id: 'tabs',
     to: '/tabs',
     label: 'Tabs',

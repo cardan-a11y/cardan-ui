@@ -1,5 +1,6 @@
 {
   "aria": {
+    "breadcrumb": "Breadcrumb",
     "callout-error": "Error",
     "callout-info": "Notice",
     "callout-success": "Success",
@@ -36,7 +37,9 @@
     "just-now": "just now",
     "seconds-ago": "{n} second ago | {n} seconds ago",
     "minutes-ago": "{n} minute ago | {n} minutes ago",
-    "hours-ago": "{n} hour ago | {n} hours ago"
+    "hours-ago": "{n} hour ago | {n} hours ago",
+    "in-minutes": "in {n} minute | in {n} minutes",
+    "in-hours": "in {n} hour | in {n} hours"
   },
   "datepicker": {
     "input": "Datepicker input",
@@ -62,7 +65,9 @@
   "error": {
     "403": "Unauthorized",
     "404": "Not found",
+    "general": "Something went wrong. Please try again later.",
     "heading": "Error",
+    "offline": "You are offline. Check your connection and try again.",
     "page-not-found": "Page not found",
     "unauthorized": "You are unauthorized to view this page.",
     "youtube": "YouTube player failed to load"
@@ -120,6 +125,7 @@
     "continue": "Continue",
     "copied": "Copied",
     "copy": "Copy",
+    "copy-failed": "Copy failed",
     "copy-url": "Copy URL",
     "clear": "Clear",
     "create": "Create",
@@ -238,8 +244,8 @@
     "value-of-max": "{value} of {max}"
   },
   "multiselect": {
-    "items-selected": "items selected",
-    "pages-selected": "pages selected"
+    "items-selected": "{count} items selected",
+    "pages-selected": "{count} pages selected"
   },
   "pagination": {
     "page-x-of-total": "page {page} of {total}",
@@ -272,6 +278,7 @@
     }
   },
   "video": {
+    "heading": "Video",
     "play": "Play video"
   }
 }

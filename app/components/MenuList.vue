@@ -27,6 +27,10 @@ const {
   id?: string;
 }>();
 
+// A list in a list is part of the menu's landmark, not one of its own
+const nested = inject(menuListNestedKey, false);
+provide(menuListNestedKey, true);
+
 function handleClick(item: MenuItem) {
   emit('click', item);
 
@@ -41,7 +45,9 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <nav
+  <component
+    :is="nested ? 'div' : 'nav'"
+    :role="nested ? 'group' : undefined"
     :aria-labelledby="label ? id : ariaLabelledby"
     :aria-label="ariaLabelledby ? undefined : ariaLabel"
     class="menu-list-nav"
@@ -92,7 +98,7 @@ const emit = defineEmits<{
             :font-size="fontSize"
             :icon-size="iconSize"
             button-variant="sidebar"
-            @click="emit('click', item)"
+            @click="emit('click', $event)"
           >
             <template #menu-list-item="{ item: subItem }">
               <MenuListTooltip :item="subItem">
@@ -126,7 +132,7 @@ const emit = defineEmits<{
         <hr v-if="item.divider" />
       </li>
     </ul>
-  </nav>
+  </component>
 </template>
 
 <style>
@@ -170,7 +176,7 @@ const emit = defineEmits<{
 
 .menu-list-item {
   > .button {
-    --radius: 0;
+    --button-radius: 0;
     outline-offset: -2px;
   }
 

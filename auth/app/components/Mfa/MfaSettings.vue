@@ -100,6 +100,8 @@ const emit = defineEmits<{
     <MfaDialog :show-disable-result="!mfaRequired" @refresh="handleRefresh" />
 
     <MfaRecoveryCodesDialog />
+
+    <PasswordConfirmationDialog />
   </div>
 </template>
 

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
  * Asks the signed-in user for their password before a sensitive change, for
- * Fortify's `password.confirm`. Mount it once, high in the app (the layout);
- * `usePasswordConfirmation()` opens it and waits for the answer.
+ * Fortify's `password.confirm`; `usePasswordConfirmation()` opens it and
+ * waits for the answer. `MfaSettings` and `MfaSetup` mount it with their
+ * flows; mount it once in the layout for flows of your own.
  */
 
 const { username = undefined } = defineProps<{
@@ -24,18 +25,30 @@ const loginName = computed(
 );
 
 const {
-  passwordConfirmationDialogRef,
   passwordConfirmationError,
   loadingPasswordConfirmation,
   passwordConfirmationRequest,
+  registerPasswordConfirmationDialog,
+  unregisterPasswordConfirmationDialog,
   confirmPassword,
-  cancelPasswordConfirmation,
+  passwordConfirmationDialogClosed,
 } = usePasswordConfirmation();
 
 const formId = useId();
 const password = ref('');
 const showPassword = ref(false);
+const dialogRef = useTemplateRef<DialogComponent>('dialog');
 const passwordInputRef = useTemplateRef<InputComponent>('passwordInput');
+
+// Registered rather than bound to the shared ref: a second dialog, from a
+// layout as well as a flow, would otherwise take the ref with it on unmount
+onMounted(() => {
+  if (dialogRef.value) registerPasswordConfirmationDialog(dialogRef.value);
+});
+
+onBeforeUnmount(() => {
+  if (dialogRef.value) unregisterPasswordConfirmationDialog(dialogRef.value);
+});
 
 async function handleSubmit() {
   if (await confirmPassword(password.value)) password.value = '';
@@ -44,13 +57,13 @@ async function handleSubmit() {
 function handleClose() {
   password.value = '';
   showPassword.value = false;
-  cancelPasswordConfirmation();
+  passwordConfirmationDialogClosed();
 }
 </script>
 
 <template>
   <Dialog
-    ref="passwordConfirmationDialogRef"
+    ref="dialog"
     :label="$t('password-confirmation.title')"
     class="password-confirmation-dialog"
     position="center"
@@ -97,7 +110,7 @@ function handleClose() {
         <PasswordReveal v-model="showPassword" size="md" />
       </div>
 
-      <AuthError :data="passwordConfirmationError" />
+      <ErrorMessage :data="passwordConfirmationError" />
     </Form>
 
     <hr class="password-confirmation-divider" />

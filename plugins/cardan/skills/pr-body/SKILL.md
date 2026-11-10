@@ -19,8 +19,10 @@ Focus on the manual steps a reviewer can repeat. Only mention checks that failed
 
 ## Local review
 
-One line: how many rounds the `cardan:cardan-reviewer` agent ran, the
-tally of the first round (Important and nits), and what happened to each
+One line: how many rounds the reviewer agent ran (`cardan:cardan-reviewer`, or
+`cardan:plugin-reviewer` for a change to the plugin alone), the
+tally of the first round (Important and nits), the browser check (Chrome,
+Firefox and WebKit, or why it was skipped), and what happened to each
 Important finding and nit (fixed, or left open and why).
 
 End with the attribution line the session was given, such as

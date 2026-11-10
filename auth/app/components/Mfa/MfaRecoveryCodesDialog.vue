@@ -11,6 +11,7 @@ const {
   recoveryCodes,
   generateRecoveryCodes,
   loadingGenerateRecoveryCodes,
+  resetMfa,
 } = useMfa();
 
 const codeListRef = useTemplateRef<{ focusHeading: () => void }>('codeList');
@@ -30,11 +31,6 @@ async function handleGenerate() {
     codeListRef.value?.focusHeading();
   }
 }
-
-function handleClose() {
-  mfaError.value = null;
-  recoveryCodes.value = [];
-}
 </script>
 
 <template>
@@ -44,13 +40,13 @@ function handleClose() {
     class="mfa-recovery-codes-dialog"
     position="center"
     :click-outside="false"
-    @close="handleClose()"
+    @close="resetMfa()"
   >
     <p v-if="isConfirming" class="mfa-recovery-codes-regenerate-description">
       {{ $t('mfa.recovery-codes-regenerate-description') }}
     </p>
 
-    <AuthError v-if="mfaError" :data="mfaError" />
+    <ErrorMessage v-if="mfaError" :data="mfaError" />
 
     <MfaRecoveryCodeList
       v-else-if="recoveryCodes.length"

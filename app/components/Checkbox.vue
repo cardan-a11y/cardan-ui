@@ -10,6 +10,7 @@ const {
   value = undefined,
   tabindex = undefined,
   errorMessage = undefined,
+  showInvalid = false,
   required,
 } = defineProps<{
   label?: string;
@@ -39,9 +40,13 @@ const isTicked = computed(() =>
     : !!model.value,
 );
 
-// The error text describes the box only while it applies
+const formShowInvalid = inject(formShowInvalidKey, ref(false));
+
+// The error text describes the box only while it shows
 const describedBy = computed(() =>
-  required && !isTicked.value ? `error-${id}` : undefined,
+  required && !isTicked.value && (showInvalid || formShowInvalid.value)
+    ? `error-${id}`
+    : undefined,
 );
 </script>
 

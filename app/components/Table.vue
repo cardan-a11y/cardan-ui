@@ -30,7 +30,7 @@ const computedStyle = computed(() => ({
     ]"
     :style="computedStyle"
   >
-    <table>
+    <table :aria-busy="loading || undefined">
       <caption v-if="ariaLabel" class="visuallyhidden" v-text="ariaLabel" />
 
       <tbody v-if="skeleton">

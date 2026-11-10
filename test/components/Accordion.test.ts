@@ -25,6 +25,8 @@ describe('Accordion', () => {
 
     expect(trigger.attributes('aria-expanded')).toBe('true');
     expect(panel.attributes('inert')).toBeUndefined();
+    // A parent with v-model:open hears the click, so it can close it again
+    expect(wrapper.emitted('update:open')).toEqual([[true]]);
     expect(await checkA11y()).toHaveNoViolations();
   });
 

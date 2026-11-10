@@ -1,19 +1,5 @@
 declare global {
   /**
-   * Shape of a Laravel validation / error response, as rendered by
-   * `AuthError.vue`. `extractAuthError()` folds a JSON:API error envelope
-   * into it.
-   */
-  type AuthErrorData = {
-    message?: string;
-    errors?: {
-      [key: string]: string[];
-    };
-    /** The language the API wrote the messages in (`Content-Language`). */
-    language?: string;
-  };
-
-  /**
    * The authenticated user's payload, as returned under `data` by the Sanctum
    * user endpoint.
    *

@@ -15,6 +15,20 @@ const {
   ariaLabel?: string;
 }>();
 
+const { t } = useI18n();
+
+/**
+ * The hidden text that names the button: the label, or, when the button
+ * shows an image or an icon, the initials or "profile picture". Initials
+ * without an image are visible and name the button themselves.
+ */
+const hiddenLabel = computed(() => {
+  if (ariaLabel) return ariaLabel;
+  if (initials && !avatar && !icon) return undefined;
+
+  return initials ?? t('general.avatar');
+});
+
 const avatarButtonRef = useTemplateRef<HTMLButtonElement>('avatarButton');
 
 function focusElement() {
@@ -28,7 +42,7 @@ defineExpose({
 
 <template>
   <button ref="avatarButton" type="button" class="avatar-button">
-    <span class="visuallyhidden">{{ ariaLabel }}</span>
+    <span v-if="hiddenLabel" class="visuallyhidden">{{ hiddenLabel }}</span>
 
     <Icon v-if="icon" :name="icon" />
 

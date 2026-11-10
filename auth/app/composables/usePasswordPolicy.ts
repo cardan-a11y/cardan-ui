@@ -28,16 +28,25 @@ export function usePasswordPolicy() {
   if (endpoints.passwordPolicy && !requested.value) {
     requested.value = true;
 
-    client<{ data: PasswordPolicyData }>(endpoints.passwordPolicy)
-      .then(({ data }) => {
+    // The reset form asks as a guest. An answer that is no policy, such as a
+    // 401 from a route that is not public, keeps the config's: it is not an
+    // error for the fetch client, so nuxt-auth-sanctum does not treat it as
+    // an expired session and send the guest to the login page mid-reset.
+    client<{ data?: PasswordPolicyData }>(endpoints.passwordPolicy, {
+      ignoreResponseError: true,
+    })
+      .then((response) => {
+        const data = response?.data;
+        if (!data?.min_length) return;
+
         policy.value = {
           minLength: data.min_length,
           maxLength: data.max_length,
         };
       })
-      .catch((error) => {
-        console.info(error);
-        // Let the next form that asks try again.
+      .catch(() => {
+        // No connection: the config's policy stands, and the next form that
+        // asks tries again
         requested.value = false;
       });
   }

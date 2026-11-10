@@ -26,10 +26,14 @@ one (2.x.0) for a breaking change.
    props or classes, behaviour that changes for stored content, modules or
    CSP hosts a project needs, and a plugin update (step 5) as a bullet with
    `claude plugin update cardan@cardan-ui --scope user`. A patch release is
-   a `### <version>` subsection at the end of the current minor's section;
-   a minor release is a new `## Upgrading to <version>` section. A release
-   that asks nothing of the projects gets only the line `<version> needs
-   nothing from projects.`, without details: the changelog says what it
+   a `### <version>` subsection in the current minor's section: below the
+   minor's own notes, which are everything before its first patch
+   subsection, and above the previous patch. A minor release is a new
+   section, `## Upgrading to <version>`, above the previous minor. So the
+   newest release is at the top of the file, and within a minor the minor's
+   own notes come first. A release
+   that asks nothing of the projects gets only the line `<version> needs nothing from
+projects. See changelog for details.`, without details: the changelog says what it
    changed. Then keep the five most recent releases that ask something, the
    one you are writing included, with the one-line sections between them,
    and remove everything older, so the file stays short for the projects
@@ -45,8 +49,10 @@ one (2.x.0) for a breaking change.
 5. **Plugin**: if anything under `plugins/cardan` changed, the other
    projects receive it with
    `claude plugin update cardan@cardan-ui --scope user`; say so in the PR
-   description. The Playwright MCP server in `.mcp.json` is pinned; bump
-   it there when a newer `@playwright/mcp` is wanted.
+   description. The Playwright MCP server in `.mcp.json` is pinned, and the
+   cross-browser script uses the same version; bump it there, and in
+   `plugins/cardan-browsers/.mcp.json`, when a newer `@playwright/mcp` is
+   wanted.
 6. **Checks and review**: `pnpm run lint`, `pnpm run typecheck`,
    `pnpm test`, then the review as the Cardan guidelines describe.
 7. **Pull request**: commit, push and open the PR against `main` with the
@@ -68,7 +74,7 @@ tree.
    and `git pull --ff-only origin develop`. Stop when `git status` shows
    uncommitted changes.
 2. **Collect the release**: `git log --first-parent --format=%s
-   origin/main..origin/develop` lists one line per pull request merged into
+origin/main..origin/develop` lists one line per pull request merged into
    `develop` since the last release (a squash commit's subject, or a merge
    commit). Take each PR's title from `gh pr view <number> --json title`
    where the subject only names its number. Leave out a "Bring main into
@@ -90,7 +96,7 @@ tree.
    `git fetch origin && git push origin origin/main:develop`. Right after a
    release that is a fast-forward and done. When git rejects it because
    `develop` has moved on, open a pull request instead: `gh pr create
-   --base develop --head main --title "Bring main into develop"`, and
+--base develop --head main --title "Bring main into develop"`, and
    merge it with a merge commit.
 5. **Cardan UI**: the production build takes the latest `main` of
    cardan-ui. When cardan-ui's `MIGRATION.md` gained a section since the

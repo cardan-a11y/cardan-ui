@@ -23,17 +23,45 @@ const computedPageSizes = computed(() => {
   return sizes;
 });
 
-function goToPage(pageNumber: number) {
+const navRef = useTemplateRef<HTMLElement>('nav');
+const pageTextRef = useTemplateRef<HTMLElement>('pageText');
+
+async function goToPage(pageNumber: number) {
   if (page.value === pageNumber) return;
   if (page.value && page.value < 1) return;
 
   page.value = pageNumber;
+  await nextTick();
+  moveFocusOn();
+}
+
+/**
+ * On the first or last page the button that got there is disabled, and a
+ * disabled button drops focus: it goes to the button for the other way,
+ * or to the page count on a single page
+ */
+function moveFocusOn() {
+  const buttons = Array.from(
+    navRef.value?.querySelectorAll<HTMLButtonElement>('button') ?? [],
+  );
+  const active = document.activeElement as HTMLButtonElement | null;
+  const index = active ? buttons.indexOf(active) : -1;
+  if (index === -1 || !active?.disabled) return;
+
+  // first, previous | next, last
+  const other = buttons[index < 2 ? 2 : 1];
+  if (other && !other.disabled) other.focus();
+  else pageTextRef.value?.focus();
 }
 </script>
 
 <template>
   <div class="pagination-wrapper">
-    <nav class="pagination-nav" :aria-label="$t('pagination.heading')">
+    <nav
+      ref="nav"
+      class="pagination-nav"
+      :aria-label="$t('pagination.heading')"
+    >
       <Button
         icon="material-symbols:keyboard-double-arrow-left-rounded"
         :label="$t('pagination.first-page')"
@@ -54,7 +82,7 @@ function goToPage(pageNumber: number) {
         @click="goToPage(page - 1)"
       />
 
-      <div class="current-page-wrapper">
+      <div ref="pageText" class="current-page-wrapper" tabindex="-1">
         {{ $t('pagination.page-x-of-total', { page, total: lastPage }) }}
       </div>
 

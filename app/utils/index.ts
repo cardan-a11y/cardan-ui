@@ -1,3 +1,5 @@
+import type { InjectionKey, Ref } from 'vue';
+
 export function fixBoldText(text?: string) {
   return text?.replaceAll('<strong>', '<b>')?.replaceAll('</strong>', '</b>');
 }
@@ -57,9 +59,46 @@ export function getRandomInt(max = 1) {
   return Math.ceil(Math.random() * max);
 }
 
-export const xsTransition = 100;
-export const smTransition = 200;
-export const mdTransition = 350;
-export const lgTransition = 650;
-export const xlTransition = 1350;
-export const xxlTransition = 2000;
+/**
+ * The `--duration-<size>` token in milliseconds, for a timeout that keeps
+ * pace with a CSS transition. It reads the token the page has, so it is 0
+ * when the user prefers reduced motion (the tokens are 0s then), on the
+ * server and when the project's main.css lacks the token.
+ */
+export function transitionDuration(
+  size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl',
+) {
+  if (import.meta.server) return 0;
+
+  const duration = getComputedStyle(document.documentElement)
+    .getPropertyValue(`--duration-${size}`)
+    .trim();
+  const [, number, unit] = duration.match(/^(\d*\.?\d+)(m?s)$/) ?? [];
+  if (!number) return 0;
+
+  return Math.round(Number(number) * (unit === 's' ? 1000 : 1));
+}
+
+/**
+ * Provided by Form: whether its fields show their errors, after a failed
+ * submit or with `show-invalid`. A field describes itself by its error text
+ * only while that text shows.
+ */
+export const formShowInvalidKey: InjectionKey<Readonly<Ref<boolean>>> =
+  Symbol('formShowInvalid');
+
+/** The elements that take keyboard focus: a loop, a popover and a tab panel look for them */
+export const focusableSelector = [
+  ...['input', 'select', 'button', 'textarea'].map(
+    (field) => `${field}:not([disabled])`,
+  ),
+  'a[href]',
+  'video[controls]',
+  'audio[controls]',
+  '[tabindex]:not([tabindex^="-"])',
+  '[contenteditable]:not([contenteditable="false"])',
+].join(',');
+
+/** Provided by MenuList to the lists in it, which are then no landmarks of their own */
+export const menuListNestedKey: InjectionKey<boolean> =
+  Symbol('menuListNested');

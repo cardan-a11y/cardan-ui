@@ -16,4 +16,16 @@ describe('Switch', () => {
     );
     expect(await checkA11y()).toHaveNoViolations();
   });
+
+  it('has a checked state also without a model, and toggles it', async () => {
+    const wrapper = await mountSuspended(Switch, {
+      props: { label: 'Dark mode' },
+    });
+
+    const control = wrapper.get('[role="switch"]');
+    expect(control.attributes('aria-checked')).toBe('false');
+
+    await control.trigger('click');
+    expect(control.attributes('aria-checked')).toBe('true');
+  });
 });

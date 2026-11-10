@@ -1,19 +1,13 @@
 <script setup lang="ts">
-// https://github.com/vue-a11y/vue-focus-loop/tree/next
+// After https://github.com/vue-a11y/vue-focus-loop/tree/next
 
-const focusableElementsSelector = [
-  ...['input', 'select', 'button', 'textarea'].map(
-    (field) => `${field}:not([disabled])`,
-  ),
-  'a[href]',
-  'video[controls]',
-  'audio[controls]',
-  '[tabindex]:not([tabindex^="-"])',
-  '[contenteditable]:not([contenteditable="false"])',
-].join(',');
-
-let ariaHiddenElements: Element[] = [];
-
+/**
+ * Keeps keyboard focus in its content while it is visible: Tab past the last
+ * element goes to the first, Shift+Tab before the first to the last. A modal
+ * loop (the default) also marks the rest of the page `inert`, so a screen
+ * reader's swipe and virtual cursor stay in the content too, and releases it
+ * the moment the loop closes or unmounts.
+ */
 const {
   disabled,
   isVisible = false,
@@ -24,78 +18,105 @@ const {
   is?: string;
   disabled?: boolean;
   isVisible?: boolean;
+  /** Focus the first element, or the one with `autofocus`, when the loop opens */
   autoFocus?: boolean;
+  /** Mark the rest of the page `inert` while the loop is open */
   modal?: boolean;
 }>();
 
-const focusLoopContainerRef = ref<InstanceType<any>>(null);
-const focusLoopContentRef = ref<InstanceType<any>>(null);
-const alreadyFocused = ref(false);
-const getTabindex = computed(() => (disabled ? '-1' : '0'));
+const containerRef = useTemplateRef<HTMLElement>('container');
+const contentRef = useTemplateRef<HTMLElement>('content');
+
+/** The elements this loop made inert, to release those and no others */
+let inertElements: Element[] = [];
+
+const active = computed(() => isVisible && !disabled);
+const sentinelTabindex = computed(() => (disabled ? '-1' : '0'));
 
 // Synchronous, so the rest of the page is no longer inert the moment the
 // loop closes: the browser's own focus restore when a dialog closes, and a
 // component that focuses its trigger, then work at once
-watch([() => disabled, () => isVisible], init, { flush: 'sync' });
+watch(active, init, { flush: 'sync' });
 
 onMounted(init);
 
 // Unmounted while still open, as when a link in a dialog leads to a page in
 // another layout and the dialog goes with the old one before it has closed:
 // the rest of the page would stay inert, and nothing on it could be clicked.
-onBeforeUnmount(() => {
-  if (isVisible && !disabled) {
-    lockForSwipeScreenReader(false);
-    ariaHiddenElements = [];
-  }
-});
+onBeforeUnmount(release);
 
 function init() {
-  const active = isVisible && !disabled;
-
-  if (!active) {
-    lockForSwipeScreenReader(false);
-    ariaHiddenElements = [];
+  if (!active.value) {
+    release();
     return;
   }
 
-  // The content renders in the next tick
+  // The content renders in the next tick. The loop may have closed again by
+  // then: locking the page for a loop that is gone would leave it inert.
   nextTick(() => {
-    focusFirst(autoFocus);
-    lockForSwipeScreenReader(true);
+    if (!active.value || !containerRef.value) return;
+    focusFirst();
+    lock(containerRef.value);
   });
 }
 
-function getElementsToAriaHidden(focusLoopContainer: HTMLElement) {
-  function getElements(element: Element) {
-    const children: Element[] = Array.from(element.children);
-    children.forEach((el: Element) => {
-      if (el === focusLoopContainer) return;
-      if (!el.contains(focusLoopContainer)) {
-        ariaHiddenElements.push(el);
-        return;
-      }
-      getElements(el);
-    });
-  }
-  getElements(document.body);
-}
+/**
+ * The elements to make inert: the siblings of the container and of each of
+ * its ancestors, up to body, whole. Two exceptions, so a toast is still
+ * announced and can still be closed: a live region next to them, and the
+ * element that holds the toasts (Nuxt's `#teleports`), whose children are
+ * taken instead.
+ */
+function elementsOutside(container: HTMLElement) {
+  const elements: Element[] = [];
 
-function lockForSwipeScreenReader(active: boolean = true) {
-  if (active) getElementsToAriaHidden(focusLoopContainerRef.value);
-  ariaHiddenElements.forEach((el) => {
-    if (
-      ['SCRIPT', 'STYLE'].includes(el.nodeName) ||
-      el.hasAttribute('aria-live')
-    ) {
+  function take(element: Element) {
+    if (element.hasAttribute('aria-live')) return;
+
+    if (element.querySelector('.toast-manager')) {
+      for (const child of element.children) take(child);
       return;
     }
 
-    if (!modal) return;
+    elements.push(element);
+  }
 
-    if (active) el.setAttribute('inert', '');
-    else el.removeAttribute('inert');
-  });
+  let node: Element = container;
+
+  while (node.parentElement && node !== document.body) {
+    for (const sibling of node.parentElement.children) {
+      if (sibling !== node) take(sibling);
+    }
+    node = node.parentElement;
+  }
+
+  return elements;
+}
+
+/**
+ * Marks the page outside the container inert, except what is inert already
+ * (another loop's, which keeps it)
+ */
+function lock(container: HTMLElement) {
+  release();
+  if (!modal) return;
+
+  for (const element of elementsOutside(container)) {
+    if (
+      ['SCRIPT', 'STYLE'].includes(element.nodeName) ||
+      element.hasAttribute('inert')
+    ) {
+      continue;
+    }
+
+    element.setAttribute('inert', '');
+    inertElements.push(element);
+  }
+}
+
+function release() {
+  inertElements.forEach((element) => element.removeAttribute('inert'));
+  inertElements = [];
 }
 
 /**
@@ -103,50 +124,57 @@ function lockForSwipeScreenReader(active: boolean = true) {
  * are in the DOM; an opening animation does not keep an element from taking
  * focus.
  */
-function focusFirst(isAutoFocus: boolean) {
-  if (!isAutoFocus) return;
+function focusFirst() {
+  if (!autoFocus) return;
 
-  const elements = Array.from(getFocusableElements());
-  const autofocusElement = elements.find((x) => x?.autofocus === true);
+  const elements = getFocusableElements();
+  const autofocusElement = elements.find((element) =>
+    element.hasAttribute('autofocus'),
+  );
 
-  if (autofocusElement) autofocusElement.focus();
-  else elements[0]?.focus();
+  (autofocusElement ?? elements[0])?.focus();
 }
 
-function getFocusableElements(): HTMLElement[] {
-  return (
-    focusLoopContentRef.value?.querySelectorAll(focusableElementsSelector) ?? []
+function getFocusableElements() {
+  return Array.from(
+    contentRef.value?.querySelectorAll<HTMLElement>(focusableSelector) ?? [],
   );
 }
 
-function handleFocusStart() {
-  const elements: HTMLElement[] = getFocusableElements();
-  if (elements.length) {
-    const index = alreadyFocused.value ? elements.length - 1 : 0;
-    alreadyFocused.value = true;
-    elements[index]?.focus();
-  }
+/** Whether the element that had focus before is in the content */
+function cameFromContent(event: FocusEvent) {
+  const previous = event.relatedTarget;
+  return previous instanceof Node && !!contentRef.value?.contains(previous);
 }
 
-function handleFocusEnd() {
-  const elements: HTMLElement[] = getFocusableElements();
-  if (elements.length) {
-    elements[0]?.focus();
-  }
+/**
+ * The sentinel before the content: Shift+Tab from the first element wraps to
+ * the last; Tab in from before the loop, or a focus from a script, goes to
+ * the first
+ */
+function handleFocusStart(event: FocusEvent) {
+  const elements = getFocusableElements();
+  const index = cameFromContent(event) ? elements.length - 1 : 0;
+  elements[index]?.focus();
+}
+
+/**
+ * The sentinel after the content: Tab from the last element wraps to the
+ * first; Shift+Tab in from after the loop goes to the last
+ */
+function handleFocusEnd(event: FocusEvent) {
+  const elements = getFocusableElements();
+  const index = cameFromContent(event) ? 0 : elements.length - 1;
+  elements[index]?.focus();
 }
 </script>
 
 <template>
-  <component
-    :is="is"
-    v-if="isVisible"
-    ref="focusLoopContainerRef"
-    class="vue-focus-loop"
-  >
-    <div :tabindex="getTabindex" @focus="handleFocusStart" />
-    <div ref="focusLoopContentRef">
+  <component :is="is" v-if="isVisible" ref="container" class="vue-focus-loop">
+    <div :tabindex="sentinelTabindex" @focus="handleFocusStart" />
+    <div ref="content">
       <slot />
     </div>
-    <div :tabindex="getTabindex" @focus="handleFocusEnd" />
+    <div :tabindex="sentinelTabindex" @focus="handleFocusEnd" />
   </component>
 </template>

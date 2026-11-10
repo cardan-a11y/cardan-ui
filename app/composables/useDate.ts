@@ -1,17 +1,28 @@
 export function useDate() {
   const { t, locale } = useI18n();
 
+  /**
+   * How long ago a date was, or how far off it is: "3 hours ago", "in 20
+   * minutes", "just now" within a minute; further than a day, the date and
+   * time in full.
+   */
   function formatDate(dateString: string): string | undefined {
-    // Format as e.g. '3 hours ago' or fallback to ISO date
     const date = new Date(dateString);
-    const now = new Date();
-    const diff = (now.getTime() - date.getTime()) / 1000; // seconds
+    const seconds = (date.getTime() - Date.now()) / 1000;
+    const distance = Math.abs(seconds);
+    const ago = seconds < 0;
 
-    if (diff < 60) return t('date.just-now');
-    if (diff < 3600) return t('date.minutes-ago', Math.floor(diff / 60));
-    if (diff < 86400) return t('date.hours-ago', Math.floor(diff / 3600));
+    if (distance < 60) return t('date.just-now');
+    if (distance < 3600) {
+      const minutes = Math.floor(distance / 60);
+      return t(ago ? 'date.minutes-ago' : 'date.in-minutes', minutes);
+    }
+    if (distance < 86400) {
+      const hours = Math.floor(distance / 3600);
+      return t(ago ? 'date.hours-ago' : 'date.in-hours', hours);
+    }
 
-    return d(date, 'datetimeLong', locale.value);
+    return formatDateTime(date, 'datetimeLong', locale.value);
   }
 
   return {

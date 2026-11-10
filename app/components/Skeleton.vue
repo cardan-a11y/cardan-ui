@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * A placeholder for content that is still loading: a bar or a circle with a
+ * shimmer or a pulse. It is decorative, hidden from assistive technology; the
+ * element whose content it stands in for carries `aria-busy="true"` while
+ * that loads, as Table does for its rows.
+ */
 const {
   size = 'md',
   width = '100%',
@@ -14,9 +20,9 @@ const {
 }>();
 
 const computedStyle = computed(() => ({
-  '--size': `var(--size-${size})`,
-  '--width': width,
-  '--radius': radius && `var(--radius-${radius})`,
+  '--skeleton-size': `var(--size-${size})`,
+  '--skeleton-width': width,
+  '--skeleton-radius': radius && `var(--radius-${radius})`,
 }));
 </script>
 
@@ -28,20 +34,21 @@ const computedStyle = computed(() => ({
       variant && `skeleton-variant--${variant}`,
     ]"
     :style="computedStyle"
+    aria-hidden="true"
   />
 </template>
 
 <style>
 .skeleton {
-  width: var(--width, 100%);
-  height: var(--size);
-  border-radius: var(--radius, var(--radius-sm));
+  width: var(--skeleton-width, 100%);
+  height: var(--skeleton-size);
+  border-radius: var(--skeleton-radius, var(--radius-sm));
   background-color: var(--color-grey-bg);
 }
 
 .skeleton-variant--circle {
   border-radius: var(--radius-full);
-  width: var(--size);
+  width: var(--skeleton-size);
 }
 
 .skeleton-animation--pulse {
@@ -49,15 +56,15 @@ const computedStyle = computed(() => ({
 }
 
 .skeleton-animation--shimmer {
-  --color-1: var(--color-grey-bg);
-  --color-2: var(--color-grey-light);
+  --skeleton-color-1: var(--color-grey-bg);
+  --skeleton-color-2: var(--color-grey-light);
   animation: shimmer var(--duration-xl) linear infinite;
   background: linear-gradient(
     -45deg,
-    var(--color-1) 30%,
-    var(--color-2) 45%,
-    var(--color-2) 55%,
-    var(--color-1) 70%
+    var(--skeleton-color-1) 30%,
+    var(--skeleton-color-2) 45%,
+    var(--skeleton-color-2) 55%,
+    var(--skeleton-color-1) 70%
   );
   background-size: 400% 400%;
 }

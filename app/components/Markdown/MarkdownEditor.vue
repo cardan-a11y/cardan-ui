@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts">
 import { MdEditor, config } from 'md-editor-v3';
 import type { ToolbarNames, Footers } from 'md-editor-v3';
 import type { MarkdownIt } from 'markdown-it';
@@ -10,10 +10,21 @@ import {
   targetBlankExtension,
 } from './extensions';
 import { hljs } from './highlight';
+// The attributes the preview lets `{…}` set: the renderer's list, so the
+// editor shows what MarkdownPreview will show
+import { SAFE_ATTRIBUTES } from './renderer';
 import 'md-editor-v3/lib/style.css';
 // md-editor-v3 adds no <link> for a theme when it is given an instance
 import 'highlight.js/styles/stackoverflow-dark.css';
 
+/** md-editor-v3's config is global: set once, not again by every editor. */
+let configured = false;
+
+/** The translator of the editor set up last, so the label follows the app at hand */
+let translate = (key: string) => key;
+</script>
+
+<script setup lang="ts">
 const {
   id = useId(),
   preview = false,
@@ -81,25 +92,33 @@ const toolbars: ToolbarNames[] = [
 
 const { t, locale } = useI18n();
 
-config({
-  markdownItConfig(mdit) {
-    // md-editor-v3 types its instance with markdown-it 14, the plugins expect the
-    // types of markdown-it 15; both run on the same API
-    const md = mdit as unknown as MarkdownIt;
+translate = t;
 
-    md.use(swatchExtension);
-    md.use(targetBlankExtension, { label: () => t('aria.open-new-window') });
-    md.use(italicExtension);
-    md.use(attrs);
-    md.use(mark);
-  },
-  editorExtensions: {
-    // Bundled instead of loaded from a CDN, so no third-party requests or CSP exceptions
-    highlight: {
-      instance: hljs,
+if (!configured) {
+  configured = true;
+
+  config({
+    markdownItConfig(mdit) {
+      // md-editor-v3 types its instance with markdown-it 14, the plugins expect the
+      // types of markdown-it 15; both run on the same API
+      const md = mdit as unknown as MarkdownIt;
+
+      md.use(swatchExtension);
+      md.use(targetBlankExtension, {
+        label: () => translate('aria.open-new-window'),
+      });
+      md.use(italicExtension);
+      md.use(attrs, { allowed: SAFE_ATTRIBUTES });
+      md.use(mark);
     },
-  },
-});
+    editorExtensions: {
+      // Bundled instead of loaded from a CDN, so no third-party requests or CSP exceptions
+      highlight: {
+        instance: hljs,
+      },
+    },
+  });
+}
 
 onMounted(async () => {
   if (!autofocus) return;
@@ -133,6 +152,12 @@ const computedErrorMessage = computed(() => {
 const emit = defineEmits<{
   blur: [value: Event];
 }>();
+
+/** Trimmed when the editor is left, not at every keystroke, which would eat a space being typed */
+function handleBlur(event: Event) {
+  content.value = content.value?.trim();
+  emit('blur', event);
+}
 </script>
 
 <template>
@@ -151,7 +176,7 @@ const emit = defineEmits<{
 
       <MdEditor
         ref="markdownEditor"
-        v-model.trim="content"
+        v-model="content"
         :language="locale"
         no-upload-img
         :preview="preview"
@@ -165,19 +190,21 @@ const emit = defineEmits<{
         no-katex
         no-echarts
         no-prettier
-        @blur="emit('blur', $event)"
+        @blur="handleBlur"
       />
 
       <p v-if="instruction" :id="`instruction-${id}`" class="instruction">
         {{ instruction }}
       </p>
 
+      <!-- Only carries the required state to the form: never a tab stop -->
       <textarea
         v-if="required"
         v-model="content"
         :required="required"
         class="visuallyhidden"
         aria-hidden="true"
+        tabindex="-1"
       />
 
       <InputError v-if="required" :id="id" :error-text="computedErrorMessage" />

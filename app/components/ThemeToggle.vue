@@ -7,11 +7,12 @@ defineProps<{ fontSize?: FontSize }>();
 <template>
   <ClientOnly>
     <button
-      id="theme-toggle"
       type="button"
       class="theme-toggle-button"
       :aria-pressed="colorMode.value === 'dark'"
-      :style="[fontSize && `--theme-toggle-font-size: var(--font-size-${fontSize})`]"
+      :style="[
+        fontSize && `--theme-toggle-font-size: var(--font-size-${fontSize})`,
+      ]"
       @click.stop="
         colorMode.preference = colorMode.value == 'light' ? 'dark' : 'light'
       "

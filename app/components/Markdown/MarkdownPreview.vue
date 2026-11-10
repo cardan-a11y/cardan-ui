@@ -6,7 +6,8 @@
  *
  * A bare YouTube or Vimeo link in a paragraph of its own renders as a
  * VideoPlayer, also without `trusted`: the link only ever becomes a video id.
- * A link with its own text stays a link.
+ * A link with its own text stays a link, and so does every link with
+ * `videos-as-links`, for a place a player does not fit, such as a table cell.
  *
  * `inline` is for a title or label: inline markup only, in a `<span>`, so it
  * fits inside a button, link or label and adds no block margins.
@@ -21,17 +22,18 @@ import 'highlight.js/styles/stackoverflow-dark.css';
 const {
   content = '',
   fontSize = undefined,
-  ellipsisLines = undefined,
   inline = false,
+  videosAsLinks = false,
   trusted = false,
   headingOffset = 0,
 } = defineProps<{
   content?: string;
   /** `md` by default; an inline text takes the size around it. */
   fontSize?: FontSize;
-  ellipsisLines?: number;
   /** Inline markup only (emphasis, code, links), in a `<span>`. */
   inline?: boolean;
+  /** A bare YouTube or Vimeo link stays a link instead of a VideoPlayer. */
+  videosAsLinks?: boolean;
   /** Allow raw HTML and every `{…}` attribute: only for text the team wrote. */
   trusted?: boolean;
   /** Levels to move the text's own headings down: 1 turns `##` into `<h3>`. */
@@ -43,25 +45,28 @@ const size = computed(() => fontSize ?? (inline ? undefined : 'md'));
 const computedStyle = computed(() => ({
   '--markdown-preview-font-size':
     size.value && `var(--font-size-${size.value})`,
-  '--line-clamp': ellipsisLines && ellipsisLines,
 }));
 
 const { t } = useI18n();
+// The same origin on the server and in the browser, so a link to the site
+// itself renders alike on both
+const { origin } = useRequestURL();
 
 const options = computed(() => ({
   trusted,
   headingOffset,
   tableLabel: t('aria.table'),
   newWindowLabel: t('aria.open-new-window'),
+  origin,
 }));
 
 /**
  * The HTML between the videos and each video on its own; one HTML segment
- * without videos. An inline text has no paragraphs, and a clamped text has
- * no room for a player: both are one string, with a video as a link.
+ * without videos. An inline text, or one with `videos-as-links`, is one
+ * string, with a video as a link.
  */
 const segments = computed<MarkdownSegment[]>(() =>
-  inline || ellipsisLines
+  inline || videosAsLinks
     ? [
         {
           type: 'html',
@@ -79,11 +84,6 @@ const html = computed(() => {
     ? segment.html
     : undefined;
 });
-
-const classes = computed(() => [
-  'cardan-markdown-preview',
-  ellipsisLines && 'ellipsis',
-]);
 
 const root = useTemplateRef<HTMLElement>('root');
 
@@ -123,18 +123,18 @@ watch(segments, highlightCode, { flush: 'post' });
   <span
     v-if="inline"
     ref="root"
-    :class="classes"
+    class="cardan-markdown-preview"
     :style="computedStyle"
     v-html="html"
   />
   <div
     v-else-if="html !== undefined"
     ref="root"
-    :class="classes"
+    class="cardan-markdown-preview"
     :style="computedStyle"
     v-html="html"
   />
-  <div v-else ref="root" :class="classes" :style="computedStyle">
+  <div v-else ref="root" class="cardan-markdown-preview" :style="computedStyle">
     <!-- A player is keyed by its URL too, so a new video in the same place
          gets a fresh player instead of the title and state of the old one -->
     <template
@@ -161,15 +161,6 @@ watch(segments, highlightCode, { flush: 'post' });
 }
 
 .cardan-markdown-preview {
-  &.ellipsis {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    line-clamp: var(--line-clamp);
-    -webkit-line-clamp: var(--line-clamp);
-    hyphens: none;
-  }
-
   font-size: var(--markdown-preview-font-size, inherit);
 
   code {

@@ -15,9 +15,14 @@ const {
   label?: string;
   ariaLabel?: string;
   id?: string;
+  /**
+   * Keeps Escape from closing the dialog. Best effort: a browser lets a
+   * second Escape without a click or keypress in between close it anyway
+   * (Chrome's close watcher), so a step that must be completed also handles
+   * `close`.
+   */
   disableEscape?: boolean;
   clickOutside?: boolean;
-  modal?: boolean;
   position?: DialogPosition;
   closeButtonVariant?: ButtonVariant;
   closeButtonRadius?: BorderRadius;
@@ -121,7 +126,8 @@ defineExpose({
     @click="handleDialogClick"
     @close="handleClose"
   >
-    <FocusLoop :is-visible="isVisible" :modal="modal">
+    <!-- The native modal dialog makes the page inert; the loop only wraps Tab -->
+    <FocusLoop :is-visible="isVisible" :modal="false">
       <div class="dialog-header-wrapper">
         <div class="dialog-header">
           <h1 v-if="label" :id="id" class="dialog-title-wrapper">

@@ -33,6 +33,8 @@
     "recovery-codes-regenerate": "Regenerate recovery codes",
     "recovery-codes-regenerate-description": "New recovery codes replace your current ones, which stop working straight away. You will see the new codes only once, so have a safe place ready to store them.",
     "recovery-codes-show": "Show recovery codes",
+    "recovery-codes-unavailable": "Your recovery codes could not be loaded, so the code was not confirmed yet. Try again.",
+    "recovery-codes-missing": "Your recovery codes could not be shown. Create new ones in your account settings with “{action}”.",
     "use-code": "Use a verification code",
     "use-recovery-code": "Use a recovery code",
     "reset": "Set up MFA again",
@@ -47,7 +49,8 @@
     "organization-required-description": "Everyone in your organization has to set up multi-factor authentication before they can use the platform. Managers always need it.",
     "organization-required-on": "Multi-factor authentication is now required for your organization.",
     "organization-required-off": "Multi-factor authentication is no longer required for your organization.",
-    "change-app-description": "To move to a new authenticator app or phone, multi-factor authentication is switched off and you set it up again straight away. Until then you can only use the setup page."
+    "change-app-description": "To move to a new authenticator app or phone, multi-factor authentication is switched off and you set it up again straight away. Until then you can only use the setup page.",
+    "session-expired": "Your session has expired. Sign in again to continue."
   },
   "password-confirmation": {
     "title": "Confirm your password",
@@ -56,8 +59,7 @@
   "auth": {
     "login-title": "Welcome back",
     "login-description": "Sign in to continue.",
-    "confirm-logout": "Are you sure you want to sign out?",
-    "error-generic": "Something went wrong. Check your connection and try again."
+    "confirm-logout": "Are you sure you want to sign out?"
   },
   "password": {
     "back-to-login": "Back to",

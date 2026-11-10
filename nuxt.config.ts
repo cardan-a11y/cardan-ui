@@ -35,8 +35,9 @@ export default defineNuxtConfig({
   // Fonts are only downloaded when a project's CSS uses them, e.g. via --font-family in main.css
   fonts: {
     defaults: {
-      weights: [400, 500, 600, 700],
+      weights: ['400 700'],
       styles: ['normal', 'italic'],
+      subsets: ['latin', 'latin-ext'],
     },
   },
 

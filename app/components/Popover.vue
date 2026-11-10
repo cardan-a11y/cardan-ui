@@ -36,14 +36,15 @@ const {
   id?: string;
 }>();
 
+// The smallest triggers have the small radius
 const computedStyle = computed(() => ({
   '--popover-font-size': fontSize && `var(--font-size-${fontSize})`,
   '--popover-icon-size': iconSize && `var(--font-size-${iconSize})`,
-  '--radius': `var(--radius-${borderRadius})`,
+  '--popover-radius': `var(--radius-${['xxs', 'xs'].includes(size) ? 'sm' : borderRadius})`,
 }));
 
 const contentStyle = computed(() => ({
-  '--max-width':
+  '--popover-max-width':
     maxWidth === undefined
       ? undefined
       : maxWidth === 'none'
@@ -51,15 +52,47 @@ const contentStyle = computed(() => ({
         : `${maxWidth}px`,
 }));
 
-const isOpen = ref(false);
-
-function onToggle(event: Event) {
-  isOpen.value = (event as ToggleEvent).newState === 'open';
-}
-
 const popoverContentRef = useTemplateRef<HTMLDivElement | null>(
   'popoverContent',
 );
+const triggerRef = useTemplateRef<HTMLButtonElement>('popoverTrigger');
+
+/**
+ * After the popover is shown or hidden. The content is a list of links or
+ * buttons, a disclosure in APG terms, not a menu with its roles and arrow
+ * keys. It is always rendered: closed, the native popover is `display: none`,
+ * so it is out of the accessibility tree and the tab order. When it opens,
+ * focus moves to its first element; on Escape, or a choice, the browser
+ * gives focus back to the trigger.
+ */
+function onToggle(event: Event) {
+  if ((event as ToggleEvent).newState === 'open') {
+    nextTick(() => {
+      popoverContentRef.value
+        ?.querySelector<HTMLElement>(focusableSelector)
+        ?.focus();
+    });
+  }
+}
+
+/**
+ * Focus that leaves the content or the trigger for the page closes the
+ * popover: Tab past the last element, or Shift+Tab from the trigger. A move
+ * between the two keeps it open.
+ */
+function handleFocusOut(event: FocusEvent) {
+  const next = event.relatedTarget;
+  if (!(next instanceof Node)) return;
+
+  if (
+    popoverContentRef.value?.contains(next) ||
+    triggerRef.value?.contains(next)
+  ) {
+    return;
+  }
+
+  hidePopover();
+}
 
 function handleMenuClick(item: MenuItem) {
   emit('click', item);
@@ -69,8 +102,6 @@ function handleMenuClick(item: MenuItem) {
 function hidePopover() {
   popoverContentRef.value?.hidePopover();
 }
-
-const triggerRef = useTemplateRef<HTMLButtonElement>('popoverTrigger');
 
 function focusElement() {
   triggerRef.value?.focus();
@@ -98,6 +129,7 @@ const emit = defineEmits<{
       ]"
       :style="computedStyle"
       :aria-describedby="ariaDescribedby"
+      @focusout="handleFocusOut"
     >
       <Icon v-if="loading" name="svg-spinners:90-ring-with-bg" />
       <Icon v-else :name="icon" />
@@ -130,28 +162,27 @@ const emit = defineEmits<{
       :data-placement="placement"
       :data-span="span"
       :style="contentStyle"
-      @beforetoggle="onToggle"
+      @toggle="onToggle"
+      @focusout="handleFocusOut"
     >
       <div class="popover-content">
-        <FocusLoop :is-visible="isOpen" :modal="false">
-          <slot name="default" />
+        <slot name="default" />
 
-          <MenuList
-            v-if="list?.length"
-            :list="list"
-            button-size="lg"
-            font-size="sm"
-            icon-size="lg"
-            :aria-labelledby="'popover-label-' + id"
-            @click="handleMenuClick($event)"
-          >
-            <template #menu-list-item="{ item }">
-              <slot name="menu-list-item" :item="item" />
-            </template>
-          </MenuList>
+        <MenuList
+          v-if="list?.length"
+          :list="list"
+          button-size="lg"
+          font-size="sm"
+          icon-size="lg"
+          :aria-labelledby="'popover-label-' + id"
+          @click="handleMenuClick($event)"
+        >
+          <template #menu-list-item="{ item }">
+            <slot name="menu-list-item" :item="item" />
+          </template>
+        </MenuList>
 
-          <slot name="content" />
-        </FocusLoop>
+        <slot name="content" />
       </div>
     </div>
   </div>
@@ -166,7 +197,7 @@ const emit = defineEmits<{
   justify-content: center;
   white-space: nowrap;
   border: 1px solid transparent;
-  border-radius: var(--radius);
+  border-radius: var(--popover-radius);
   transition-property: color, background-color, opacity;
   transition-duration: var(--duration-sm);
   font-size: var(--popover-font-size);
@@ -191,7 +222,7 @@ const emit = defineEmits<{
 }
 
 .popover-content-wrapper {
-  position-area: var(--placement, block-end);
+  position-area: var(--popover-placement, block-end);
   position-try-fallbacks:
     flip-block,
     flip-inline,
@@ -199,7 +230,7 @@ const emit = defineEmits<{
   position-try-order: most-block-size;
   margin: 0;
   inset: auto;
-  max-inline-size: var(--max-width, none);
+  max-inline-size: var(--popover-max-width, none);
   border: 1px solid var(--popover-border-color);
   border-radius: var(--radius-md);
   background-color: var(--color-card-bg);
@@ -250,7 +281,7 @@ const emit = defineEmits<{
 }
 
 .popover-content-wrapper[data-placement='top'] {
-  --placement: block-start;
+  --popover-placement: block-start;
   margin-block: 0.5rem;
 
   &:popover-open {
@@ -260,15 +291,15 @@ const emit = defineEmits<{
   }
 
   &[data-span='left'] {
-    position-area: var(--placement) span-inline-start;
+    position-area: var(--popover-placement) span-inline-start;
   }
   &[data-span='right'] {
-    position-area: var(--placement) span-inline-end;
+    position-area: var(--popover-placement) span-inline-end;
   }
 }
 
 .popover-content-wrapper[data-placement='bottom'] {
-  --placement: block-end;
+  --popover-placement: block-end;
   margin-block: 0.5rem;
 
   &:popover-open {
@@ -278,15 +309,15 @@ const emit = defineEmits<{
   }
 
   &[data-span='left'] {
-    position-area: var(--placement) span-inline-start;
+    position-area: var(--popover-placement) span-inline-start;
   }
   &[data-span='right'] {
-    position-area: var(--placement) span-inline-end;
+    position-area: var(--popover-placement) span-inline-end;
   }
 }
 
 .popover-content-wrapper[data-placement='left'] {
-  --placement: inline-start;
+  --popover-placement: inline-start;
   margin-inline-end: 0.5rem;
 
   &:popover-open {
@@ -296,15 +327,15 @@ const emit = defineEmits<{
   }
 
   &[data-span='top'] {
-    position-area: var(--placement) span-block-start;
+    position-area: var(--popover-placement) span-block-start;
   }
   &[data-span='bottom'] {
-    position-area: var(--placement) span-block-end;
+    position-area: var(--popover-placement) span-block-end;
   }
 }
 
 .popover-content-wrapper[data-placement='right'] {
-  --placement: inline-end;
+  --popover-placement: inline-end;
   margin-inline-start: 0.5rem;
 
   &:popover-open {
@@ -314,10 +345,10 @@ const emit = defineEmits<{
   }
 
   &[data-span='top'] {
-    position-area: var(--placement) span-block-start;
+    position-area: var(--popover-placement) span-block-start;
   }
   &[data-span='bottom'] {
-    position-area: var(--placement) span-block-end;
+    position-area: var(--popover-placement) span-block-end;
   }
 }
 
@@ -372,7 +403,6 @@ const emit = defineEmits<{
 }
 
 .popover-trigger-size--xxs {
-  --radius: var(--radius-sm) !important;
   position: relative;
   height: 1.25rem;
   min-width: 1.25rem;
@@ -401,7 +431,6 @@ const emit = defineEmits<{
 }
 
 .popover-trigger-size--xs {
-  --radius: var(--radius-sm) !important;
   height: 1.5rem;
   min-width: 1.5rem;
   font-size: var(--popover-font-size, var(--font-size-sm));

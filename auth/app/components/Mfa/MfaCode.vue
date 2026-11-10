@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * The six-digit code from the authenticator app. `one-time-code` lets the
+ * phone fill a code it received by SMS or mail, and a password manager that
+ * holds the secret (iCloud Keychain, 1Password, Bitwarden) fill the app's
+ * code; the browser's own autofill has nothing to offer here.
+ */
 const { mfaCredentials, mfaError, codeInputRef } = useMfa();
 </script>
 
@@ -9,7 +15,7 @@ const { mfaCredentials, mfaError, codeInputRef } = useMfa();
       v-model="mfaCredentials.code"
       required
       autofocus
-      autocomplete="off"
+      autocomplete="one-time-code"
       inputmode="numeric"
       pattern="[0-9]{6}"
       name="code"
@@ -18,18 +24,17 @@ const { mfaCredentials, mfaError, codeInputRef } = useMfa();
       :maxlength="6"
       :error-message="$t('mfa.challenge-invalid')"
       class="mfa-code-input"
-      data-1p-ignore
     />
 
-    <AuthError :data="mfaError" />
+    <ErrorMessage :data="mfaError" />
   </div>
 </template>
 
 <style>
-.mfa-code-confirmation {
-  .auth-error {
-    margin-block-start: 0rem;
-  }
+/* Centred under the code field, whatever an app gives the box elsewhere */
+.mfa-code-confirmation .error-message {
+  margin-block-start: 0;
+  margin-inline: auto;
 }
 
 .mfa-code-input {

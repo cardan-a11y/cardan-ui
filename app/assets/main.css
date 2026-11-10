@@ -97,7 +97,13 @@
     var(--cardan-error) 65%,
     var(--cardan-white)
   );
-  --color-red-graphic: var(--cardan-error);
+  /* The same mix as the text: the brand red is 2.2:1 on the track and
+     2.8:1 on the red surface, this is 3.8:1 and 4.9:1 */
+  --color-red-graphic: color-mix(
+    in srgb,
+    var(--cardan-error) 65%,
+    var(--cardan-white)
+  );
 
   /* Ochre: data and status only */
   --color-orange: var(--cardan-ochre-on-dark);
@@ -292,6 +298,8 @@
 
   /* Inline padding of the app, also of MobileMenu's content */
   --app-padding-inline: 0.75rem;
+  /* The height of the app header: UserMenu sits under it */
+  --app-header-height: 3.5rem;
 
   @media (min-width: 480px) {
     --app-padding-inline: 1.5rem;

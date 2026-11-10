@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** A recovery code, typed or pasted from where it was stored: nothing autofills it. */
 const { mfaCredentials, mfaError, recoveryCodeInputRef } = useMfa();
 </script>
 
@@ -13,18 +14,17 @@ const { mfaCredentials, mfaError, recoveryCodeInputRef } = useMfa();
       name="recovery_code"
       :label="$t('mfa.recovery-code')"
       class="mfa-recovery-code-input"
-      data-1p-ignore
     />
 
-    <AuthError :data="mfaError" />
+    <ErrorMessage :data="mfaError" />
   </div>
 </template>
 
 <style>
-.mfa-recovery-code-confirmation {
-  .auth-error {
-    margin-block-start: 0rem;
-  }
+/* Centred under the code field, whatever an app gives the box elsewhere */
+.mfa-recovery-code-confirmation .error-message {
+  margin-block-start: 0;
+  margin-inline: auto;
 }
 
 .mfa-recovery-code-input {

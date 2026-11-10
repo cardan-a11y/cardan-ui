@@ -5,7 +5,9 @@
  *
  *   gate        PreToolUse on Bash: blocks `git commit`, `git push` and
  *               `gh pr create` until the cardan:cardan-reviewer agent has
- *               reviewed the files exactly as they are now. A change that
+ *               reviewed the files exactly as they are now, or the
+ *               cardan:plugin-reviewer agent has, for a change to the
+ *               Claude Code setup alone (see `setupOnly`). A change that
  *               touches only documentation (Markdown outside `plugins/`
  *               and `.claude/`) passes without a review, and so do a PR
  *               from a branch with nothing uncommitted or unpushed and a
@@ -30,7 +32,8 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const PLUGIN_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const REVIEWER = /^(cardan:)?cardan-reviewer$/;
+const REVIEWER = /^(cardan:)?(cardan|plugin)-reviewer$/;
+const PLUGIN_REVIEWER = /^(cardan:)?plugin-reviewer$/;
 
 /**
  * `git commit`, `git push` or `gh pr create` where a command starts: at the
@@ -147,6 +150,29 @@ function markdownOnly(root) {
     const remote = nearestRemote(root);
     if (remote) add(git(root, 'diff', '--name-only', `${remote}...HEAD`));
     return files.size > 0 && [...files].every(isDocumentation);
+  } catch {
+    return false;
+  }
+}
+
+/** A file of the Claude Code setup: the cardan plugin, or `.claude/`. */
+function isSetup(file) {
+  return /^(plugins|\.claude-plugin|\.claude)\//.test(file);
+}
+
+/**
+ * Whether every uncommitted change (the working tree against HEAD and the
+ * untracked files) is to the Claude Code setup or documentation: the change
+ * the cardan:plugin-reviewer may review instead of the cardan:cardan-reviewer.
+ * Anything unclear counts as code.
+ */
+function setupOnly(root) {
+  try {
+    const files = [
+      ...git(root, 'diff', '--name-only', 'HEAD').split('\n'),
+      ...git(root, 'ls-files', '--others', '--exclude-standard').split('\n'),
+    ].filter(Boolean);
+    return files.length > 0 && files.every((file) => isSetup(file) || isDocumentation(file));
   } catch {
     return false;
   }
@@ -273,7 +299,8 @@ function gate() {
     block(
       'Blocked: the files as they are now have not been reviewed. Run the ' +
         'cardan:cardan-reviewer agent as described in the Cardan guidelines ("Review Before ' +
-        'Commit, Push and PR"); it records the reviewed state when it finishes, and any change ' +
+        'Commit, Push and PR"), or the cardan:plugin-reviewer agent for a change to plugins/, ' +
+        '.claude-plugin/ or .claude/ alone; it records the reviewed state when it finishes, and any change ' +
         'after that needs a new review. Only a change to documentation alone (Markdown outside ' +
         'plugins/ and .claude/), a PR from a branch with nothing uncommitted or unpushed, and a ' +
         'push that sends only commits already on origin/main or origin/develop need none, each ' +
@@ -409,6 +436,15 @@ function mark() {
     return;
   }
 
+  if (PLUGIN_REVIEWER.test(input.agent_type ?? '') && !setupOnly(root)) {
+    process.stderr.write(
+      'cardan-review: the uncommitted change is empty or touches more than plugins/, .claude-plugin/ ' +
+        'and .claude/, which the cardan:plugin-reviewer does not cover, so the review was not ' +
+        'recorded; run the cardan:cardan-reviewer.\n',
+    );
+    return;
+  }
+
   const tree = workingTree(root);
   if (started === tree) {
     writeFileSync(markerPath(root), tree + '\n');
@@ -428,8 +464,11 @@ function guidelines() {
   const root = sessionRoot(readInput());
   if (!root || (!existsSync(join(root, 'REVIEW.md')) && !repositoryName(root))) return;
 
+  // `${CLAUDE_PLUGIN_ROOT}` in the guidelines becomes the plugin's folder,
+  // so a session can run the plugin's scripts wherever it is installed.
   const skill = readFileSync(join(PLUGIN_ROOT, 'skills', 'guidelines', 'SKILL.md'), 'utf8');
-  process.stdout.write(skill.replace(/^---\n[\s\S]*?\n---\n/, '').trim() + '\n');
+  const text = skill.replace(/^---\n[\s\S]*?\n---\n/, '').replaceAll('${CLAUDE_PLUGIN_ROOT}', PLUGIN_ROOT);
+  process.stdout.write(text.trim() + '\n');
 }
 
 const command = process.argv[2];

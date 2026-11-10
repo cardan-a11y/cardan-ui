@@ -7,7 +7,7 @@ a Nuxt layer. cardan-auditor-nuxt (Cardan Auditor), cardan-lms-nuxt
 cardan-shop-nuxt extends it too, but is being phased out soon: leave it out
 of the review. Cardan is an accessibility-first company: an accessibility
 regression in this library is a production bug in every project, not polish.
-CLAUDE.md and the Cardan guidelines (the `cardan:guidelines` skill) hold the conventions;
+CLAUDE.md holds the conventions;
 MIGRATION.md tells projects how to upgrade. The `auth/` directory is a
 separate layer, Cardan Auth UI, used by cardan-lms-nuxt and
 cardan-auditor-nuxt; its documentation is `auth/README.md`.
@@ -96,18 +96,22 @@ happens.
 - Components use design tokens, never hard-coded colors, sizes, radii or
   durations. Exceptions: the fixed artwork colors in `CardanLogo`, the black
   video area in `VideoPlayer`/`YouTube` and the hue slider in `RangeInput`.
-- Tokens are used without fallbacks: `var(--token)`, not
-  `var(--token, var(--other))`.
+- A shared token is read bare: `var(--color-text)`, not
+  `var(--new-token, var(--old-token))`. A fallback is fine as the default of a
+  component's own property that a prop or a parent may set:
+  `var(--button-radius, var(--radius-md))`.
 - Components never use the `--cardan-*` primitives; only the semantic
   `--color-*` tokens in `main.css` do.
 - Text and icons on tinted (`-bg`) surfaces use the matching
   `--color-*-text` token.
-- Custom CSS only: no Tailwind classes; nested classes, logical properties
+- Custom CSS: nested classes, logical properties
   (`margin-inline`, `padding-block`, …), mobile-first.
 - The `cardan` plugin under `plugins/cardan` is what every Cardan project
   loads: a change to its guidelines, reviewer, hook or skills reaches them
-  at their next plugin update, so it is reviewed like a change to a
-  component. `claude plugin validate ./plugins/cardan` must pass.
+  at their next plugin update. A change to it alone goes to the
+  `cardan:plugin-reviewer`; in a change with other files it is reviewed
+  here like a component, and `claude plugin validate ./plugins/cardan`
+  must pass.
 - Common translations belong here: a string that several projects need
   (buttons like Close, Save or Cancel, generic labels and errors) goes into
   the layer's locale files, as the auth strings did, so projects don't each
@@ -119,9 +123,6 @@ happens.
   `declare global`.
 - No new external dependencies unless clearly necessary, and nothing loaded
   from a CDN at runtime (projects run a strict Content Security Policy).
-- New Nuxt-only APIs in components (`NuxtLink`, `useState`, `useNuxtApp`,
-  `ClientOnly`, …) are a 🟡 Nit: the components will also be imported in
-  Inertia.js apps, so prefer plain Vue where it is just as simple.
 - Icons are Material Symbols (`material-symbols:*-outline-rounded` first)
   and decorative unless a text label is missing.
 

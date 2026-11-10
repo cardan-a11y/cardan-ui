@@ -13,7 +13,9 @@ function lockHeight(element: Element) {
 </script>
 
 <template>
-  <Teleport to="body">
+  <!-- Nuxt renders a teleport to #teleports on the server too. One polite
+       live region for every toast: the manager, so none is announced twice -->
+  <Teleport to="#teleports">
     <div class="toast-manager" aria-live="polite">
       <TransitionGroup name="toast" @before-leave="lockHeight">
         <Toast

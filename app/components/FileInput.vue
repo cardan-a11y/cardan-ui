@@ -19,6 +19,7 @@ const {
   name = undefined,
   placeholderUrl = undefined,
   accept = undefined,
+  disabled = false,
   id = useId(),
 } = defineProps<{
   label: string;
@@ -84,24 +85,69 @@ const typesLabel = computed(() =>
 
 const maxSizeLabel = computed(() => formatFileSize(maxFileSize * 1000));
 
-const showError = computed(
-  () => !validity.value && (showInvalid || mode === 'document'),
+const formShowInvalid = inject(formShowInvalidKey, ref(false));
+
+/** A required image field without a file, once its form shows the errors */
+const missing = computed(
+  () =>
+    required &&
+    mode !== 'document' &&
+    !model.value &&
+    (showInvalid || formShowInvalid.value),
 );
 
+// A rejected file shows its error at once, in both modes
+const showError = computed(() => !validity.value || missing.value);
+
+const shownErrorMessage = computed(
+  () => errorMessage.value || t('form.missing-value', { item: label }),
+);
+
+const wrapperRef = useTemplateRef<HTMLElement>('wrapper');
+
+/** A paste anywhere on the page, unless it belongs to another field */
+function takesPaste(event: ClipboardEvent) {
+  const wrapper = wrapperRef.value;
+  const target = event.target as Element | null;
+  const active = document.activeElement;
+  if (disabled || !wrapper || !target) return false;
+
+  // Into a text field, an editor or another FileInput
+  if (
+    !wrapper.contains(target) &&
+    (target.closest('input, textarea, select, [contenteditable]') ||
+      target.closest('.file-input-wrapper'))
+  ) {
+    return false;
+  }
+
+  // With focus in another FileInput, that one takes it
+  const focusedWrapper = active?.closest('.file-input-wrapper');
+  if (focusedWrapper && focusedWrapper !== wrapper) return false;
+
+  // One field per paste: the first one mounted, unless one has focus
+  const taken = event as ClipboardEvent & { fileInputTaken?: boolean };
+  if (taken.fileInputTaken) return false;
+  taken.fileInputTaken = true;
+
+  return true;
+}
+
 async function handlePaste(event: ClipboardEvent) {
-  if (mode === 'document') return;
+  if (mode === 'document' || !takesPaste(event)) return;
 
+  // A paste of text leaves the field, and the input a form posts, as they are
   const file = event.clipboardData?.files?.[0];
+  if (!file) return;
 
-  if (fileInputRef.value?.files && event.clipboardData?.files) {
+  // The input holds the pasted file like a chosen one
+  if (fileInputRef.value && event.clipboardData) {
     fileInputRef.value.files = event.clipboardData.files;
   }
 
-  if (file) {
-    // A parent reads `validity` on paste, so the check goes first
-    await handleFile(file);
-    emit('paste', file);
-  }
+  // A parent reads `validity` on paste, so the check goes first
+  await handleFile(file);
+  emit('paste', file);
 }
 
 onMounted(() => {
@@ -132,6 +178,9 @@ const emit = defineEmits<{
 
 const errorMessage = ref('');
 
+/** The file being compressed; a result for an earlier file is dropped */
+let compressing: File | undefined;
+
 function handleDragOver() {
   dragover.value = true;
 }
@@ -147,6 +196,7 @@ function handleDragLeave() {
  */
 function compressFile(file: File) {
   model.value = file;
+  compressing = file;
 
   if (!file.type.includes('image') || file.type.includes('gif')) return;
 
@@ -157,6 +207,8 @@ function compressFile(file: File) {
     convertSize: convertSize,
 
     success(result: File) {
+      // Another file was chosen, or this one removed, in the meantime
+      if (compressing !== file) return;
       model.value = new File([result], result.name, { type: result.type });
     },
   });
@@ -203,6 +255,24 @@ function clearInput() {
   if (fileInputRef.value) fileInputRef.value.value = '';
 }
 
+/**
+ * After a rejected file, the input holds the value again, so a form that
+ * posts the input (FormData) sends the file the field shows; without a value
+ * the input is empty, and the same file can be chosen again either way
+ */
+function restoreInput() {
+  const input = fileInputRef.value;
+  if (!input) return;
+
+  if (model.value && typeof DataTransfer !== 'undefined') {
+    const transfer = new DataTransfer();
+    transfer.items.add(model.value);
+    input.files = transfer.files;
+  } else {
+    clearInput();
+  }
+}
+
 async function handleFile(file?: File) {
   if (!file) return;
 
@@ -214,6 +284,13 @@ async function handleFile(file?: File) {
   if (mode === 'document') {
     if (validity.value) emit('select', file);
     clearInput();
+    return;
+  }
+
+  // A rejected file is not the value: the field keeps what it had, in the
+  // input too, and shows the error
+  if (!validity.value) {
+    restoreInput();
     return;
   }
 
@@ -232,6 +309,7 @@ function handleFileInput(event: Event) {
 function reset() {
   validity.value = true;
   errorMessage.value = '';
+  compressing = undefined;
   clearInput();
 
   if (imagePreview.value?.startsWith('blob:')) {
@@ -257,7 +335,10 @@ function removeFile() {
 </script>
 
 <template>
-  <div :class="['file-input-wrapper', `file-input-shape--${shape}`]">
+  <div
+    ref="wrapper"
+    :class="['file-input-wrapper', `file-input-shape--${shape}`]"
+  >
     <label
       v-show="!hideZone"
       :for="id"
@@ -285,7 +366,7 @@ function removeFile() {
         "
         :disabled="disabled"
         :aria-describedby="
-          validity ? `instruction-${id}` : `instruction-${id} error-${id}`
+          showError ? `instruction-${id} error-${id}` : `instruction-${id}`
         "
         :aria-invalid="showError || undefined"
         :class="[showError && 'show-invalid']"
@@ -295,9 +376,11 @@ function removeFile() {
         @change="handleFileInput"
       />
 
+      <!-- The look of the control, which is the input over it -->
       <button
         tabindex="-1"
         type="button"
+        aria-hidden="true"
         :class="[
           'file-input-button',
           imagePreview && 'has-image-preview',
@@ -328,7 +411,7 @@ function removeFile() {
       </button>
     </div>
 
-    <div v-if="model" class="file-preview" :aria-describedby="id">
+    <div v-if="model" class="file-preview">
       <div>
         <span class="file-name">{{ model.name }}</span>
 
@@ -346,7 +429,7 @@ function removeFile() {
       />
     </div>
 
-    <InputError :id="id" :error-text="errorMessage" />
+    <InputError :id="id" :error-text="shownErrorMessage" />
   </div>
 </template>
 

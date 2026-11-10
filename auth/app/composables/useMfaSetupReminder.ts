@@ -10,6 +10,11 @@ type MfaUserFields = {
   mfa_required?: boolean;
 };
 
+const STORAGE_KEY = 'mfa-setup-reminder';
+
+/** Whether the pending reminder was read from sessionStorage, once per page load */
+let storageRead = false;
+
 /**
  * Whether the MFA setup page stands between the user and the app.
  *
@@ -28,13 +33,18 @@ type MfaUserFields = {
 export function useMfaSetupReminder() {
   const { user } = useAuth();
 
-  const fields = computed(
-    () => user.value?.data as MfaUserFields | undefined,
-  );
+  const fields = computed(() => user.value?.data as MfaUserFields | undefined);
 
-  const pendingFor = useState<string | null>('mfaSetupReminder', () =>
-    import.meta.client ? sessionStorage.getItem('mfa-setup-reminder') : null,
-  );
+  const pendingFor = useState<string | null>('mfaSetupReminder', () => null);
+
+  // Read on the client, outside the initializer: on a server-rendered page the
+  // initializer runs on the server, where there is no sessionStorage, and its
+  // null reaches the client in the payload. Nothing renders from it, so a read
+  // during hydration changes no markup.
+  if (import.meta.client && !storageRead) {
+    storageRead = true;
+    pendingFor.value = sessionStorage.getItem(STORAGE_KEY);
+  }
 
   const mfaEnabled = computed(() => !!fields.value?.mfa_enabled);
   const mfaRequired = computed(() => !!fields.value?.mfa_required);
@@ -47,8 +57,13 @@ export function useMfaSetupReminder() {
       !fields.value?.mfa_exempt,
   );
 
+  /**
+   * Required and still to be set up. An exempted account is never required,
+   * whatever the role says: the setup page would send it on, and the
+   * middleware straight back.
+   */
   const isMfaSetupRequired = computed(
-    () => mfaRequired.value && fields.value?.mfa_enabled === false,
+    () => needsMfaSetup.value && mfaRequired.value,
   );
 
   const isReminderPending = computed(
@@ -63,12 +78,12 @@ export function useMfaSetupReminder() {
     if (!email) return;
 
     pendingFor.value = email;
-    sessionStorage.setItem('mfa-setup-reminder', email);
+    sessionStorage.setItem(STORAGE_KEY, email);
   }
 
   function dismissMfaSetup() {
     pendingFor.value = null;
-    sessionStorage.removeItem('mfa-setup-reminder');
+    sessionStorage.removeItem(STORAGE_KEY);
   }
 
   return {

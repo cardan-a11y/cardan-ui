@@ -1,5 +1,8 @@
 <script setup lang="ts">
 const colorMode = useColorMode();
+
+// Per instance: a menu and a settings page may both show the select
+const id = useId();
 </script>
 
 <template>
@@ -12,14 +15,14 @@ const colorMode = useColorMode();
       <ul role="list" class="theme-options-list">
         <li class="color-theme-option">
           <input
-            id="color-theme-light"
+            :id="`${id}-light`"
             v-model="colorMode.preference"
-            name="color-theme"
+            :name="id"
             value="light"
             type="radio"
           />
 
-          <label for="color-theme-light">
+          <label :for="`${id}-light`">
             <Icon name="material-symbols:light-mode-outline-rounded" />
 
             <span>
@@ -30,14 +33,14 @@ const colorMode = useColorMode();
 
         <li class="color-theme-option">
           <input
-            id="color-theme-dark"
+            :id="`${id}-dark`"
             v-model="colorMode.preference"
-            name="color-theme"
+            :name="id"
             value="dark"
             type="radio"
           />
 
-          <label for="color-theme-dark">
+          <label :for="`${id}-dark`">
             <Icon name="material-symbols:dark-mode-outline-rounded" />
 
             <span>
@@ -48,14 +51,14 @@ const colorMode = useColorMode();
 
         <li class="color-theme-option">
           <input
-            id="color-theme-system"
+            :id="`${id}-system`"
             v-model="colorMode.preference"
-            name="color-theme"
+            :name="id"
             value="system"
             type="radio"
           />
 
-          <label for="color-theme-system">
+          <label :for="`${id}-system`">
             <Icon name="material-symbols:computer-outline-rounded" />
 
             <span>
@@ -69,23 +72,25 @@ const colorMode = useColorMode();
 </template>
 
 <style>
-:where(label) {
-  font-weight: var(--font-weight-medium);
-  -webkit-user-select: none;
-  user-select: none;
-}
+/* Its own base styles for the form elements, so it looks the same with or
+   without a form field on the page */
+.theme-select-wrapper {
+  label,
+  legend {
+    font-weight: var(--font-weight-medium);
+    -webkit-user-select: none;
+    user-select: none;
+  }
 
-:where(legend) {
-  padding: 0;
-  font-weight: var(--font-weight-medium);
-  -webkit-user-select: none;
-  user-select: none;
-}
+  legend {
+    padding: 0;
+  }
 
-:where(fieldset) {
-  border: none;
-  padding: 0;
-  margin-inline: 0;
+  fieldset {
+    border: none;
+    padding: 0;
+    margin-inline: 0;
+  }
 }
 
 .color-theme-fieldset {

@@ -51,7 +51,7 @@ const password = ref('');
 const showPassword = ref(false);
 const submitting = ref(false);
 const shaking = ref(false);
-const error = ref<AuthErrorData | null>(null);
+const error = ref<ApiErrorData | null>(null);
 
 const shakeStyle = computed(() =>
   shake && shaking.value ? 'animation: var(--animation-shake)' : undefined,
@@ -87,7 +87,7 @@ async function handleLogin() {
 
     if (target !== false) return await navigateTo(target);
   } catch (e) {
-    error.value = extractAuthError(e);
+    error.value = extractApiError(e);
     shaking.value = true;
     emit('error', error.value);
   } finally {
@@ -108,7 +108,7 @@ const emit = defineEmits<{
   success: [];
   /** Credentials accepted, but a second factor is required. */
   twoFactor: [];
-  error: [error: AuthErrorData | null];
+  error: [error: ApiErrorData | null];
 }>();
 
 defineExpose({ submitting, error });
@@ -151,7 +151,7 @@ defineExpose({ submitting, error });
 
     <template v-if="errorPosition === 'above-submit'">
       <slot name="error" :error="error">
-        <AuthError :data="error" />
+        <ErrorMessage :data="error" />
       </slot>
     </template>
 
@@ -169,7 +169,7 @@ defineExpose({ submitting, error });
 
     <template v-if="errorPosition === 'below-submit'">
       <slot name="error" :error="error">
-        <AuthError :data="error" />
+        <ErrorMessage :data="error" />
       </slot>
     </template>
 
@@ -187,8 +187,9 @@ defineExpose({ submitting, error });
     background-color: var(--color-grey-light);
   }
 
-  .auth-error {
-    margin-block-start: 0rem;
+  /* The form places its error itself, whatever an app gives the box elsewhere */
+  .error-message {
+    margin-block-start: 0;
     min-width: 100%;
     max-width: none;
   }

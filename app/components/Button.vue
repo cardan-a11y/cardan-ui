@@ -14,6 +14,7 @@ const {
   icon = undefined,
   download = undefined,
   hideExternalIcon = false,
+  loading = false,
   iconPos = 'start',
   variant = 'secondary',
   size = 'md',
@@ -42,16 +43,38 @@ const {
 }>();
 
 const computedStyle = computed(() => ({
-  '--radius': radius && `var(--radius-${radius})`,
+  '--button-radius': radius && `var(--radius-${radius})`,
   '--button-font-size': fontSize && `var(--font-size-${fontSize})`,
   '--button-icon-size': iconSize && `var(--font-size-${iconSize})`,
 }));
+
+const { t } = useI18n();
+
+const opensNewWindow = computed(() => !download && target === '_blank');
+
+// An aria-label replaces the content, hidden text included; a title would
+// be read once more as the description, so the name is the one place
+const computedAriaLabel = computed(() =>
+  ariaLabel && opensNewWindow.value
+    ? `${ariaLabel} (${t('aria.open-new-window')})`
+    : ariaLabel,
+);
 
 const showExternalIcon = computed(() => {
   return !hideExternalIcon && target === '_blank';
 });
 
-function handleClick() {
+/**
+ * A loading button stays focusable instead of disabled, so it ignores its
+ * clicks itself: no event, no navigation, no submit. The link listens in the
+ * capture phase, before NuxtLink's own click handler navigates.
+ */
+function handleClick(event: Event) {
+  if (loading) {
+    event.preventDefault();
+    return;
+  }
+
   emit('click');
 }
 const buttonRef = useTemplateRef<HTMLButtonElement | HTMLAnchorElement>(
@@ -75,11 +98,12 @@ const emit = defineEmits<{
     ref="button"
     :to="disabled ? undefined : to || href"
     :role="disabled ? 'link' : undefined"
-    :aria-disabled="disabled || undefined"
+    :aria-disabled="disabled || loading || undefined"
+    :aria-busy="loading || undefined"
     :target="target"
     :external="external"
     :download="download"
-    :aria-label="ariaLabel"
+    :aria-label="computedAriaLabel"
     :class="[
       'button',
       `button-size--${size}`,
@@ -90,10 +114,7 @@ const emit = defineEmits<{
       (loading || disabled) && 'disabled',
     ]"
     :style="computedStyle"
-    :title="
-      !download && target === '_blank' ? $t('aria.open-new-window') : undefined
-    "
-    @click="handleClick"
+    @click.capture="handleClick"
   >
     <slot v-if="!showExternalIcon" name="icon" />
 
@@ -115,13 +136,20 @@ const emit = defineEmits<{
     </template>
 
     <slot name="default" />
+
+    <!-- In the name, after the label, as a link in a markdown text has it -->
+    <span v-if="opensNewWindow" class="visuallyhidden">
+      ({{ $t('aria.open-new-window') }})
+    </span>
   </NuxtLink>
 
   <button
     v-else
     ref="button"
     :type="type"
-    :disabled="loading || disabled"
+    :disabled="disabled"
+    :aria-disabled="loading || undefined"
+    :aria-busy="loading || undefined"
     :aria-label="ariaLabel"
     :class="[
       'button',
@@ -130,6 +158,7 @@ const emit = defineEmits<{
       `icon-position--${iconPos}`,
       hideLabel && 'button--icon-only',
       loading && 'button--loading',
+      loading && 'disabled',
     ]"
     :style="computedStyle"
     :title="disabled ? undefined : title"
@@ -156,7 +185,7 @@ const emit = defineEmits<{
 
 <style>
 .button {
-  border-radius: var(--radius, var(--radius-md));
+  border-radius: var(--button-radius, var(--radius-md));
   -webkit-tap-highlight-color: transparent;
   position: relative;
   display: inline-flex;
@@ -476,7 +505,7 @@ const emit = defineEmits<{
 }
 
 .button-variant--link {
-  --radius: 0 !important;
+  border-radius: 0;
   overflow-wrap: anywhere;
   min-height: 0;
   height: auto;
@@ -608,19 +637,40 @@ const emit = defineEmits<{
     }
   }
 
-  @media (prefers-reduced-motion: no-preference) {
-    @media (pointer: coarse) {
-      text-decoration: underline;
-      text-underline-offset: 0.25em;
+  @media (pointer: coarse) {
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+
+  @media (pointer: fine) {
+    border-radius: 0;
+    background-image: linear-gradient(var(--button-underline-color));
+    background-repeat: no-repeat;
+    background-size: 0% var(--button-underline-thickness);
+    background-position: calc(100% - 0.25rem) bottom;
+
+    &:hover {
+      background-position: 0.25rem bottom;
+      background-size: calc(100% - 0.5rem) var(--button-underline-thickness);
     }
 
-    @media (pointer: fine) {
-      border-radius: 0;
-      background-image: linear-gradient(var(--button-underline-color));
-      background-repeat: no-repeat;
-      background-size: 0% var(--button-underline-thickness);
-      background-position: calc(100% - 0.25rem) bottom;
+    /* The current page keeps its underline, with or without motion */
+    &.router-link-exact-active {
+      --button-underline-color: var(--button-active-color);
+      color: var(--button-active-color);
+      background-size: calc(100% - 0.5rem) var(--button-underline-thickness);
 
+      .iconify {
+        color: var(--button-active-color);
+      }
+    }
+
+    &:focus-visible {
+      border-radius: var(--radius-xs);
+    }
+
+    /* The underline grows in; with reduced motion it just appears */
+    @media (prefers-reduced-motion: no-preference) {
       transition-timing-function: ease-in-out;
       transition:
         color var(--duration-sm),
@@ -628,26 +678,10 @@ const emit = defineEmits<{
         border-color var(--duration-sm) var(--duration-sm);
 
       &:hover {
-        background-position: 0.25rem bottom;
-        background-size: calc(100% - 0.5rem) var(--button-underline-thickness);
         transition:
           color var(--duration-sm),
           background-size var(--duration-sm),
           border-color var(--duration-sm);
-      }
-
-      &.router-link-exact-active {
-        --button-underline-color: var(--button-active-color);
-        color: var(--button-active-color);
-        background-size: calc(100% - 0.5rem) var(--button-underline-thickness);
-
-        .iconify {
-          color: var(--button-active-color);
-        }
-      }
-
-      &:focus-visible {
-        border-radius: var(--radius-xs);
       }
     }
   }

@@ -23,6 +23,7 @@ const {
   tabindex = undefined,
   itemsSelectedLabel = undefined,
   instruction = undefined,
+  showInvalid = false,
 } = defineProps<{
   mode?: 'single' | 'multiple' | 'tags';
   id?: string;
@@ -40,6 +41,7 @@ const {
   valueKey?: string;
   labelKey?: string;
   disabledKey?: string;
+  /** After the count, instead of "items selected" */
   itemsSelectedLabel?: string;
   instruction?: string;
   size?: InputSize;
@@ -47,19 +49,56 @@ const {
 
 const multiSelectRef = useTemplateRef('multiselect');
 
-// The error message is only rendered for required fields
+const hasValue = computed(() =>
+  Array.isArray(model.value)
+    ? model.value.length > 0
+    : model.value !== undefined && model.value !== null && model.value !== '',
+);
+
+const formShowInvalid = inject(formShowInvalidKey, ref(false));
+
+/** The error text shows after a failed submit */
+const errorShown = computed(
+  () => required && !hasValue.value && (showInvalid || formShowInvalid.value),
+);
+
+// The error describes the field only while it shows
 const computedAriaDescribedby = computed(
   () =>
-    [instruction && `instruction-${id}`, required && id && `error-${id}`]
+    [instruction && `instruction-${id}`, errorShown.value && `error-${id}`]
       .filter(Boolean)
       .join(' ') || undefined,
 );
+
+/**
+ * The library puts an attribute given to the component on its wrapper, and
+ * only `aria` reaches the combobox. It names a searchable combobox by the
+ * selected options, so the label is added to that name: "Cheese, Ham
+ * Toppings" once something is selected, and the label alone before.
+ */
+const aria = computed(() => ({
+  'aria-placeholder': null,
+  'aria-multiselectable': null,
+  'aria-labelledby': `label-${id}`,
+  'aria-describedby': computedAriaDescribedby.value,
+  'aria-invalid': errorShown.value || undefined,
+}));
+
+/**
+ * A required field has a hidden input that carries the constraint, which a
+ * form focuses when it reports the empty field: focus goes on to the control
+ */
+function handleFocusIn(event: FocusEvent) {
+  const target = event.target as HTMLElement;
+  if (target.classList.contains('multiselect-fake-input')) focusElement();
+}
 
 function formatMultipleLabels(values: Record<string, string>[]) {
   if (values.length === 1) {
     return values[0]?.[labelKey];
   }
-  return `${values.length} ${itemsSelectedLabel || t('multiselect.items-selected')}`;
+  if (itemsSelectedLabel) return `${values.length} ${itemsSelectedLabel}`;
+  return t('multiselect.items-selected', { count: values.length });
 }
 
 function selectAll() {
@@ -157,7 +196,9 @@ function preventEscape(event: KeyboardEvent) {
     :required="required"
     :disabled="disabled"
     :instruction="instruction"
-    :error-text="required ? $t('form.missing-value', { item: label }) : undefined"
+    :error-text="
+      required ? $t('form.missing-value', { item: label }) : undefined
+    "
     :show-invalid="showInvalid"
   >
     <Multiselect
@@ -176,13 +217,10 @@ function preventEscape(event: KeyboardEvent) {
       :label="labelKey"
       :value-prop="valueKey"
       :disabled-prop="disabledKey"
-      :aria-describedby="computedAriaDescribedby"
-      :aria="{
-        'aria-placeholder': null,
-        'aria-multiselectable': null,
-      }"
+      :aria="aria"
       :multiple-label="formatMultipleLabels"
       :open-direction="fixedOpenDirection ?? openDirection"
+      @focusin="handleFocusIn"
       @open="
         isExpanded = true;
         placeDropdown();

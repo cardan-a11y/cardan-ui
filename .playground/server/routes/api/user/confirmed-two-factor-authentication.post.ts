@@ -6,9 +6,9 @@ export default defineEventHandler(async (event) => {
     // The body Laravel sends for a failed validation, not H3's error format
     setResponseStatus(event, 422);
     return {
-      message: 'The provided two factor authentication code was invalid.',
+      message: 'The provided code is invalid.',
       errors: {
-        code: ['The provided two factor authentication code was invalid.'],
+        code: ['The provided code is invalid.'],
       },
     };
   }
