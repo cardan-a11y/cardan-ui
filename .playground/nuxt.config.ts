@@ -104,7 +104,7 @@ export default defineNuxtConfig({
     port: 3003,
   },
 
-  // As in cardan-lms-nuxt and cardan-auditor-nuxt, so the layer's typecheck
+  // As in cardan-academy-nuxt and cardan-auditor-nuxt, so the layer's typecheck
   // and build see what theirs see, such as typed routes
   future: {
     compatibilityVersion: 5,

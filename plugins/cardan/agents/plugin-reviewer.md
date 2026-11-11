@@ -40,7 +40,7 @@ reaches every project at its next plugin update.
    - A skill or agent description that would not make Claude use it when
      it should, or would when it should not.
    - Text in the shared guidelines that is wrong for one of the projects
-     (cardan-ui, cardan-lms-nuxt, cardan-auditor-nuxt, cardan-cms-nuxt,
+     (cardan-ui, cardan-academy-nuxt, cardan-auditor-nuxt, cardan-cms-nuxt,
      cardan-support-nuxt): their branches, scripts and ports differ.
    - In `.claude/settings.json`: a permission that lets a gated command or
      a destructive one run unasked, or a secret.

@@ -56,8 +56,8 @@ function shellPath(argument) {
 
 /**
  * The directory a command runs in at position `end` of `command`, after
- * the `cd`s before it: `cd cardan-lms-nuxt && git commit` commits in
- * cardan-lms-nuxt, not in the directory the session started in.
+ * the `cd`s before it: `cd cardan-academy-nuxt && git commit` commits in
+ * cardan-academy-nuxt, not in the directory the session started in.
  */
 function directoryAt(command, end, cwd) {
   let dir = cwd;
