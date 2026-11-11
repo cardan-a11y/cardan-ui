@@ -1,7 +1,7 @@
 # Review instructions
 
 This is cardan-ui, the accessible Vue component library of Cardan, shipped as
-a Nuxt layer. cardan-auditor-nuxt (Cardan Auditor), cardan-lms-nuxt
+a Nuxt layer. cardan-auditor-nuxt (Cardan Auditor), cardan-academy-nuxt
 (Cardan Academy), cardan-cms-nuxt (cardan.com) and cardan-support-nuxt
 (support.cardan.com) extend it, so a change here reaches all of them at once.
 cardan-shop-nuxt extends it too, but is being phased out soon: leave it out
@@ -9,7 +9,7 @@ of the review. Cardan is an accessibility-first company: an accessibility
 regression in this library is a production bug in every project, not polish.
 CLAUDE.md holds the conventions;
 MIGRATION.md tells projects how to upgrade. The `auth/` directory is a
-separate layer, Cardan Auth UI, used by cardan-lms-nuxt and
+separate layer, Cardan Auth UI, used by cardan-academy-nuxt and
 cardan-auditor-nuxt; its documentation is `auth/README.md`.
 
 ## What Important means here

@@ -611,7 +611,7 @@ useHead({ title: 'Changelog' });
         <li>
           The cardan Claude Code plugin: the release skill also opens the
           release pull request from <code>develop</code> into
-          <code>main</code> in Cardan LMS and Cardan Auditor, the guidelines
+          <code>main</code> in Cardan Academy and Cardan Auditor, the guidelines
           describe the branches and releases of each project, and the review
           hook lets a pull request from a pushed branch through without a new
           review

@@ -56,7 +56,7 @@ const componentIcons = [
 ];
 
 /**
- * The icons that two or more of the Cardan projects use (cardan-lms-nuxt,
+ * The icons that two or more of the Cardan projects use (cardan-academy-nuxt,
  * cardan-auditor-nuxt, cardan-cms-nuxt and cardan-support-nuxt, November 2026).
  */
 const projectIcons = [

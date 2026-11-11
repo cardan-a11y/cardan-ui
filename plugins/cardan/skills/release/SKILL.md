@@ -1,6 +1,6 @@
 ---
 name: release
-description: Release in a Cardan repository. In cardan-ui, a new version: version, changelog, migration notes, the plugin, review and pull request. In a project that releases from develop (cardan-lms-nuxt, cardan-auditor-nuxt), uncommitted work first through its own reviewed PR into develop, then the pull request from develop into main with the merged PRs as its description, and main back into develop after a merge.
+description: Release in a Cardan repository. In cardan-ui, a new version: version, changelog, migration notes, the plugin, review and pull request. In a project that releases from develop (cardan-academy-nuxt, cardan-auditor-nuxt), uncommitted work first through its own reviewed PR into develop, then the pull request from develop into main with the merged PRs as its description, and main back into develop after a merge.
 disable-model-invocation: true
 ---
 
