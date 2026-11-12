@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { computed } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
-import { Button } from '#components';
+import { Button, NuxtLink } from '#components';
 import { checkA11y } from '../a11y';
 
 describe('Button', () => {
@@ -63,5 +64,39 @@ describe('Button', () => {
     expect(link.attributes('target')).toBe('_blank');
     expect(link.get('.visuallyhidden').text()).toBe('(open in new window)');
     expect(await checkA11y()).toHaveNoViolations();
+  });
+
+  it('keeps the current page on a disabled link, which has no href', async () => {
+    // The link state NuxtLink would have for the current page
+    const useLink = vi.spyOn(NuxtLink, 'useLink').mockReturnValue({
+      isActive: computed(() => true),
+      isExactActive: computed(() => true),
+    } as unknown as ReturnType<typeof NuxtLink.useLink>);
+
+    const wrapper = await mountSuspended(Button, {
+      props: { label: 'Buttons', to: '/buttons', disabled: true },
+      attachTo: document.body,
+    });
+
+    // Disabled: no href, so it cannot be followed or reached with Tab
+    const link = wrapper.get('a');
+    expect(link.attributes('href')).toBeUndefined();
+    expect(link.attributes('role')).toBe('link');
+    expect(link.attributes('aria-disabled')).toBe('true');
+    expect(link.classes()).toContain('disabled');
+
+    // Still the current page: its look and aria-current, as NuxtLink sets them
+    expect(link.attributes('aria-current')).toBe('page');
+    expect(link.classes()).toContain('router-link-active');
+    expect(link.classes()).toContain('router-link-exact-active');
+    expect(await checkA11y()).toHaveNoViolations();
+
+    // Enabled, NuxtLink says it itself: Button adds nothing
+    await wrapper.setProps({ disabled: false });
+    const enabled = wrapper.get('a');
+    expect(enabled.attributes('href')).toBe('/buttons');
+    expect(enabled.classes()).not.toContain('disabled');
+
+    useLink.mockRestore();
   });
 });

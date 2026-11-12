@@ -105,9 +105,12 @@ const layoutExample = `<SidebarLayout sticky beside="xl">
         The wrapper around the header, the navigation and the pages. It
         announces a new page to screen readers, puts the skip link first and
         takes focus after a navigation to another page, so the next Tab is the
-        skip link. A field the new page focuses itself (<code>autofocus</code>)
-        keeps focus. The app's <code>&lt;main&gt;</code> carries the skip link's
-        target: <code>id="main"</code> with <code>tabindex="-1"</code>.
+        skip link. Focus the new page moves into its
+        <code>&lt;main&gt;</code> itself stays there (a code field, a heading),
+        and an address with a hash focuses the element it names
+        (<code>useHashFocus()</code>). The app's
+        <code>&lt;main&gt;</code> carries the skip link's target:
+        <code>id="main"</code> with <code>tabindex="-1"</code>.
       </p>
 
       <pre class="layout-demo-code"><code>{{ shellExample }}</code></pre>

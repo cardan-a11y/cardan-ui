@@ -19,8 +19,9 @@
  * `--sidebar-layout-side-width`, `--sidebar-layout-gap` (between the columns,
  * stacked too), `--sidebar-layout-padding-start` and
  * `--sidebar-layout-padding-end` (also on one column alone), and
- * `--sidebar-layout-top` for what is sticky above the panel besides the
- * header, such as a navigation bar under it. `--sidebar-layout-scrollbar-gutter`
+ * `--sidebar-layout-top`, where the panel sticks: under the header and what
+ * the app keeps sticky below it (`--app-header-sticky-below`, AppHeader) by
+ * default. `--sidebar-layout-scrollbar-gutter`
  * is the panel's `scrollbar-gutter`, and `--sidebar-layout-outline-room`
  * (0.25rem) the room around its content for focus outlines while it scrolls.
  *
@@ -63,10 +64,11 @@ const { side = 'end', beside = 'lg' } = defineProps<{
 
 <style>
 .sidebar-layout {
-  /* Where the sticky panel starts: under the header and its line */
+  /* Where the sticky panel starts: under the header, its line and what
+     sticks below it */
   --sidebar-layout-sticky-top: var(
     --sidebar-layout-top,
-    calc(var(--app-header-height) + 1px)
+    calc(var(--app-header-height) + 1px + var(--app-header-sticky-below, 0px))
   );
 
   /* Whether the panel sits beside the main column, as a switch: a

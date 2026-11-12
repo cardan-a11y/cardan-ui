@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
+import { NuxtLink } from '#components';
 
 const {
   label = undefined,
@@ -15,6 +16,8 @@ const {
   download = undefined,
   hideExternalIcon = false,
   loading = false,
+  disabled = false,
+  external = false,
   iconPos = 'start',
   variant = 'secondary',
   size = 'md',
@@ -60,6 +63,31 @@ const computedAriaLabel = computed(() =>
     : ariaLabel,
 );
 
+/**
+ * A disabled link has no href, so it cannot be followed, and NuxtLink no
+ * longer says whether it is the current page. Its link state comes from
+ * NuxtLink here instead: the current page keeps its look (the classes
+ * NuxtLink sets) and `aria-current`, disabled.
+ */
+const linkTarget = to || href;
+// A link to a part of this page (`#section`) is never the current page
+const isPageLink =
+  !!linkTarget &&
+  !(typeof linkTarget === 'string' && linkTarget.startsWith('#'));
+const linkState = isPageLink
+  ? NuxtLink.useLink({
+      to: toRef(() => to || href || ''),
+      external: toRef(() => external),
+    })
+  : undefined;
+
+const isDisabledActive = computed(
+  () => disabled && !!linkState?.isActive.value,
+);
+const isDisabledCurrent = computed(
+  () => disabled && !!linkState?.isExactActive.value,
+);
+
 const showExternalIcon = computed(() => {
   return !hideExternalIcon && target === '_blank';
 });
@@ -99,6 +127,7 @@ const emit = defineEmits<{
     :to="disabled ? undefined : to || href"
     :role="disabled ? 'link' : undefined"
     :aria-disabled="disabled || loading || undefined"
+    v-bind="isDisabledCurrent ? { 'aria-current': 'page' } : {}"
     :aria-busy="loading || undefined"
     :target="target"
     :external="external"
@@ -112,6 +141,8 @@ const emit = defineEmits<{
       hideLabel && 'button--icon-only',
       loading && 'button--loading',
       (loading || disabled) && 'disabled',
+      isDisabledActive && 'router-link-active',
+      isDisabledCurrent && 'router-link-exact-active',
     ]"
     :style="computedStyle"
     @click.capture="handleClick"

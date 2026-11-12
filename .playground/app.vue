@@ -70,7 +70,6 @@ const isAuthSubpage = computed(() => authPages.includes(route.path));
 
 main {
   container-type: inline-size;
-  scroll-margin-block: var(--app-header-height);
   /* The page's spacing is main's own and the sidebar's (AppSidebar), not the
      layout's: the sticky sidebar then runs the whole height of the page */
   padding-block: var(--app-padding-block);

@@ -11,6 +11,8 @@ New: AppShell, AppHeader, AppSidebar and SidebarLayout, the parts of an app's la
 - **`--app-max-width` is in the template** (`1280px`): AppHeader keeps its content within it. The four projects already define it in their own `main.css`; a project without it adds it before using AppHeader.
 - **A project's own `AppHeader`, `AppSidebar`, `AppShell` or `SidebarLayout` shadows the layer's.** To use the layer's, rename the project's component first (the Auditor's and the support site's `AppHeader` became `TheHeader`).
 - **AppHeader sticks from 360px wide and 480px high**, and AppSidebar and a sticky SidebarLayout panel with it. A project's own sticky parts under the header use the same condition, or they stick under a header that has scrolled away.
+- **A bar or toolbar a project keeps sticky under the header sets `--app-header-sticky-below`** (its height) on `:root` while it sticks: keyboard focus then stops below it too, instead of under it (WCAG 2.4.11), and a SidebarLayout panel starts under it. The Auditor's audit and report navigation and its filter toolbar do so.
+- **Remove a `scroll-margin` that makes room for the header**: AppHeader's scroll padding covers the header and what sticks under it, so a margin that adds `--app-header-height` (or a bar's height) counts it twice and lands an anchor, a skip link's target or a list that much lower.
 
 ## Upgrading to 2.4
 

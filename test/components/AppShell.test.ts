@@ -1,4 +1,4 @@
-import { afterEach, describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { h } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { AppHeader, AppShell } from '#components';
@@ -89,21 +89,106 @@ describe('AppShell', () => {
     expect(document.activeElement).toBe(link);
   });
 
-  it('leaves focus on a field the new page focuses itself', async () => {
+  it('leaves focus where the new page puts it itself', async () => {
     const wrapper = await mountSuspended(AppShell, {
       slots: {
-        default: () => [h('input', { autofocus: true, 'aria-label': 'Code' })],
+        default: () => [
+          h('a', { href: '/somewhere' }, 'A link of the page'),
+          h('main', [
+            // The code field of a second factor, or AuthPage's frame
+            h('input', { 'aria-label': 'Code' }),
+            h('div', { tabindex: '-1', class: 'frame' }, 'Frame'),
+          ]),
+        ],
       },
       attachTo: document.body,
     });
 
-    const input = wrapper.get('input').element;
-    input.focus();
+    // Settle the focus a mount after an earlier page of this visit takes
+    await afterNavigation();
+
+    for (const selector of ['input', '.frame']) {
+      wrapper.get('a').element.focus();
+
+      await useRouter().push(selector === 'input' ? '/buttons' : '/tabs');
+      // The new page moves focus as it mounts, before the shell would
+      const moved = wrapper.get(selector).element as HTMLElement;
+      moved.focus();
+      await afterNavigation();
+
+      expect(document.activeElement).toBe(moved);
+    }
+  });
+
+  it('focuses the element the address names, when the new page has it', async () => {
+    const wrapper = await mountSuspended(AppShell, {
+      slots: {
+        default: () => [
+          h('a', { href: '/somewhere' }, 'A link of the page'),
+          h('section', { id: 'non-text-content' }, 'Non-text content'),
+        ],
+      },
+      attachTo: document.body,
+    });
+    await afterNavigation();
+
+    const section = wrapper.get('#non-text-content').element as HTMLElement;
+    section.scrollIntoView = vi.fn();
+    wrapper.get('a').element.focus();
+
+    await useRouter().push('/buttons#non-text-content');
+    await afterNavigation();
+
+    // Made focusable for it, then focused and brought into view
+    expect(section.getAttribute('tabindex')).toBe('-1');
+    expect(document.activeElement).toBe(section);
+    expect(section.scrollIntoView).toHaveBeenCalled();
+
+    // A hash that names nothing on the page: the shell, as without one
+    wrapper.get('a').element.focus();
+    await useRouter().push('/tabs#nothing-here');
+    await afterNavigation();
+    expect(document.activeElement).toBe(wrapper.get('.app-shell').element);
+  });
+
+  it('takes focus when a menu gives it back to its button as it closes', async () => {
+    const wrapper = await mountSuspended(AppShell, {
+      slots: {
+        default: () => [
+          h('header', [h('button', { type: 'button' }, 'Menu')]),
+          h('nav', [h('a', { href: '/buttons' }, 'Buttons')]),
+          h('main', { id: 'main', tabindex: '-1' }, [h('h1', 'Page')]),
+        ],
+      },
+      attachTo: document.body,
+    });
+    await afterNavigation();
+
+    // A link in the open menu is followed; the menu closes and gives focus
+    // back to its button in the header before the new page is in
+    (wrapper.get('nav a').element as HTMLElement).focus();
+    await useRouter().push('/buttons');
+    (wrapper.get('header button').element as HTMLElement).focus();
+    await afterNavigation();
+
+    expect(document.activeElement).toBe(wrapper.get('.app-shell').element);
+  });
+
+  it('takes focus when it stays on a link that is not part of the page', async () => {
+    const wrapper = await mountSuspended(AppShell, {
+      slots: { default: page },
+      attachTo: document.body,
+    });
+    await afterNavigation();
+
+    // A link in the header, which the next page keeps
+    const link = wrapper.findAll('a')[1]!.element as HTMLAnchorElement;
+    link.focus();
 
     await useRouter().push('/buttons');
     await afterNavigation();
 
-    expect(document.activeElement).toBe(input);
+    expect(document.activeElement).toBe(wrapper.get('.app-shell').element);
   });
 });
 

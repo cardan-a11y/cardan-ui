@@ -6,8 +6,11 @@
  * (the user menu, a theme switch).
  *
  * Its height is `--app-header-height` plus its 1px line, which is where
- * everything sticky below it starts (AppSidebar, SidebarLayout). The look is
- * the app's: `--app-header-bg`, `--app-header-border-color`,
+ * everything sticky below it starts (AppSidebar, SidebarLayout). What the
+ * app keeps sticky right under it, a navigation bar or a toolbar, it sets as
+ * `--app-header-sticky-below` on `:root` while that sticks: keyboard focus
+ * then stops below both, and SidebarLayout's panel starts under both. The
+ * look is the app's: `--app-header-bg`, `--app-header-border-color`,
  * `--app-header-max-width` and `--app-header-gap`.
  */
 </script>
@@ -51,12 +54,16 @@
   }
 }
 
-/* While it sticks, the browser stops a focused element below it, with the
-   template's 2rem room above: keyboard focus never hides under the header
-   (WCAG 2.4.11). A project's own header of the same class is left alone. */
+/* While it sticks, the browser stops a focused element below it and below
+   what sticks under it, with the template's 2rem room above: keyboard focus
+   never hides under the header (WCAG 2.4.11). A project's own header of the
+   same class is left alone. */
 @media (min-width: 360px) and (min-height: 480px) {
   :root:has(.app-header > .app-header-content) {
-    scroll-padding-block-start: calc(var(--app-header-height) + 1px + 2rem);
+    scroll-padding-block-start: calc(
+      var(--app-header-height) + 1px + var(--app-header-sticky-below, 0px) +
+        2rem
+    );
   }
 }
 
