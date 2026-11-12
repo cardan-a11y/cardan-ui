@@ -222,12 +222,6 @@ body:has(.mobile-dialog[open]) {
   overflow: hidden;
 }
 
-.dark-mode {
-  .mobile-dialog {
-    --color-grey-light: var(--color-grey-bg);
-  }
-}
-
 .mobile-dialog {
   --mobile-menu-padding-inline: var(--app-padding-inline);
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { links = [{ href: '#main' }] } = defineProps<{
-  links?: { href: string; label?: string }[];
+  links?: SkipLinkItem[];
 }>();
 </script>
 

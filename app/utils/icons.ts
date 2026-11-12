@@ -29,6 +29,7 @@ const componentIcons = [
   'material-symbols:dark-mode-outline-rounded',
   'material-symbols:dehaze-rounded',
   'material-symbols:do-not-disturb-on-outline-rounded',
+  'material-symbols:dock-to-right-outline-rounded',
   'material-symbols:error',
   'material-symbols:expand-more-rounded',
   'material-symbols:help-outline-rounded',

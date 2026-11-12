@@ -300,6 +300,8 @@
   --app-padding-inline: 0.75rem;
   /* The height of the app header: UserMenu sits under it */
   --app-header-height: 3.5rem;
+  /* The width of the app's content: AppHeader keeps its content within it */
+  --app-max-width: 1280px;
 
   @media (min-width: 480px) {
     --app-padding-inline: 1.5rem;

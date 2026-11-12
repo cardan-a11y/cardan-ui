@@ -11,6 +11,11 @@ export const navList: MenuItem[] = [
     divider: true,
   },
   {
+    id: 'layout',
+    to: '/layout',
+    label: 'App layout',
+  },
+  {
     id: 'colors',
     to: '/colors',
     label: 'Colors',

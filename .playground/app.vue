@@ -1,13 +1,5 @@
 <script setup lang="ts">
 const route = useRoute();
-const appRef = useTemplateRef('app');
-
-watch(
-  () => route.path,
-  () => {
-    appRef.value?.focus();
-  },
-);
 
 // The <html lang> follows the locale, as in the projects
 const head = useLocaleHead();
@@ -30,17 +22,18 @@ const isAuthSubpage = computed(() => authPages.includes(route.path));
 </script>
 
 <template>
-  <div ref="app" tabindex="-1" class="app-focus-wrapper">
-    <NuxtRouteAnnouncer />
-
-    <SkipLink />
-
-    <AppHeader />
+  <AppShell>
+    <TheHeader />
 
     <div class="app-layout">
-      <aside class="app-sidebar">
-        <MenuList :list="navList" button-size="md" button-variant="sidebar" />
-      </aside>
+      <AppSidebar>
+        <MenuList
+          :list="navList"
+          button-size="md"
+          button-variant="sidebar"
+          aria-label="Components"
+        />
+      </AppSidebar>
 
       <main id="main" tabindex="-1">
         <Button
@@ -59,7 +52,7 @@ const isAuthSubpage = computed(() => authPages.includes(route.path));
         description="This cookies dialog is for demo purposes only."
       /> -->
     </div>
-  </div>
+  </AppShell>
 
   <AxePopup />
 
@@ -71,7 +64,6 @@ const isAuthSubpage = computed(() => authPages.includes(route.path));
 <style>
 :root {
   /* Layout design tokens */
-  --app-max-width: 1280px;
   --app-header-height: 4rem;
   --app-padding-block: 2.5rem;
 }
@@ -79,6 +71,9 @@ const isAuthSubpage = computed(() => authPages.includes(route.path));
 main {
   container-type: inline-size;
   scroll-margin-block: var(--app-header-height);
+  /* The page's spacing is main's own and the sidebar's (AppSidebar), not the
+     layout's: the sticky sidebar then runs the whole height of the page */
+  padding-block: var(--app-padding-block);
 }
 
 .section-topbar {
@@ -93,29 +88,28 @@ h3 {
   font-size: var(--font-size-md);
 }
 
-.app-focus-wrapper {
-  outline: 1px solid transparent;
-}
-
+/* The sidebar under the header, beside the page; below 1024px the header's
+   menu holds the navigation (TheHeader) */
 .app-layout {
+  --app-sidebar-display: none;
+  --app-sidebar-top: calc(var(--app-header-height) + 1px);
+  /* As wide as its longest label, which does not wrap (Button) */
+  --app-sidebar-width: max-content;
+  --app-sidebar-padding-inline: 0px;
+  --app-sidebar-padding-block: var(--app-padding-block);
+  --app-sidebar-border-color: transparent;
+
   padding-inline: var(--app-padding-inline);
-  padding-block: var(--app-padding-block);
   max-width: var(--app-max-width);
   margin-inline: auto;
-  min-height: calc(100dvh - 3.5rem - 1px);
+  min-height: calc(100dvh - var(--app-header-height) - 1px);
 
   @media (min-width: 1024px) {
+    --app-sidebar-display: grid;
+
     display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 4rem;
-  }
-}
-
-.app-sidebar {
-  display: none;
-
-  @media (min-width: 1024px) {
-    display: block;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 4rem;
   }
 }
 
