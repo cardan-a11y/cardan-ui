@@ -9,8 +9,12 @@
  * everything sticky below it starts (AppSidebar, SidebarLayout). What the
  * app keeps sticky right under it, a navigation bar or a toolbar, it sets as
  * `--app-header-sticky-below` on `:root` while that sticks: keyboard focus
- * then stops below both, and SidebarLayout's panel starts under both. The
- * look is the app's: `--app-header-bg`, `--app-header-border-color`,
+ * then stops below both, and SidebarLayout's panel starts under both. A bar
+ * that sticks by a container query cannot: a rule on `:root` cannot query
+ * a container. It gives the content it covers a `scroll-margin-block-start`
+ * of its height instead, set in the same container query (through an
+ * inherited variable where that content holds a container of its own,
+ * which its rules would query instead). The look is the app's: `--app-header-bg`, `--app-header-border-color`,
  * `--app-header-max-width` and `--app-header-gap`.
  */
 </script>
