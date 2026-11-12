@@ -80,7 +80,9 @@
     "missing-value": "{item} ontbreekt",
     "required": "vereist",
     "checkbox-required": "Vink dit vakje aan om verder te gaan",
-    "checkbox-group-required": "Vink minstens één optie aan"
+    "checkbox-group-required": "Vink minstens één optie aan",
+    "below-min": "Vul {min} of meer in",
+    "above-max": "Vul {max} of minder in"
   },
   "files": {
     "browse": "Selecteer bestand",
@@ -191,6 +193,7 @@
     "publish": "Publiceren",
     "published": "Gepubliceerd",
     "recommended": "Aanbevolen",
+    "remove": "Verwijderen",
     "report": "Rapport | Rapporten",
     "reset": "Resetten",
     "result": "Resultaat | Resultaten",
@@ -262,6 +265,10 @@
   },
   "select": {
     "no-options": "Geen opties"
+  },
+  "spinbutton": {
+    "decrease": "{label} verlagen",
+    "increase": "{label} verhogen"
   },
   "theme": {
     "dark": "Donker",

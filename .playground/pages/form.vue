@@ -5,6 +5,7 @@ const inputVariant = ref<InputVariant>('default');
 const singleSelection = ref('');
 const multiSelection = ref<string | string[]>();
 const rangeValue = ref(0);
+const quantity = ref<number | undefined>(1);
 const min = ref(0);
 const max = ref(10);
 const step = ref(1);
@@ -257,6 +258,18 @@ async function handleSubmit(formData: FormData) {
           value-key="id"
           :size="inputSize"
           style="--col-width: var(--col-width-40)"
+        />
+
+        <SpinButton
+          v-model="quantity"
+          :required="required"
+          :min="1"
+          :max="20"
+          name="spin-button"
+          label="Spin button"
+          instruction="A whole number from 1 to 20: type it, or count with the buttons or the arrow keys"
+          :disabled="disabled"
+          :size="inputSize"
         />
 
         <Textarea

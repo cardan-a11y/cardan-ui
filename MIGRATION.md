@@ -65,10 +65,6 @@ A release that needs nothing from projects has a one-line section that says so; 
 - **The password reset form** sends a user whose password was reset but whose sign-in failed to /login with the address prefilled, instead of a reset error. **The forgot-password form** accepts another address after a success. **The password-policy route must be public**: a guest on the reset form reads it, and a 401 no longer redirects (the configured policy stays).
 - New message keys an app may override: `mfa.recovery-codes-unavailable`, `mfa.recovery-codes-missing`, `mfa.session-expired`. The layer needs the base layer at the same version (`transitionDuration`).
 
-### The cardan plugin
-
-- Run `claude plugin update cardan@cardan-ui --scope user`. The review round now runs a cross-browser check in Chrome, Firefox and WebKit (`scripts/cross-browser.mjs`) for a change to what a page shows; the first run prints the command that installs Firefox and WebKit, once per machine. A change to the Claude Code setup alone is reviewed by the new `cardan:plugin-reviewer`. The `cardan-browsers` plugin in the same marketplace adds Firefox and WebKit MCP servers, off by default: switch it on with `/plugin` only to look into a difference the check found. The release skill puts the newest release at the top of this file, as it is now ordered.
-
 ### Tokens
 
 - **Paste these token values into your `main.css`** (cardan-cms-nuxt keeps its own tokens until its rebrand): the dark-mode red graphic is the mix the red text uses, so a red meter fill reaches 3:1 on its track (was 2.2:1) and the danger button's hover border 3:1 on the red surface (was 2.8:1); and the header height UserMenu positions itself with, which every project already declares with its own value, is in the template now.
@@ -128,8 +124,6 @@ A release that needs nothing from projects has a one-line section that says so; 
 - **The field components render through the new FormField component**: the label with its chip, the control, the error text and the instruction, in that order. The classes are the same (`.form-field-wrapper`, `label`, `.instruction`, `.error-wrapper`), so CSS keeps working. Two things change: the error text sits directly under the field in every field, above the instruction, where Select and Textarea showed it below; and an Input without a `label` renders no empty `<label>`.
 - **FileInput keeps the chosen file as its value** while an image is compressed, and the compressed file replaces it; the value no longer goes empty in between. A watcher on the value sees the chosen file first and then the compressed one.
 - **A link in a markdown text ends in hidden text "(open in new window)"** in the current language, and gets that title only when it has none of its own. The icon after the link is decorative now; CSS that changed its alternative text can go.
-- **The cardan plugin**: run `claude plugin update cardan@cardan-ui --scope user`. The reviewer runs on Opus at high effort, work in cardan-ui starts on a `release/<version>` branch, and this file keeps only what projects must do.
-
 ### 2.3.6
 
 2.3.6 needs nothing from projects. See changelog for details.
@@ -142,8 +136,6 @@ A release that needs nothing from projects has a one-line section that says so; 
 - **Six grammars**: `xml` (also `html` and `svg`), `css`, `javascript`, `typescript`, `json` and `bash`, with the aliases highlight.js gives them (`js`, `ts`, `sh`, …). A fence in another language stays plain, where `highlight.js/lib/common` coloured 38 languages. Check your stored markdown for fences in another language (PHP, Python, SQL, YAML, …); when Cardan content needs one, add it to `app/components/Markdown/highlight.ts` in cardan-ui, so every project gets it. The playground's markdown page lists the set.
 - **`vite.optimizeDeps.include`** in a project's `nuxt.config.ts`: replace `highlight.js/lib/common` with the six `highlight.js/lib/languages/*` entries, as the playground does (`.playground/nuxt.config.ts`); cardan-academy-nuxt has them.
 - **The header cells of a markdown table** carry `scope="col"`, which WCAG H63 asks for. Nothing to do, unless your CSS selects `th[scope]`.
-- **The cardan plugin**: run `claude plugin update cardan@cardan-ui --scope user`. The release skill now keeps the five most recent releases in this file.
-
 ### 2.3.4
 
 2.3.4 brings **Accordion** closer to the APG accordion pattern. It looks the same in a project that does nothing, but its panel is no longer a landmark.
@@ -163,7 +155,7 @@ A release that needs nothing from projects has a one-line section that says so; 
 - **The outline Button** has a `--color-grey-light` border (was `--color-grey-bg`), which stands out from the background. Check a place where your own CSS changed that border.
 - **`formatFileSize(bytes, locale?)`** counts in decimal units and formats in the app's locale unless you give another ("2,4 MB" in Dutch). A call with one argument keeps working.
 - **`toolbars` and `footers`**, MarkdownEditor's toolbar settings, are no longer auto-imported from `app/utils/markdown.ts`; they moved into the component. No project used them.
-- **The cardan plugin**: run `claude plugin update cardan@cardan-ui --scope user`. A review now counts for the repository the reviewer names, also from a session started in another repository, and the Playwright MCP server gives each session its own browser profile, so sessions no longer block each other. The guidelines now say that every project's `netlify.toml` skips builds of documentation, AI and CI changes (cardan-ui#32 and the matching PRs in each project; check that yours has the `ignore` command), and that `develop` is the default branch on GitHub of cardan-academy-nuxt and cardan-auditor-nuxt, so a hotfix PR passes `--base main`.
+- **Every project's `netlify.toml`** skips builds of documentation, AI and CI changes (cardan-ui#32 and the matching PRs in each project): check that yours has the `ignore` command.
 
 ### 2.3.3
 
@@ -175,4 +167,3 @@ A release that needs nothing from projects has a one-line section that says so; 
 
 - **Update Nuxt to 4.6.4** in every project, first of all in the ones that render on the server (Cardan Academy's public pages, Cardan Support, the websites): `pnpm update --latest '!typescript'`, then `pnpm run build`. Keep TypeScript on 6.
 - **A project on `compatibilityVersion: 5`** (cardan-academy-nuxt, cardan-auditor-nuxt) sets `experimental: { nitroAutoImports: true }` in its `nuxt.config.ts`. With version 5, Nuxt 4.6 turns off the auto-imports of the server bundle, which the server runtime of `@nuxtjs/i18n` and `@nuxt/image` still relies on; without them the build fails with `"useRuntimeConfig" is not exported by "#imports"`.
-- **The cardan plugin**: run `claude plugin update cardan@cardan-ui --scope user`. In cardan-academy-nuxt and cardan-auditor-nuxt, work goes into `develop` and reaches `main` through one release pull request (`/cardan:release`), from the releases of 3 November 2026 on.

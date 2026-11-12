@@ -59,7 +59,9 @@ const computedIconLabel = computed(() => {
     :style="computedStyle"
   >
     <div class="callout-content">
-      <Icon v-if="computedIcon" :name="computedIcon" class="callout-icon" />
+      <span v-if="computedIcon" class="callout-icon-box">
+        <Icon :name="computedIcon" class="callout-icon" />
+      </span>
       <strong v-if="computedIconLabel" class="visuallyhidden">
         {{ computedIconLabel }}
       </strong>
@@ -84,11 +86,20 @@ const computedIconLabel = computed(() => {
 
   .callout-content {
     display: flex;
-    align-items: center;
+    /* Text that wraps keeps the icon beside its first line */
+    align-items: flex-start;
     gap: 0.75em;
 
-    .callout-icon {
+    /* One line of the callout's text high, so the icon is centred on it; an
+       icon larger than the line makes it taller */
+    .callout-icon-box {
+      display: flex;
+      align-items: center;
       flex-shrink: 0;
+      min-block-size: 1lh;
+    }
+
+    .callout-icon {
       font-size: var(--callout-icon-size);
     }
   }

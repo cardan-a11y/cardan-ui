@@ -24,8 +24,8 @@ one (2.x.0) for a breaking change.
    that extends the layer must do, or a change that can break it; the
    changelog lists every change, so the notes leave the rest out. That is: new tokens for `main.css`, renamed
    props or classes, behaviour that changes for stored content, modules or
-   CSP hosts a project needs, and a plugin update (step 5) as a bullet with
-   `claude plugin update cardan@cardan-ui --scope user`. A patch release is
+   CSP hosts a project needs. A plugin change is not a migration note: the
+   projects pick it up by themselves (step 5). A patch release is
    a `### <version>` subsection in the current minor's section: below the
    minor's own notes, which are everything before its first patch
    subsection, and above the previous patch. A minor release is a new
@@ -46,10 +46,13 @@ projects. See changelog for details.`, without details: the changelog says what 
    the file (`git log -p MIGRATION.md`).
 4. **CLAUDE.md**: update the component list or the sections that describe
    what changed, so it stays true.
-5. **Plugin**: if anything under `plugins/cardan` changed, the other
-   projects receive it with
-   `claude plugin update cardan@cardan-ui --scope user`; say so in the PR
-   description. The Playwright MCP server in `.mcp.json` is pinned, and the
+5. **Plugin**: if anything under `plugins/cardan` changed, say so in the PR
+   description. The projects receive it by themselves after the merge: the
+   `cardan-ui` marketplace auto-updates (`autoUpdate` in their
+   `.claude/settings.json`), within minutes of a session's start, and
+   applies from the next launch or `/reload-plugins`. A machine that added
+   the marketplace from a local cardan-ui checkout runs that checkout as it
+   is, without updates. The Playwright MCP server in `.mcp.json` is pinned, and the
    cross-browser script uses the same version; bump it there, and in
    `plugins/cardan-browsers/.mcp.json`, when a newer `@playwright/mcp` is
    wanted.

@@ -80,7 +80,9 @@
     "missing-value": "{item} is missing",
     "required": "required",
     "checkbox-required": "Tick this box to continue",
-    "checkbox-group-required": "Tick at least one option"
+    "checkbox-group-required": "Tick at least one option",
+    "below-min": "Enter {min} or more",
+    "above-max": "Enter {max} or less"
   },
   "files": {
     "browse": "Browse files",
@@ -192,6 +194,7 @@
     "publish": "Publish",
     "published": "Published",
     "recommended": "Recommended",
+    "remove": "Remove",
     "report": "Report",
     "reset": "Reset",
     "result": "Result | Results",
@@ -264,6 +267,10 @@
   },
   "select": {
     "no-options": "No options"
+  },
+  "spinbutton": {
+    "decrease": "Decrease {label}",
+    "increase": "Increase {label}"
   },
   "theme": {
     "dark": "Dark",

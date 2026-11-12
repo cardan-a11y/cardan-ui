@@ -8,6 +8,7 @@
  */
 const componentIcons = [
   'material-symbols:add-photo-alternate-outline-rounded',
+  'material-symbols:add-rounded',
   'material-symbols:add-to-home-screen-outline-rounded',
   'material-symbols:arrow-left-alt',
   'material-symbols:arrow-right-alt',
@@ -46,6 +47,7 @@ const componentIcons = [
   'material-symbols:more-horiz',
   'material-symbols:open-in-new-rounded',
   'material-symbols:refresh-rounded',
+  'material-symbols:remove-rounded',
   'material-symbols:search-rounded',
   'material-symbols:upload-file-outline',
   'material-symbols:visibility',

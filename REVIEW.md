@@ -110,8 +110,8 @@ happens.
   loads: a change to its guidelines, reviewer, hook or skills reaches them
   at their next plugin update. A change to it alone goes to the
   `cardan:plugin-reviewer`; in a change with other files it is reviewed
-  here like a component, and `claude plugin validate ./plugins/cardan`
-  must pass.
+  here with that reviewer's checks (see the cardan-reviewer agent), and
+  `claude plugin validate ./plugins/cardan` must pass.
 - Common translations belong here: a string that several projects need
   (buttons like Close, Save or Cancel, generic labels and errors) goes into
   the layer's locale files, as the auth strings did, so projects don't each

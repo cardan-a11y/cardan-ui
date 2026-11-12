@@ -264,52 +264,13 @@ const emit = defineEmits<{
 </template>
 
 <style>
-:where(input) {
-  background-color: transparent;
-  filter: none;
-
-  &:-webkit-autofill {
-    -webkit-text-fill-color: var(--color-accent-text);
-    box-shadow: 0 0 0 100px var(--color-accent-bg) inset;
-  }
-}
-
-:where(.form-field-wrapper) {
-  &:has(.input:disabled) {
-    opacity: 35%;
-  }
-
-  .input {
-    font-family: var(--font-family-input, system-ui, sans-serif);
-    font-size: 16px;
-    width: 100%;
-    border: 1px solid var(--color-grey-graphic);
-    border-radius: var(--radius-md);
-
-    &::placeholder {
-      color: var(--color-grey-text);
-    }
-
-    &:focus {
-      outline: 1px solid var(--focus-color);
-      border-color: var(--focus-color);
-    }
-  }
-}
-
+/* The base look of `.input` is in FormField, which SpinButton shares */
 .form-field-wrapper {
   .input-wrapper {
     position: relative;
   }
 
   .input {
-    background-color: var(--color-input-bg);
-
-    &[readonly] {
-      background-color: var(--color-grey-bg);
-      caret-color: transparent;
-    }
-
     &:has(+ .iconify) {
       padding-inline-start: 1.75rem;
     }
@@ -322,34 +283,6 @@ const emit = defineEmits<{
       margin-block: auto;
       color: var(--color-grey-text);
     }
-  }
-}
-
-.input-size--sm {
-  .input {
-    height: 2rem;
-    padding-inline: 0.5em;
-  }
-}
-
-.input-size--md {
-  .input {
-    height: 2.5rem;
-    padding-inline: 0.5em;
-  }
-}
-
-.input-size--lg {
-  .input {
-    height: 2.75rem;
-    padding-inline: 0.65em;
-  }
-}
-
-.input-size--xl {
-  .input {
-    height: 3rem;
-    padding-inline: 0.75em;
   }
 }
 
