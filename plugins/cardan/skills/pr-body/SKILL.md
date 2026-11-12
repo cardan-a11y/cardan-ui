@@ -4,26 +4,29 @@ description: The description of a pull request in a Cardan repository: summary, 
 ---
 
 Write the pull request description with these parts, in this order, and
-nothing else. Keep it to what a reviewer who did not watch the work needs.
+nothing else. Be concise: short fragments over full sentences, only what a
+reviewer who did not watch the work needs. The docs the PR changes carry
+the detail; don't repeat it here.
 
 ## Summary
 
-One bullet per change, each a full sentence that names the component or
-area in bold at the start (`**MarkdownPreview** renders …`). Say what
-changed for users of the code, not how the work went. Mention a
-`MIGRATION.md` section or a version when there is one.
+One short bullet per change, the component or area in bold first
+(`**MarkdownPreview**: bare video links play inline`). What changed for
+users of the code, not how the work went. Name the `MIGRATION.md` section or
+version when there is one.
 
 ## Verification
 
-Focus on the manual steps a reviewer can repeat. Only mention checks that failed or leave questions.
+Only the manual steps a reviewer can repeat, and checks that failed or leave
+questions. Omit the section when there are none.
 
 ## Local review
 
-One line: how many rounds the reviewer agent ran (`cardan:cardan-reviewer`, or
+One terse line: reviewer rounds (`cardan:cardan-reviewer`, or
 `cardan:plugin-reviewer` for a change to the Claude Code setup alone), the
-tally of the first round (Important and nits), the browser check (Chrome,
-Firefox and WebKit, or why it was skipped), and what happened to each
-Important finding and nit (fixed, or left open and why).
+first round's tally, the browser check (browsers, or why skipped), and the
+fate of each finding (fixed, or open and why). Example: `2 rounds
+(cardan-reviewer): 1 Important, 2 nits, all fixed; Chrome/Firefox/WebKit ok.`
 
 End with the attribution line the session was given, such as
 `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
