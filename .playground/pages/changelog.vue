@@ -7,6 +7,191 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.5.0" date="2026-11-13">
+      <p>
+        The app shell, a default error page, SpinButton and a second round of
+        audit fixes, with an accessibility test suite that the projects run
+        too. <code>MIGRATION.md</code> has what a project must do.
+      </p>
+      <ul>
+        <li>
+          New app shell, the layout rules the apps share, with the look left to
+          each app's CSS variables (<code>/layout</code> in the playground, which
+          uses all four):
+          <ul>
+            <li>
+              AppShell holds the route announcer and the skip link, and moves
+              focus to the shell after a navigation
+              (<code>useRouteFocus()</code>), also when it mounts after the app
+              has started, around the error page. It leaves focus that the new
+              page moves itself, such as an <code>autofocus</code> field, the
+              second factor's code field or AuthPage's frame.
+            </li>
+            <li>
+              AppHeader is the sticky header frame with start, default and end
+              slots and the loading indicator. It sticks from 360px wide and
+              480px high, and AppSidebar and a sticky SidebarLayout panel with
+              it. While it sticks, keyboard focus never hides under it, nor
+              under a bar that sets <code>--app-header-sticky-below</code>
+              (WCAG 2.4.11).
+            </li>
+            <li>
+              AppSidebar is the side navigation: sticky, scrolling on its own and
+              never sideways, collapsible to a rail of icons, the choice kept in
+              the browser (<code>useAppSidebar()</code>) and applied from the
+              first paint.
+            </li>
+            <li>
+              SidebarLayout is a page in two columns whose sticky side panel
+              runs from under the header to the bottom of the viewport and
+              scrolls on its own. With the new <code>side-label</code> prop a
+              panel of text only is a named <code>aside</code> and, while it
+              scrolls, a tab stop, so the keyboard scrolls it in Safari too (WCAG
+              2.1.1).
+            </li>
+            <li>
+              New <code>useResultsFocus()</code> brings a list of results to the
+              reader after it changes in place (pagination, filters), and
+              <code>useHashFocus()</code> focuses the element the address's hash
+              names once a page's content has rendered.
+            </li>
+            <li>
+              The template gains <code>--app-max-width</code>. A disabled Button
+              link keeps the current page's look and
+              <code>aria-current="page"</code>.
+            </li>
+          </ul>
+        </li>
+        <li>
+          New default error page, the layer's <code>app/error.vue</code> with
+          <strong>ErrorPageContent</strong> (<code>/error-page</code> in the
+          playground): a heading and text per status (404/410, 401/403, 5xx, the
+          rest) in the page's language, also as the document title, the status
+          code, and one link on, back to the page before or home. A page's own
+          text goes in <code>data.text</code>; <code>statusText</code> and the
+          stack show in development only. It renders in the route's layout, so
+          the playground moves its frame into <code>layouts/default.vue</code>.
+        </li>
+        <li>
+          SkipLink moves focus to its target itself, without
+          <code>#main</code> in the address: the hash was a router navigation
+          that ran the middleware and, on the error page, cleared the error.
+        </li>
+        <li>
+          UserMenu is a non-modal disclosure on the Popover API: its panel is in
+          the top layer, anchored to the trigger, nothing is
+          <code>inert</code> while it is open, and it closes when focus leaves
+          it, on Escape, on a click outside and on a route change. Its trigger
+          is named "User menu" and the initials it shows. A second press on a
+          Popover trigger closes it in WebKit too.
+        </li>
+        <li>
+          New SpinButton, the APG spinbutton for a whole number of zero or more,
+          such as a quantity, as the alternative to
+          <code>&lt;Input type="number"&gt;</code>. The base look of a text
+          field moves from Input to FormField, so a page with a SpinButton and
+          no Input gets it too.
+        </li>
+        <li>
+          The second round of audit fixes:
+          <ul>
+            <li>
+              Every field but FileInput, RangeInput and Switch takes
+              <code>custom-error</code>, and is described by its error only
+              while it shows. MultiSelect and DatePicker put an attribute on the
+              control, <code>class</code> and <code>style</code> on the wrapper;
+              DatePicker's input is named by its <code>label</code>; Escape in an
+              open MultiSelect or DatePicker closes it and no longer the Dialog
+              around it.
+            </li>
+            <li>
+              A required Input refuses a value of only spaces, and an e-mail
+              Input a domain without a dot, through its <code>pattern</code>,
+              before the submit instead of from the server; a project's own
+              pattern replaces the dot check. A Textarea of only spaces is left
+              to the API.
+            </li>
+            <li>
+              FocusLoop skips content that is hidden or inert; after a link in a
+              modal dialog, route focus waits for the dialog to close and then
+              reaches the new page; Popover and Tooltip stay open on a press
+              inside them; a loading Popover trigger keeps focus
+              (<code>aria-disabled</code>, <code>aria-busy</code>); ToastManager
+              moves focus on when a toast is closed with its button.
+            </li>
+            <li>
+              The layer sets <code>&lt;html lang&gt;</code> and
+              <code>dir</code> from the locale (the html-lang plugin), and the
+              shell of an <code>ssr: false</code> route gets the default
+              locale's language before the app runs (the html-lang module),
+              instead of a fixed <code>nl</code>.
+            </li>
+            <li>
+              Custom properties set by a component are prefixed with its name
+              (<code>--form-col-width</code>,
+              <code>--multi-select-height</code>,
+              <code>--ellipsis-line-clamp</code>,
+              <code>--video-player-aspect-ratio</code>,
+              <code>--table-shimmer-color-*</code>, …); the new
+              <code>--font-family-input</code> token sets the fields' font; an
+              inline MenuList spaces its items by <code>--menu-list-gap</code>.
+            </li>
+            <li>
+              RangeInput without a model starts at <code>min</code> in its input
+              too; a markdown link to another origin no longer gets a
+              <code>title</code>, only its hidden "(open in new window)";
+              VideoPlayer switches off the players' single-key shortcuts (WCAG
+              2.1.4); CookiesDialog asks nothing of Google without a
+              <code>gtmId</code>; <code>extractApiError()</code> reads Statamic's
+              failed form posts; <code>useDate()</code> and the date utilities
+              return nothing for a string that is not a date.
+            </li>
+            <li>
+              Cardan Auth UI: the MFA challenge starts fresh on every sign-in,
+              the setup secret and the codes go when a page is left with the
+              browser's Back, and <code>useMfaDialog().loadingMfaDisableDialog</code>
+              is new for a project's own Disable MFA button.
+            </li>
+            <li>
+              Callout keeps its icon beside the first line of wrapping text;
+              Dialog and MobileMenu no longer dim their dividers in dark mode;
+              AuthPage keeps the focus a form already set.
+            </li>
+          </ul>
+        </li>
+        <li>
+          An accessibility test suite: shared helpers in <code>test/</code>
+          that the projects import, vitest tests for every component, a
+          Playwright suite in <code>test/browser/</code> on the built playground
+          (focus and Tab, Dialog and Popover, hidden content, token contrast
+          and axe on every page in both modes), failed-request bodies of the
+          projects' backends as fixtures, and <code>pnpm test:projects</code>,
+          which runs each project's suites against this checkout. CI runs the
+          browser suite on every pull request.
+        </li>
+        <li>
+          The layer holds every message key that two projects use: new
+          <code>user.profile</code> and <code>toasts.profile-updated</code>, the
+          Dutch <code>general.home</code> is "Homepagina", and 58 keys that
+          nothing used are removed.
+        </li>
+        <li>
+          <code>packageManager</code> pins pnpm 12.18.0, which CI and Netlify
+          read; the unused <code>@nuxt/a11y</code> and
+          <code>@nuxt/hints</code> dev dependencies are removed. The
+          playground's favicon shows on pages below the root too.
+        </li>
+        <li>
+          The cardan Claude Code plugin: Nuxt's documentation MCP server; the
+          Playwright MCP servers run headless; the guidelines say how often to
+          repeat a test run and describe the projects' tests ("Tests in the
+          projects"); CLAUDE.md and REVIEW.md are reviewed as setup; the
+          projects' marketplace auto-updates; i18n-pair looks in the layer
+          first.
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.4.0" date="2026-11-10">
       <p>
         The accessibility release after the audit of November 2026: 98 findings
