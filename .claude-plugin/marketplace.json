@@ -8,7 +8,7 @@
     {
       "name": "cardan",
       "source": "./plugins/cardan",
-      "description": "The shared Claude Code setup of the Cardan Nuxt projects: the frontend guidelines, the local review before every commit (the reviewer agents and their hook), release and PR skills, a Playwright MCP server for browser checks, and a cross-browser check in Chrome, Firefox and WebKit for the review round."
+      "description": "The shared Claude Code setup of the Cardan Nuxt projects: the frontend guidelines, the local review before every commit (the reviewer agents and their hook), release and PR skills, a Playwright MCP server for browser checks, Nuxt's documentation MCP server, and a cross-browser check in Chrome, Firefox and WebKit for the review round."
     },
     {
       "name": "cardan-browsers",

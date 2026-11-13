@@ -58,6 +58,8 @@ The reviewer's report arrives a moment before the hook records it: when a commit
 
 Avoid a new external dependency unless it is necessary. A dependency that Cardan UI already lists is not a new one: reusing it in a project is fine, especially a Nuxt module, and better than writing your own version.
 
+Look up a Nuxt API, config key or official module in the plugin's `nuxt` MCP server (the documentation at `https://nuxt.com/mcp`) rather than from memory.
+
 ## Browser checks while you work
 
 - Check a change in the browser while you work on it: the plugin's `playwright` MCP server (Chrome) loads the dev server, walks a page with the keyboard, reads the console and screenshots at 320px. Firefox and WebKit join in the review round (step 4 above).
