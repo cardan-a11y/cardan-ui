@@ -1,6 +1,6 @@
 ---
 name: guidelines
-description: The shared frontend guidelines of the Cardan Nuxt projects (the review before every commit, CSS, dependencies, browser checks, WCAG 2.2). Claude Code adds them to every session in a Cardan repository.
+description: The shared frontend guidelines of the Cardan Nuxt projects (the review before every commit, CSS, dependencies, the projects' tests, browser checks, WCAG 2.2). Claude Code adds them to every session in a Cardan repository.
 ---
 
 # Cardan frontend guidelines
@@ -59,6 +59,11 @@ The reviewer's report arrives a moment before the hook records it: when a commit
 Avoid a new external dependency unless it is necessary. A dependency that Cardan UI already lists is not a new one: reusing it in a project is fine, especially a Nuxt module, and better than writing your own version.
 
 Look up a Nuxt API, config key or official module in the plugin's `nuxt` MCP server (the documentation at `https://nuxt.com/mcp`) rather than from memory.
+
+## Tests in the projects
+
+- **One setup**: a project that extends Cardan UI tests against the sibling checkout `../cardan-ui`: its `$test` block in `nuxt.config.ts` extends the local layer, so `pnpm test` and `pnpm test:layer` (the same single `vitest run`; `test:layer` is what Cardan UI's `pnpm test:projects` calls, `test:watch` watches) and the build of `pnpm test:browser` (`envName: 'test'`) use it, and `pnpm run typecheck` (`NODE_ENV=development`) does through `$development`: a bare `nuxt typecheck` checks against the layer's `main` on GitHub, so always run `pnpm run typecheck`. Production builds extend `github:cardan-a11y/cardan-ui` (`main`); CI checks that `main` out as `../cardan-ui`, so a change that needs a newer layer merges once that release is on `main`.
+- **The layer's helpers** come from the checkout, never copied: `#layer-test/…` in vitest, `../cardan-ui/test/browser/helpers.ts` in Playwright with `test` and `expect` from the project's own `@playwright/test`. happy-dom has no CSS, layout, Popover API or top layer (`../cardan-ui/test/a11y.ts` and `dom.ts`), so Dialog, Popover and top-layer behaviour belong in `test:browser`. A defect a test finds is fixed, or left as a named `it.todo` or `test.fixme` with its cause, never tested around.
 
 ## Browser checks while you work
 
