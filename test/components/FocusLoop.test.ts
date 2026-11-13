@@ -196,6 +196,29 @@ describe('FocusLoop', () => {
     expect(document.activeElement).toBe(last);
   });
 
+  it('skips a hidden or inert element at either end, when it opens and when it wraps', async () => {
+    addPage();
+    // happy-dom computes an inline display: none for checkVisibility, not
+    // the [hidden] attribute or a stylesheet: those are the browser suite's
+    const wrapper = await mountLoop(
+      {},
+      '<button style="display: none">Hidden</button>' +
+        '<button id="first">First</button><button id="last">Last</button>' +
+        '<div inert><button>Inert</button></div>',
+    );
+    await nextTick();
+    const { start, end } = sentinels(wrapper);
+    const first = document.getElementById('first')!;
+    const last = document.getElementById('last')!;
+    expect(document.activeElement).toBe(first);
+
+    focusFrom(end, last);
+    expect(document.activeElement).toBe(first);
+
+    focusFrom(start, first);
+    expect(document.activeElement).toBe(last);
+  });
+
   it('sends a Tab from before the loop to the first element, and one from after it to the last', async () => {
     const { home } = addPage();
     const wrapper = await mountLoop({ modal: false });

@@ -24,7 +24,7 @@ export function swatchExtension(md: MarkdownIt) {
 
     if (token && COLOR_VALUE.test(token.content)) {
       token.attrPush(['data-color', token.content]);
-      token.attrPush(['style', '--color:' + token.content]);
+      token.attrPush(['style', '--markdown-swatch-color:' + token.content]);
     }
 
     return defaultRender(tokens, idx, options, env, self);
@@ -33,7 +33,7 @@ export function swatchExtension(md: MarkdownIt) {
 
 export type TargetBlankOptions = {
   /**
-   * Hidden text and title of a link, "open in new window" in the reader's
+   * Hidden text of a link, "open in new window" in the reader's
    * language. A function is called at every render, so it follows a locale
    * switch.
    */
@@ -64,8 +64,9 @@ function isExternal(href: string, origin?: unknown) {
 }
 
 /**
- * A link to another site opens in a new window and says so: hidden text at
- * its end and, when the link has no title of its own, a title. The text comes
+ * A link to another site opens in a new window and says so in hidden text at
+ * its end, and not in a title too, which a screen reader would read again, as
+ * Button does. The text comes
  * from `env.newWindowLabel` (MarkdownPreview, per render) or the `label`
  * option (MarkdownEditor, whose preview renders without an env). A link that
  * already has `target="_blank"` (a trusted text) gets the hidden text too.
@@ -104,10 +105,6 @@ export function targetBlankExtension(
       isExternal(href, (env as { origin?: unknown } | undefined)?.origin)
     ) {
       token.attrSet('target', '_blank');
-
-      if (token.attrIndex('title') === -1) {
-        token.attrPush(['title', text(env)]);
-      }
     }
 
     return defaultOpen(tokens, idx, options, env, self);

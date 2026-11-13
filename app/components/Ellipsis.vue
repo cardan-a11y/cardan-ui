@@ -19,7 +19,7 @@ const { is = 'span', lines = 1 } = defineProps<{
       'ellipsis-variant--clamp',
       lines === 1 && 'ellipsis--1-line',
     ]"
-    :style="{ '--line-clamp': lines }"
+    :style="{ '--ellipsis-line-clamp': lines }"
   >
     <slot mdc-unwrap="p" />
   </component>
@@ -38,8 +38,8 @@ const { is = 'span', lines = 1 } = defineProps<{
 .ellipsis-variant--clamp {
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: var(--line-clamp);
-  line-clamp: var(--line-clamp);
+  -webkit-line-clamp: var(--ellipsis-line-clamp);
+  line-clamp: var(--ellipsis-line-clamp);
   -webkit-hyphens: none;
   hyphens: none;
 }

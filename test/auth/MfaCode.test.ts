@@ -12,7 +12,18 @@ describe('MfaCode', () => {
     const input = wrapper.get('input[name="code"]');
     expect(input.attributes('inputmode')).toBe('numeric');
     expect(input.attributes('autocomplete')).toBe('one-time-code');
-    expect(input.attributes('pattern')).toBe('[0-9]{6}');
     expect(await checkA11y()).toHaveNoViolations();
+
+    // Six digits, nothing else
+    const element = input.element as HTMLInputElement;
+    for (const [code, valid] of [
+      ['123456', true],
+      ['12345', false],
+      ['12345a', false],
+      ['      ', false],
+    ] as const) {
+      await input.setValue(code);
+      expect(element.validity.patternMismatch, code).toBe(!valid);
+    }
   });
 });

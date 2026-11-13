@@ -36,14 +36,27 @@ const dialogLabel = computed(() => {
 const stepRef = useTemplateRef<HTMLDivElement>('step');
 useMfaStepFocus(stepRef);
 
+const loadingEnable = ref(false);
+
 /**
  * Asks for the password once the user chooses to enable MFA on the intro, so
  * that dialog opens on top of this one. Cancelling it keeps the intro open.
+ * The button loads from the click until the QR code step, so a second click
+ * starts nothing.
  */
 async function handleEnableMfa() {
-  if (!(await ensurePasswordConfirmed())) return;
-  await enableMfa();
+  loadingEnable.value = true;
+
+  try {
+    if (await ensurePasswordConfirmed()) await enableMfa();
+  } finally {
+    loadingEnable.value = false;
+  }
 }
+
+// Leaving the page while the dialog is open (browser Back) unmounts it without
+// a close event: the setup secret and the codes go with it all the same
+onBeforeUnmount(resetMfa);
 
 async function handleEnterCode() {
   const success = await enterCode();
@@ -121,6 +134,7 @@ const emit = defineEmits<{
         variant="black"
         icon="material-symbols:lock-outline"
         :label="$t('mfa.enable')"
+        :loading="loadingEnable"
         @click="handleEnableMfa()"
       />
 

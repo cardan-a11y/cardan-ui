@@ -52,24 +52,74 @@ const isOpen = ref(false);
 
 function onToggle(event: Event) {
   isOpen.value = (event as ToggleEvent).newState === 'open';
+  if (!isOpen.value) unpark();
 }
 
-// Native `popover=auto` dismisses on Escape / outside-click but not on focus
-// leaving the trigger, so close it on blur to avoid a lingering bubble.
-function onTriggerBlur() {
-  if (isOpen.value) tooltipContentRef.value?.hidePopover();
+const triggerRef = useTemplateRef<HTMLButtonElement>('trigger');
+
+/**
+ * Whether a mousedown in the tooltip is moving focus: its default action
+ * moves focus, from the tooltip's text to the nearest focusable element
+ * around it, such as a `<main tabindex="-1">`. Until the next task.
+ */
+let pressedInside = false;
+
+function onContentMousedown() {
+  pressedInside = true;
+  setTimeout(() => {
+    pressedInside = false;
+  });
 }
+
+/** The element around the tooltip that a press in it gave focus to */
+let parked: Element | null = null;
+
+function unpark() {
+  parked?.removeEventListener('focusout', onFocusOut);
+  parked = null;
+}
+
+/**
+ * Native `popover=auto` dismisses on Escape and an outside press but not on
+ * focus leaving the trigger, so close it when focus moves on to an element
+ * outside the trigger and the tooltip, as Popover does. Not when it moves
+ * nowhere, or because of a press in the tooltip, to select its text or
+ * follow a link in it: it then closes on Escape, an outside press, or when
+ * focus leaves the element the press gave it to for the page (the next Tab).
+ */
+function onFocusOut(event: Event) {
+  const next = (event as FocusEvent).relatedTarget;
+  const content = tooltipContentRef.value;
+  if (!content?.matches(':popover-open') || !(next instanceof Element)) return;
+
+  if (content.contains(next) || triggerRef.value?.contains(next)) {
+    unpark();
+    return;
+  }
+
+  if (pressedInside) {
+    unpark();
+    parked = next;
+    next.addEventListener('focusout', onFocusOut);
+    return;
+  }
+
+  content.hidePopover();
+}
+
+onBeforeUnmount(unpark);
 </script>
 
 <template>
   <div class="tooltip-wrapper" aria-live="polite">
     <button
+      ref="trigger"
       type="button"
       class="tooltip-trigger-button"
       :popovertarget="id"
       :style="computedStyle"
       :tabindex="tabindex"
-      @blur="onTriggerBlur"
+      @focusout="onFocusOut"
     >
       <span
         v-if="label && hideLabel"
@@ -98,6 +148,8 @@ function onTriggerBlur() {
       :data-span="span"
       :style="contentStyle"
       @toggle="onToggle"
+      @mousedown="onContentMousedown"
+      @focusout="onFocusOut"
     >
       <div v-if="isOpen" class="tooltip-content">
         <slot />

@@ -47,6 +47,9 @@ in the projects that extend the layer:
 - Incorrect logic or state: a `useState` key that collides, reactive state
   that goes stale, listeners or observers that are not cleaned up.
 - A broken step in one of the auth flows below.
+- A test bent around a defect (a looser assertion, a class check in place
+  of behaviour) instead of a fix or a named `it.todo`: it hides the
+  regression it should catch. Tests follow CLAUDE.md's Tests section.
 
 Style, naming and refactoring suggestions are 🟡 Nit at most.
 
@@ -96,10 +99,10 @@ happens.
 - Components use design tokens, never hard-coded colors, sizes, radii or
   durations. Exceptions: the fixed artwork colors in `CardanLogo`, the black
   video area in `VideoPlayer`/`YouTube` and the hue slider in `RangeInput`.
-- A shared token is read bare: `var(--color-text)`, not
-  `var(--new-token, var(--old-token))`. A fallback is fine as the default of a
-  component's own property that a prop or a parent may set:
-  `var(--button-radius, var(--radius-md))`.
+- No chain that papers over a renamed token:
+  `var(--new-token, var(--old-token))`. A bare read is preferred, not
+  required: a default in `var()` that makes sense, such as
+  `var(--button-radius, var(--radius-md))`, is not a finding.
 - Components never use the `--cardan-*` primitives; only the semantic
   `--color-*` tokens in `main.css` do.
 - Text and icons on tinted (`-bg`) surfaces use the matching
@@ -110,8 +113,8 @@ happens.
   loads: a change to its guidelines, reviewer, hook or skills reaches them
   at their next plugin update. A change to it alone goes to the
   `cardan:plugin-reviewer`; in a change with other files it is reviewed
-  here like a component, and `claude plugin validate ./plugins/cardan`
-  must pass.
+  here with that reviewer's checks (see the cardan-reviewer agent), and
+  `claude plugin validate ./plugins/cardan` must pass.
 - Common translations belong here: a string that several projects need
   (buttons like Close, Save or Cancel, generic labels and errors) goes into
   the layer's locale files, as the auth strings did, so projects don't each
@@ -125,6 +128,8 @@ happens.
   from a CDN at runtime (projects run a strict Content Security Policy).
 - Icons are Material Symbols (`material-symbols:*-outline-rounded` first)
   and decorative unless a text label is missing.
+- A change to a component that has a test comes with an updated or new
+  test; without one it is a 🟡 Nit.
 
 ## Do not report
 
@@ -135,10 +140,9 @@ happens.
 - `pnpm-lock.yaml`, `.playground/public/**`, and generated or vendored code.
 - Code style in the playground pages under `.playground/`; they are
   documentation. Accessibility problems in them still count.
-- A missing test for a change that is not a form component or dialog:
-  the suite under `test/` covers those with axe and is growing from there.
-  A change to a component that has a test without an updated or new test
-  is a 🟡 Nit.
+- A missing test for a change to a component that has no test yet and is
+  not a form component or dialog: the suite under `test/` covers those with
+  axe and is growing from there.
 
 ## Cap the nits
 

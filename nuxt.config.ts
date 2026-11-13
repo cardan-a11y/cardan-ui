@@ -75,14 +75,6 @@ export default defineNuxtConfig({
     ],
   },
 
-  app: {
-    head: {
-      htmlAttrs: {
-        lang: 'nl',
-      },
-    },
-  },
-
   devtools: {
     enabled: false,
   },

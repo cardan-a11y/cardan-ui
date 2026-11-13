@@ -125,7 +125,10 @@ function takesPaste(event: ClipboardEvent) {
   const focusedWrapper = active?.closest('.file-input-wrapper');
   if (focusedWrapper && focusedWrapper !== wrapper) return false;
 
-  // One field per paste: the first one mounted, unless one has focus
+  // Not a field that is out of sight, such as one in a closed Dialog
+  if (wrapper.checkVisibility?.() === false) return false;
+
+  // One field per paste: the first visible one mounted, unless one has focus
   const taken = event as ClipboardEvent & { fileInputTaken?: boolean };
   if (taken.fileInputTaken) return false;
   taken.fileInputTaken = true;

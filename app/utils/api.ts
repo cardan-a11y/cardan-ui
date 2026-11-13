@@ -7,7 +7,10 @@ type JsonApiError = {
 
 type ErrorBody = {
   message?: unknown;
-  errors?: Record<string, string[]> | JsonApiError[];
+  /** Laravel's per field, JSON:API's objects, or Statamic's plain messages */
+  errors?: Record<string, string[]> | (JsonApiError | string)[];
+  /** Statamic: the first message of each field */
+  error?: unknown;
 };
 
 type ErrorSource = {
@@ -24,7 +27,10 @@ type ErrorSource = {
  * envelope (`errors: [{ detail, source }]`) is folded into it: each `detail`
  * under its `source.parameter`. Details that name no field become the
  * message, or, next to field errors, the first entry of `errors` (the empty
- * key), so neither is lost.
+ * key), so neither is lost. Statamic's failed form post (`errors: [string]`,
+ * `error: { field: string }`) is folded the same way: `error` gives each
+ * field its first message, and a message in `errors` that no field holds is
+ * a general one.
  *
  * Takes what the fetch layer threw: an `ofetch` error (the body on
  * `response._data`), the error of `useAsyncData` or `useFetch` (the request's
@@ -73,7 +79,19 @@ export function extractApiError(error: unknown): ApiErrorData {
   const general: string[] = [];
   const fields: Record<string, string[]> = {};
 
+  if (body.error && typeof body.error === 'object') {
+    for (const [field, detail] of Object.entries(body.error)) {
+      if (typeof detail === 'string') fields[field] = [detail];
+    }
+  }
+  const fieldMessages = new Set(Object.values(fields).flat());
+
   for (const item of body.errors) {
+    if (typeof item === 'string') {
+      if (!fieldMessages.has(item)) general.push(item);
+      continue;
+    }
+
     const detail = item.detail ?? item.title;
     if (!detail) continue;
 

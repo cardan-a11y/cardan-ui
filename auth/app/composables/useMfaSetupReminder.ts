@@ -48,13 +48,14 @@ export function useMfaSetupReminder() {
 
   const mfaEnabled = computed(() => !!fields.value?.mfa_enabled);
   const mfaRequired = computed(() => !!fields.value?.mfa_required);
+  const mfaExempt = computed(() => !!fields.value?.mfa_exempt);
 
   /** The API takes part, MFA is off, and the account is not exempted. */
   const needsMfaSetup = computed(
     () =>
       fields.value?.mfa_enabled !== undefined &&
       !mfaEnabled.value &&
-      !fields.value?.mfa_exempt,
+      !mfaExempt.value,
   );
 
   /**
@@ -89,6 +90,7 @@ export function useMfaSetupReminder() {
   return {
     mfaEnabled,
     mfaRequired,
+    mfaExempt,
     needsMfaSetup,
     isMfaSetupRequired,
     isReminderPending,

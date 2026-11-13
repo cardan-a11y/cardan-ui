@@ -23,7 +23,9 @@ const { locale, locales, setLocale } = useI18n();
           @click="setLocale(option.code)"
         >
           <span>{{ option.code.toUpperCase() }}</span>
-          <span class="visuallyhidden">({{ option.name ?? option.code }})</span>
+          <!-- The space keeps "EN (English)" apart in a name read from the
+               DOM; at the start of the hidden box it is not rendered -->
+          <span class="visuallyhidden"> ({{ option.name ?? option.code }})</span>
         </NuxtLinkLocale>
       </li>
     </ul>

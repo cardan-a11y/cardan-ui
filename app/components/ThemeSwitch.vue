@@ -56,7 +56,7 @@ const emit = defineEmits<{
 }
 
 .theme-switch-button {
-  --color-shape: var(--color-grey-text);
+  --theme-switch-shape-color: var(--color-grey-text);
   position: relative;
   background-color: transparent;
   display: flex;
@@ -87,7 +87,7 @@ const emit = defineEmits<{
 
   .iconify {
     z-index: 1;
-    color: var(--color-shape);
+    color: var(--theme-switch-shape-color);
     font-size: var(--theme-switch-font-size, var(--font-size-lg));
 
     &[class*='material-symbols:light-mode-outline-rounded'] {

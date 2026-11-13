@@ -12,9 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      # The pnpm version comes from packageManager in package.json
       - uses: pnpm/action-setup@v6
-        with:
-          version: 10
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -30,3 +29,26 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
+      # Catches what only a production build finds, such as a bundled icon
+      # that does not exist
+      - name: Build the playground
+        run: pnpm build
+
+      # What happy-dom cannot show (test/browser): dialogs, popovers, inert,
+      # tab order, axe with contrast, on the build above
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run browser tests
+        run: pnpm test:browser
+        env:
+          PLAYGROUND_OUTPUT: .playground/.output
+
+      - name: Keep the browser test traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-results
+          path: node_modules/.cache/cardan-ui-browser/results
+          retention-days: 7

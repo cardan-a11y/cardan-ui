@@ -23,8 +23,10 @@ export default defineNuxtConfig({
 
   app: {
     head: {
+      // In the config, not a layout or app.vue, so the error page has it too
+      titleTemplate: '%s | Cardan UI',
       title: 'Cardan UI',
-      link: [{ rel: 'icon', href: 'favicon.svg', type: 'image/svg+xml' }],
+      link: [{ rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' }],
     },
   },
 

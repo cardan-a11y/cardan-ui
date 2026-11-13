@@ -11,6 +11,7 @@ const {
   tabindex = undefined,
   titleKey = undefined,
   errorMessage = undefined,
+  customError = undefined,
   showInvalid = false,
   label,
   disabled,
@@ -34,6 +35,11 @@ const {
   showInvalid?: boolean;
   /** Under the group when it is required and no option is chosen; "<label> is missing" by default */
   errorMessage?: string;
+  /**
+   * An error the browser cannot find, such as one from the server: the group
+   * shows this text and is described by it until another option is chosen
+   */
+  customError?: string;
   variant?: 'default' | '3d' | 'outline';
 }>();
 
@@ -63,18 +69,42 @@ const hasChoice = computed(
 );
 
 const formShowInvalid = inject(formShowInvalidKey, ref(false));
+const customErrorActive = ref(false);
 
-// The error text describes the group only while it shows
-const describedBy = computed(() =>
-  required && !hasChoice.value && (showInvalid || formShowInvalid.value)
-    ? `error-${id}`
-    : undefined,
+/**
+ * The custom error shows like the group's own, and describes the group, but
+ * does not keep the form from submitting again: the server judges the next
+ * attempt
+ */
+function applyCustomError() {
+  customErrorActive.value = !!customError;
+}
+
+onMounted(applyCustomError);
+watch(() => customError, applyCustomError, { flush: 'post' });
+
+/** The error text shows after a failed submit, or for a custom error */
+const errorShown = computed(
+  () =>
+    customErrorActive.value ||
+    (required && !hasChoice.value && (showInvalid || formShowInvalid.value)),
 );
 </script>
 
 <template>
-  <div :class="['radios-wrapper', showInvalid && 'show-invalid']">
-    <fieldset v-if="options?.length" :aria-describedby="describedBy">
+  <div
+    :class="[
+      'radios-wrapper',
+      showInvalid && 'show-invalid',
+      customErrorActive && 'custom-error',
+    ]"
+  >
+    <!-- The error describes the group only while it shows -->
+    <fieldset
+      v-if="options?.length"
+      :aria-describedby="errorShown ? `error-${id}` : undefined"
+      @change="customErrorActive = false"
+    >
       <legend
         v-if="label || tooltip"
         :class="[hideLegend && 'visuallyhidden', disabled && 'disabled']"
@@ -114,7 +144,11 @@ const describedBy = computed(() =>
       </ul>
     </fieldset>
 
-    <InputError v-if="required" :id="id" :error-text="message" />
+    <InputError
+      v-if="required || customError"
+      :id="id"
+      :error-text="customErrorActive ? customError : message"
+    />
   </div>
 </template>
 
@@ -167,8 +201,10 @@ const describedBy = computed(() =>
   }
 }
 
-/* A required group without a chosen option, once the form reports its state */
+/* A required group without a chosen option, once the form reports its state,
+   or a custom error */
 :where(.radios-wrapper.show-invalid:has(:invalid)),
+:where(.radios-wrapper.custom-error),
 :where(.show-invalid) .radios-wrapper:has(:invalid) {
   legend {
     color: var(--color-red-text);

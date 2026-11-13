@@ -14,21 +14,32 @@
  */
 const route = useRoute();
 const { refreshIdentity } = useAuth();
+const { loadingDisableMfa } = useMfa();
 
-const { mfaEnabled, mfaRequired, isMfaSetupRequired } = useMfaSetupReminder();
+const { mfaEnabled, mfaRequired, mfaExempt } = useMfaSetupReminder();
 const {
   openMfaEnableDialog,
   openMfaDisableDialog,
   openMfaRecoveryCodesDialog,
   closeMfaDialog,
   loadingMfaRecoveryCodesDialog,
+  loadingMfaDisableDialog,
 } = useMfaDialog();
 
+/**
+ * Switching MFA off sends this account straight back to set it up. An exempted
+ * account is never required, whatever the role says, so it switches it off.
+ */
+const resetsMfa = computed(() => mfaRequired.value && !mfaExempt.value);
+
 async function handleRefresh() {
-  await refreshIdentity();
+  // MFA did change, so the app re-syncs its copy even when this read fails
+  await refreshIdentity().catch(() => {});
   emit('refresh');
 
-  if (isMfaSetupRequired.value) {
+  // Without its "MFA is off" step the dialog keeps loading on the disable
+  // confirmation, whatever the read above did, until this closes it
+  if (resetsMfa.value && loadingDisableMfa.value) {
     closeMfaDialog();
     await navigateTo({
       path: '/mfa-setup',
@@ -60,7 +71,7 @@ const emit = defineEmits<{
       {{ $t('mfa.recovery-codes-lost') }}
     </p>
 
-    <p v-if="mfaEnabled && mfaRequired" class="mfa-settings-description">
+    <p v-if="mfaEnabled && resetsMfa" class="mfa-settings-description">
       {{ $t('mfa.change-app-description') }}
     </p>
 
@@ -77,11 +88,12 @@ const emit = defineEmits<{
         <Button
           variant="danger"
           :icon="
-            mfaRequired
+            resetsMfa
               ? 'material-symbols:lock-reset'
               : 'material-symbols:lock-open-outline'
           "
-          :label="mfaRequired ? $t('mfa.reset') : $t('mfa.disable')"
+          :label="resetsMfa ? $t('mfa.reset') : $t('mfa.disable')"
+          :loading="loadingMfaDisableDialog"
           @click="openMfaDisableDialog"
         />
       </template>
@@ -97,7 +109,7 @@ const emit = defineEmits<{
 
     <!-- A required user goes straight on to set MFA up again, so the
          "MFA is off" step would only flash by. -->
-    <MfaDialog :show-disable-result="!mfaRequired" @refresh="handleRefresh" />
+    <MfaDialog :show-disable-result="!resetsMfa" @refresh="handleRefresh" />
 
     <MfaRecoveryCodesDialog />
 

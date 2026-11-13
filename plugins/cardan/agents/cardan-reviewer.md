@@ -22,6 +22,16 @@ intent.
    as 🔴 Important and as 🟡 Nit, "Always check", "Do not report", the nit
    cap and the verification bar. Read enough of the surrounding code to
    cite `file:line` for every finding.
+   When the change also touches the Claude Code setup (`plugins/`,
+   `.claude-plugin/`, `.claude/`, a CLAUDE.md or REVIEW.md at any depth),
+   review those files with the checks of the `cardan:plugin-reviewer` as
+   well: read its steps 1 to 4 in `plugins/cardan/agents/plugin-reviewer.md`
+   (in a project, in the sibling checkout `../cardan-ui`) and report what
+   they find in the same tally, under REVIEW.md's nit cap. When that file
+   is not there (a cloud session has only its own repository), check those
+   files for contradictions with the rest of the repository and references
+   to what does not exist, and say in your answer that the plugin-reviewer's
+   checks were not available.
 4. The parts of REVIEW.md about pull requests don't apply here: post
    nothing to GitHub. When the brief says this is a re-review after fixes,
    report Important findings only.

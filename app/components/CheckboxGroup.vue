@@ -12,6 +12,7 @@ const {
   titleKey = undefined,
   tabindex = undefined,
   errorMessage = undefined,
+  customError = undefined,
   id = useId(),
   showInvalid = false,
   disabled,
@@ -34,6 +35,11 @@ const {
   showInvalid?: boolean;
   /** Under the group when it is required and no box is ticked; "Tick at least one option" by default */
   errorMessage?: string;
+  /**
+   * An error the browser cannot find, such as one from the server: the group
+   * shows this text and is described by it until a box is ticked or unticked
+   */
+  customError?: string;
   id?: string;
   variant?: 'default' | '3d';
 }>();
@@ -61,12 +67,25 @@ const hasSelection = computed(() =>
 );
 
 const formShowInvalid = inject(formShowInvalidKey, ref(false));
+const customErrorActive = ref(false);
 
-// The error text describes the group only while it shows
-const describedBy = computed(() =>
-  required && !hasSelection.value && (showInvalid || formShowInvalid.value)
-    ? `error-${id}`
-    : undefined,
+/**
+ * The custom error shows like the group's own, and describes the group, but
+ * does not keep the form from submitting again: the server judges the next
+ * attempt
+ */
+function applyCustomError() {
+  customErrorActive.value = !!customError;
+}
+
+onMounted(applyCustomError);
+watch(() => customError, applyCustomError, { flush: 'post' });
+
+/** The error text shows after a failed submit, or for a custom error */
+const errorShown = computed(
+  () =>
+    customErrorActive.value ||
+    (required && !hasSelection.value && (showInvalid || formShowInvalid.value)),
 );
 
 const listRef = useTemplateRef<HTMLElement>('list');
@@ -95,9 +114,19 @@ watch([hasSelection, message, () => required, () => options], applyValidity, {
 </script>
 
 <template>
-  <div :class="['checkboxes-wrapper', showInvalid && 'show-invalid']">
+  <div
+    :class="[
+      'checkboxes-wrapper',
+      showInvalid && 'show-invalid',
+      customErrorActive && 'custom-error',
+    ]"
+  >
     <template v-if="options?.length">
-      <fieldset :aria-describedby="describedBy">
+      <!-- The error describes the group only while it shows -->
+      <fieldset
+        :aria-describedby="errorShown ? `error-${id}` : undefined"
+        @change="customErrorActive = false"
+      >
         <legend
           v-if="label"
           :class="[hideLegend && 'visuallyhidden', disabled && 'disabled']"
@@ -127,7 +156,11 @@ watch([hasSelection, message, () => required, () => options], applyValidity, {
         </ul>
       </fieldset>
 
-      <InputError v-if="required" :id="id" :error-text="message" />
+      <InputError
+        v-if="required || customError"
+        :id="id"
+        :error-text="customErrorActive ? customError : message"
+      />
     </template>
   </div>
 </template>
@@ -168,8 +201,10 @@ watch([hasSelection, message, () => required, () => options], applyValidity, {
   }
 }
 
-/* A required group without a ticked box, once the form reports its state */
+/* A required group without a ticked box, once the form reports its state, or
+   a custom error */
 :where(.checkboxes-wrapper.show-invalid:has(:invalid)),
+:where(.checkboxes-wrapper.custom-error),
 :where(.show-invalid) .checkboxes-wrapper:has(:invalid) {
   legend {
     color: var(--color-red-text);

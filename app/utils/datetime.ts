@@ -1,7 +1,7 @@
 /**
  * A date in a named format ('long': "9 november 2026"; 'short', 'numeric',
  * 'datetime' and 'datetimeLong') or in the given Intl options, in the given
- * locale; undefined for no date.
+ * locale; undefined for no date or one that is not a date.
  */
 export function formatDateTime(
   date: number | string | Date,
@@ -10,7 +10,10 @@ export function formatDateTime(
 ) {
   if (!date) return;
 
-  return new Date(date).toLocaleDateString(
+  const value = new Date(date);
+  if (Number.isNaN(value.getTime())) return;
+
+  return value.toLocaleDateString(
     locale,
     typeof format === 'string' ? formats[format] : format,
   );

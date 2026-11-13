@@ -181,12 +181,6 @@ html:has(.dialog[open]) {
   }
 }
 
-.dark-mode {
-  .dialog {
-    --color-grey-light: var(--color-grey-bg);
-  }
-}
-
 .dialog {
   --color-dialog-border: var(--card-border-color);
   --dialog-padding-inline: 1.5rem;

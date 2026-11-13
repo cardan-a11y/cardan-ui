@@ -215,7 +215,7 @@ defineExpose({
   }
 
   .select {
-    font-family: var(--font-family-input, system-ui, sans-serif);
+    font-family: var(--font-family-input);
     font-size: 16px;
     width: 100%;
     border: 1px solid var(--color-grey-graphic);

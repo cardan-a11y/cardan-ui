@@ -180,7 +180,7 @@ watch(segments, highlightCode, { flush: 'post' });
       vertical-align: middle;
       margin-inline-end: 0.25rem;
       margin-block-start: -2px;
-      background-color: var(--color);
+      background-color: var(--markdown-swatch-color);
     }
   }
 

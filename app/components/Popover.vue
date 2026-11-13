@@ -14,6 +14,7 @@ const {
   span = undefined,
   maxWidth = undefined,
   ariaDescribedby = undefined,
+  loading = false,
   id = useId(),
 } = defineProps<{
   fontSize?: FontSize;
@@ -72,31 +73,88 @@ function onToggle(event: Event) {
         ?.querySelector<HTMLElement>(focusableSelector)
         ?.focus();
     });
+  } else {
+    unpark();
   }
+}
+
+/**
+ * Whether a mousedown in the content or on the trigger is moving focus: its
+ * default action moves focus, outside the items (or from the trigger in
+ * Safari, where a click does not focus a button) to the nearest focusable
+ * element around the popover, such as a `<main tabindex="-1">`. Until the
+ * next task.
+ */
+let pressedInside = false;
+
+function onPress() {
+  pressedInside = true;
+  setTimeout(() => {
+    pressedInside = false;
+  });
+}
+
+/** The element around the popover that a press in it gave focus to */
+let parked: Element | null = null;
+
+function unpark() {
+  parked?.removeEventListener('focusout', handleFocusOut);
+  parked = null;
 }
 
 /**
  * Focus that leaves the content or the trigger for the page closes the
  * popover: Tab past the last element, or Shift+Tab from the trigger. A move
- * between the two keeps it open.
+ * between the two keeps it open, and so does the move a press in the content
+ * or on the trigger makes: the popover then closes when focus leaves that
+ * element for the page, as it does after a navigation, when AppShell focuses
+ * the shell, and a press on the trigger closes it with the click instead of
+ * on mousedown, for the click to open it again.
  */
-function handleFocusOut(event: FocusEvent) {
-  const next = event.relatedTarget;
-  if (!(next instanceof Node)) return;
+function handleFocusOut(event: Event) {
+  const next = (event as FocusEvent).relatedTarget;
+  if (!(next instanceof Element)) return;
 
   if (
     popoverContentRef.value?.contains(next) ||
     triggerRef.value?.contains(next)
   ) {
+    unpark();
+    return;
+  }
+
+  if (pressedInside) {
+    unpark();
+    parked = next;
+    next.addEventListener('focusout', handleFocusOut);
     return;
   }
 
   hidePopover();
 }
 
+// A popover does not outlive its page, also when focus did not move
+const route = useRoute();
+watch(
+  () => route.path,
+  () => {
+    if (popoverContentRef.value?.matches(':popover-open')) hidePopover();
+  },
+);
+
+onBeforeUnmount(unpark);
+
 function handleMenuClick(item: MenuItem) {
   emit('click', item);
   hidePopover();
+}
+
+/**
+ * A loading trigger stays focusable instead of disabled, as Button does:
+ * a canceled click does not open the popover
+ */
+function ignoreWhileLoading(event: Event) {
+  if (loading) event.preventDefault();
 }
 
 function hidePopover() {
@@ -120,7 +178,9 @@ const emit = defineEmits<{
       ref="popoverTrigger"
       type="button"
       :popovertarget="id"
-      :disabled="loading || disabled"
+      :disabled="disabled"
+      :aria-disabled="loading || undefined"
+      :aria-busy="loading || undefined"
       :class="[
         'popover-trigger',
         `popover-trigger-variant--${buttonVariant}`,
@@ -129,7 +189,9 @@ const emit = defineEmits<{
       ]"
       :style="computedStyle"
       :aria-describedby="ariaDescribedby"
+      @mousedown="onPress"
       @focusout="handleFocusOut"
+      @click="ignoreWhileLoading"
     >
       <Icon v-if="loading" name="svg-spinners:90-ring-with-bg" />
       <Icon v-else :name="icon" />
@@ -163,6 +225,7 @@ const emit = defineEmits<{
       :data-span="span"
       :style="contentStyle"
       @toggle="onToggle"
+      @mousedown="onPress"
       @focusout="handleFocusOut"
     >
       <div class="popover-content">
@@ -208,11 +271,12 @@ const emit = defineEmits<{
     outline-color: var(--focus-color);
   }
 
-  &:disabled {
+  &:disabled,
+  &[aria-disabled='true'] {
     opacity: 35%;
   }
 
-  &:not(:disabled):hover {
+  &:not(:disabled, [aria-disabled='true']):hover {
     background-color: color-mix(
       in srgb,
       var(--color-grey-bg) 95%,
@@ -364,7 +428,7 @@ const emit = defineEmits<{
   background-color: var(--color-input-bg);
   border-color: var(--popover-border-color);
 
-  &:not(:disabled):hover {
+  &:not(:disabled, [aria-disabled='true']):hover {
     background-color: var(--color-grey-bg);
   }
 }
@@ -375,7 +439,7 @@ const emit = defineEmits<{
   color: var(--color-on-accent);
   background-color: var(--color-accent);
 
-  &:not(:disabled, .disabled):hover {
+  &:not(:disabled, [aria-disabled='true']):hover {
     background-color: var(--color-accent-hover);
   }
 }
@@ -384,7 +448,7 @@ const emit = defineEmits<{
   color: var(--color-text);
   background-color: var(--color-grey-bg);
 
-  &:not(:disabled):hover {
+  &:not(:disabled, [aria-disabled='true']):hover {
     background-color: color-mix(
       in srgb,
       var(--color-grey-bg) 95%,
@@ -397,7 +461,7 @@ const emit = defineEmits<{
   color: var(--color-text);
   background-color: transparent;
 
-  &:not(:disabled):hover {
+  &:not(:disabled, [aria-disabled='true']):hover {
     background-color: var(--color-ghost-hover-bg);
   }
 }

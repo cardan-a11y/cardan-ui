@@ -111,16 +111,16 @@ const computedStyle = computed(() => ({
     }
 
     tr {
-      --color-1: var(--color-card-bg);
-      --color-2: var(--color-bg);
+      --table-shimmer-color-1: var(--color-card-bg);
+      --table-shimmer-color-2: var(--color-bg);
       animation: shimmer var(--duration-xl) linear infinite;
       animation-duration: var(--duration-xxl);
       background: linear-gradient(
         -45deg,
-        var(--color-1) 30%,
-        var(--color-2) 45%,
-        var(--color-2) 55%,
-        var(--color-1) 70%
+        var(--table-shimmer-color-1) 30%,
+        var(--table-shimmer-color-2) 45%,
+        var(--table-shimmer-color-2) 55%,
+        var(--table-shimmer-color-1) 70%
       );
       background-size: 400% 400%;
     }

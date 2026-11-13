@@ -24,8 +24,8 @@ one (2.x.0) for a breaking change.
    that extends the layer must do, or a change that can break it; the
    changelog lists every change, so the notes leave the rest out. That is: new tokens for `main.css`, renamed
    props or classes, behaviour that changes for stored content, modules or
-   CSP hosts a project needs, and a plugin update (step 5) as a bullet with
-   `claude plugin update cardan@cardan-ui --scope user`. A patch release is
+   CSP hosts a project needs. A plugin change is not a migration note: the
+   projects pick it up by themselves (step 5). A patch release is
    a `### <version>` subsection in the current minor's section: below the
    minor's own notes, which are everything before its first patch
    subsection, and above the previous patch. A minor release is a new
@@ -46,15 +46,25 @@ projects. See changelog for details.`, without details: the changelog says what 
    the file (`git log -p MIGRATION.md`).
 4. **CLAUDE.md**: update the component list or the sections that describe
    what changed, so it stays true.
-5. **Plugin**: if anything under `plugins/cardan` changed, the other
-   projects receive it with
-   `claude plugin update cardan@cardan-ui --scope user`; say so in the PR
-   description. The Playwright MCP server in `.mcp.json` is pinned, and the
+5. **Plugin**: if anything under `plugins/cardan` changed, say so in the PR
+   description. The projects receive it by themselves after the merge: the
+   `cardan-ui` marketplace auto-updates (`autoUpdate` in their
+   `.claude/settings.json`), within minutes of a session's start, and
+   applies from the next launch or `/reload-plugins`. A machine that added
+   the marketplace from a local cardan-ui checkout runs that checkout as it
+   is, without updates. The Playwright MCP server in `.mcp.json` is pinned, and the
    cross-browser script uses the same version; bump it there, and in
    `plugins/cardan-browsers/.mcp.json`, when a newer `@playwright/mcp` is
    wanted.
 6. **Checks and review**: `pnpm run lint`, `pnpm run typecheck`,
-   `pnpm test`, then the review as the Cardan guidelines describe.
+   `pnpm test`, and `pnpm test:browser` where `package.json` has that
+   script. Then `pnpm test:projects`, which runs the suites of each sibling
+   project against this checkout, one project at a time: its `test:layer`
+   and, once that passes, its `test:browser` (Playwright, on the project's
+   own port), unless `--skip-browser` is given, which leaves the browser
+   suites out for a quick run. A project it reports as "not checked out",
+   or a suite as "no suite", is skipped, not a failure; only a failed suite
+   stops the release. Then the review as the Cardan guidelines describe.
 7. **Pull request**: commit, push and open the PR against `main` with the
    `cardan:pr-body` skill. Merge only when the user says so. After the
    merge, the next work starts on `release/<next patch version>`, cut from

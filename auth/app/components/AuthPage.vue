@@ -20,9 +20,17 @@ const pageRef = useTemplateRef<HTMLDivElement>('page');
  * Reached through a link in the app (back to login, reset here), the page
  * starts focus at its top instead of at the email field or the body. On a
  * fresh load there is no previous entry, so the form's autofocus applies.
+ * A form that has put focus in the page already keeps it: the second factor,
+ * reached by signing in, starts in its code field. The content mounts first,
+ * so its focus is in place when this runs.
  */
 onMounted(() => {
-  if (window.history.state?.back) pageRef.value?.focus();
+  if (
+    window.history.state?.back &&
+    !pageRef.value?.contains(document.activeElement)
+  ) {
+    pageRef.value?.focus();
+  }
 });
 </script>
 

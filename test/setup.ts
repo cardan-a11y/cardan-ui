@@ -5,5 +5,5 @@ import * as matchers from 'vitest-axe/matchers';
 expect.extend(matchers);
 
 // A failed test must not leave its component in the document for the next
-// test's axe run.
+// test's axe run; addToPage() (dom.ts) removes what a test added itself.
 enableAutoUnmount(afterEach);

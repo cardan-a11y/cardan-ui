@@ -92,8 +92,10 @@ const emit = defineEmits<{
         <template v-else-if="item.items?.length">
           <hr />
 
+          <!-- A group named by its item, which has no button of its own -->
           <MenuList
             :list="item.items"
+            :aria-label="item.label || item.title"
             :button-size="buttonSize"
             :font-size="fontSize"
             :icon-size="iconSize"
@@ -198,11 +200,12 @@ const emit = defineEmits<{
   }
 }
 
+/* --menu-list-gap: the space between the items of an inline list */
 .menu-list--inline {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--gap);
+  gap: var(--menu-list-gap, 1.5rem);
 
   > .menu-list-item {
     display: inline-block;

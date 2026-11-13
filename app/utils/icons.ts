@@ -8,6 +8,7 @@
  */
 const componentIcons = [
   'material-symbols:add-photo-alternate-outline-rounded',
+  'material-symbols:add-rounded',
   'material-symbols:add-to-home-screen-outline-rounded',
   'material-symbols:arrow-left-alt',
   'material-symbols:arrow-right-alt',
@@ -28,9 +29,11 @@ const componentIcons = [
   'material-symbols:dark-mode-outline-rounded',
   'material-symbols:dehaze-rounded',
   'material-symbols:do-not-disturb-on-outline-rounded',
+  'material-symbols:dock-to-right-outline-rounded',
   'material-symbols:error',
   'material-symbols:expand-more-rounded',
   'material-symbols:help-outline-rounded',
+  'material-symbols:home-outline-rounded',
   'material-symbols:info-outline',
   'material-symbols:info-outline-rounded',
   'material-symbols:info-rounded',
@@ -46,6 +49,7 @@ const componentIcons = [
   'material-symbols:more-horiz',
   'material-symbols:open-in-new-rounded',
   'material-symbols:refresh-rounded',
+  'material-symbols:remove-rounded',
   'material-symbols:search-rounded',
   'material-symbols:upload-file-outline',
   'material-symbols:visibility',

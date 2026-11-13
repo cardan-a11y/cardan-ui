@@ -15,6 +15,9 @@ const { client, loginWithoutRedirect, refreshIdentity, loginRedirectTarget } =
 const { endpoints } = useCardanAuthConfig();
 const { minLength, maxLength } = usePasswordPolicy();
 const loginEmail = useLoginEmail();
+const { remindMfaSetup } = useMfaSetupReminder();
+const { createToast } = useToast();
+const { t } = useI18n();
 
 /** The address in the reset link, when the mail carries one. */
 const linkEmail = computed(() => String(route.query.email ?? ''));
@@ -49,7 +52,8 @@ async function resetPassword() {
   }
 
   // The password is set. A sign-in that fails now is no reason to say the
-  // reset failed: the login page takes over, with the address filled in.
+  // reset failed: the login page takes over, with the address filled in and
+  // a word that the new password was saved.
   try {
     const response = await loginWithoutRedirect({
       email: email.value,
@@ -63,11 +67,14 @@ async function resetPassword() {
       });
     } else {
       await refreshIdentity();
+      // Signed in like on the login page: without MFA, past the setup page
+      remindMfaSetup();
       const target = loginRedirectTarget();
       if (target !== false) await navigateTo(target);
     }
   } catch {
     loginEmail.value = email.value;
+    createToast({ label: t('password.saved'), color: 'green' });
     await navigateTo({
       path: '/login',
       query: { redirect: route.query.redirect },

@@ -1,12 +1,32 @@
 <script setup lang="ts">
+/**
+ * Moves focus to its target itself, without a change of address: the hash
+ * would be a navigation of the router, which runs the middleware, and on the
+ * error page clears the error (Nuxt clears it after every navigation) and
+ * renders the page that failed once more, which can fail again after the
+ * user has moved on. A target that cannot take focus is left to the browser.
+ */
 const { links = [{ href: '#main' }] } = defineProps<{
-  links?: { href: string; label?: string }[];
+  links?: SkipLinkItem[];
 }>();
+
+function skip(event: MouseEvent, href: string) {
+  const target = href.startsWith('#')
+    ? document.getElementById(decodeURIComponent(href.slice(1)))
+    : null;
+  if (!target) return;
+
+  target.focus({ preventScroll: true });
+  if (document.activeElement !== target) return;
+
+  event.preventDefault();
+  target.scrollIntoView({ block: 'start' });
+}
 </script>
 
 <template>
   <template v-for="link in links" :key="link.href">
-    <a :href="link.href" class="skip-link">
+    <a :href="link.href" class="skip-link" @click="skip($event, link.href)">
       {{ link.label || $t('aria.skip-to-main-content') }}
     </a>
   </template>

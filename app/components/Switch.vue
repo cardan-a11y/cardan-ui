@@ -25,10 +25,12 @@ function handleClick() {
   model.value = !model.value;
 }
 
-const computedAriaDescribedby = computed(() =>
-  [ariaDescribedby, instruction && `instruction-${id}`]
-    .filter(Boolean)
-    .join(' '),
+// No attribute without a description, rather than an empty one
+const computedAriaDescribedby = computed(
+  () =>
+    [ariaDescribedby, instruction && `instruction-${id}`]
+      .filter(Boolean)
+      .join(' ') || undefined,
 );
 </script>
 

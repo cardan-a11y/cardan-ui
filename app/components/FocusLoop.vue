@@ -135,9 +135,19 @@ function focusFirst() {
   (autofocusElement ?? elements[0])?.focus();
 }
 
+/**
+ * The elements in the content that can take focus now: not hidden (the items
+ * of a closed popover, a panel behind `v-show`) and not in an inert part (a
+ * closed accordion's panel). One of those at either end would leave focus on
+ * a sentinel.
+ */
 function getFocusableElements() {
   return Array.from(
     contentRef.value?.querySelectorAll<HTMLElement>(focusableSelector) ?? [],
+  ).filter(
+    (element) =>
+      !element.closest('[inert]') &&
+      element.checkVisibility({ visibilityProperty: true }),
   );
 }
 
