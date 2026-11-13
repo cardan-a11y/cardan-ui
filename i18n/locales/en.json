@@ -63,6 +63,27 @@
     "page-not-found": "Page not found",
     "youtube": "YouTube player failed to load"
   },
+  "error-page": {
+    "back": "Back to the previous page",
+    "home": "Go to the homepage",
+    "status": "Error code {status}",
+    "not-found": {
+      "heading": "Page not found",
+      "text": "The address may be mistyped, or the page has moved or no longer exists."
+    },
+    "no-access": {
+      "heading": "No access",
+      "text": "You are not signed in, or your account has no access to this page."
+    },
+    "server": {
+      "heading": "Something went wrong",
+      "text": "This is an error on our side. Please try again later."
+    },
+    "other": {
+      "heading": "This page cannot be shown",
+      "text": "Something went wrong while opening this page. Please try again later."
+    }
+  },
   "form": {
     "invalid-email": "Email address is invalid",
     "invalid-phone": "Phone number is invalid",

@@ -33,6 +33,7 @@ const componentIcons = [
   'material-symbols:error',
   'material-symbols:expand-more-rounded',
   'material-symbols:help-outline-rounded',
+  'material-symbols:home-outline-rounded',
   'material-symbols:info-outline',
   'material-symbols:info-outline-rounded',
   'material-symbols:info-rounded',

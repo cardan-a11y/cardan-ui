@@ -16,6 +16,11 @@ export const navList: MenuItem[] = [
     label: 'App layout',
   },
   {
+    id: 'error-page',
+    to: '/error-page',
+    label: 'Error page',
+  },
+  {
     id: 'colors',
     to: '/colors',
     label: 'Colors',

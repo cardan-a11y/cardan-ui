@@ -52,11 +52,13 @@ const onlyOpen = ref(false);
 // MarkdownPreview, which colours it with the `xml` grammar.
 const htmlFence = (code: string) => ['```html', code, '```'].join('\n');
 
-const shellExample = htmlFence(`<AppShell>
+const shellExample =
+  htmlFence(`<!-- app/layouts/default.vue: also around the error page -->
+<AppShell>
   <AppHeader>…</AppHeader>
 
   <main id="main" tabindex="-1">
-    <NuxtPage />
+    <slot />
   </main>
 </AppShell>`);
 
@@ -123,13 +125,17 @@ const orderExample = htmlFence(`<SidebarLayout sticky side-label="Your order">
       <p>
         The wrapper around the header, the navigation and the pages. It
         announces a new page to screen readers, puts the skip link first and
-        takes focus after a navigation to another page, so the next Tab is the
-        skip link. Focus the new page moves into its
+        takes focus after a navigation to another page, and when the
+        <NuxtLink to="/error-page">error page</NuxtLink> replaces the app, so
+        the next Tab is the skip link. Focus the new page moves into its
         <code>&lt;main&gt;</code> itself stays there (a code field, a heading),
         and an address with a hash focuses the element it names
-        (<code>useHashFocus()</code>). The app's
-        <code>&lt;main&gt;</code> carries the skip link's target:
-        <code>id="main"</code> with <code>tabindex="-1"</code>.
+        (<code>useHashFocus()</code>). The skip link's target is exactly one
+        element per page with <code>id="main"</code> and
+        <code>tabindex="-1"</code>, past everything that repeats from page to
+        page (WCAG 2.4.1): the app's <code>&lt;main&gt;</code>, or, where
+        breadcrumbs or tabs repeat at the top of the pages, the page's own
+        content after them.
       </p>
 
       <MarkdownPreview :content="shellExample" class="layout-demo-code" />

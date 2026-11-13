@@ -63,6 +63,27 @@
     "page-not-found": "Pagina niet gevonden",
     "youtube": "YouTube player is niet geladen"
   },
+  "error-page": {
+    "back": "Terug naar de vorige pagina",
+    "home": "Naar de homepagina",
+    "status": "Foutcode {status}",
+    "not-found": {
+      "heading": "Pagina niet gevonden",
+      "text": "Misschien is het adres verkeerd getypt, of is de pagina verplaatst of verwijderd."
+    },
+    "no-access": {
+      "heading": "Geen toegang",
+      "text": "Je bent niet ingelogd, of je account heeft geen toegang tot deze pagina."
+    },
+    "server": {
+      "heading": "Er is iets misgegaan",
+      "text": "Dit is een fout aan onze kant. Probeer het later opnieuw."
+    },
+    "other": {
+      "heading": "Deze pagina kan niet worden getoond",
+      "text": "Er is iets misgegaan bij het openen van deze pagina. Probeer het later opnieuw."
+    }
+  },
   "form": {
     "invalid-email": "Geen geldig e-mailadres",
     "invalid-phone": "Telefoonnummer is ongeldig",
