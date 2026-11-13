@@ -88,6 +88,22 @@ const layoutExample = htmlFence(`<SidebarLayout sticky beside="xl">
     <aside aria-label="Filters">…</aside>
   </template>
 </SidebarLayout>`);
+
+// An order summary: text only, longer than the viewport is high
+const orderLines = Array.from({ length: 24 }, (_, i) => ({
+  title: `Training ${i + 1}`,
+  price: `€${(i + 1) * 25}`,
+}));
+const orderTotal = `€${orderLines.length * (orderLines.length + 1) * 12.5}`;
+
+const orderExample = htmlFence(`<SidebarLayout sticky side-label="Your order">
+  …
+
+  <template #side>
+    <h3>Your order</h3>
+    <dl>…</dl>
+  </template>
+</SidebarLayout>`);
 </script>
 
 <template>
@@ -216,6 +232,48 @@ const layoutExample = htmlFence(`<SidebarLayout sticky beside="xl">
         </aside>
       </template>
     </SidebarLayout>
+
+    <p>
+      A panel with nothing focusable in it, such as an order summary, takes
+      <code>side-label</code>. The panel is then an <code>aside</code> with that
+      name, and while it scrolls it is in the tab order itself: Safari does not
+      focus a scroll container on its own, so without it the end of the order
+      would be out of reach of the keyboard. Its content brings no landmark of
+      its own. Below, from 1024px wide, Tab reaches the order and End scrolls it
+      to the total; on a screen tall enough for the whole order, the panel is no
+      tab stop.
+    </p>
+
+    <MarkdownPreview :content="orderExample" class="layout-demo-code" />
+
+    <SidebarLayout sticky side-label="Your order" class="layout-demo">
+      <Card>
+        <h3>Payment</h3>
+
+        <p>
+          You pay with iDEAL, a credit card or Bancontact on the next page. The
+          invoice reaches you by email once the payment is in.
+        </p>
+      </Card>
+
+      <template #side>
+        <Card class="layout-demo-order">
+          <h3>Your order</h3>
+
+          <dl>
+            <div v-for="line in orderLines" :key="line.title">
+              <dt>{{ line.title }}</dt>
+              <dd>{{ line.price }}</dd>
+            </div>
+
+            <div class="layout-demo-total">
+              <dt>Total</dt>
+              <dd>{{ orderTotal }}</dd>
+            </div>
+          </dl>
+        </Card>
+      </template>
+    </SidebarLayout>
   </div>
 </template>
 
@@ -311,6 +369,32 @@ main:has(.layout-page) {
     /* The column's own spacing is below the last card */
     > .sidebar-layout-main > .card:last-child {
       margin-block-end: 0;
+    }
+  }
+
+  .layout-demo-order {
+    margin-block-end: 0;
+
+    dl {
+      display: grid;
+      gap: 0.5rem;
+      margin: 0;
+    }
+
+    dl > div {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    dd {
+      margin: 0;
+    }
+
+    .layout-demo-total {
+      padding-block-start: 0.5rem;
+      border-block-start: 1px solid var(--color-grey-light);
+      font-weight: var(--font-weight-bold);
     }
   }
 

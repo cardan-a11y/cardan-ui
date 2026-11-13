@@ -2,11 +2,11 @@
 
 This guide is for developers of projects that extend the layer. Each section says what a project must do or check for a release: new tokens for its `main.css`, renamed props or classes, modules or CSP hosts. The components read their design tokens from the project's own `main.css`, a copy of the template in [`app/assets/main.css`](app/assets/main.css), so a token a release adds has to be pasted there.
 
-A release that needs nothing from projects has a one-line section that says so; what it changed is in the playground's changelog ([`.playground/pages/changelog.vue`](.playground/pages/changelog.vue)). The newest release is at the top. The projects are kept up to date, so the file only holds the five most recent releases that ask something of them, with the one-line sections in between: each release that asks something removes the notes older than that. Older notes are in the history of this file (`git log -p MIGRATION.md`).
+A release that needs nothing from projects has a one-line section that says so; what it changed is in the playground's changelog ([`.playground/pages/changelog.vue`](.playground/pages/changelog.vue)). The newest minor is at the top. Within a minor, its own notes come first, by topic, and its patch releases follow, newest first. The projects are kept up to date, so the file only holds the five most recent releases that ask something of them, with the one-line sections in between: each release that asks something removes the notes older than that. Older notes are in the history of this file (`git log -p MIGRATION.md`).
 
 ## Upgrading to 2.4
 
-2.4.0 is the accessibility release after the audit of November 2026: 98 findings in the form fields, the overlays, the display components and the auth layer. Most of it keeps working in a project that does nothing; the items below rename or remove something.
+2.4.0 is the accessibility release after the audit of November 2026: 98 findings in the form fields, the overlays, the display components and the auth layer. Most of it keeps working in a project that does nothing; the topics below rename or remove something. The patch releases follow them, newest first: 2.4.1.
 
 ### Form fields
 
@@ -100,7 +100,8 @@ Also a round of audit fixes. Paste the token, rename what a project sets, and ch
 - **RangeInput without a model starts at `min`** in its `<input>` too: a form that posts an untouched RangeInput sends `min`, where the browser sent the middle of the range.
 - **The layer sets `<html lang>` and `dir` from the locale** (its `language` and `dir` in the i18n config, which the four projects set), and its own `htmlAttrs.lang: 'nl'` is gone. A project's static `htmlAttrs.lang` (cardan-auditor-nuxt, cardan-support-nuxt) and its `useLocaleHead()` binding on `<Html>` can go, but only once its production build has this release.
 - **A toast cannot be reached or heard while a modal Dialog or MobileMenu is open**: the browser makes everything outside the dialog inert. Show a message about what happens in a dialog, such as a form's error, inside it, with ErrorMessage.
-- **A link to another origin in MarkdownPreview no longer has a `title`**: the hidden text "(open in new window)" in its name remains. A test or style that selects that `title` (`a[title]`, `getAttribute('title')`) selects the link by its name or by `target="_blank"`. None of the four projects does.
+- **A link to another origin in MarkdownPreview no longer gets a `title` from the layer**: the hidden text "(open in new window)" in its name remains. A link that sets its own title in the markdown (`[text](url "title")`) keeps it. A test or style that selects the layer's `title` (`a[title]`, `getAttribute('title')`) selects the link by its name or by `target="_blank"`. None of the four projects does.
+- **A sticky SidebarLayout whose panel holds text only and can be taller than the viewport takes `side-label`**, the panel's name: the panel is then an `aside` with that name, and while it scrolls it is a tab stop itself, so the keyboard scrolls it in Safari too, which does not focus a scroll container on its own (WCAG 2.1.1). Its content drops its own landmark and name (a `div`, not a second `aside`). A panel that leads focus through links or fields needs nothing. cardan-academy-nuxt's CheckoutShell passes it (its order panel), so that change merges only after this release is on `main`.
 - **Cardan Auth UI**: new message key `mfa.recovery-codes-regenerate-unavailable` for an app that overrides the `mfa` messages. `useMfaDialog().loadingMfaDisableDialog` is new, for a project's own Disable MFA button; cardan-auditor-nuxt's UserProfileForm uses it, so that change merges only after this release is on `main`.
 
 ## Upgrading to 2.3

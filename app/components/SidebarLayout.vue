@@ -25,16 +25,96 @@
  * is the panel's `scrollbar-gutter`, and `--sidebar-layout-outline-room`
  * (0.25rem) the room around its content for focus outlines while it scrolls.
  *
- * The panel is a `div`: its content brings the landmark (`aside`, `nav`)
- * and its label. A panel that scrolls needs something focusable in it, as a
- * list of links or a form has, to be reachable with the keyboard in every
- * browser.
+ * A sticky panel that scrolls is reached with the keyboard through what is
+ * focusable in it: scrolling follows focus. That holds for a list of links
+ * or a form, not for text alone, such as an order summary: Chromium and
+ * Firefox focus a scroll container themselves, unnamed, Safari does not, and
+ * what lies below the fold is out of reach. Such a panel takes `side-label`.
+ * The panel is then an `aside` with that name, the complementary landmark of
+ * the page, and while it scrolls (sticky, beside the main column and taller
+ * than its room) it is in the tab order itself, so the arrow keys, Page Down
+ * and End scroll it in every browser. A panel that fits adds no tab stop.
+ *
+ * Exactly one element is named: the one that scrolls and takes focus. With
+ * `side-label` the content brings no landmark or name of its own (a `div`,
+ * not a second `aside`); without it the panel is a `div` and its content
+ * brings the landmark (`aside`, `nav`) and its label.
  */
-const { side = 'end', beside = 'lg' } = defineProps<{
+const {
+  side = 'end',
+  beside = 'lg',
+  sticky = false,
+  sideLabel = undefined,
+} = defineProps<{
   side?: 'start' | 'end';
   beside?: 'md' | 'lg' | 'xl' | boolean;
   sticky?: boolean;
+  /** Names the panel, as its `aside`, and lets it take focus while it scrolls */
+  sideLabel?: string;
 }>();
+
+const sideRef = useTemplateRef<HTMLElement>('side');
+
+/** Whether the panel scrolls on its own: sticky, beside, and too tall */
+const scrolls = ref(false);
+/** Whether the panel itself has focus, which it keeps once it stops scrolling */
+const focused = ref(false);
+
+function measure(panel: HTMLElement) {
+  scrolls.value =
+    getComputedStyle(panel).overflowY !== 'visible' &&
+    // Rounding can put the two a pixel apart in a panel that fits
+    panel.scrollHeight > panel.clientHeight + 1;
+}
+
+// The panel's box follows the viewport (its room, beside or stacked), its
+// children follow the content
+watch(
+  [sideRef, () => sticky && !!sideLabel],
+  ([panel, watched], _, onCleanup) => {
+    scrolls.value = false;
+    focused.value = false;
+    if (!panel || !watched) return;
+
+    focused.value = document.activeElement === panel;
+    const onFocus = () => (focused.value = true);
+    const onBlur = () => (focused.value = false);
+    panel.addEventListener('focus', onFocus);
+    panel.addEventListener('blur', onBlur);
+
+    const resizes = new ResizeObserver(() => measure(panel));
+    const observeAll = () => {
+      resizes.disconnect();
+      resizes.observe(panel);
+      for (const child of panel.children) resizes.observe(child);
+    };
+    const mutations = new MutationObserver(observeAll);
+    observeAll();
+    mutations.observe(panel, { childList: true });
+
+    onCleanup(() => {
+      resizes.disconnect();
+      mutations.disconnect();
+      panel.removeEventListener('focus', onFocus);
+      panel.removeEventListener('blur', onBlur);
+    });
+  },
+  { flush: 'post' },
+);
+
+/** In the tab order while it scrolls */
+function sideTabindex() {
+  if (!sideLabel) return undefined;
+  if (scrolls.value) return 0;
+  // Focused as it stops scrolling (a resize, zoom): still focusable, out of
+  // the tab order; without a tabindex focus would drop to <body>
+  return focused.value ? -1 : undefined;
+}
+
+const sideAttrs = computed(() => ({
+  'aria-label': sideLabel,
+  tabindex: sideTabindex(),
+}));
 </script>
 
 <template>
@@ -48,17 +128,29 @@ const { side = 'end', beside = 'lg' } = defineProps<{
       sticky && 'is-sticky',
     ]"
   >
-    <div v-if="$slots.side && side === 'start'" class="sidebar-layout-side">
+    <component
+      :is="sideLabel ? 'aside' : 'div'"
+      v-if="$slots.side && side === 'start'"
+      ref="side"
+      class="sidebar-layout-side"
+      v-bind="sideAttrs"
+    >
       <slot name="side" />
-    </div>
+    </component>
 
     <div class="sidebar-layout-main">
       <slot />
     </div>
 
-    <div v-if="$slots.side && side === 'end'" class="sidebar-layout-side">
+    <component
+      :is="sideLabel ? 'aside' : 'div'"
+      v-if="$slots.side && side === 'end'"
+      ref="side"
+      class="sidebar-layout-side"
+      v-bind="sideAttrs"
+    >
       <slot name="side" />
-    </div>
+    </component>
   </div>
 </template>
 
@@ -171,5 +263,14 @@ const { side = 'end', beside = 'lg' } = defineProps<{
     padding-inline: var(--sidebar-layout-beside)
       var(--sidebar-layout-outline-room, 0.25rem);
   }
+}
+
+/* The panel in the tab order while it scrolls (`side-label`): its outline
+   inside its box, where nothing clips it. Inline it lies in the outline room
+   around the content; at the top, without `--sidebar-layout-padding-start`,
+   on the content's first line. */
+.sidebar-layout-side[tabindex]:focus-visible {
+  outline: 2px solid var(--focus-color);
+  outline-offset: -2px;
 }
 </style>
