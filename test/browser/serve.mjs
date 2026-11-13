@@ -22,6 +22,8 @@ async function build() {
   const nuxt = await loadNuxt({
     cwd: join(root, '.playground'),
     dev: false,
+    // As `nuxt build` does, so `$production` in the config applies, as in CI
+    envName: 'production',
     overrides: {
       buildDir: join(cache, '.nuxt'),
       nitro: { output: { dir: join(cache, '.output') } },

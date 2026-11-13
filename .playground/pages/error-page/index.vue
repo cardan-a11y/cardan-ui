@@ -67,34 +67,36 @@ function showServerError() {
         this page.
       </p>
 
+      <!-- No prefetch: with ISR (production) Nuxt fetches each link's payload,
+           which fails on purpose here and logs an error per link -->
       <ul class="error-page-demo-list">
         <li>
-          <NuxtLink to="/this-page-does-not-exist">
+          <NuxtLink to="/this-page-does-not-exist" no-prefetch>
             A page that does not exist (404)
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="/error-page/demo?status=404&text">
+          <NuxtLink to="/error-page/demo?status=404&text" no-prefetch>
             An item that was not found, with the page's own text (404)
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="/error-page/demo?status=403">
+          <NuxtLink to="/error-page/demo?status=403" no-prefetch>
             A page you have no access to (403)
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="/error-page/demo?refuse">
+          <NuxtLink to="/error-page/demo?refuse" no-prefetch>
             A page whose middleware refuses access (403)
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="/error-page/demo?status=503">
+          <NuxtLink to="/error-page/demo?status=503" no-prefetch>
             An error on the server (503)
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="/error-page/demo?status=429">
+          <NuxtLink to="/error-page/demo?status=429" no-prefetch>
             Any other error (429)
           </NuxtLink>
         </li>
