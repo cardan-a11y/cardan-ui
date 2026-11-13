@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from 'vitest';
-import { h, nextTick } from 'vue';
+import { defineComponent, h, nextTick } from 'vue';
 import type { VueWrapper } from '@vue/test-utils';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { AppHeader, AppShell, Dialog, MobileMenu } from '#components';
@@ -90,6 +90,64 @@ describe('AppShell', () => {
     await afterRouteFocus();
 
     expectFocused(shellOf(wrapper));
+  });
+
+  it('moves focus to the skip link target itself, without a navigation', async () => {
+    const wrapper = await mountSuspended(AppShell, {
+      slots: { default: page },
+      attachTo: document.body,
+    });
+    await afterRouteFocus();
+    const before = useRoute().fullPath;
+    const navigation = vi.fn();
+    const removeGuard = useRouter().beforeEach(navigation);
+
+    link(wrapper, 'Skip to main content').click();
+    await afterRouteFocus();
+    removeGuard();
+
+    expectFocused(document.getElementById('main')!);
+    expect(window.location.hash).toBe('');
+    expect(useRoute().fullPath).toBe(before);
+    expect(navigation).not.toHaveBeenCalled();
+  });
+
+  it('takes focus when it mounts after the app has started, as around the error page, but not on the first page of a visit', async () => {
+    const nuxtApp = useNuxtApp();
+    // The first page of a visit: no earlier page in the history
+    window.history.replaceState({ ...window.history.state, back: null }, '');
+
+    // The first render, with AppShell straight in app.vue: Nuxt ends the
+    // hydration (here: a later sibling's setup) before the shell's mounted
+    // hook runs
+    const EndHydration = defineComponent({
+      setup() {
+        nuxtApp.isHydrating = false;
+        return () => null;
+      },
+    });
+    nuxtApp.isHydrating = true;
+    try {
+      await mountSuspended(
+        defineComponent({
+          render: () =>
+            h('div', [h(AppShell, null, { default: page }), h(EndHydration)]),
+        }),
+        { attachTo: document.body },
+      );
+      await afterRouteFocus();
+      expect(document.activeElement).toBe(document.body);
+    } finally {
+      nuxtApp.isHydrating = false;
+    }
+
+    // The error page replaces the app on the page the user was on
+    const errorShell = await mountSuspended(AppShell, {
+      slots: { default: page },
+      attachTo: document.body,
+    });
+    await afterRouteFocus();
+    expectFocused(shellOf(errorShell));
   });
 
   it('keeps focus where it is when only the query or hash changes', async () => {

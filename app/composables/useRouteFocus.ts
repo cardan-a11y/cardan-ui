@@ -2,7 +2,8 @@ import type { MaybeRefOrGetter } from 'vue';
 
 /**
  * Moves focus to an element, the app's wrapper, after every navigation to
- * another page: a keyboard or screen reader user then starts at the top of
+ * another page, and when the error page replaces the app or the app comes
+ * back after it: a keyboard or screen reader user then starts at the top of
  * the new page, with the skip link as the next stop, instead of on a link of
  * the page that is gone. AppShell does this for its own wrapper.
  *
@@ -108,10 +109,15 @@ export function useRouteFocus(
 
   // Arriving from a page in another layout mounts the wrapper anew and the
   // watcher does not fire: focus the same way, unless something in the new
-  // wrapper has focus already. Not on the first page of a visit, where the
-  // browser starts at the top; a reload of a later page keeps its history
-  // state and counts as arriving.
+  // wrapper has focus already. So does the error page, which replaces the
+  // app, and the app that comes back after it, also without a navigation.
+  // Not on the first page of a visit, where the browser starts at the top; a
+  // reload of a later page keeps its history state and counts as arriving.
+  // Whether this is the first render is read now, in setup: by the time the
+  // wrapper mounts, Nuxt may have ended the hydration already, depending on
+  // what wraps it (a NuxtLayout holds it back, app.vue alone does not).
+  const isFirstRender = useNuxtApp().isHydrating;
   onMounted(() => {
-    if (window.history.state?.back) focusTarget(null);
+    if (window.history.state?.back || !isFirstRender) focusTarget(null);
   });
 }

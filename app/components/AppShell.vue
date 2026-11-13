@@ -3,8 +3,10 @@
  * The wrapper every app renders its header, navigation and pages in. It
  * announces a new page to screen readers, puts the skip link first and takes
  * focus after a navigation (`useRouteFocus()`), so the next Tab is the skip
- * link. The app's `<main>` carries the skip link's target, `id="main"` with
- * `tabindex="-1"`, or the links name another one.
+ * link. The skip link's target is exactly one focusable `id="main"`
+ * (`tabindex="-1"`) per page, past all repeated content (WCAG 2.4.1): the
+ * app's `<main>`, or the page's own content after what repeats from page to
+ * page, such as breadcrumbs or tabs; or the links name another one.
  *
  * It has no layout of its own: a class on it lays out what is in it.
  */
