@@ -32,6 +32,7 @@ const {
   max = undefined,
   name = undefined,
   instruction = undefined,
+  customError = undefined,
   size = 'md',
   id = useId(),
   required,
@@ -50,6 +51,11 @@ const {
   instruction?: string;
   /** Shows the error now; a Form shows it after a failed submit */
   showInvalid?: boolean;
+  /**
+   * An error the browser cannot find, such as one from the server: the field
+   * shows this text and is described by it until its value changes
+   */
+  customError?: string;
   size?: InputSize;
 }>();
 
@@ -111,10 +117,25 @@ watchPostEffect(() => {
 });
 
 const formShowInvalid = inject(formShowInvalidKey, ref(false));
+const customErrorActive = ref(false);
 
-/** The error text shows after a failed submit, or with `show-invalid` */
+/**
+ * The custom error shows like the field's own, and describes the field, but
+ * does not keep the form from submitting again: the server judges the next
+ * attempt, and the parent moves focus to the field (`focusElement()`)
+ */
+function applyCustomError() {
+  customErrorActive.value = !!customError;
+}
+
+onMounted(applyCustomError);
+watch(() => customError, applyCustomError, { flush: 'post' });
+
+/** The error text shows after a failed submit, with `show-invalid`, or for a custom error */
 const errorShown = computed(
-  () => (showInvalid || formShowInvalid.value) && invalid.value,
+  () =>
+    customErrorActive.value ||
+    ((showInvalid || formShowInvalid.value) && invalid.value),
 );
 
 // The error describes the field only while it shows; a project's own
@@ -152,6 +173,8 @@ function handleInput(event: Event) {
 
   text.value = number;
   model.value = value.value;
+  // A new value clears the custom error, until the parent sets one again
+  customErrorActive.value = false;
 }
 
 /** A typed number is final on blur or Enter: "007" reads "7" from then on */
@@ -165,6 +188,7 @@ function setValue(newValue: number) {
 
   text.value = toText(newValue);
   model.value = newValue;
+  customErrorActive.value = false;
   emit('change', newValue);
 }
 
@@ -235,8 +259,9 @@ defineExpose({
     :disabled="disabled"
     :chip-size="chipSize"
     :instruction="instruction"
-    :error-text="errorText"
+    :error-text="customErrorActive ? customError : errorText"
     :show-invalid="showInvalid"
+    :custom-error="customErrorActive"
   >
     <div class="spin-button-control">
       <button

@@ -242,7 +242,7 @@ async function handleSubmit(formData: FormData) {
           :disabled="disabled"
           :readonly="readonly"
           :size="inputSize"
-          style="--col-width: var(--col-width-60)"
+          style="--form-col-width: var(--form-col-width-60)"
         />
 
         <Select
@@ -257,7 +257,20 @@ async function handleSubmit(formData: FormData) {
           label-key="name"
           value-key="id"
           :size="inputSize"
-          style="--col-width: var(--col-width-40)"
+          style="--form-col-width: var(--form-col-width-40)"
+        />
+
+        <Input
+          :required="required"
+          type="email"
+          name="email"
+          label="Email address"
+          autocomplete="email"
+          instruction="The browser accepts an address without a dot in its domain, such as a@b, but the Laravel APIs refuse it, so this field does too."
+          :variant="inputVariant"
+          :disabled="disabled"
+          :readonly="readonly"
+          :size="inputSize"
         />
 
         <SpinButton
@@ -301,7 +314,7 @@ async function handleSubmit(formData: FormData) {
               :disabled="disabled"
               label="Checkbox group"
               name="checkbox-group[]"
-              style="--col-width: var(--col-width-auto)"
+              style="--form-col-width: var(--form-col-width-auto)"
             />
           </section>
           <section>
@@ -314,7 +327,7 @@ async function handleSubmit(formData: FormData) {
               :disabled="disabled"
               label="Radio buttons group"
               name="radio-group"
-              style="--col-width: var(--col-width-50)"
+              style="--form-col-width: var(--form-col-width-50)"
             />
           </section>
         </div>
@@ -521,7 +534,9 @@ async function handleSubmit(formData: FormData) {
       />
 
       <h3>CSRF mismatch (419) or a 500</h3>
-      <ErrorMessage :data="{ message: 'CSRF token mismatch.', language: 'en' }" />
+      <ErrorMessage
+        :data="{ message: 'CSRF token mismatch.', language: 'en' }"
+      />
 
       <h3>JSON:API, with a summary of the page's own</h3>
       <ErrorMessage

@@ -31,8 +31,15 @@ const {
 
 const range = computed(() => max - min);
 
-/** The value on the track; the minimum until there is one */
+/**
+ * The value on the track; the minimum until there is one. The input shows
+ * it too: on its own the browser would put the thumb in the middle
+ */
 const value = computed(() => Number(model.value ?? min));
+
+function handleInput(event: Event) {
+  model.value = Number((event.target as HTMLInputElement).value);
+}
 
 const ratio = computed(() => (value.value - min) / range.value);
 
@@ -74,7 +81,7 @@ const computedAriaValuetext = computed(() => {
     <input
       :id="id"
       ref="input"
-      v-model.number="model"
+      :value="value"
       class="range-input"
       :name="name"
       :disabled="disabled"
@@ -84,6 +91,7 @@ const computedAriaValuetext = computed(() => {
       :step="step"
       :tabindex="tabindex"
       type="range"
+      @input="handleInput"
     />
 
     <ClientOnly>
@@ -91,14 +99,14 @@ const computedAriaValuetext = computed(() => {
         <span
           v-for="tick in ticksList"
           :key="tick.value"
-          :class="['tick', model === tick.value && 'active']"
+          :class="['tick', value === tick.value && 'active']"
         >
           {{ tick.label }}
         </span>
       </div>
 
       <output v-if="showOutput" class="range-output">
-        {{ model }}
+        {{ value }}
       </output>
     </ClientOnly>
   </FormField>

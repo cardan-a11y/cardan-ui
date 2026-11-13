@@ -157,7 +157,7 @@
     "files": "Bestand | Bestanden",
     "heading": "Algemeen",
     "home": "Home",
-    "hour": "{n} uur",
+    "hour": "{n} uur | {n} uur",
     "image": "Afbeelding | Afbeeldingen",
     "import": "Importeren",
     "init": "Initialiseren",
@@ -180,6 +180,7 @@
     "next": "Volgende",
     "new": "Nieuw",
     "previous": "Vorige",
+    "no": "nee",
     "open": "Openen",
     "order": "Volgorde",
     "page": "pagina's | {n} pagina | {n} pagina's",
@@ -235,7 +236,8 @@
     "invalid": "Ongeldig",
     "version": "Versie",
     "website": "Website",
-    "year": "{n} jaar | {n} jaar"
+    "year": "{n} jaar | {n} jaar",
+    "yes": "ja"
   },
   "language": {
     "en": "Engels",

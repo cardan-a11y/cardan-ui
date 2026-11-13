@@ -56,7 +56,7 @@ function controlAttrs() {
 
 const computedErrorMessage = computed(() => {
   if (errorMessage) return errorMessage;
-  if (required && !model.value) {
+  if (required && !String(model.value ?? '').trim()) {
     return t('form.missing-value', { item: label });
   }
   return t('form.invalid-value');
@@ -67,8 +67,18 @@ const formShowInvalid = inject(formShowInvalidKey, ref(false));
 const isValid = ref(true);
 const customErrorActive = ref(false);
 
+/**
+ * A required text of only spaces, which the APIs trim to empty and refuse, is
+ * missing: a custom validity, so the field is `:invalid` and Form focuses it
+ * and shows its error as for an empty one
+ */
 function updateValidity() {
-  isValid.value = textareaRef.value?.validity.valid ?? true;
+  const textarea = textareaRef.value;
+  const blank = !!required && !!textarea?.value && !textarea.value.trim();
+  textarea?.setCustomValidity(
+    blank ? (errorMessage ?? t('form.missing-value', { item: label })) : '',
+  );
+  isValid.value = textarea?.validity.valid ?? true;
 }
 
 /**
@@ -202,7 +212,7 @@ const emit = defineEmits<{
   }
 
   .textarea {
-    font-family: var(--font-family-input, system-ui, sans-serif);
+    font-family: var(--font-family-input);
     font-size: 16px;
     width: 100%;
     border: 1px solid var(--color-grey-graphic);

@@ -17,6 +17,8 @@
     "lint": "eslint .",
     "typecheck": "vue-tsc --noEmit -p .playground/.nuxt/tsconfig.app.json",
     "test": "vitest run",
+    "test:browser": "playwright test -c test/browser",
+    "test:projects": "node test/projects.mjs",
     "format": "prettier . --write"
   },
   "devDependencies": {
@@ -36,6 +38,7 @@
     "@nuxtjs/color-mode": "^4.1.0",
     "@nuxtjs/html-validator": "^2.1.0",
     "@nuxtjs/i18n": "^10.6.0",
+    "@playwright/test": "^1.65.0",
     "@vue/test-utils": "^2.5.1",
     "@vueform/multiselect": "^2.6.11",
     "@vuepic/vue-datepicker": "^14.0.0",

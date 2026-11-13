@@ -261,6 +261,7 @@
 :where(:root) {
   /* Font family design tokens */
   --font-family: 'Hanken Grotesk', Arial, system-ui, sans-serif;
+  --font-family-input: system-ui, sans-serif;
 
   /* Font weight design tokens */
   --font-weight-regular: 400;

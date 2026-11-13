@@ -64,7 +64,7 @@ export type MarkdownRenderOptions = {
   headingOffset?: number;
   /** Accessible name of the scroll region around a table. */
   tableLabel?: string;
-  /** Hidden text and title of a link, which opens in a new window. */
+  /** Hidden text of a link, which opens in a new window. */
   newWindowLabel?: string;
   /**
    * The site's origin, which a link must leave to open in a new window. The

@@ -36,6 +36,16 @@ const filteredCriteria = computed(() =>
 
 const results = ref(filteredCriteria.value.slice(0, 10));
 
+// A row's actions, as the Auditor's tables have them
+const rowActions: MenuItem[] = [
+  { id: 'edit', label: 'Edit', icon: 'material-symbols:edit-outline-rounded' },
+  {
+    id: 'delete',
+    label: 'Delete',
+    icon: 'material-symbols:delete-outline-rounded',
+  },
+];
+
 const wcagLevels = [
   {
     value: 'A',
@@ -198,6 +208,7 @@ function handleFilter() {
             <th scope="col" colspan="2">WCAG success criterion</th>
             <th scope="col">Description</th>
             <th scope="col">Level</th>
+            <th scope="col">Actions</th>
           </tr>
         </thead>
 
@@ -208,6 +219,9 @@ function handleFilter() {
             <td>{{ sc.description }}</td>
             <td>
               <Chip :label="sc.level" size="sm" color="accent" />
+            </td>
+            <td>
+              <Popover :label="`Actions for ${sc.number}`" :list="rowActions" />
             </td>
           </tr>
         </tbody>

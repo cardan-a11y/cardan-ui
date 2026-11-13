@@ -1,4 +1,12 @@
 <script setup lang="ts">
+/**
+ * A text field. Two values the browser lets through but the Laravel APIs
+ * refuse are invalid here too, so the error shows before the submit, not
+ * from the server: a required field of only spaces (the API trims it to
+ * empty) is missing, and an e-mail address whose domain has no dot (`a@b`,
+ * which `email:filter` refuses) is invalid. A project's own `pattern` on an
+ * e-mail field replaces the dot check.
+ */
 import type { StyleValue } from 'vue';
 
 // An attribute goes to the control; `class` and `style` stay on the wrapper
@@ -92,7 +100,7 @@ function controlAttrs() {
 const computedErrorMessage = computed(() => {
   if (errorMessage) {
     return errorMessage;
-  } else if (required && !model.value) {
+  } else if (required && !String(model.value ?? '').trim()) {
     return t('form.missing-value', { item: label });
   } else if (type === 'email') {
     return t('form.invalid-email');
@@ -125,8 +133,35 @@ const formShowInvalid = inject(formShowInvalidKey, ref(false));
 const isValid = ref(true);
 const customErrorActive = ref(false);
 
+/** A domain without a dot, as in `a@b`; one address or a `multiple` list */
+function hasDotlessDomain(value: string) {
+  return value
+    .split(',')
+    .some(
+      (address) =>
+        address.includes('@') && !address.split('@').pop()!.includes('.'),
+    );
+}
+
+/** What the browser lets through and the APIs refuse (see above); '' for none */
+function ownError(value: string) {
+  if (required && value !== '' && !value.trim()) {
+    return errorMessage ?? t('form.missing-value', { item: label });
+  }
+  if (type === 'email' && !pattern && hasDotlessDomain(value)) {
+    return errorMessage ?? t('form.invalid-email');
+  }
+  return '';
+}
+
+/**
+ * As a custom validity, so the field is `:invalid` and Form focuses it and
+ * shows its error as for an empty one; cleared once the value is accepted
+ */
 function updateValidity() {
-  isValid.value = inputRef.value?.validity.valid ?? true;
+  const input = inputRef.value;
+  input?.setCustomValidity(ownError(input.value));
+  isValid.value = input?.validity.valid ?? true;
 }
 
 /**

@@ -176,13 +176,13 @@ useHead({ title: 'Buttons & Links' });
         <Button
           variant="sidebar"
           to="/buttons"
-          icon="material-symbols:smart-button-outline-rounded"
+          icon="material-symbols:smart-button-rounded"
           label="Buttons & Links"
         />
         <Button
           variant="sidebar"
           to="/buttons"
-          icon="material-symbols:smart-button-outline-rounded"
+          icon="material-symbols:smart-button-rounded"
           label="Buttons & Links"
           disabled
         />

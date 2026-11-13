@@ -47,10 +47,6 @@ const isAuthSubpage = computed(() => authPages.includes(route.path));
 
         <NuxtPage />
       </main>
-
-      <!-- <CookiesDialog
-        description="This cookies dialog is for demo purposes only."
-      /> -->
     </div>
   </AppShell>
 

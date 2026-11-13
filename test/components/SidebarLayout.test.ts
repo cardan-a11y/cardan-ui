@@ -3,8 +3,13 @@ import { h } from 'vue';
 import type { VueWrapper } from '@vue/test-utils';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { SidebarLayout } from '#components';
-import { checkA11y } from '../a11y';
+import { checkA11y, roleOf } from '../a11y';
 
+/**
+ * Which column sits where on screen is CSS, and the browser suite's. What is
+ * pinned here is the document order, which focus and reading order follow,
+ * and that the panel brings no landmark of its own.
+ */
 const slots = {
   default: () => h('p', 'Main content'),
   side: () =>
@@ -13,34 +18,32 @@ const slots = {
     ]),
 };
 
-/** The class names of the layout's columns, in document order */
-function columns(wrapper: VueWrapper) {
-  return wrapper
-    .findAll('.sidebar-layout > *')
-    .map((column) => column.classes()[0]);
+/** The main content and the side panel's navigation, found by content */
+function parts(wrapper: VueWrapper) {
+  const main = wrapper
+    .findAll('p')
+    .find((paragraph) => paragraph.text() === 'Main content')!.element;
+  const side = wrapper.get('nav').element;
+  return { main, side };
+}
+
+/** Whether `a` comes before `b` in the document */
+function precedes(a: Node, b: Node) {
+  return !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
 }
 
 describe('SidebarLayout', () => {
-  it('puts the side panel after the main content, beside it from 1024px', async () => {
+  it('puts the side panel after the main content, as a plain wrapper of its content', async () => {
     const wrapper = await mountSuspended(SidebarLayout, {
       slots,
       attachTo: document.body,
     });
 
-    expect(columns(wrapper)).toEqual([
-      'sidebar-layout-main',
-      'sidebar-layout-side',
-    ]);
-
-    const layout = wrapper.get('.sidebar-layout');
-    expect(layout.classes()).toContain('sidebar-layout--side-end');
-    expect(layout.classes()).toContain('has-side');
-    expect(layout.classes()).toContain('beside-lg');
-    expect(layout.classes()).not.toContain('is-beside');
-    expect(layout.classes()).not.toContain('is-sticky');
+    const { main, side } = parts(wrapper);
+    expect(precedes(main, side)).toBe(true);
 
     // The panel has no role of its own: its content brings the landmark
-    expect(wrapper.get('.sidebar-layout-side').element.tagName).toBe('DIV');
+    expect(roleOf(side.parentElement!)).toBeNull();
 
     expect(await checkA11y()).toHaveNoViolations();
   });
@@ -53,42 +56,9 @@ describe('SidebarLayout', () => {
     });
 
     // Focus and reading order follow what is on screen
-    expect(columns(wrapper)).toEqual([
-      'sidebar-layout-side',
-      'sidebar-layout-main',
-    ]);
-
-    const layout = wrapper.get('.sidebar-layout');
-    expect(layout.classes()).toContain('sidebar-layout--side-start');
-    expect(layout.classes()).toContain('beside-xl');
-    expect(layout.classes()).toContain('is-sticky');
+    const { main, side } = parts(wrapper);
+    expect(precedes(side, main)).toBe(true);
 
     expect(await checkA11y()).toHaveNoViolations();
-  });
-
-  it('follows a boolean the app works out for its own breakpoint', async () => {
-    const wrapper = await mountSuspended(SidebarLayout, {
-      props: { beside: false },
-      slots,
-    });
-
-    const layout = wrapper.get('.sidebar-layout');
-    expect(layout.classes()).not.toContain('is-beside');
-    expect(layout.classes().some((name) => name.startsWith('beside-'))).toBe(
-      false,
-    );
-
-    await wrapper.setProps({ beside: true });
-
-    expect(layout.classes()).toContain('is-beside');
-  });
-
-  it('is one column without a side panel', async () => {
-    const wrapper = await mountSuspended(SidebarLayout, {
-      slots: { default: slots.default },
-    });
-
-    expect(columns(wrapper)).toEqual(['sidebar-layout-main']);
-    expect(wrapper.get('.sidebar-layout').classes()).not.toContain('has-side');
   });
 });

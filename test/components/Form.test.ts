@@ -1,42 +1,32 @@
 import { describe, it, expect, vi } from 'vitest';
-import { defineComponent, h, nextTick, ref } from 'vue';
-import { mountSuspended } from '@nuxt/test-utils/runtime';
-import { CheckboxGroup, Form, Input } from '#components';
+import { h, nextTick, ref } from 'vue';
+import { CheckboxGroup, Input } from '#components';
+import { description, expectFocused } from '../a11y';
+import { mountInForm } from '../form';
 
 describe('Form', () => {
   it('focuses the first box of a required group, not its fieldset', async () => {
     let invalid = 0;
-    const wrapper = await mountSuspended(
-      defineComponent({
-        setup: () => () =>
-          h(
-            Form,
-            { onInvalid: () => invalid++ },
-            {
-              default: () => [
-                h(CheckboxGroup, {
-                  label: 'Toppings',
-                  required: true,
-                  options: [
-                    { value: 'cheese', label: 'Cheese' },
-                    { value: 'ham', label: 'Ham' },
-                  ],
-                  modelValue: [],
-                }),
-                h('button', { type: 'submit' }, 'Order'),
-              ],
-            },
-          ),
-      }),
-      { attachTo: document.body },
+    const wrapper = await mountInForm(
+      () => [
+        h(CheckboxGroup, {
+          label: 'Toppings',
+          required: true,
+          options: [
+            { value: 'cheese', label: 'Cheese' },
+            { value: 'ham', label: 'Ham' },
+          ],
+          modelValue: [],
+        }),
+        h('button', { type: 'submit' }, 'Order'),
+      ],
+      { onInvalid: () => invalid++ },
     );
 
     await wrapper.get('form').trigger('submit');
 
     expect(invalid).toBe(1);
-    expect(document.activeElement).toBe(
-      wrapper.get('input[type="checkbox"]').element,
-    );
+    expectFocused(wrapper.get('input[type="checkbox"]'));
   });
 
   it('submits through requestSubmit, so its fields are checked first', async () => {
@@ -44,33 +34,24 @@ describe('Form', () => {
     let invalid = 0;
     const name = ref('');
     const form = ref<{ submit: () => void }>();
-    const wrapper = await mountSuspended(
-      defineComponent({
-        setup: () => () =>
-          h(
-            Form,
-            {
-              ref: form,
-              onSubmit: (data: FormData) => submitted.push(data),
-              onInvalid: () => invalid++,
-            },
-            {
-              default: () => [
-                h(Input, {
-                  label: 'Name',
-                  name: 'name',
-                  required: true,
-                  errorMessage: 'Fill in your name',
-                  modelValue: name.value,
-                  'onUpdate:modelValue': (value?: string | number) => {
-                    name.value = String(value ?? '');
-                  },
-                }),
-              ],
-            },
-          ),
-      }),
-      { attachTo: document.body },
+    const wrapper = await mountInForm(
+      () => [
+        h(Input, {
+          label: 'Name',
+          name: 'name',
+          required: true,
+          errorMessage: 'Fill in your name',
+          modelValue: name.value,
+          'onUpdate:modelValue': (value?: string | number) => {
+            name.value = String(value ?? '');
+          },
+        }),
+      ],
+      {
+        ref: form,
+        onSubmit: (data: FormData) => submitted.push(data),
+        onInvalid: () => invalid++,
+      },
     );
     const formElement = wrapper.get('form').element;
     const requestSubmit = vi.spyOn(formElement, 'requestSubmit');
@@ -92,37 +73,26 @@ describe('Form', () => {
   });
 
   it('shows the errors of its fields after a failed submit', async () => {
-    const wrapper = await mountSuspended(
-      defineComponent({
-        setup: () => () =>
-          h(Form, null, {
-            default: () => [
-              h(Input, {
-                label: 'Name',
-                required: true,
-                errorMessage: 'Fill in your name',
-                modelValue: '',
-              }),
-              h('button', { type: 'submit' }, 'Send'),
-            ],
-          }),
+    const wrapper = await mountInForm(() => [
+      h(Input, {
+        label: 'Name',
+        required: true,
+        errorMessage: 'Fill in your name',
+        modelValue: '',
       }),
-      { attachTo: document.body },
-    );
+      h('button', { type: 'submit' }, 'Send'),
+    ]);
 
     // Before a submit, the empty field is not marked or described yet
     const input = wrapper.get('input');
     expect(input.attributes('aria-invalid')).toBeUndefined();
-    expect(input.attributes('aria-describedby')).toBeUndefined();
+    expect(description(input)).toBe('');
 
     await wrapper.get('form').trigger('submit');
     await nextTick();
 
     expect(input.attributes('aria-invalid')).toBe('true');
-    expect(
-      document.getElementById(input.attributes('aria-describedby') ?? '')
-        ?.textContent,
-    ).toContain('Fill in your name');
-    expect(document.activeElement).toBe(input.element);
+    expect(description(input)).toContain('Fill in your name');
+    expectFocused(input);
   });
 });

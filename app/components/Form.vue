@@ -84,18 +84,18 @@ const emit = defineEmits<{
 .form,
 .form-content,
 .button {
-  --col-width-auto: auto;
-  --col-width-20: calc(20% - calc(var(--column-gap) / 5 * 4));
-  --col-width-25: calc(25% - calc(var(--column-gap) / 4 * 3));
-  --col-width-30: calc(30% - calc(var(--column-gap) / 10 * 7));
-  --col-width-33: calc(33.333% - calc(var(--column-gap) / 3 * 2));
-  --col-width-40: calc(40% - calc(var(--column-gap) / 5 * 3));
-  --col-width-50: calc(50% - calc(var(--column-gap) / 2));
-  --col-width-60: calc(60% - calc(var(--column-gap) / 5 * 2));
-  --col-width-67: calc(66.666% - calc(var(--column-gap) / 3));
-  --col-width-70: calc(70% - calc(var(--column-gap) / 10 * 3));
-  --col-width-75: calc(75% - calc(var(--column-gap) / 4));
-  --col-width-80: calc(80% - calc(var(--column-gap) / 5));
+  --form-col-width-auto: auto;
+  --form-col-width-20: calc(20% - calc(var(--column-gap) / 5 * 4));
+  --form-col-width-25: calc(25% - calc(var(--column-gap) / 4 * 3));
+  --form-col-width-30: calc(30% - calc(var(--column-gap) / 10 * 7));
+  --form-col-width-33: calc(33.333% - calc(var(--column-gap) / 3 * 2));
+  --form-col-width-40: calc(40% - calc(var(--column-gap) / 5 * 3));
+  --form-col-width-50: calc(50% - calc(var(--column-gap) / 2));
+  --form-col-width-60: calc(60% - calc(var(--column-gap) / 5 * 2));
+  --form-col-width-67: calc(66.666% - calc(var(--column-gap) / 3));
+  --form-col-width-70: calc(70% - calc(var(--column-gap) / 10 * 3));
+  --form-col-width-75: calc(75% - calc(var(--column-gap) / 4));
+  --form-col-width-80: calc(80% - calc(var(--column-gap) / 5));
 }
 
 .form,
@@ -117,13 +117,19 @@ const emit = defineEmits<{
 
   @container (min-width: 280px) {
     > * {
-      flex-basis: var(--col-width, 100%);
+      flex-basis: var(--form-col-width, 100%);
     }
   }
 
   .button {
-    --col-width: var(--col-width, auto);
     flex-grow: 0;
   }
+}
+
+/* A button directly in a form takes the full row, also where its parent sets
+   a width for the fields in it. A width set on the button itself, inline or
+   from a rule, wins: `--form-col-width: auto` gives it its own width. */
+:where(.form, .form-content) > :where(.button) {
+  --form-col-width: initial;
 }
 </style>

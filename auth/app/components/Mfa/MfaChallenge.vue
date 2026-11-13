@@ -26,7 +26,13 @@ const {
   mfaCredentials,
   mfaError,
   solveMfaChallenge,
+  resetMfa,
 } = useMfa();
+
+// A fresh challenge on every sign-in: the code and error of one abandoned
+// earlier (Back to the login page) go before the first render and on leaving
+onBeforeMount(resetMfa);
+onUnmounted(resetMfa);
 
 const useRecoveryCode = ref(false);
 

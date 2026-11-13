@@ -10,6 +10,7 @@ const {
   value = undefined,
   tabindex = undefined,
   errorMessage = undefined,
+  customError = undefined,
   showInvalid = false,
   required,
 } = defineProps<{
@@ -23,6 +24,11 @@ const {
   showInvalid?: boolean;
   /** Under the box when it is required and not ticked; "Tick this box to continue" by default */
   errorMessage?: string;
+  /**
+   * An error the browser cannot find, such as one from the server: the box
+   * shows this text and is described by it until it is ticked or unticked
+   */
+  customError?: string;
   tabindex?: string;
   id?: string;
   variant?: 'default' | '3d';
@@ -41,12 +47,25 @@ const isTicked = computed(() =>
 );
 
 const formShowInvalid = inject(formShowInvalidKey, ref(false));
+const customErrorActive = ref(false);
 
-// The error text describes the box only while it shows
-const describedBy = computed(() =>
-  required && !isTicked.value && (showInvalid || formShowInvalid.value)
-    ? `error-${id}`
-    : undefined,
+/**
+ * The custom error shows like the browser's own, and describes the box, but
+ * does not keep the form from submitting again: the server judges the next
+ * attempt
+ */
+function applyCustomError() {
+  customErrorActive.value = !!customError;
+}
+
+onMounted(applyCustomError);
+watch(() => customError, applyCustomError, { flush: 'post' });
+
+/** The error text shows after a failed submit, or for a custom error */
+const errorShown = computed(
+  () =>
+    customErrorActive.value ||
+    (required && !isTicked.value && (showInvalid || formShowInvalid.value)),
 );
 </script>
 
@@ -56,6 +75,7 @@ const describedBy = computed(() =>
       'checkbox-wrapper',
       disabled && 'disabled',
       showInvalid && 'show-invalid',
+      customErrorActive && 'custom-error',
       `checkbox-variant--${variant}`,
     ]"
   >
@@ -67,8 +87,10 @@ const describedBy = computed(() =>
       :disabled="disabled"
       :required="required"
       :tabindex="tabindex"
-      :aria-describedby="describedBy"
+      :aria-describedby="errorShown ? `error-${id}` : undefined"
+      :aria-invalid="errorShown || undefined"
       type="checkbox"
+      @change="customErrorActive = false"
     />
 
     <label
@@ -85,7 +107,11 @@ const describedBy = computed(() =>
 
     <slot name="default" />
 
-    <InputError v-if="required" :id="id" :error-text="computedErrorMessage" />
+    <InputError
+      v-if="required || customError"
+      :id="id"
+      :error-text="customErrorActive ? customError : computedErrorMessage"
+    />
   </div>
 </template>
 
@@ -213,8 +239,10 @@ const describedBy = computed(() =>
   flex-basis: 100%;
 }
 
-/* A required box that is not ticked, once the form reports its state */
+/* A required box that is not ticked, once the form reports its state, or a
+   custom error */
 :where(.checkbox-wrapper.show-invalid:has(:invalid)),
+:where(.checkbox-wrapper.custom-error),
 :where(.show-invalid) .checkbox-wrapper:has(:invalid) {
   input[type='checkbox']::before {
     border-color: var(--color-red-graphic);

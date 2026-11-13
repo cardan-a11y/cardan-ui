@@ -265,7 +265,7 @@ const emit = defineEmits<{
   padding-inline: 0.5rem;
 
   .iconify {
-    font-size: var(--button-font-size, var(--font-size-sm));
+    font-size: var(--button-icon-size, var(--font-size-sm));
   }
 }
 
@@ -668,9 +668,24 @@ const emit = defineEmits<{
     }
   }
 
+  &.router-link-exact-active {
+    --button-underline-color: var(--button-active-color);
+    color: var(--button-active-color);
+
+    .iconify {
+      color: var(--button-active-color);
+    }
+  }
+
+  /* Without hover every item is underlined; the current page more heavily */
   @media (pointer: coarse) {
     text-decoration: underline;
     text-underline-offset: 0.25em;
+
+    &.router-link-exact-active {
+      --button-underline-thickness: 3px;
+      text-decoration-thickness: var(--button-underline-thickness);
+    }
   }
 
   @media (pointer: fine) {
@@ -687,13 +702,7 @@ const emit = defineEmits<{
 
     /* The current page keeps its underline, with or without motion */
     &.router-link-exact-active {
-      --button-underline-color: var(--button-active-color);
-      color: var(--button-active-color);
       background-size: calc(100% - 0.5rem) var(--button-underline-thickness);
-
-      .iconify {
-        color: var(--button-active-color);
-      }
     }
 
     &:focus-visible {

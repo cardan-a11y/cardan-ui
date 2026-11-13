@@ -27,7 +27,8 @@ function handleSearch() {
 
 function handleReset() {
   model.value = '';
-  emit('reset', model.value);
+  // Not `model.value`: with a v-model it holds the old term until the parent updates
+  emit('reset', '');
   searchInputRef.value?.focusElement();
 }
 

@@ -57,7 +57,14 @@ projects. See changelog for details.`, without details: the changelog says what 
    `plugins/cardan-browsers/.mcp.json`, when a newer `@playwright/mcp` is
    wanted.
 6. **Checks and review**: `pnpm run lint`, `pnpm run typecheck`,
-   `pnpm test`, then the review as the Cardan guidelines describe.
+   `pnpm test`, and `pnpm test:browser` where `package.json` has that
+   script. Then `pnpm test:projects`, which runs the suites of each sibling
+   project against this checkout, one project at a time: its `test:layer`
+   and, once that passes, its `test:browser` (Playwright, on the project's
+   own port), unless `--skip-browser` is given, which leaves the browser
+   suites out for a quick run. A project it reports as "not checked out",
+   or a suite as "no suite", is skipped, not a failure; only a failed suite
+   stops the release. Then the review as the Cardan guidelines describe.
 7. **Pull request**: commit, push and open the PR against `main` with the
    `cardan:pr-body` skill. Merge only when the user says so. After the
    merge, the next work starts on `release/<next patch version>`, cut from

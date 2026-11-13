@@ -32,6 +32,7 @@
     "recovery-codes-lost": "Je herstelcodes zag je één keer, bij het instellen van MFA. Kwijt? Vernieuw ze: je ziet de nieuwe codes één keer en de oude werken niet meer.",
     "recovery-codes-regenerate": "Herstelcodes vernieuwen",
     "recovery-codes-regenerate-description": "Nieuwe herstelcodes vervangen je huidige codes, die meteen niet meer werken. Je ziet de nieuwe codes maar één keer, dus houd een veilige plek klaar om ze te bewaren.",
+    "recovery-codes-regenerate-unavailable": "Je nieuwe herstelcodes konden niet worden getoond, en je oude werken niet meer. Genereer opnieuw nieuwe codes.",
     "recovery-codes-show": "Herstelcodes tonen",
     "recovery-codes-unavailable": "Je herstelcodes konden niet worden geladen, dus de code is nog niet bevestigd. Probeer het opnieuw.",
     "recovery-codes-missing": "Je herstelcodes konden niet worden getoond. Maak nieuwe aan in je accountinstellingen met ‘{action}’.",

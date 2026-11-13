@@ -100,11 +100,18 @@ function openDialog() {
 }
 
 /**
- * On the native close event, after the exit animation. The tick lets the
- * closed state reach FocusLoop, which lifts the `inert` on the page first.
+ * On the native close event, after the exit animation, when the browser could
+ * not give focus back and it is on the body. The tick lets the closed state
+ * reach FocusLoop, which lifts the `inert` on the page first. Focus that has
+ * moved on stays: after a link in the menu, `useRouteFocus()` may have put it
+ * at the top of the new page already.
  */
 async function focusDialogTrigger() {
   await nextTick();
+  if (document.activeElement && document.activeElement !== document.body) {
+    return;
+  }
+
   dialogTriggerRef.value?.focusElement();
 }
 

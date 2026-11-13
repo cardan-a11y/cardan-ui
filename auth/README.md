@@ -289,13 +289,13 @@ The buttons follow the [button variants](#button-variants) of your app config.
 
 ### Passwords
 
-`/forgot-password` and `/reset-password` use `PasswordForgotForm` and `PasswordResetForm`. The forgot form starts from the address typed on the login page (`useLoginEmail()`). After a reset the user is signed in: straight on, or through the sign-in challenge when the account has MFA; when that sign-in fails, the password is set all the same, so the login page takes over with the address filled in. A reset link that was sent once can be asked for again for another address.
+`/forgot-password` and `/reset-password` use `PasswordForgotForm` and `PasswordResetForm`. The forgot form starts from the address typed on the login page (`useLoginEmail()`). After a reset the user is signed in: straight on, or through the sign-in challenge when the account has MFA; when that sign-in fails, the password is set all the same, so the login page takes over with the address filled in and a toast that says the new password was saved. A sign-in without MFA there detours past `/mfa-setup`, as on the login page. A reset link that was sent once can be asked for again for another address.
 
 `PasswordUpdateForm` changes the password while signed in, for an account settings page, and shows a toast when it is saved. Both password forms list the requirements with `PasswordRequirements` and check the length while the user types, read from the policy endpoint, or from the `passwordPolicy` settings for an API without one (see [Configuration](#configuration)). Every password field has a reveal button (`PasswordReveal`); in the reset and update forms the one beside the last field reveals them all. When the reset link carries no `?email=`, the reset form asks for the address.
 
 ### Account settings for MFA
 
-`<MfaSettings />` shows whether MFA is on and offers to enable it, regenerate the recovery codes, or disable it, with the dialogs mounted for you, the password confirmation included. It says that lost recovery codes are replaced that way, and the recovery codes step of the setup says the codes are shown only this once. For an account that requires MFA, disabling becomes "set up MFA again": the dialog skips its "MFA is off" step and sends the user to `/mfa-setup`.
+`<MfaSettings />` shows whether MFA is on and offers to enable it, regenerate the recovery codes, or disable it, with the dialogs mounted for you, the password confirmation included. It says that lost recovery codes are replaced that way, and the recovery codes step of the setup says the codes are shown only this once. For an account that requires MFA (`mfa_required`, and not `mfa_exempt`), disabling becomes "set up MFA again": the dialog skips its "MFA is off" step and sends the user to `/mfa-setup`. An exempted account disables MFA like any other.
 
 ### Setup reminder
 
@@ -303,7 +303,7 @@ When the user payload has `mfa_enabled: false`, a sign-in on `/login` detours pa
 
 ### Signing out
 
-Mount `<LogoutDialog />` once, in your layout, and open it with `useLogoutDialog().logoutDialogRef.value?.openDialog()`. It asks before signing out, keeps its button loading while the API answers, and closes once the user is signed out; a refusal shows in the dialog (`handleLogout()` throws it), so the user knows they are still signed in.
+Mount `<LogoutDialog />` once, in your layout, and open it with `useLogoutDialog().logoutDialogRef.value?.openDialog()`. It asks before signing out, keeps its button loading while the API answers, and closes once the user is signed out; a refusal shows in the dialog (`handleLogout()` throws it), so the user knows they are still signed in. The sign-out link of `/mfa-setup`, there when the setup cannot be skipped, does the same on the page.
 
 ### Password confirmation
 
@@ -340,13 +340,13 @@ Fortify has no "swap" for the second factor, and its undocumented `force` re-ena
 
 The app's authentication surface, wrapping nuxt-auth-sanctum so app code has one place to reach for:
 
-|                                                                         |                                                                                                                                                                              |
-| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `client`                                                                | The Sanctum fetch client — this is what most call sites want                                                                                                                 |
-| `user`, `isAuthenticated`, `init`, `login`, `logout`, `refreshIdentity` | Passed through from `useSanctumAuth()`                                                                                                                                       |
-| `loginWithoutRedirect(credentials)`                                     | Posts the credentials and returns the raw response, without fetching the identity or redirecting — both wrong while a second factor is pending                               |
-| `loginRedirectTarget()`                                                 | Where to go after a successful login, following your Sanctum `redirect` config. A `?redirect=` only counts when it is a path within your app. `false` when the app opted out |
-| `userName`, `userInitials`                                              | Read off the payload's `name`, for avatars                                                                                                                                   |
+|                                                                         |                                                                                                                                                                                                     |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `client`                                                                | The Sanctum fetch client — this is what most call sites want                                                                                                                                        |
+| `user`, `isAuthenticated`, `init`, `login`, `logout`, `refreshIdentity` | Passed through from `useSanctumAuth()`                                                                                                                                                              |
+| `loginWithoutRedirect(credentials)`                                     | Posts the credentials and returns the raw response, without fetching the identity or redirecting — both wrong while a second factor is pending                                                      |
+| `loginRedirectTarget()`                                                 | Where to go after a successful login, following your Sanctum `redirect` config. A `?redirect=` only counts when the browser would read it as a path within your app. `false` when the app opted out |
+| `userName`, `userInitials`                                              | Read off the payload's `name`, for avatars                                                                                                                                                          |
 
 `user` is typed as `{ data: AuthUser } | null`, and **`AuthUser` is an empty interface for your app to fill** by declaration merging. Put this anywhere in your app's types:
 
@@ -360,13 +360,13 @@ Every `useAuth().user` in your app is then typed against your own payload, with 
 
 ### Other composables
 
-|                                    |                                                                                                                                                                     |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `useLoginEmail()`                  | The address typed on the login page, shared with the forgot-password page                                                                                           |
-| `usePasswordPolicy()`              | `minLength`, `maxLength` and `serverChecks` of new passwords                                                                                                        |
-| `useCardanAuthConfig()`            | The `cardanAuth` settings of the app config, see [Configuration](#configuration)                                                                                    |
-| `useLogoutDialog()`                | `logoutDialogRef` to open `LogoutDialog`, and `handleLogout()`, which throws a refusal                                                                              |
-| `useMfaSetupReminder()`            | `mfaEnabled`, `mfaRequired`, `needsMfaSetup` and the reminder used by `/mfa-setup`                                                                                  |
+|                         |                                                                                                 |
+| ----------------------- | ----------------------------------------------------------------------------------------------- |
+| `useLoginEmail()`       | The address typed on the login page, shared with the forgot-password page                       |
+| `usePasswordPolicy()`   | `minLength`, `maxLength` and `serverChecks` of new passwords                                    |
+| `useCardanAuthConfig()` | The `cardanAuth` settings of the app config, see [Configuration](#configuration)                |
+| `useLogoutDialog()`     | `logoutDialogRef` to open `LogoutDialog`, and `handleLogout()`, which throws a refusal          |
+| `useMfaSetupReminder()` | `mfaEnabled`, `mfaRequired`, `mfaExempt`, `needsMfaSetup` and the reminder used by `/mfa-setup` |
 
 ### `useMfaDialog()`
 
@@ -379,10 +379,11 @@ Every `useAuth().user` in your app is then typed against your own payload, with 
 | `closeMfaRecoveryCodesDialog()`             |                                                                                                                                |
 | `mfaDialogRef`, `mfaRecoveryCodesDialogRef` | The underlying `Dialog` refs, if you need them                                                                                 |
 | `loadingMfaRecoveryCodesDialog`             | Loading state for the button that opens the recovery codes dialog, while it checks whether the password was confirmed recently |
+| `loadingMfaDisableDialog`                   | The same for the button that opens the disable confirmation; a second click while it loads opens nothing                       |
 
 ### `useMfa()`
 
-The state and endpoint calls behind the components: `mfaStep`, `mfaCredentials`, `mfaError`, `qrCode` (the SVG, reduced to the elements of a QR code), `qrCodeUrl` (the `otpauth://` link in the QR code), `setupKey` (its secret), `recoveryCodes`, the `loading*` flags, and `enableMfa()`, `disableMfa()`, `getQrCode()`, `enterCode()` (which reads the recovery codes first, and stops on the code step when they do not come), `getRecoveryCodes()` (the codes, or null when the request failed), `generateRecoveryCodes()`, `solveMfaChallenge()` and `resetMfa()`, which clears all of it: the dialogs call it when they close, `MfaSetup` on leaving, the challenge once it is solved.
+The state and endpoint calls behind the components: `mfaStep`, `mfaCredentials`, `mfaError`, `qrCode` (the SVG, reduced to the elements of a QR code), `qrCodeUrl` (the `otpauth://` link in the QR code), `setupKey` (its secret), `recoveryCodes`, the `loading*` flags, and `enableMfa()`, `disableMfa()`, `getQrCode()`, `enterCode()` (which reads the recovery codes first, and stops on the code step when they do not come), `getRecoveryCodes()` (the codes, or null when the request failed), `generateRecoveryCodes()` (which sets an error when the new codes do not come, as the old ones no longer work), `solveMfaChallenge()` and `resetMfa()`, which clears all of it: the dialogs call it when they close or unmount, `MfaSetup` and `MfaChallenge` on arriving and leaving, the challenge once it is solved. A failed read of the identity after a change the API has made (the challenge solved, MFA switched on or off) does not count as that change failing.
 
 Reach for it to build your own flow. For the standard one, `useMfaDialog()` plus the two dialogs is all you need.
 
@@ -400,7 +401,7 @@ Reach for it to build your own flow. For the standard one, `useMfaDialog()` plus
 | `LogoutDialog`                                                        | Asks before signing out                                      |
 | `MfaDialog`                                                           | The enable/disable flow, all six steps. Emits `refresh`      |
 | `MfaSetup`                                                            | The enable flow inline on a page, with an optional skip      |
-| `MfaRecoveryCodesDialog`                                              | Shows and regenerates recovery codes                         |
+| `MfaRecoveryCodesDialog`                                              | Regenerates the recovery codes and shows the new ones once   |
 | `MfaChallenge`                                                        | The second-factor form used by the challenge page            |
 | `MfaCode`, `MfaRecoveryCode`                                          | The two inputs, with their validation and error region       |
 | `MfaQr`, `MfaEnableResult`, `MfaDisableResult`, `MfaRecoveryCodeList` | Steps of the flow, reusable on their own                     |

@@ -2,8 +2,15 @@ import { beforeEach, describe, it, expect } from 'vitest';
 import { h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { AppSidebar } from '#components';
-import { checkA11y } from '../a11y';
+import { accessibleName, checkA11y, roleOf } from '../a11y';
 
+/**
+ * A labelled `aside` (a complementary landmark) around the app's navigation.
+ * With `collapsible`, a disclosure button folds it to a rail of icons: folded,
+ * the text of its links is hidden from view only, so they keep their names
+ * and stay usable (the docblock). What folding looks like is the browser
+ * suite's.
+ */
 const slots = {
   header: () => h('span', 'Cardan'),
   default: () =>
@@ -17,49 +24,41 @@ describe('AppSidebar', () => {
     localStorage.removeItem(APP_SIDEBAR_STORAGE_KEY);
   });
 
-  it('is a labelled landmark around its header and navigation', async () => {
+  it('is a labelled complementary landmark around its header and navigation', async () => {
     const wrapper = await mountSuspended(AppSidebar, {
       slots,
       attachTo: document.body,
     });
 
     const aside = wrapper.get('aside');
-    expect(aside.attributes('id')).toBe('app-sidebar');
-    expect(aside.attributes('aria-label')).toBe('Sidebar menu');
-    expect(aside.get('.app-sidebar-header').text()).toBe('Cardan');
-    expect(aside.find('.app-sidebar-content nav').exists()).toBe(true);
+    expect(roleOf(aside)).toBe('complementary');
+    expect(accessibleName(aside)).toBe('Sidebar menu');
+    expect(aside.text()).toContain('Cardan');
+    expect(accessibleName(aside.get('nav'))).toBe('Main navigation');
 
-    // Not collapsible unless asked: no button, no state
+    // Not collapsible unless asked: no button
     expect(wrapper.find('button').exists()).toBe(false);
-    expect(aside.classes()).not.toContain('is-collapsible');
-    expect(aside.classes()).not.toContain('is-collapsed');
 
     expect(await checkA11y()).toHaveNoViolations();
   });
 
-  it('takes its own label and id', async () => {
-    const wrapper = await mountSuspended(AppSidebar, {
-      props: { id: 'docs-sidebar', label: 'Documentation' },
-      slots,
-    });
-
-    const aside = wrapper.get('aside');
-    expect(aside.attributes('id')).toBe('docs-sidebar');
-    expect(aside.attributes('aria-label')).toBe('Documentation');
-  });
-
-  it('names its button after its own label', async () => {
+  it('takes its own label, and names its button after it', async () => {
     const wrapper = await mountSuspended(AppSidebar, {
       props: { id: 'docs-sidebar', label: 'Documentation', collapsible: true },
       slots,
+      attachTo: document.body,
     });
 
+    const aside = wrapper.get('aside');
+    expect(accessibleName(aside)).toBe('Documentation');
+
     const button = wrapper.get('button');
-    expect(button.text()).toBe('Documentation');
+    expect(accessibleName(button)).toBe('Documentation');
     expect(button.attributes('aria-controls')).toBe('docs-sidebar');
+    expect(document.getElementById('docs-sidebar')).toBe(aside.element);
   });
 
-  it('folds and unfolds with its button, and keeps the choice', async () => {
+  it('folds and unfolds with its disclosure button, and keeps the choice', async () => {
     const wrapper = await mountSuspended(AppSidebar, {
       props: { collapsible: true },
       slots,
@@ -70,28 +69,28 @@ describe('AppSidebar', () => {
     const button = wrapper.get('button');
 
     // The button names what it controls and says whether that is open
-    expect(button.text()).toBe('Sidebar menu');
-    expect(button.attributes('aria-controls')).toBe('app-sidebar');
+    expect(roleOf(button)).toBe('button');
+    expect(accessibleName(button)).toBe('Sidebar menu');
+    expect(document.getElementById(button.attributes('aria-controls')!)).toBe(
+      aside.element,
+    );
     expect(button.attributes('aria-expanded')).toBe('true');
-    expect(aside.classes()).toContain('is-collapsible');
-    expect(aside.classes()).not.toContain('is-collapsed');
+    expect(await checkA11y()).toHaveNoViolations();
 
     await button.trigger('click');
     await nextTick();
 
     expect(button.attributes('aria-expanded')).toBe('false');
-    expect(aside.classes()).toContain('is-collapsed');
     expect(localStorage.getItem(APP_SIDEBAR_STORAGE_KEY)).toBe('true');
-
-    // Folded, the navigation is still in the accessibility tree
-    expect(aside.get('nav a').text()).toBe('Dashboard');
+    // Folded, the landmark and its button keep their names
+    expect(accessibleName(aside)).toBe('Sidebar menu');
+    expect(accessibleName(button)).toBe('Sidebar menu');
     expect(await checkA11y()).toHaveNoViolations();
 
     await button.trigger('click');
     await nextTick();
 
     expect(button.attributes('aria-expanded')).toBe('true');
-    expect(aside.classes()).not.toContain('is-collapsed');
     expect(localStorage.getItem(APP_SIDEBAR_STORAGE_KEY)).toBe('false');
   });
 
@@ -104,7 +103,6 @@ describe('AppSidebar', () => {
     });
     await nextTick();
 
-    expect(wrapper.get('aside').classes()).toContain('is-collapsed');
     expect(wrapper.get('button').attributes('aria-expanded')).toBe('false');
   });
 });

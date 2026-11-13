@@ -1,0 +1,21 @@
+{
+  "from": "cardan-cms-statamic: an AJAX post of the contact form (resources/blueprints/forms/contact.yaml; cardan-cms-nuxt PageBlockForm sends X-Requested-With) with empty required fields. Statamic's FrontendFormRequest::failedValidation and FormController::formFailure answer 400 with every message in `errors` (a list of strings) and each field's first message in `error`; the fields are named by their display name, the sentences are English (APP_LOCALE=en), no Content-Language",
+  "status": 400,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "errors": [
+      "The Bericht field is required.",
+      "The Voornaam field is required.",
+      "The Achternaam field is required.",
+      "The E-mailadres field is required."
+    ],
+    "error": {
+      "message": "The Bericht field is required.",
+      "first_name": "The Voornaam field is required.",
+      "last_name": "The Achternaam field is required.",
+      "email": "The E-mailadres field is required."
+    }
+  }
+}

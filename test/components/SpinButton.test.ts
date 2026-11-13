@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { SpinButton } from '#components';
-import { checkA11y } from '../a11y';
+import { accessibleName, checkA11y, description } from '../a11y';
 
 /**
  * The rows of the APG spinbutton pattern and its quantity example
@@ -14,11 +14,20 @@ async function mountSpinButton(props: Record<string, unknown> = {}) {
     attachTo: document.body,
   });
 
+  /** The button with this name */
+  const button = (name: string) => {
+    const found = wrapper
+      .findAll('button')
+      .find((button) => accessibleName(button) === name);
+    if (!found) throw new Error(`No button named ${name}`);
+    return found;
+  };
+
   return {
     wrapper,
     input: wrapper.get('input'),
-    decrease: wrapper.get('button:first-child'),
-    increase: wrapper.get('button:last-child'),
+    decrease: button('Decrease Adults'),
+    increase: button('Increase Adults'),
   };
 }
 
@@ -31,7 +40,6 @@ function model(wrapper: {
 
 afterEach(() => {
   vi.useRealTimers();
-  document.body.innerHTML = '';
 });
 
 describe('SpinButton: roles, states and properties', () => {
@@ -347,5 +355,32 @@ describe('SpinButton: as a field', () => {
     expect(wrapper.get('input').attributes('data-test')).toBe('adults');
     expect(wrapper.get('.form-field-wrapper').classes()).toContain('wide');
     expect(wrapper.get('input').classes()).not.toContain('wide');
+  });
+
+  it('shows a custom error, and is described by it, until its value changes', async () => {
+    const { wrapper, input, increase } = await mountSpinButton({
+      instruction: 'Everyone aged 12 or older',
+      customError: 'Only 2 places left',
+    });
+
+    expect(description(input)).toBe(
+      'Everyone aged 12 or older Only 2 places left',
+    );
+    expect(input.attributes('aria-invalid')).toBe('true');
+    // The server judges the next submit: the browser does not hold it back
+    expect(input.element.checkValidity()).toBe(true);
+    expect(await checkA11y()).toHaveNoViolations();
+
+    await input.setValue('3');
+    expect(description(input)).toBe('Everyone aged 12 or older');
+    expect(input.attributes('aria-invalid')).toBeUndefined();
+
+    // Set again by the parent, and cleared by a button too
+    await wrapper.setProps({ customError: 'Only 1 place left' });
+    expect(description(input)).toBe(
+      'Everyone aged 12 or older Only 1 place left',
+    );
+    await increase.trigger('click');
+    expect(description(input)).toBe('Everyone aged 12 or older');
   });
 });

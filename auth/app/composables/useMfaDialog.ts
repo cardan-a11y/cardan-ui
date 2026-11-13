@@ -4,11 +4,8 @@
  */
 export function useMfaDialog() {
   const { mfaStep, mfaError, recoveryCodes, resetMfa } = useMfa();
-  const {
-    ensurePasswordConfirmed,
-    isPasswordConfirmed,
-    requestPasswordConfirmation,
-  } = usePasswordConfirmation();
+  const { isPasswordConfirmed, requestPasswordConfirmation } =
+    usePasswordConfirmation();
 
   /**
    * Loading state for whatever opens the recovery codes dialog, while it checks
@@ -16,6 +13,15 @@ export function useMfaDialog() {
    */
   const loadingMfaRecoveryCodesDialog = useState(
     'loadingMfaRecoveryCodesDialog',
+    () => false,
+  );
+
+  /**
+   * Loading state for whatever opens the disable dialog, while it checks
+   * whether the password was confirmed recently.
+   */
+  const loadingMfaDisableDialog = useState(
+    'loadingMfaDisableDialog',
     () => false,
   );
 
@@ -39,9 +45,18 @@ export function useMfaDialog() {
     mfaDialogRef.value?.openDialog();
   }
 
-  /** Opens the dialog on the "turn MFA off" confirmation step, after the password. */
+  /**
+   * Opens the dialog on the "turn MFA off" confirmation step, after the
+   * password. A second click while the check runs starts nothing.
+   */
   async function openMfaDisableDialog() {
-    if (!(await ensurePasswordConfirmed())) return;
+    if (loadingMfaDisableDialog.value) return;
+
+    loadingMfaDisableDialog.value = true;
+    const confirmed = await isPasswordConfirmed();
+    loadingMfaDisableDialog.value = false;
+
+    if (!confirmed && !(await requestPasswordConfirmation())) return;
     resetMfa();
     mfaStep.value = 5;
     mfaDialogRef.value?.openDialog();
@@ -77,6 +92,7 @@ export function useMfaDialog() {
     mfaDialogRef,
     mfaRecoveryCodesDialogRef,
     loadingMfaRecoveryCodesDialog,
+    loadingMfaDisableDialog,
     openMfaEnableDialog,
     openMfaDisableDialog,
     closeMfaDialog,

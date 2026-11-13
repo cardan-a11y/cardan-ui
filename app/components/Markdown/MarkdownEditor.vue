@@ -1,6 +1,6 @@
 <script lang="ts">
 import { MdEditor, config } from 'md-editor-v3';
-import type { ToolbarNames, Footers } from 'md-editor-v3';
+import type { ToolbarNames, Footers, ExposeParam } from 'md-editor-v3';
 import type { MarkdownIt } from 'markdown-it';
 import { attrs } from '@mdit/plugin-attrs';
 import { mark } from '@mdit/plugin-mark';
@@ -34,6 +34,7 @@ const {
   placeholder = undefined,
   errorMessage = undefined,
   instruction = undefined,
+  customError = undefined,
   required,
 } = defineProps<{
   label?: string;
@@ -46,6 +47,11 @@ const {
   disabled?: boolean;
   errorMessage?: string;
   instruction?: string;
+  /**
+   * An error the browser cannot find, such as one from the server: the field
+   * shows this text and is described by it until its value changes
+   */
+  customError?: string;
 }>();
 
 const footers: Footers[] = [
@@ -131,11 +137,71 @@ onMounted(async () => {
 const colorMode = useColorMode();
 
 const content = defineModel<string>();
-const markdownEditorRef = useTemplateRef<HTMLDivElement>('markdownEditor');
+const markdownEditorRef = useTemplateRef<ExposeParam>('markdownEditor');
 
 function focusEditor() {
   markdownEditorRef.value?.focus();
 }
+
+const formShowInvalid = inject(formShowInvalidKey, ref(false));
+const customErrorActive = ref(false);
+
+/**
+ * The custom error shows like the missing text, and describes the field, but
+ * does not keep the form from submitting again: the server judges the next
+ * attempt, and the parent moves focus to the field (`focusEditor()`)
+ */
+function applyCustomError() {
+  customErrorActive.value = !!customError;
+}
+
+onMounted(applyCustomError);
+watch(() => customError, applyCustomError, { flush: 'post' });
+
+/** The error text shows after a failed submit, or for a custom error */
+const errorShown = computed(
+  () =>
+    customErrorActive.value ||
+    (!!required && !content.value && formShowInvalid.value),
+);
+
+/**
+ * The textbox is CodeMirror's content element, which md-editor-v3 gives no
+ * attributes: a `<label>` cannot point to it, so it is named by the label's
+ * id and described by the instruction, and by the error only while it
+ * shows. CodeMirror keeps an attribute it does not set itself.
+ */
+const editorAttributes = computed<Record<string, string | undefined>>(() => ({
+  'aria-labelledby': label ? `label-${id}` : undefined,
+  'aria-describedby':
+    [instruction && `instruction-${id}`, errorShown.value && `error-${id}`]
+      .filter(Boolean)
+      .join(' ') || undefined,
+  'aria-required': required ? 'true' : undefined,
+  'aria-invalid': errorShown.value ? 'true' : undefined,
+}));
+
+function describeEditor(retry = true) {
+  const editor = markdownEditorRef.value;
+  const textbox = editor?.getEditorView()?.contentDOM;
+
+  // md-editor-v3 can set its ref before it has created the CodeMirror view,
+  // as when a custom error shows from the start: once more after a tick
+  if (!textbox) {
+    if (editor && retry) nextTick(() => describeEditor(false));
+    return;
+  }
+
+  for (const [name, value] of Object.entries(editorAttributes.value)) {
+    if (value) textbox.setAttribute(name, value);
+    else textbox.removeAttribute(name);
+  }
+}
+
+// The editor is in a ClientOnly: there once its ref is
+watch([markdownEditorRef, editorAttributes], () => describeEditor(), {
+  flush: 'post',
+});
 
 defineExpose({
   focusEditor,
@@ -153,6 +219,11 @@ const emit = defineEmits<{
   blur: [value: Event];
 }>();
 
+/** A new text clears the custom error, until the parent sets one again */
+function handleChange() {
+  customErrorActive.value = false;
+}
+
 /** Trimmed when the editor is left, not at every keystroke, which would eat a space being typed */
 function handleBlur(event: Event) {
   content.value = content.value?.trim();
@@ -162,8 +233,9 @@ function handleBlur(event: Event) {
 
 <template>
   <ClientOnly>
-    <div class="markdown-editor">
+    <div :class="['markdown-editor', customErrorActive && 'custom-error']">
       <div
+        :id="`label-${id}`"
         :class="['label', hideLabel && 'visuallyhidden']"
         @click="focusEditor()"
       >
@@ -185,11 +257,11 @@ function handleBlur(event: Event) {
         :placeholder="placeholder"
         :disabled="disabled"
         :theme="colorMode.value === 'light' ? 'light' : 'dark'"
-        :aria-describedby="`${instruction ? `instruction-${id}` : ''}`"
         no-mermaid
         no-katex
         no-echarts
         no-prettier
+        @change="handleChange"
         @blur="handleBlur"
       />
 
@@ -197,7 +269,8 @@ function handleBlur(event: Event) {
         {{ instruction }}
       </p>
 
-      <!-- Only carries the required state to the form: never a tab stop -->
+      <!-- Only carries the required state to the form: never a tab stop, and
+           the focus a form gives the first invalid field goes on to the editor -->
       <textarea
         v-if="required"
         v-model="content"
@@ -205,9 +278,14 @@ function handleBlur(event: Event) {
         class="visuallyhidden"
         aria-hidden="true"
         tabindex="-1"
+        @focus="focusEditor()"
       />
 
-      <InputError v-if="required" :id="id" :error-text="computedErrorMessage" />
+      <InputError
+        v-if="required || customError"
+        :id="id"
+        :error-text="customErrorActive ? customError : computedErrorMessage"
+      />
     </div>
   </ClientOnly>
 </template>
@@ -299,7 +377,7 @@ function handleBlur(event: Event) {
       vertical-align: middle;
       margin-inline-end: 0.25rem;
       margin-block-start: -2px;
-      background-color: var(--color);
+      background-color: var(--markdown-swatch-color);
     }
   }
 
@@ -341,7 +419,8 @@ function handleBlur(event: Event) {
   min-height: 9rem;
 }
 
-.show-invalid .markdown-editor:has(:invalid) {
+.show-invalid .markdown-editor:has(:invalid),
+.markdown-editor.custom-error {
   .error-wrapper .error {
     display: flex;
   }

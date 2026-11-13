@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import Multiselect from '@vueform/multiselect';
 import type MultiselectProps from '@vueform/multiselect';
-import type { ComponentPublicInstance } from 'vue';
+import type { ComponentPublicInstance, StyleValue } from 'vue';
+
+// An attribute goes to the control; `class` and `style` stay on the wrapper
+defineOptions({ inheritAttrs: false });
 
 const { t } = useI18n();
 
@@ -23,6 +26,7 @@ const {
   tabindex = undefined,
   itemsSelectedLabel = undefined,
   instruction = undefined,
+  customError = undefined,
   showInvalid = false,
 } = defineProps<{
   mode?: 'single' | 'multiple' | 'tags';
@@ -44,6 +48,11 @@ const {
   /** After the count, instead of "items selected" */
   itemsSelectedLabel?: string;
   instruction?: string;
+  /**
+   * An error the browser cannot find, such as one from the server: the field
+   * shows this text and is described by it until its value changes
+   */
+  customError?: string;
   size?: InputSize;
 }>();
 
@@ -56,10 +65,25 @@ const hasValue = computed(() =>
 );
 
 const formShowInvalid = inject(formShowInvalidKey, ref(false));
+const customErrorActive = ref(false);
 
-/** The error text shows after a failed submit */
+/**
+ * The custom error shows like the missing value, and describes the field,
+ * but does not keep the form from submitting again: the server judges the
+ * next attempt, and the parent moves focus to the field (`focusElement()`)
+ */
+function applyCustomError() {
+  customErrorActive.value = !!customError;
+}
+
+onMounted(applyCustomError);
+watch(() => customError, applyCustomError, { flush: 'post' });
+
+/** The error text shows after a failed submit, or for a custom error */
 const errorShown = computed(
-  () => required && !hasValue.value && (showInvalid || formShowInvalid.value),
+  () =>
+    customErrorActive.value ||
+    (required && !hasValue.value && (showInvalid || formShowInvalid.value)),
 );
 
 // The error describes the field only while it shows
@@ -93,6 +117,18 @@ function handleFocusIn(event: FocusEvent) {
   if (target.classList.contains('multiselect-fake-input')) focusElement();
 }
 
+/** That input is no field of its own: hidden from assistive technology, as it has no name */
+function hideFakeInput() {
+  const container = (multiSelectRef.value as ComponentPublicInstance | null)
+    ?.$el as HTMLElement | undefined;
+  container
+    ?.querySelector('.multiselect-fake-input')
+    ?.setAttribute('aria-hidden', 'true');
+}
+
+onMounted(hideFakeInput);
+watch(() => required, hideFakeInput, { flush: 'post' });
+
 function formatMultipleLabels(values: Record<string, string>[]) {
   if (values.length === 1) {
     return values[0]?.[labelKey];
@@ -117,6 +153,13 @@ defineExpose({
 const isExpanded = ref(false);
 
 const attrs = useAttrs();
+
+/** The attributes for the control, without the wrapper's `class` and `style` */
+function controlAttrs() {
+  return Object.fromEntries(
+    Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'),
+  );
+}
 
 // An open-direction passed by the parent wins over the automatic placement
 const fixedOpenDirection = computed(
@@ -163,15 +206,28 @@ async function placeDropdown() {
 
 onMounted(() => {
   if (autofocus) setTimeout(() => focusElement(), 200);
-
-  document.addEventListener('keydown', preventEscape);
 });
 
-onUnmounted(() => document.removeEventListener('keydown', preventEscape));
+/**
+ * The library blurs the field on Escape, so focus fell to the page. Escape
+ * closes the listbox here, cancelled so a Dialog around it stays open, and
+ * the field's `blur()` does nothing from the capture phase until the event
+ * leaves the wrapper: focus stays on the combobox (APG combobox). With the
+ * listbox closed the event goes on as it came, so a Dialog around it closes.
+ */
+function keepFocusOnEscape(event: KeyboardEvent) {
+  if (event.key !== 'Escape') return;
 
-function preventEscape(event: KeyboardEvent) {
-  if (event.key === 'Escape' && isExpanded.value) {
+  if (isExpanded.value) {
     event.preventDefault();
+    multiSelectRef.value?.close();
+  }
+  (event.target as HTMLElement).blur = () => {};
+}
+
+function restoreBlur(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    Reflect.deleteProperty(event.target as HTMLElement, 'blur');
   }
 }
 
@@ -185,24 +241,33 @@ function preventEscape(event: KeyboardEvent) {
       'cardan-multiselect',
       `multi-select-size--${size}`,
       showOptionIcons && 'show-option-icons',
+      $attrs.class,
     ]"
-    :style="
+    :style="[
+      $attrs.style as StyleValue,
       availableHeight === undefined
         ? undefined
-        : { '--ms-available-height': `${availableHeight}px` }
-    "
+        : { '--ms-available-height': `${availableHeight}px` },
+    ]"
     :label="label"
     :hide-label="hideLabel"
     :required="required"
     :disabled="disabled"
     :instruction="instruction"
     :error-text="
-      required ? $t('form.missing-value', { item: label }) : undefined
+      customErrorActive
+        ? customError
+        : required
+          ? $t('form.missing-value', { item: label })
+          : undefined
     "
     :show-invalid="showInvalid"
+    :custom-error="customErrorActive"
+    @keydown.capture="keepFocusOnEscape"
+    @keydown="restoreBlur"
   >
     <Multiselect
-      v-bind="$attrs"
+      v-bind="controlAttrs()"
       :id="id"
       ref="multiselect"
       v-model="model"
@@ -221,6 +286,7 @@ function preventEscape(event: KeyboardEvent) {
       :multiple-label="formatMultipleLabels"
       :open-direction="fixedOpenDirection ?? openDirection"
       @focusin="handleFocusIn"
+      @change="customErrorActive = false"
       @open="
         isExpanded = true;
         placeDropdown();
@@ -380,7 +446,7 @@ function preventEscape(event: KeyboardEvent) {
 }
 
 .multiselect-wrapper {
-  height: var(--height);
+  height: var(--multi-select-height);
   min-height: 0;
 }
 
@@ -404,7 +470,7 @@ function preventEscape(event: KeyboardEvent) {
 }
 
 .cardan-multiselect {
-  flex-basis: var(--col-width, 240px);
+  flex-basis: var(--form-col-width, 240px);
   flex-shrink: 0;
 
   .clear-button {
@@ -425,7 +491,7 @@ function preventEscape(event: KeyboardEvent) {
   .multiselect-placeholder,
   .multiselect-single-label {
     padding-inline-end: calc(1.5rem + var(--ms-px, 0.875rem) * 3);
-    line-height: var(--height);
+    line-height: var(--multi-select-height);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -545,16 +611,20 @@ function preventEscape(event: KeyboardEvent) {
   --ms-border-color: var(--color-red-graphic);
 }
 
+.cardan-multiselect.custom-error {
+  --ms-border-color: var(--color-red-graphic);
+}
+
 /* Sizes */
 .multi-select-size--sm .multiselect-wrapper {
-  --height: calc(2rem - 2px);
+  --multi-select-height: calc(2rem - 2px);
 }
 
 .multi-select-size--md .multiselect-wrapper {
-  --height: calc(2.5rem - 2px);
+  --multi-select-height: calc(2.5rem - 2px);
 }
 
 .multi-select-size--lg .multiselect-wrapper {
-  --height: calc(2.75rem - 2px);
+  --multi-select-height: calc(2.75rem - 2px);
 }
 </style>

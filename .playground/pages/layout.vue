@@ -48,16 +48,19 @@ const search = ref('');
 const onlyOpen = ref(false);
 
 // The examples are text here: Prettier formats a template literal in the
-// template as HTML, and drops its indentation
-const shellExample = `<AppShell>
+// template as HTML, and drops its indentation. Each is a fenced block for
+// MarkdownPreview, which colours it with the `xml` grammar.
+const htmlFence = (code: string) => ['```html', code, '```'].join('\n');
+
+const shellExample = htmlFence(`<AppShell>
   <AppHeader>…</AppHeader>
 
   <main id="main" tabindex="-1">
     <NuxtPage />
   </main>
-</AppShell>`;
+</AppShell>`);
 
-const headerExample = `<AppHeader>
+const headerExample = htmlFence(`<AppHeader>
   <template #start>
     <MobileMenu :list="navList" />
     <CardanLogo product="auditor" />
@@ -68,23 +71,23 @@ const headerExample = `<AppHeader>
   <template #end>
     <UserMenu />
   </template>
-</AppHeader>`;
+</AppHeader>`);
 
-const sidebarExample = `<AppSidebar collapsible>
+const sidebarExample = htmlFence(`<AppSidebar collapsible>
   <template #header>
     <CardanLogo product="academy" />
   </template>
 
   <MenuList :list="navList" button-variant="sidebar" />
-</AppSidebar>`;
+</AppSidebar>`);
 
-const layoutExample = `<SidebarLayout sticky beside="xl">
+const layoutExample = htmlFence(`<SidebarLayout sticky beside="xl">
   …
 
   <template #side>
     <aside aria-label="Filters">…</aside>
   </template>
-</SidebarLayout>`;
+</SidebarLayout>`);
 </script>
 
 <template>
@@ -113,7 +116,7 @@ const layoutExample = `<SidebarLayout sticky beside="xl">
         <code>id="main"</code> with <code>tabindex="-1"</code>.
       </p>
 
-      <pre class="layout-demo-code"><code>{{ shellExample }}</code></pre>
+      <MarkdownPreview :content="shellExample" class="layout-demo-code" />
     </Card>
 
     <Card>
@@ -130,7 +133,7 @@ const layoutExample = `<SidebarLayout sticky beside="xl">
         <code>--app-header-max-width</code> and <code>--app-header-gap</code>.
       </p>
 
-      <pre class="layout-demo-code"><code>{{ headerExample }}</code></pre>
+      <MarkdownPreview :content="headerExample" class="layout-demo-code" />
     </Card>
 
     <Card>
@@ -160,7 +163,7 @@ const layoutExample = `<SidebarLayout sticky beside="xl">
         <p class="sidebar-demo-page">The page</p>
       </div>
 
-      <pre class="layout-demo-code"><code>{{ sidebarExample }}</code></pre>
+      <MarkdownPreview :content="sidebarExample" class="layout-demo-code" />
     </Card>
 
     <h2 class="layout-demo-title">SidebarLayout</h2>
@@ -178,7 +181,7 @@ const layoutExample = `<SidebarLayout sticky beside="xl">
       end of the page instead of being cut off above a wrapper's padding.
     </p>
 
-    <pre class="layout-demo-code"><code>{{ layoutExample }}</code></pre>
+    <MarkdownPreview :content="layoutExample" class="layout-demo-code" />
 
     <SidebarLayout sticky beside="xl" class="layout-demo">
       <Card v-for="section in sections" :key="section">
@@ -228,7 +231,10 @@ main:has(.layout-page) {
 
   .layout-demo-code {
     margin-block-start: 1rem;
-    word-break: normal;
+
+    pre {
+      word-break: normal;
+    }
   }
 
   /* The sidebar in a frame, instead of the height of the viewport */
