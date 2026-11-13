@@ -2,11 +2,11 @@
   "mcpServers": {
     "playwright-firefox": {
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@0.0.84", "--isolated", "--browser", "firefox"]
+      "args": ["-y", "@playwright/mcp@0.0.84", "--isolated", "--headless", "--browser", "firefox"]
     },
     "playwright-webkit": {
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@0.0.84", "--isolated", "--browser", "webkit"]
+      "args": ["-y", "@playwright/mcp@0.0.84", "--isolated", "--headless", "--browser", "webkit"]
     }
   }
 }

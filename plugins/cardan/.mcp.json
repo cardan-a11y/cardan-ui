@@ -2,7 +2,7 @@
   "mcpServers": {
     "playwright": {
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@0.0.84", "--isolated"]
+      "args": ["-y", "@playwright/mcp@0.0.84", "--isolated", "--headless"]
     },
     "nuxt": {
       "type": "http",
