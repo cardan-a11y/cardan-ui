@@ -93,9 +93,20 @@ export async function focusStop(
 }
 
 /**
- * Presses Tab (or Shift+Tab) `steps` times and returns where focus went
- * after each press, as the browser moves it: real tab order, `inert`,
- * hidden content and top-layer dialogs included.
+ * The key that moves focus to the next element. WebKit's Tab skips links
+ * and buttons unless Safari's "Press Tab to highlight each item" setting is
+ * on; Option+Tab is what a keyboard user presses there.
+ */
+export function tabKey(page: Page, { reverse = false } = {}): string {
+  const webkit = page.context().browser()?.browserType().name() === 'webkit';
+  return `${reverse ? 'Shift+' : ''}${webkit ? 'Alt+' : ''}Tab`;
+}
+
+/**
+ * Presses Tab (or Shift+Tab; with Option in WebKit, see `tabKey`) `steps`
+ * times and returns where focus went after each press, as the browser moves
+ * it: real tab order, `inert`, hidden content and top-layer dialogs
+ * included.
  */
 export async function focusWalk(
   page: Page,
@@ -105,7 +116,7 @@ export async function focusWalk(
   const stops: FocusStop[] = [];
 
   for (let i = 0; i < steps; i++) {
-    await page.keyboard.press(reverse ? 'Shift+Tab' : 'Tab');
+    await page.keyboard.press(tabKey(page, { reverse }));
     stops.push(await focusStop(page, within));
   }
 
@@ -113,15 +124,15 @@ export async function focusWalk(
 }
 
 /**
- * Tabs from where focus is until it comes back to the same element (or
- * `max` presses), round the end of the page, and returns every stop: all
- * that Tab reaches on the page, starting where it started.
+ * Tabs (`tabKey`) from where focus is until it comes back to the same
+ * element (or `max` presses), round the end of the page, and returns every
+ * stop: all that Tab reaches on the page, starting where it started.
  */
 export async function tabOrder(page: Page, max = 400): Promise<FocusStop[]> {
   const stops: FocusStop[] = [];
 
   for (let i = 0; i < max; i++) {
-    await page.keyboard.press('Tab');
+    await page.keyboard.press(tabKey(page));
     const stop = await focusStop(page);
     if (stops.length && stop.key && stop.key === stops[0]!.key) break;
     stops.push(stop);

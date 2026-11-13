@@ -79,13 +79,15 @@ function onToggle(event: Event) {
 }
 
 /**
- * Whether a mousedown in the content is moving focus: its default action
- * moves focus, outside the items to the nearest focusable element around the
- * popover, such as a `<main tabindex="-1">`. Until the next task.
+ * Whether a mousedown in the content or on the trigger is moving focus: its
+ * default action moves focus, outside the items (or from the trigger in
+ * Safari, where a click does not focus a button) to the nearest focusable
+ * element around the popover, such as a `<main tabindex="-1">`. Until the
+ * next task.
  */
 let pressedInside = false;
 
-function onContentMousedown() {
+function onPress() {
   pressedInside = true;
   setTimeout(() => {
     pressedInside = false;
@@ -104,8 +106,10 @@ function unpark() {
  * Focus that leaves the content or the trigger for the page closes the
  * popover: Tab past the last element, or Shift+Tab from the trigger. A move
  * between the two keeps it open, and so does the move a press in the content
- * makes: the popover then closes when focus leaves that element for the page,
- * as it does after a navigation, when AppShell focuses the shell.
+ * or on the trigger makes: the popover then closes when focus leaves that
+ * element for the page, as it does after a navigation, when AppShell focuses
+ * the shell, and a press on the trigger closes it with the click instead of
+ * on mousedown, for the click to open it again.
  */
 function handleFocusOut(event: Event) {
   const next = (event as FocusEvent).relatedTarget;
@@ -185,6 +189,7 @@ const emit = defineEmits<{
       ]"
       :style="computedStyle"
       :aria-describedby="ariaDescribedby"
+      @mousedown="onPress"
       @focusout="handleFocusOut"
       @click="ignoreWhileLoading"
     >
@@ -220,7 +225,7 @@ const emit = defineEmits<{
       :data-span="span"
       :style="contentStyle"
       @toggle="onToggle"
-      @mousedown="onContentMousedown"
+      @mousedown="onPress"
       @focusout="handleFocusOut"
     >
       <div class="popover-content">

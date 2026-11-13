@@ -151,8 +151,8 @@ describe('Popover', () => {
     expect(popover.hidePopover).toHaveBeenCalledTimes(3);
   });
 
-  it('stays open when a press inside moves focus to the page around it, and closes when focus leaves that', async () => {
-    const { content, item, popover } = await mountPopover();
+  it('stays open when a press inside or on its trigger moves focus to the page around it, and closes when focus leaves that', async () => {
+    const { trigger, content, item, popover } = await mountPopover();
     const main = addToPage('<main tabindex="-1"><a href="#">Next</a></main>');
     const next = main.querySelector('a')!;
     await popover.show();
@@ -167,6 +167,14 @@ describe('Popover', () => {
     await new Promise((resolve) => setTimeout(resolve));
     leave(main, next);
     expect(popover.isOpen()).toBe(false);
+    // Safari does not focus a pressed button: the click that follows closes
+    // it, as the trigger's own toggle
+    await popover.show();
+    trigger.element.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true }),
+    );
+    leave(item('Edit'), main);
+    expect(popover.isOpen()).toBe(true);
   });
 
   it('closes on a route change, also when focus did not move', async () => {

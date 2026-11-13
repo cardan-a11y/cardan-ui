@@ -51,6 +51,16 @@ test('Popover: Tab past the last item leaves and closes it', async ({
   await expect(trigger).not.toBeFocused();
 });
 
+test('Popover: a second click on its trigger closes it', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: 'More options' });
+  const list = page.getByRole('navigation', { name: 'More options' });
+
+  await trigger.click();
+  await expect(list).toBeVisible();
+  await trigger.click();
+  await expect(list).toBeHidden();
+});
+
 test('Popover: Shift+Tab from the first item goes back to the trigger and keeps it open', async ({
   page,
 }) => {

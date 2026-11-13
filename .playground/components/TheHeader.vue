@@ -20,7 +20,8 @@ watch(
       </MobileMenu>
 
       <NuxtLink to="/" class="home-link">
-        <CardanLogo product="UI" />
+        <!-- Narrower than the default, next to three buttons at 320px -->
+        <CardanLogo product="UI" narrow-width="7.5rem" />
       </NuxtLink>
     </template>
 
@@ -29,6 +30,7 @@ watch(
         <CookiesButton />
       </ClientOnly> -->
       <ThemeSwitch />
+      <AppUserMenu />
     </template>
   </AppHeader>
 </template>

@@ -4,9 +4,10 @@ import { AvatarButton } from '#components';
 import { accessibleName, checkA11y } from '../a11y';
 
 /**
- * The button is named by its label; without one, by the visible initials;
- * when an image or an icon hides the initials, by the initials or "Profile
- * picture" in hidden text (the image itself is decorative).
+ * The button is named by its label, followed by the initials it shows;
+ * without one, by the visible initials; when an image or an icon hides the
+ * initials, by the initials or "Profile picture" in hidden text (the image
+ * itself is decorative).
  */
 async function nameOf(props: Record<string, unknown>) {
   const wrapper = await mountSuspended(AvatarButton, {
@@ -25,6 +26,11 @@ describe('AvatarButton', () => {
   it.each([
     ['the label, over an image', { ariaLabel: 'Account', avatar }, 'Account'],
     ['the label, over an icon', { ariaLabel: 'Account', icon }, 'Account'],
+    [
+      'the label, then the visible initials',
+      { ariaLabel: 'Account', initials: 'AL' },
+      'Account AL',
+    ],
     ['the visible initials', { initials: 'AL' }, 'AL'],
     ['the initials, behind an image', { initials: 'AL', avatar }, 'AL'],
     ['the initials, behind an icon', { initials: 'AL', icon }, 'AL'],
