@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { defineComponent, h, nextTick, ref } from 'vue';
+import { defineComponent, h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Textarea } from '#components';
-import { accessibleName, checkA11y, description, expectFocused } from '../a11y';
+import { accessibleName, checkA11y, description } from '../a11y';
 import { mountInForm } from '../form';
 
 describe('Textarea', () => {
@@ -152,43 +152,15 @@ describe('Textarea', () => {
     expect(await checkA11y()).toHaveNoViolations();
   });
 
-  // The Laravel APIs trim a text and refuse an empty one
-  it('is missing with only spaces when required, after a failed submit', async () => {
-    const message = ref(' \n  ');
-    const wrapper = await mountInForm(() => [
-      h(Textarea, {
-        label: 'Message',
-        required: true,
-        modelValue: message.value,
-        'onUpdate:modelValue': (value?: string | number) => {
-          message.value = String(value ?? '');
-        },
-      }),
-      h('button', { type: 'submit' }, 'Send'),
-    ]);
-    const textarea = wrapper.get('textarea');
+  // Only spaces are left to the API, which trims them and refuses an empty text
+  it.each([true, false])(
+    'lets only spaces through, required: %s',
+    async (required) => {
+      await mountInForm(() => [
+        h(Textarea, { label: 'Message', required, modelValue: ' \n  ' }),
+      ]);
 
-    await wrapper.get('form').trigger('submit');
-    await nextTick();
-
-    expect(textarea.attributes('aria-invalid')).toBe('true');
-    expect(description(textarea)).toBe('Message is missing');
-    expectFocused(textarea);
-
-    await textarea.setValue(' \n  A');
-
-    expect(textarea.attributes('aria-invalid')).toBeUndefined();
-    expect(description(textarea)).toBe('');
-    expect((textarea.element as HTMLTextAreaElement).checkValidity()).toBe(
-      true,
-    );
-  });
-
-  it('accepts only spaces when optional', async () => {
-    await mountInForm(() => [
-      h(Textarea, { label: 'Message', modelValue: '   ' }),
-    ]);
-
-    expect(document.querySelector('textarea')!.checkValidity()).toBe(true);
-  });
+      expect(document.querySelector('textarea')!.checkValidity()).toBe(true);
+    },
+  );
 });

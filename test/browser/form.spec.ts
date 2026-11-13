@@ -1,9 +1,8 @@
 /**
  * Values the browser lets through but the Laravel APIs refuse: a required
  * field of only spaces and an e-mail address without a dot in its domain.
- * Input makes them invalid with its `pattern`, Textarea with a custom
- * validity; here the real browser holds the submit back and Form focuses
- * the field.
+ * Input makes them invalid with its `pattern`; here the real browser holds
+ * the submit back and Form focuses the field.
  */
 import { expect, test } from '@playwright/test';
 import { gotoHydrated } from './helpers';
@@ -32,16 +31,6 @@ test('a required field of only spaces holds the submit back, with focus on it', 
   await expect(
     page.getByRole('combobox', { name: 'Select required', exact: true }),
   ).toBeFocused();
-
-  const textarea = page.getByRole('textbox', { name: 'Textarea required' });
-  await textarea.fill('  \n  ');
-  expect(
-    await textarea.evaluate((el) => (el as HTMLTextAreaElement).validity.valid),
-  ).toBe(false);
-  await textarea.pressSequentially('A');
-  expect(
-    await textarea.evaluate((el) => (el as HTMLTextAreaElement).validity.valid),
-  ).toBe(true);
 });
 
 test('an e-mail address without a dot in its domain holds the submit back, with focus on it', async ({

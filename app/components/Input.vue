@@ -215,6 +215,8 @@ function handleInput(event: Event) {
   // is in range, which the form reports. A model kept at the old value would
   // differ from the number the field shows.
   model.value = target.value;
+  // Not left to the model's watcher: validity can change while the model
+  // does not (`e` in a number field, a space under `v-model.trim`)
   updateValidity();
 }
 
@@ -279,7 +281,6 @@ const emit = defineEmits<{
         @focus="emit('focus', $event)"
         @blur="emit('blur', $event)"
         @input="handleInput"
-        @change="updateValidity"
         @invalid="updateValidity"
       />
 

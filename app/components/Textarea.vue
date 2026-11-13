@@ -68,17 +68,12 @@ const isValid = ref(true);
 const customErrorActive = ref(false);
 
 /**
- * A required text of only spaces, which the APIs trim to empty and refuse, is
- * missing: a custom validity, so the field is `:invalid` and Form focuses it
- * and shows its error as for an empty one
+ * The browser's constraints only: a required text of only spaces passes here
+ * and the API, which trims it to empty, refuses it (a textarea has no
+ * `pattern`, as Input uses for this)
  */
 function updateValidity() {
-  const textarea = textareaRef.value;
-  const blank = !!required && !!textarea?.value && !textarea.value.trim();
-  textarea?.setCustomValidity(
-    blank ? (errorMessage ?? t('form.missing-value', { item: label })) : '',
-  );
-  isValid.value = textarea?.validity.valid ?? true;
+  isValid.value = textareaRef.value?.validity.valid ?? true;
 }
 
 /**
@@ -123,6 +118,8 @@ function handleInput(event: Event) {
   customErrorActive.value = false;
 
   model.value = target.value;
+  // Not left to the model's watcher: under `v-model.trim` a space changes
+  // the length `minlength` checks, not the model
   updateValidity();
 }
 
@@ -192,7 +189,6 @@ const emit = defineEmits<{
       :aria-describedby="computedAriaDescribedby"
       :aria-invalid="errorShown || undefined"
       @input="handleInput"
-      @change="updateValidity"
       @invalid="updateValidity"
       @blur="emit('blur', $event)"
       @paste="emit('paste', $event)"
