@@ -1,8 +1,9 @@
 /**
  * Values the browser lets through but the Laravel APIs refuse: a required
  * field of only spaces and an e-mail address without a dot in its domain.
- * Input and Textarea make them invalid with a custom validity; here the real
- * browser holds the submit back and Form focuses the field.
+ * Input makes them invalid with its `pattern`, Textarea with a custom
+ * validity; here the real browser holds the submit back and Form focuses
+ * the field.
  */
 import { expect, test } from '@playwright/test';
 import { gotoHydrated } from './helpers';

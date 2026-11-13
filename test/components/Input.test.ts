@@ -238,6 +238,20 @@ describe('Input', () => {
     expect((input.element as HTMLInputElement).checkValidity()).toBe(true);
   });
 
+  it('refuses only spaces in a required field whose own pattern allows them', async () => {
+    const { input } = await mountField(
+      { label: 'Name', required: true, pattern: '[a-z ]*' },
+      '   ',
+    );
+    const element = input.element as HTMLInputElement;
+
+    expect(element.checkValidity()).toBe(false);
+
+    await input.setValue('ada lovelace');
+
+    expect(element.checkValidity()).toBe(true);
+  });
+
   it('shows a custom error over the e-mail message', async () => {
     const wrapper = await mountSuspended(Input, {
       props: {
