@@ -7,15 +7,11 @@
     "callout-warning": "Waarschuwing",
     "choose-language": "Kies taal",
     "close-menu": "Menu sluiten",
-    "logo-cardan": "Cardan voor iedereen",
     "main-content": "Hoofdcontent",
-    "main-nav": "Hoofdnavigatie",
     "mobile-menu": "Mobiel menu",
-    "open-menu": "open menu",
     "open-larger-view": "open grotere weergave",
     "open-new-window": "open in nieuw venster",
     "skip-to-main-content": "Spring naar hoofdcontent",
-    "skip-to-side-content": "Spring naar zijbalk",
     "sidebar": "Zijmenu",
     "popover": "Meer opties",
     "more-info": "Meer info",
@@ -35,14 +31,12 @@
   },
   "date": {
     "just-now": "zojuist",
-    "seconds-ago": "{n} seconde geleden | {n} seconden geleden",
     "minutes-ago": "{n} minuut geleden | {n} minuten geleden",
     "hours-ago": "{n} uur geleden | {n} uur geleden",
     "in-minutes": "over {n} minuut | over {n} minuten",
     "in-hours": "over {n} uur | over {n} uur"
   },
   "datepicker": {
-    "input": "Datumveld",
     "selectText": "Selecteren",
     "cancelText": "Sluiten",
     "clearInput": "Wis datum",
@@ -63,13 +57,10 @@
     "no-description": "Geen beschrijving."
   },
   "error": {
-    "403": "Geen toegang",
-    "404": "Niet gevonden",
     "general": "Er is iets misgegaan. Probeer het later opnieuw.",
     "heading": "Foutmelding",
     "offline": "Je bent offline. Controleer je verbinding en probeer het opnieuw.",
     "page-not-found": "Pagina niet gevonden",
-    "unauthorized": "Je hebt geen rechten om deze pagina te openen.",
     "youtube": "YouTube player is niet geladen"
   },
   "form": {
@@ -87,11 +78,7 @@
   "files": {
     "browse": "Selecteer bestand",
     "example": "Voorbeeld van {file}",
-    "name": "Bestandsnaam",
-    "no-file-selected": "Geen bestand geselecteerd.",
-    "or-drop-file": "of sleep een bestand",
     "open": "Bestand openen",
-    "thumb": "Thumbnail van {file}",
     "too-big": "Dit bestand is groter dan {size}. Kies een kleiner bestand.",
     "button-text": "Klik om te uploaden of sleep een bestand",
     "wrong-type": "Dit bestandstype wordt niet ondersteund. Kies een bestand van het type {types}."
@@ -99,8 +86,7 @@
   "filters": {
     "apply": "Filters toepassen",
     "heading": "Filter | Filters",
-    "reset": "Reset filters",
-    "reset-all": "Reset alle filters"
+    "reset": "Reset filters"
   },
   "general": {
     "about": "Over",
@@ -112,13 +98,9 @@
     "apply": "Toepassen",
     "attachment": "Bijlage | Bijlagen",
     "avatar": "Profielfoto",
-    "avatar-edit": "Profielfoto wijzigen",
     "back": "Terug",
-    "backoffice": "Backoffice",
     "cancel": "Annuleren",
     "close": "Sluiten",
-    "code": "Code",
-    "collapse": "Inklappen",
     "completed": "voltooid",
     "confirm": "Bevestigen",
     "confirm-number": "Bevestig nummer",
@@ -130,7 +112,6 @@
     "copy": "Kopiëren",
     "copy-failed": "Kopiëren mislukt",
     "copy-url": "Link kopiëren",
-    "create": "Aanmaken",
     "created": "Aangemaakt",
     "date": "Datum",
     "date-created": "Datum aangemaakt",
@@ -138,31 +119,18 @@
     "delete": "Verwijderen",
     "description": "Beschrijving",
     "details": "Details",
-    "disable": "Uitschakelen",
-    "disabled": "Uitgeschakeld",
     "document": "documenten | {n} document | {n} documenten",
     "done": "Klaar",
-    "download": "Download",
     "draft": "Concept",
     "duplicate": "Dupliceren",
     "edit": "Bewerken",
-    "edit-details": "Bewerken",
     "email": "E-mailadres",
-    "enable": "Inschakelen",
-    "enabled": "Ingeschakeld",
     "expand": "Uitklappen",
     "explanation": "Toelichting",
-    "feedback": "Feedback",
     "files": "Bestand | Bestanden",
-    "heading": "Algemeen",
-    "home": "Home",
+    "home": "Homepagina",
     "hour": "{n} uur | {n} uur",
     "image": "Afbeelding | Afbeeldingen",
-    "import": "Importeren",
-    "init": "Initialiseren",
-    "insert": "Invoegen",
-    "item": "Item",
-    "introduction": "Inleiding",
     "key": "Kenmerk",
     "keywords": "Trefwoorden",
     "language": "Taal",
@@ -170,28 +138,20 @@
     "links": "Link | Links",
     "loading": "Laden",
     "login": "Login",
-    "logo": "Logo",
     "menu": "Menu",
-    "modify": "Aanpassen",
     "move-down": "Verplaats omlaag",
     "move-up": "Verplaats omhoog",
     "name": "Naam",
     "next": "Volgende",
     "new": "Nieuw",
-    "previous": "Vorige",
-    "no": "nee",
     "open": "Openen",
     "order": "Volgorde",
     "page": "pagina's | {n} pagina | {n} pagina's",
     "part": "onderdelen | {n} onderdeel | {n} onderdelen",
     "permissions": "Permissies",
-    "phone": "Telefoon",
     "phone-number": "Telefoonnummer",
     "prefs": "Voorkeuren",
-    "priority": "Prioriteit",
     "progress": "Voortgang",
-    "project": "Project",
-    "publish": "Publiceren",
     "published": "Gepubliceerd",
     "recommended": "Aanbevolen",
     "remove": "Verwijderen",
@@ -204,38 +164,25 @@
     "save-changes": "Bewaar wijzigingen",
     "screen": "schermen | {n} scherm | {n} schermen",
     "search": "zoeken",
-    "select": "Selecteren",
-    "settings": "Instellingen",
     "show": "Openen",
     "sign-in": "Inloggen",
     "sign-out": "Uitloggen",
     "sign-out-confirm": "Weet je zeker dat je wilt uitloggen?",
-    "sort": "Sorteren",
-    "source": "Bron",
-    "start": "Starten",
     "stats": "Statistieken",
     "status": "Status",
-    "subject": "Onderwerp",
     "submit": "Insturen",
     "summary": "Samenvatting",
     "tags": "Labels",
     "tel": "Telefoon",
     "title": "Titel",
-    "token": "Code",
     "total": "Totaal",
     "type": "Type",
-    "unpublish": "Depubliceren",
-    "unpublished": "Gedepubliceerd",
     "updated": "Gewijzigd",
     "upload": "Uploaden",
     "upload-file": "Bestand uploaden",
-    "upload-image": "Afbeelding uploaden",
     "url": "URL | URLs",
-    "valid": "Geldig",
-    "invalid": "Ongeldig",
     "version": "Versie",
     "website": "Website",
-    "year": "{n} jaar | {n} jaar",
     "yes": "ja"
   },
   "language": {
@@ -247,8 +194,7 @@
     "value-of-max": "{value} van {max}"
   },
   "multiselect": {
-    "items-selected": "{count} items geselecteerd",
-    "pages-selected": "{count} pagina's geselecteerd"
+    "items-selected": "{count} items geselecteerd"
   },
   "pagination": {
     "page-x-of-total": "pagina {page} van {total}",
@@ -262,7 +208,6 @@
     "prev-page": "Vorige pagina"
   },
   "pricing": {
-    "per-month": "Per maand",
     "price-on-request": "Prijs op aanvraag"
   },
   "select": {
@@ -277,12 +222,15 @@
     "heading": "Thema",
     "light": "Licht",
     "system": "Systeem",
-    "toggle": "Kleurthema wisselen",
     "sr": {
-      "dark": "Donkere modus",
-      "light": "Lichte modus",
-      "system": "Systeemthema"
+      "dark": "Donkere modus"
     }
+  },
+  "toasts": {
+    "profile-updated": "Je profielgegevens zijn bijgewerkt."
+  },
+  "user": {
+    "profile": "Gebruikersprofiel"
   },
   "video": {
     "heading": "Video",

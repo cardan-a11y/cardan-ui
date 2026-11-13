@@ -7,15 +7,11 @@
     "callout-warning": "Warning",
     "choose-language": "Choose language",
     "close-menu": "Close menu",
-    "logo-cardan": "Cardan for all",
     "main-content": "Main content",
-    "main-nav": "Main navigation",
     "mobile-menu": "Mobile menu",
-    "open-menu": "open menu",
     "open-larger-view": "open larger view",
     "open-new-window": "open in new window",
     "skip-to-main-content": "Skip to main content",
-    "skip-to-side-content": "Skip to sidebar",
     "sidebar": "Sidebar menu",
     "popover": "More options",
     "more-info": "More info",
@@ -35,14 +31,12 @@
   },
   "date": {
     "just-now": "just now",
-    "seconds-ago": "{n} second ago | {n} seconds ago",
     "minutes-ago": "{n} minute ago | {n} minutes ago",
     "hours-ago": "{n} hour ago | {n} hours ago",
     "in-minutes": "in {n} minute | in {n} minutes",
     "in-hours": "in {n} hour | in {n} hours"
   },
   "datepicker": {
-    "input": "Datepicker input",
     "selectText": "Select",
     "cancelText": "Close",
     "clearInput": "Clear date",
@@ -63,13 +57,10 @@
     "no-description": "No description."
   },
   "error": {
-    "403": "Unauthorized",
-    "404": "Not found",
     "general": "Something went wrong. Please try again later.",
     "heading": "Error",
     "offline": "You are offline. Check your connection and try again.",
     "page-not-found": "Page not found",
-    "unauthorized": "You are unauthorized to view this page.",
     "youtube": "YouTube player failed to load"
   },
   "form": {
@@ -87,11 +78,7 @@
   "files": {
     "browse": "Browse files",
     "example": "Example of {file}",
-    "name": "File name",
-    "no-file-selected": "No file selected.",
-    "or-drop-file": "or drop a file here",
     "open": "Open file",
-    "thumb": "Thumbnail of {file}",
     "too-big": "This file is larger than {size}. Choose a smaller file.",
     "button-text": "Click to upload or drop a file",
     "wrong-type": "This file type is not supported. Choose a file of type {types}."
@@ -99,8 +86,7 @@
   "filters": {
     "apply": "Apply filters",
     "heading": "Filter | Filters",
-    "reset": "Reset filters",
-    "reset-all": "Reset all filters"
+    "reset": "Reset filters"
   },
   "general": {
     "about": "About",
@@ -112,13 +98,9 @@
     "apply": "Apply",
     "attachment": "Attachment | Attachments",
     "avatar": "Profile picture",
-    "avatar-edit": "Edit profile picture",
     "back": "Back",
-    "backoffice": "Backoffice",
     "cancel": "Cancel",
     "close": "Close",
-    "code": "Code",
-    "collapse": "Collapse",
     "completed": "completed",
     "confirm": "Confirm",
     "confirm-number": "Confirm number",
@@ -130,7 +112,6 @@
     "copy-failed": "Copy failed",
     "copy-url": "Copy URL",
     "clear": "Clear",
-    "create": "Create",
     "created": "Created",
     "date": "Date",
     "date-created": "Date created",
@@ -138,31 +119,18 @@
     "delete": "Delete",
     "description": "Description",
     "details": "Details",
-    "disable": "Disable",
-    "disabled": "Disabled",
     "document": "documents | {n} document | {n} documents",
     "done": "Done",
-    "download": "Download",
     "draft": "Draft",
     "duplicate": "Duplicate",
     "edit": "Edit",
-    "edit-details": "Edit details",
     "email": "Email",
-    "enable": "Enable",
-    "enabled": "Enabled",
     "expand": "Expand",
     "explanation": "Explanation",
-    "feedback": "Feedback",
     "files": "File | Files",
-    "heading": "General",
     "home": "Home",
     "hour": "{n} hour | {n} hours",
     "image": "Image | Images",
-    "import": "Import",
-    "init": "Initialize",
-    "insert": "Insert",
-    "item": "Item",
-    "introduction": "Introduction",
     "key": "Key",
     "keywords": "Keywords",
     "language": "Language",
@@ -170,28 +138,20 @@
     "links": "Link | Links",
     "loading": "Loading",
     "login": "Login",
-    "logo": "Logo",
     "menu": "Menu",
-    "modify": "Modify",
     "move-down": "Move down",
     "move-up": "Move up",
     "name": "Name",
     "next": "Next",
     "new": "New",
-    "previous": "Previous",
-    "no": "no",
     "open": "Open",
     "order": "Order",
     "page": "pages | {n} page | {n} pages",
     "part": "parts | {n} part | {n} parts",
     "permissions": "Permissions",
-    "phone": "Telephone",
     "phone-number": "Telephone number",
     "prefs": "Preferences",
-    "priority": "Priority",
     "progress": "Progress",
-    "project": "Project",
-    "publish": "Publish",
     "published": "Published",
     "recommended": "Recommended",
     "remove": "Remove",
@@ -204,38 +164,25 @@
     "save-changes": "Save changes",
     "screen": "screens | {n} screen | {n} screens",
     "search": "search",
-    "select": "Select",
-    "settings": "Settings",
     "show": "Open",
     "sign-in": "Sign in",
     "sign-out": "Sign out",
     "sign-out-confirm": "Are you sure you want to sign out?",
-    "sort": "Sort",
-    "source": "Source",
-    "start": "Start",
     "stats": "Statistics",
     "status": "Status",
-    "subject": "Subject",
     "submit": "Submit",
     "summary": "Summary",
     "tags": "Tags",
     "tel": "Telephone",
     "title": "Title",
-    "token": "Token",
     "total": "Total",
     "type": "Type",
-    "unpublish": "Unpublish",
-    "unpublished": "Unpublished",
     "updated": "Updated",
     "upload": "Upload",
     "upload-file": "Upload file",
-    "upload-image": "Upload image",
     "url": "URL | URLs",
-    "valid": "Valid",
-    "invalid": "Invalid",
     "version": "Version",
     "website": "Website",
-    "year": "{n} year | {n} years",
     "yes": "yes"
   },
   "language": {
@@ -247,8 +194,7 @@
     "value-of-max": "{value} of {max}"
   },
   "multiselect": {
-    "items-selected": "{count} items selected",
-    "pages-selected": "{count} pages selected"
+    "items-selected": "{count} items selected"
   },
   "pagination": {
     "page-x-of-total": "page {page} of {total}",
@@ -262,7 +208,6 @@
     "prev-page": "Previous page"
   },
   "pricing": {
-    "per-month": "Per month",
     "price-on-request": "Price on request"
   },
   "select": {
@@ -277,12 +222,15 @@
     "heading": "Theme",
     "light": "Light",
     "system": "System",
-    "toggle": "Toggle color theme",
     "sr": {
-      "dark": "Dark mode",
-      "light": "Light mode",
-      "system": "System theme"
+      "dark": "Dark mode"
     }
+  },
+  "toasts": {
+    "profile-updated": "Your profile was updated."
+  },
+  "user": {
+    "profile": "User profile"
   },
   "video": {
     "heading": "Video",
