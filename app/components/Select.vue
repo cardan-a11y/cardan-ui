@@ -128,7 +128,15 @@ const computedAriaDescribedby = computed(
 function handleChange() {
   customErrorActive.value = false;
   updateValidity();
+  remember();
 }
+
+// A choice an extension made without a change event: the event the select's
+// v-model listens to, which also reads an option's non-string value
+const { remember } = useAutofillSync(selectRef, (control) =>
+  control.dispatchEvent(new Event('change')),
+);
+watch(model, remember, { flush: 'post' });
 
 function focusElement() {
   selectRef.value?.focus();

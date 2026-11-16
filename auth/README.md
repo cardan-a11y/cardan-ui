@@ -303,7 +303,7 @@ When the user payload has `mfa_enabled: false`, a sign-in on `/login` detours pa
 
 ### Signing out
 
-Mount `<LogoutDialog />` once, in your layout, and open it with `useLogoutDialog().logoutDialogRef.value?.openDialog()`. It asks before signing out, keeps its button loading while the API answers, and closes once the user is signed out; a refusal shows in the dialog (`handleLogout()` throws it), so the user knows they are still signed in. The sign-out link of `/mfa-setup`, there when the setup cannot be skipped, does the same on the page.
+Mount `<LogoutDialog />` once, in your layout, and open it with `useLogoutDialog().logoutDialogRef.value?.openDialog()`. It asks before signing out, keeps its button loading while the API answers, and closes once the user is signed out, before nuxt-auth-sanctum goes to `redirect.onLogout` (through its `sanctum:logout` hook), so the dialog never shows the next page's language while it fades out; a refusal shows in the dialog (`handleLogout()` throws it), so the user knows they are still signed in. The sign-out link of `/mfa-setup`, there when the setup cannot be skipped, does the same on the page.
 
 ### Password confirmation
 

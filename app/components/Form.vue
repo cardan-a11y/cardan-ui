@@ -22,6 +22,13 @@ provide(
   computed(() => !!showInvalid || !validity.value),
 );
 
+// The fields' values that an extension filled in without an input event
+const syncs = new Set<() => boolean>();
+provide(formSyncKey, (sync) => {
+  syncs.add(sync);
+  return () => syncs.delete(sync);
+});
+
 /** Submits as the submit button does: a failed check reports and focuses */
 function submit() {
   formRef.value?.requestSubmit();
@@ -29,6 +36,12 @@ function submit() {
 
 async function handleSubmit(event: Event) {
   const target = event.target as HTMLFormElement;
+  // The models first, so the parent reads what the fields show. A model
+  // bound through a component's own v-model (`defineModel`) reads the new
+  // value only after its parent's render
+  const synced = [...syncs].map((sync) => sync()).some(Boolean);
+  if (synced) await nextTick();
+
   validity.value = target?.checkValidity();
 
   if (validity.value) {

@@ -80,6 +80,19 @@ describe('Dialog', () => {
     expect(loopOpenAtClose).toBe(false);
   });
 
+  it('resolves closeDialog() once the dialog has closed, the same promise for a second call', async () => {
+    const { exposed, dialog } = await mountDialog();
+
+    const first = exposed.closeDialog();
+    const second = exposed.closeDialog();
+    expect(second).toBe(first);
+
+    await first;
+    expect(dialog.open).toBe(false);
+    // Closed already: nothing to wait for
+    await expect(exposed.closeDialog()).resolves.toBeUndefined();
+  });
+
   it('closes with Cancel next to the buttons of the buttons slot', async () => {
     const { dialog, button } = await mountDialog(
       {},

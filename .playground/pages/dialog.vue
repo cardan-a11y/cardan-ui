@@ -53,6 +53,17 @@ function makeToast() {
 
     <Card>
       <h2>Dialog</h2>
+
+      <p>
+        Open a dialog with <code>openDialog()</code> and close it with
+        <code>closeDialog()</code>, both exposed on the component's ref. The
+        dialog plays its exit animation before it closes, and
+        <code>closeDialog()</code> returns a promise that resolves once it has
+        closed. Wait for it before you change what the dialog shows, such as the
+        language after a user saved another one, or before you leave the page,
+        so the change does not show while the dialog fades out.
+      </p>
+
       <div class="flex-wrapper">
         <Button
           label="Open dialog left"

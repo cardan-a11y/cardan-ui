@@ -206,8 +206,11 @@ const computedAriaDescribedby = computed(
 );
 
 function handleInput(event: Event) {
-  const target = event.target as HTMLInputElement;
+  takeValue(event.target as HTMLInputElement);
+  remember();
+}
 
+function takeValue(target: HTMLInputElement) {
   // A new value clears the custom error, until the parent sets one again
   customErrorActive.value = false;
 
@@ -219,6 +222,12 @@ function handleInput(event: Event) {
   // does not (`e` in a number field, a space under `v-model.trim`)
   updateValidity();
 }
+
+// A value an extension filled in without an input event
+const { remember, sync } = useAutofillSync(inputRef, (control) =>
+  takeValue(control as HTMLInputElement),
+);
+watch(model, remember, { flush: 'post' });
 
 function focusElement() {
   inputRef.value?.focus();
@@ -281,6 +290,7 @@ const emit = defineEmits<{
         @focus="emit('focus', $event)"
         @blur="emit('blur', $event)"
         @input="handleInput"
+        @change="sync"
         @invalid="updateValidity"
       />
 

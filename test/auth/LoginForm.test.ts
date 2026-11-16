@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { defineComponent, h, ref } from 'vue';
 import { flushPromises } from '@vue/test-utils';
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { LoginForm } from '#components';
@@ -155,6 +156,55 @@ describe.each(scenarios)('LoginForm ($name)', (scenario) => {
     expect(client.mock.invocationCallOrder[identityCall]).toBeLessThan(
       navigate.mock.invocationCallOrder[0]!,
     );
+  });
+
+  it('sends what a password manager filled in without an input event', async () => {
+    fortify({
+      [login]: () => ({}),
+      [identity]: () => ({ data: scenario.user() }),
+    });
+    const { wrapper, email, password } = await mountForm();
+
+    // iCloud Passwords sets the values only: the models never hear of them
+    email.element.value = 'ada@example.com';
+    password.element.value = 'secret';
+    password.element.focus();
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+
+    expect(requests(login)).toEqual([
+      { email: 'ada@example.com', password: 'secret' },
+    ]);
+  });
+
+  it('sends a filled-in address also when the page binds it, as the login page does', async () => {
+    fortify({
+      [login]: () => ({}),
+      [identity]: () => ({ data: scenario.user() }),
+    });
+    const address = ref('');
+    const wrapper = await mountSuspended(
+      defineComponent({
+        setup: () => () =>
+          h(LoginForm, {
+            autofocus: false,
+            email: address.value,
+            'onUpdate:email': (value: string) => (address.value = value),
+          }),
+      }),
+      { route: '/login', attachTo: document.body },
+    );
+
+    wrapper.get<HTMLInputElement>('input[name="email"]').element.value =
+      'ada@example.com';
+    wrapper.get<HTMLInputElement>('input[name="password"]').element.value =
+      'secret';
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+
+    expect(requests(login)).toEqual([
+      { email: 'ada@example.com', password: 'secret' },
+    ]);
   });
 
   it('goes to the app’s onLogin without a requested route', async () => {
