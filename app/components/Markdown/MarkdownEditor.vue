@@ -117,6 +117,10 @@ if (!configured) {
       md.use(attrs, { allowed: SAFE_ATTRIBUTES });
       md.use(mark);
     },
+    // Without md-editor-v3's link shortener, which shows a URL of over 30
+    // characters as "..." in the text being edited, to screen readers too
+    codeMirrorExtensions: (extensions) =>
+      extensions.filter(({ type }) => type !== 'linkShortener'),
     editorExtensions: {
       // Bundled instead of loaded from a CDN, so no third-party requests or CSP exceptions
       highlight: {
@@ -162,7 +166,7 @@ watch(() => customError, applyCustomError, { flush: 'post' });
 const errorShown = computed(
   () =>
     customErrorActive.value ||
-    (!!required && !content.value && formShowInvalid.value),
+    (!!required && !content.value?.trim() && formShowInvalid.value),
 );
 
 /**
@@ -209,7 +213,7 @@ defineExpose({
 
 const computedErrorMessage = computed(() => {
   if (errorMessage) return errorMessage;
-  if (required && !content.value) {
+  if (required && !content.value?.trim()) {
     return t('form.missing-value', { item: label });
   }
   return t('form.invalid-value');
@@ -222,12 +226,6 @@ const emit = defineEmits<{
 /** A new text clears the custom error, until the parent sets one again */
 function handleChange() {
   customErrorActive.value = false;
-}
-
-/** Trimmed when the editor is left, not at every keystroke, which would eat a space being typed */
-function handleBlur(event: Event) {
-  content.value = content.value?.trim();
-  emit('blur', event);
 }
 </script>
 
@@ -262,7 +260,7 @@ function handleBlur(event: Event) {
         no-echarts
         no-prettier
         @change="handleChange"
-        @blur="handleBlur"
+        @blur="emit('blur', $event)"
       />
 
       <p v-if="instruction" :id="`instruction-${id}`" class="instruction">
@@ -270,10 +268,12 @@ function handleBlur(event: Event) {
       </p>
 
       <!-- Only carries the required state to the form: never a tab stop, and
-           the focus a form gives the first invalid field goes on to the editor -->
+           the focus a form gives the first invalid field goes on to the editor.
+           Trimmed here, so a text of only spaces, which the APIs refuse, is
+           missing -->
       <textarea
         v-if="required"
-        v-model="content"
+        :value="content?.trim()"
         :required="required"
         class="visuallyhidden"
         aria-hidden="true"

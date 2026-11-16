@@ -170,6 +170,13 @@ useHead({ title: 'Changelog' });
           browser suite on every pull request.
         </li>
         <li>
+          MarkdownEditor keeps its text as typed: it no longer trims it when
+          focus leaves, which took the space before a word being written when
+          the writer switched windows or used the toolbar. A required editor
+          of only spaces is still missing. A long URL shows in full while
+          editing, no longer as "..." (md-editor-v3's link shortener is off).
+        </li>
+        <li>
           The layer holds every message key that two projects use: new
           <code>user.profile</code> and <code>toasts.profile-updated</code>, the
           Dutch <code>general.home</code> is "Homepagina", and 58 keys that

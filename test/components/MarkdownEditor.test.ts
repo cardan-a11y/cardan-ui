@@ -121,6 +121,53 @@ describe('MarkdownEditor', () => {
     expect(textbox().getAttribute('aria-invalid')).toBe('true');
   });
 
+  it('keeps the text as typed when the editor is left, a trailing space too', async () => {
+    const wrapper = await mountSuspended(MarkdownEditor, {
+      props: {
+        label: 'Answer',
+        modelValue: '',
+        'onUpdate:modelValue': (value?: string) => {
+          void wrapper.setProps({ modelValue: value });
+        },
+      },
+      attachTo: document.body,
+    });
+    await rendered();
+
+    // "hello world" with the last word backspaced away, then another window
+    await type(wrapper, 'hello ');
+    textbox().dispatchEvent(new FocusEvent('blur'));
+    await rendered();
+
+    expect(wrapper.emitted('blur')).toHaveLength(1);
+    expect(wrapper.props('modelValue')).toBe('hello ');
+    expect(textbox().textContent).toBe('hello ');
+  });
+
+  it('counts a text of only spaces as missing when required', async () => {
+    const wrapper = await mountInForm(() => [
+      h(MarkdownEditor, { label: 'Answer', required: true, modelValue: '   ' }),
+    ]);
+    await rendered();
+
+    await wrapper.get('form').trigger('submit');
+    await rendered();
+
+    expect(textbox().getAttribute('aria-invalid')).toBe('true');
+    expect(description(textbox())).toBe('Answer is missing');
+  });
+
+  it('shows a long URL in full, not shortened', async () => {
+    const url = 'https://www.example.com/some/long/path/page.html';
+    await mountSuspended(MarkdownEditor, {
+      props: { label: 'Answer', modelValue: `See ${url} for more` },
+      attachTo: document.body,
+    });
+    await rendered();
+
+    expect(textbox().textContent).toBe(`See ${url} for more`);
+  });
+
   it('keeps its label and texts to itself next to another editor', async () => {
     await mountSuspended(
       defineComponent({
