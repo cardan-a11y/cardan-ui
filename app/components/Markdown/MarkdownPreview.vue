@@ -152,7 +152,6 @@ watch(segments, highlightCode, { flush: 'post' });
       <div v-else class="markdown-chunk" v-html="segment.html" />
     </template>
   </div>
-  <!-- eslint-enable vue/no-v-html -->
 </template>
 
 <style>
@@ -166,6 +165,13 @@ watch(segments, highlightCode, { flush: 'post' });
 
 .cardan-markdown-preview {
   font-size: var(--markdown-preview-font-size, inherit);
+
+  blockquote {
+    border-inline-start: 3px solid var(--color-secondary);
+    margin-inline-start: 0;
+    padding-inline-start: 1.5rem;
+    font-style: italic;
+  }
 
   code {
     font-size: smaller;
