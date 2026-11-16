@@ -7,7 +7,7 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
-    <ChangelogEntry v="2.5.0" date="2026-11-13">
+    <ChangelogEntry v="2.5.0" date="2026-11-16">
       <p>
         The app shell, a default error page, SpinButton and a second round of
         audit fixes, with an accessibility test suite that the projects run
