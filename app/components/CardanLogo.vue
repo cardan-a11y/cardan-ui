@@ -61,6 +61,7 @@ const PRODUCT_WIDTHS: Record<string, number> = {
   Auditor: 106.1,
   Support: 115.7,
   UI: 28.9,
+  'All Access': 146.2,
 };
 // Another name: about 0.5em a letter in Hanken Grotesk (0.45 to 0.57 measured);
 // add it to the table above for its exact width

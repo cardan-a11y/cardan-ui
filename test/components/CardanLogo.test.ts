@@ -59,7 +59,7 @@ describe('CardanLogo', () => {
     ['auditor', 106.1],
     ['support', 115.7],
     ['UI', 28.9],
-    ['learning', 8 * 16],
+    ['All Access', 146.2],
   ])('fits the product name %s to a fixed width', async (product, width) => {
     const logo = await mountLogo({ product });
     const viewBox = logo.querySelector('svg')!.getAttribute('viewBox')!;
