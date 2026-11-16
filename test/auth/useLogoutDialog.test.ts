@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ref } from 'vue';
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
-import { useLogoutDialog } from '#imports';
+import { useLogoutDialog, useNuxtApp } from '#imports';
 
 // The session, so a test decides whether there is one and what signing out does
 const { logout, isAuthenticated } = vi.hoisted(() => ({
@@ -44,6 +44,34 @@ describe('useLogoutDialog', () => {
 
     expect(signedOut).toBe(true);
     expect(closeDialog).toHaveBeenCalledOnce();
+  });
+
+  it('closes the dialog before nuxt-auth-sanctum leaves the page', async () => {
+    const steps: string[] = [];
+    const closeDialog = dialog();
+    closeDialog.mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve));
+      steps.push('closed');
+    });
+    // nuxt-auth-sanctum's order: the API, the hook, then the redirect
+    logout.mockImplementation(async () => {
+      await useNuxtApp().callHook('sanctum:logout');
+      steps.push('redirect');
+    });
+
+    await useLogoutDialog().handleLogout();
+
+    expect(steps.slice(0, 2)).toEqual(['closed', 'redirect']);
+  });
+
+  it('leaves the hook after signing out, so a later sign-out elsewhere does not close it', async () => {
+    const closeDialog = dialog();
+    await useLogoutDialog().handleLogout();
+    closeDialog.mockClear();
+
+    await useNuxtApp().callHook('sanctum:logout');
+
+    expect(closeDialog).not.toHaveBeenCalled();
   });
 
   it('keeps the dialog open when the API refuses to sign out', async () => {

@@ -266,4 +266,28 @@ describe('Input', () => {
 
     expect(description(wrapper.get('input'))).toBe('Already registered');
   });
+
+  it('takes a value filled in without an input event on change, trimmed under v-model.trim', async () => {
+    const model = ref('');
+    const wrapper = await mountSuspended(
+      defineComponent({
+        setup: () => () =>
+          h(Input, {
+            label: 'Name',
+            modelValue: model.value,
+            modelModifiers: { trim: true },
+            'onUpdate:modelValue': (value?: string | number) => {
+              model.value = String(value ?? '');
+            },
+          }),
+      }),
+      { attachTo: document.body },
+    );
+    const input = wrapper.get('input');
+
+    input.element.value = ' Ada ';
+    await input.trigger('change');
+
+    expect(model.value).toBe('Ada');
+  });
 });

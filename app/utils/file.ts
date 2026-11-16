@@ -13,8 +13,13 @@ export function formatFileSize(
   return `${megabytes.toLocaleString(locale, { maximumFractionDigits: 1 })} MB`;
 }
 
+/**
+ * The part after the last dot, `undefined` for a name without one; a leading
+ * dot (`.env`) starts the name, not an extension.
+ */
 export function getFileExtension(filename?: string) {
-  return filename?.split('.')?.pop();
+  const dot = filename?.lastIndexOf('.') ?? -1;
+  return filename && dot > 0 ? filename.slice(dot + 1) : undefined;
 }
 
 export function fileTypeIcon(file?: File) {

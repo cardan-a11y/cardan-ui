@@ -52,13 +52,23 @@ function openDialog() {
   isVisible.value = true;
 }
 
-function closeDialog() {
+/** The close in progress, which a second call waits for too */
+let closing: Promise<void> | undefined;
+
+/**
+ * Closes after the exit animation. Resolves once the dialog has closed, so a
+ * caller can wait before it changes what the dialog shows, such as the
+ * language or the page under it.
+ */
+function closeDialog(): Promise<void> {
   const dialog = dialogTemplateRef.value;
+
+  if (closing && dialog?.hasAttribute('closing')) return closing;
 
   // Derive state from the DOM instead of a shadow flag: the native `close`
   // event is dispatched asynchronously, so a ref-based flag can go stale
   // and permanently block closing (dialog stuck open in the top layer).
-  if (!dialog?.open || dialog.hasAttribute('closing')) return;
+  if (!dialog?.open) return Promise.resolve();
 
   dialog.setAttribute('closing', '');
 
@@ -73,16 +83,18 @@ function closeDialog() {
   // `finished` settles on finish *and* on cancel, resolves immediately
   // when animations run with 0s durations (prefers-reduced-motion), and
   // the closure keeps working if the component is torn down mid-close.
-  Promise.allSettled(dialog.getAnimations().map((a) => a.finished)).then(
-    async () => {
-      dialog.removeAttribute('closing');
-      // The loop first, and its render, so the page is not inert when the
-      // browser gives focus back to the element that opened the dialog
-      isVisible.value = false;
-      await nextTick();
-      dialog.close();
-    },
-  );
+  closing = Promise.allSettled(
+    dialog.getAnimations().map((a) => a.finished),
+  ).then(async () => {
+    dialog.removeAttribute('closing');
+    // The loop first, and its render, so the page is not inert when the
+    // browser gives focus back to the element that opened the dialog
+    isVisible.value = false;
+    await nextTick();
+    dialog.close();
+  });
+
+  return closing;
 }
 
 function handleClose() {

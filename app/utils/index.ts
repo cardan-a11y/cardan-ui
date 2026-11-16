@@ -87,6 +87,15 @@ export function transitionDuration(
 export const formShowInvalidKey: InjectionKey<Readonly<Ref<boolean>>> =
   Symbol('formShowInvalid');
 
+/**
+ * Provided by Form: a field registers how it takes a value that the browser
+ * or an extension filled in without an input event, and Form calls it before
+ * it checks a submit; the field's sync says whether it took a value. Returns
+ * the function that unregisters it.
+ */
+export const formSyncKey: InjectionKey<(sync: () => boolean) => () => void> =
+  Symbol('formSync');
+
 /** The elements that take keyboard focus: a loop, a popover and a tab panel look for them */
 export const focusableSelector = [
   ...['input', 'select', 'button', 'textarea'].map(

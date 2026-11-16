@@ -112,8 +112,11 @@ const computedAriaDescribedby = computed(
 );
 
 function handleInput(event: Event) {
-  const target = event.target as HTMLTextAreaElement;
+  takeValue(event.target as HTMLTextAreaElement);
+  remember();
+}
 
+function takeValue(target: HTMLTextAreaElement) {
   // A new value clears the custom error, until the parent sets one again
   customErrorActive.value = false;
 
@@ -122,6 +125,12 @@ function handleInput(event: Event) {
   // the length `minlength` checks, not the model
   updateValidity();
 }
+
+// A value an extension filled in without an input event
+const { remember, sync } = useAutofillSync(textareaRef, (control) =>
+  takeValue(control as HTMLTextAreaElement),
+);
+watch(model, remember, { flush: 'post' });
 
 function focusElement() {
   textareaRef.value?.focus();
@@ -189,6 +198,7 @@ const emit = defineEmits<{
       :aria-describedby="computedAriaDescribedby"
       :aria-invalid="errorShown || undefined"
       @input="handleInput"
+      @change="sync"
       @invalid="updateValidity"
       @blur="emit('blur', $event)"
       @paste="emit('paste', $event)"

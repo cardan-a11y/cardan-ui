@@ -3,12 +3,15 @@
  * layout, and open it with `logoutDialogRef.value?.openDialog()`.
  */
 export function useLogoutDialog() {
+  const nuxtApp = useNuxtApp();
   const { logout, isAuthenticated } = useAuth();
 
   const logoutDialogRef = useState<DialogComponent | null>(
     'logoutDialog',
     () => null,
   );
+
+  const closeDialog = async () => await logoutDialogRef.value?.closeDialog();
 
   /**
    * Signs out and closes the dialog once that is done. A sign-out the API
@@ -18,8 +21,19 @@ export function useLogoutDialog() {
   async function handleLogout() {
     // Nothing to end: a session that already expired. nuxt-auth-sanctum
     // refuses to sign out then; the dialog has done its job.
-    if (isAuthenticated.value) await logout();
-    logoutDialogRef.value?.closeDialog();
+    if (isAuthenticated.value) {
+      // nuxt-auth-sanctum awaits this hook after the API signed out, before
+      // it goes to `redirect.onLogout`: the dialog finishes closing on its own
+      // page, so its closing frames never show the next one's language
+      const unhook = nuxtApp.hook('sanctum:logout', closeDialog);
+      try {
+        await logout();
+      } finally {
+        unhook();
+      }
+    }
+
+    await closeDialog();
   }
 
   return {
