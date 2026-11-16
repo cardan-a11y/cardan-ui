@@ -12,9 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      # The pnpm version comes from packageManager in package.json
       - uses: pnpm/action-setup@v6
-        with:
-          version: 10
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -30,3 +29,8 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
+      # Catches what only a production build finds, such as a bundled icon
+      # that does not exist
+      - name: Build the playground
+        run: pnpm build

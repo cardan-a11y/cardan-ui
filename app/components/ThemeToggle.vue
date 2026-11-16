@@ -48,7 +48,7 @@ defineProps<{ fontSize?: FontSize }>();
 }
 
 .theme-toggle-button {
-  --color-shape: var(--color-text);
+  --theme-toggle-shape-color: var(--color-text);
   background-color: transparent;
   display: grid;
   place-content: center;
@@ -60,7 +60,7 @@ defineProps<{ fontSize?: FontSize }>();
   transition-duration: var(--duration-sm);
 
   .iconify {
-    color: var(--color-shape);
+    color: var(--theme-toggle-shape-color);
     font-size: var(--theme-toggle-font-size, var(--font-size-md));
   }
 

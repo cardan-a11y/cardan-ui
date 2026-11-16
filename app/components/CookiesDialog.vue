@@ -58,43 +58,64 @@ interface GoogleTagManager {
   remove: () => void;
 }
 
-const consentTrigger = useScriptTriggerConsent() as unknown as ConsentTrigger;
+/**
+ * GTM with the container in `runtimeConfig.public.gtmId`, held back until
+ * the visitor accepts. Without an id nothing is registered and nothing is
+ * asked of Google: the choice is still stored and the dialog still closes.
+ */
+function useTagManager(id: string) {
+  const consentTrigger = useScriptTriggerConsent() as unknown as ConsentTrigger;
 
-const gtm = useScriptGoogleTagManager({
-  id: useRuntimeConfig().public.gtmId,
+  const gtm = useScriptGoogleTagManager({
+    id,
 
-  onBeforeGtmStart: (gtag: (...command: ConsentCommand) => void) => {
-    gtag('consent', 'default', {
-      ad_storage: 'denied',
-      ad_user_data: 'denied',
-      ad_personalization: 'denied',
-      analytics_storage: 'denied',
-      functionality_storage: 'denied',
-      personalization_storage: 'denied',
+    onBeforeGtmStart: (gtag: (...command: ConsentCommand) => void) => {
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        functionality_storage: 'denied',
+        personalization_storage: 'denied',
+      });
+    },
+
+    scriptOptions: {
+      trigger: consentTrigger,
+    },
+  }) as unknown as GoogleTagManager;
+
+  // GTM only reads gtag commands from an Arguments object, not from an array
+  function gtag(..._command: ConsentCommand) {
+    // eslint-disable-next-line prefer-rest-params
+    gtm.proxy.dataLayer.push(arguments);
+  }
+
+  function updateConsent(value: 'granted' | 'denied') {
+    gtag('consent', 'update', {
+      ad_user_data: value,
+      ad_personalization: value,
+      ad_storage: value,
+      analytics_storage: value,
+      functionality_storage: value,
+      personalization_storage: value,
     });
-  },
+  }
 
-  scriptOptions: {
-    trigger: consentTrigger,
-  },
-}) as unknown as GoogleTagManager;
-
-// GTM only reads gtag commands from an Arguments object, not from an array
-function gtag(..._command: ConsentCommand) {
-  // eslint-disable-next-line prefer-rest-params
-  gtm.proxy.dataLayer.push(arguments);
+  return {
+    grant() {
+      updateConsent('granted');
+      consentTrigger.accept();
+    },
+    deny() {
+      updateConsent('denied');
+      gtm.remove();
+    },
+  };
 }
 
-function updateConsent(value: 'granted' | 'denied') {
-  gtag('consent', 'update', {
-    ad_user_data: value,
-    ad_personalization: value,
-    ad_storage: value,
-    analytics_storage: value,
-    functionality_storage: value,
-    personalization_storage: value,
-  });
-}
+const { gtmId } = useRuntimeConfig().public;
+const tagManager = gtmId ? useTagManager(gtmId) : undefined;
 
 // A choice is either everything accepted or everything but necessary denied
 function isChoice(consent: typeof cookieConsent.value | null) {
@@ -108,15 +129,10 @@ function isChoice(consent: typeof cookieConsent.value | null) {
 watch(
   cookieConsent,
   (consent) => {
-    if (!isChoice(consent)) return;
+    if (!tagManager || !isChoice(consent)) return;
 
-    if (consent.analytics) {
-      updateConsent('granted');
-      consentTrigger.accept();
-    } else {
-      updateConsent('denied');
-      gtm.remove();
-    }
+    if (consent.analytics) tagManager.grant();
+    else tagManager.deny();
   },
   { deep: true },
 );

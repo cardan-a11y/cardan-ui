@@ -1,0 +1,14 @@
+{
+  "from": "cardan-academy-api: POST /api/login (Fortify, config/fortify.php prefix 'api') with a wrong password. Outside /api/v1 Laravel renders its own validation shape; the message is lang/nl/auth.php 'failed', and ApiExceptionRenderer::withContentLanguage labels it",
+  "status": 422,
+  "headers": {
+    "Content-Type": "application/json",
+    "Content-Language": "nl"
+  },
+  "body": {
+    "message": "Deze inloggegevens kloppen niet.",
+    "errors": {
+      "email": ["Deze inloggegevens kloppen niet."]
+    }
+  }
+}

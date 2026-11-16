@@ -8,7 +8,12 @@ import type {
 import { nl, enGB } from 'date-fns/locale';
 import { format } from 'date-fns';
 import type { Day, Locale as DateFnsLocale } from 'date-fns';
+import type { StyleValue } from 'vue';
 import '@vuepic/vue-datepicker/dist/main.css';
+
+// An attribute goes to the date picker, `aria-describedby` to its input;
+// `class` and `style` stay on the wrapper
+defineOptions({ inheritAttrs: false });
 
 const model = defineModel<ModelValue>();
 
@@ -37,13 +42,23 @@ const {
   alwaysClearable = false,
   escClose = false,
   showInvalid = false,
+  instruction = undefined,
+  customError = undefined,
+  label,
 } = defineProps<{
+  /** Names the input, also for the library's own label of it */
   label: string;
   formats?: Partial<FormatsConfig>;
   disabled?: boolean;
   required?: boolean;
   /** Shows the error now; a Form shows it after a failed submit */
   showInvalid?: boolean;
+  instruction?: string;
+  /**
+   * An error the browser cannot find, such as one from the server: the field
+   * shows this text and is described by it until its value changes
+   */
+  customError?: string;
   name?: string;
   autocomplete?: string;
   clearable?: boolean;
@@ -85,30 +100,68 @@ const isMounted = ref(false);
 const isDark = computed(() => isMounted.value && colorMode.value === 'dark');
 
 const formShowInvalid = inject(formShowInvalidKey, ref(false));
-
-/** The error text shows after a failed submit */
-const errorShown = computed(
-  () => required && !model.value && (showInvalid || formShowInvalid.value),
-);
+const customErrorActive = ref(false);
 
 /**
- * The library puts an attribute given to the component on its wrapper, so
- * the error is attached to the input itself, only while it shows
+ * The custom error shows like the missing date, and describes the field,
+ * but does not keep the form from submitting again: the server judges the
+ * next attempt
+ */
+function applyCustomError() {
+  customErrorActive.value = !!customError;
+}
+
+watch(() => customError, applyCustomError, { flush: 'post' });
+
+/** The error text shows after a failed submit, or for a custom error */
+const errorShown = computed(
+  () =>
+    customErrorActive.value ||
+    (required && !model.value && (showInvalid || formShowInvalid.value)),
+);
+
+const attrs = useAttrs();
+
+/** The attributes for the date picker, without the wrapper's and the input's */
+function controlAttrs() {
+  return Object.fromEntries(
+    Object.entries(attrs).filter(
+      ([key]) =>
+        !['class', 'style', 'aria-describedby', 'ariaDescribedby'].includes(
+          key,
+        ),
+    ),
+  );
+}
+
+/**
+ * The library takes no `aria-describedby` or `aria-invalid` for its input,
+ * so they are set on the input itself. The error describes the input only
+ * while it shows; a project's own `aria-describedby` comes first. `attrs` is
+ * not reactive, so this runs after every render, which a changed attribute
+ * causes, and when the error shows or hides.
  */
 function describeInput() {
   const input = document.getElementById(inputId);
   if (!input) return;
 
-  if (errorShown.value) {
-    input.setAttribute('aria-describedby', `error-${id}`);
-    input.setAttribute('aria-invalid', 'true');
-  } else {
-    input.removeAttribute('aria-describedby');
-    input.removeAttribute('aria-invalid');
-  }
+  const describedBy = [
+    attrs['aria-describedby'] ?? attrs.ariaDescribedby,
+    instruction && `instruction-${id}`,
+    errorShown.value && `error-${id}`,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  if (describedBy) input.setAttribute('aria-describedby', describedBy);
+  else input.removeAttribute('aria-describedby');
+
+  if (errorShown.value) input.setAttribute('aria-invalid', 'true');
+  else input.removeAttribute('aria-invalid');
 }
 
 watch(errorShown, describeInput, { flush: 'post' });
+onUpdated(describeInput);
 
 const isExpanded = ref(false);
 
@@ -128,15 +181,35 @@ function preventEscape(event: KeyboardEvent) {
   }
 }
 
+/**
+ * The library cancels every key but Tab in its input while text input is
+ * off, Escape included, so a Dialog around it never got its `cancel`. While
+ * the calendar is closed, the input's own handler cannot cancel Escape (from
+ * the capture phase until the event leaves the wrapper), so the browser
+ * closes the dialog; a handler further up can still cancel it.
+ */
+function releaseEscape(event: KeyboardEvent) {
+  if (
+    event.key === 'Escape' &&
+    !isExpanded.value &&
+    (event.target as Element).id === inputId
+  ) {
+    event.preventDefault = () => {};
+  }
+}
+
+function restoreEscape(event: KeyboardEvent) {
+  Reflect.deleteProperty(event, 'preventDefault');
+}
+
 onMounted(() => {
   isMounted.value = true;
+  applyCustomError();
   describeInput();
   document.addEventListener('keydown', preventEscape);
 });
 
 onUnmounted(() => document.removeEventListener('keydown', preventEscape));
-
-const attrs = useAttrs();
 
 /** The first day of the week as the library takes it: the `week-start` attribute, else the locale's, else date-fns's Sunday */
 const weekStart = computed(() => {
@@ -156,7 +229,8 @@ const computedAriaLabels = computed(() => {
       computedLocale.value.localize.day(((day + weekStart.value) % 7) as Day, {
         width: 'wide',
       }),
-    input: t('datepicker.input'),
+    // The library's `aria-label` on the input wins over the `<label>`
+    input: label,
     clearInput: t('datepicker.clearInput'),
     toggleOverlay: t('datepicker.toggleOverlay'),
     calendarWrap: t('datepicker.calendarWrap'),
@@ -177,21 +251,34 @@ const computedAriaLabels = computed(() => {
 <template>
   <FormField
     :id="id"
-    :class="['cardan-datepicker-container', `datepicker-size--${size}`]"
+    :class="[
+      'cardan-datepicker-container',
+      `datepicker-size--${size}`,
+      $attrs.class,
+    ]"
+    :style="$attrs.style as StyleValue"
     :label="label"
     :label-for="inputId"
     :required="required"
     :disabled="disabled"
+    :instruction="instruction"
     :error-text="
-      required ? $t('form.missing-value', { item: label }) : undefined
+      customErrorActive
+        ? customError
+        : required
+          ? $t('form.missing-value', { item: label })
+          : undefined
     "
     :show-invalid="showInvalid"
+    :custom-error="customErrorActive"
+    @keydown.capture="releaseEscape"
+    @keydown="restoreEscape"
   >
     <VueDatePicker
       :id="id"
       ref="datepicker"
       v-model="model"
-      v-bind="$attrs"
+      v-bind="controlAttrs()"
       auto-apply
       :esc-close="escClose"
       :text-input="textInput"
@@ -216,6 +303,7 @@ const computedAriaLabels = computed(() => {
       class="cardan-datepicker"
       @open="handleOpen"
       @closed="handleClose"
+      @update:model-value="customErrorActive = false"
     >
       <template #input-icon>
         <Icon name="material-symbols:calendar-month-outline-rounded" />
@@ -263,7 +351,7 @@ const computedAriaLabels = computed(() => {
 }
 
 :root {
-  --dp-font-family: var(--font-family-input, system-ui, sans-serif);
+  --dp-font-family: var(--font-family-input);
   --dp-border-radius: var(--radius-md);
   --dp-input-padding: 0;
 }
@@ -318,6 +406,11 @@ const computedAriaLabels = computed(() => {
       display: flex;
     }
   }
+}
+
+.cardan-datepicker-container.custom-error .dp--input {
+  border-color: var(--color-red-graphic);
+  outline: 1px solid var(--color-red-graphic);
 }
 
 /* Sizes */

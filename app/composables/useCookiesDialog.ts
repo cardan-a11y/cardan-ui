@@ -4,8 +4,10 @@ type CookieConsent = {
   marketing: boolean;
 };
 
-// Shared consent state. CookiesDialog loads GTM and applies the choice, so
-// any number of components can call this without repeating that work.
+// Shared consent state. CookiesDialog applies the choice, and loads GTM after
+// an Accept only when runtimeConfig.public.gtmId is set (without one, nothing
+// is asked of Google), so any number of components can call this without
+// repeating that work.
 export function useCookiesDialog() {
   /** Whether CookiesDialog is open: set it and the dialog follows */
   const cookiesDialogOpen = useState<boolean>(

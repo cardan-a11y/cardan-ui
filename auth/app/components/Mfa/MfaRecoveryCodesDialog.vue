@@ -14,6 +14,10 @@ const {
   resetMfa,
 } = useMfa();
 
+// Leaving the page while the codes show (browser Back) unmounts the dialog
+// without a close event: the codes go with it all the same
+onBeforeUnmount(resetMfa);
+
 const codeListRef = useTemplateRef<{ focusHeading: () => void }>('codeList');
 
 /** Asking to replace the codes, before the new ones are there. */

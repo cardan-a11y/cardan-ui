@@ -4,3 +4,7 @@
   # commit or a comparison git cannot make. A build hook always builds.
   # README.md is not on the list: the playground's home page shows it.
   ignore = '[ "$CACHED_COMMIT_REF" != "$COMMIT_REF" ] && git diff --quiet "$CACHED_COMMIT_REF" "$COMMIT_REF" -- . ":(exclude,glob)**/CLAUDE.md" ":(exclude,glob)**/REVIEW.md" ":(exclude,glob)**/AGENTS.md" ":(exclude,glob)MIGRATION.md" ":(exclude)docs" ":(exclude).claude" ":(exclude).cursor" ":(exclude).mcp.json" ":(exclude).github" ":(exclude)plugins" ":(exclude).claude-plugin"'
+
+[build.environment]
+  # Node 24 bundles a corepack that installs packageManager's pnpm 12
+  NODE_VERSION = "24"

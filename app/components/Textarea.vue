@@ -56,7 +56,7 @@ function controlAttrs() {
 
 const computedErrorMessage = computed(() => {
   if (errorMessage) return errorMessage;
-  if (required && !model.value) {
+  if (required && !String(model.value ?? '').trim()) {
     return t('form.missing-value', { item: label });
   }
   return t('form.invalid-value');
@@ -67,6 +67,11 @@ const formShowInvalid = inject(formShowInvalidKey, ref(false));
 const isValid = ref(true);
 const customErrorActive = ref(false);
 
+/**
+ * The browser's constraints only: a required text of only spaces passes here
+ * and the API, which trims it to empty, refuses it (a textarea has no
+ * `pattern`, as Input uses for this)
+ */
 function updateValidity() {
   isValid.value = textareaRef.value?.validity.valid ?? true;
 }
@@ -113,6 +118,8 @@ function handleInput(event: Event) {
   customErrorActive.value = false;
 
   model.value = target.value;
+  // Not left to the model's watcher: under `v-model.trim` a space changes
+  // the length `minlength` checks, not the model
   updateValidity();
 }
 
@@ -182,7 +189,6 @@ const emit = defineEmits<{
       :aria-describedby="computedAriaDescribedby"
       :aria-invalid="errorShown || undefined"
       @input="handleInput"
-      @change="updateValidity"
       @invalid="updateValidity"
       @blur="emit('blur', $event)"
       @paste="emit('paste', $event)"
@@ -202,7 +208,7 @@ const emit = defineEmits<{
   }
 
   .textarea {
-    font-family: var(--font-family-input, system-ui, sans-serif);
+    font-family: var(--font-family-input);
     font-size: 16px;
     width: 100%;
     border: 1px solid var(--color-grey-graphic);

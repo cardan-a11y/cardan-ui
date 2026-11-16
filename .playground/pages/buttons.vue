@@ -165,6 +165,28 @@ useHead({ title: 'Buttons & Links' });
         />
         <CopyButton size="lg" text="Demo Text" />
       </div>
+
+      <h3>The current page, disabled</h3>
+      <p>
+        A disabled link has no href, so it cannot be followed or reached with
+        Tab. When it leads to the current page it keeps that look and
+        <code>aria-current="page"</code>, as an enabled one has them.
+      </p>
+      <div class="flex-wrapper">
+        <Button
+          variant="sidebar"
+          to="/buttons"
+          icon="material-symbols:smart-button-rounded"
+          label="Buttons & Links"
+        />
+        <Button
+          variant="sidebar"
+          to="/buttons"
+          icon="material-symbols:smart-button-rounded"
+          label="Buttons & Links"
+          disabled
+        />
+      </div>
     </Card>
   </div>
 </template>

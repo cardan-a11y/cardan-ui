@@ -1,6 +1,6 @@
 ---
 name: guidelines
-description: The shared frontend guidelines of the Cardan Nuxt projects (the review before every commit, CSS, dependencies, browser checks, WCAG 2.2). Claude Code adds them to every session in a Cardan repository.
+description: The shared frontend guidelines of the Cardan Nuxt projects (the review before every commit, CSS, dependencies, the projects' tests, browser checks, WCAG 2.2). Claude Code adds them to every session in a Cardan repository.
 ---
 
 # Cardan frontend guidelines
@@ -21,14 +21,14 @@ These guidelines apply in every Cardan Nuxt repository. They come from the
 
 Run a review **before every `git commit`, `git push` and `gh pr create`** in a Cardan repository. There is no review in GitHub Actions, so this local review is the only one. Three cases need no review, each run as a command of its own (not chained with another commit, push or PR):
 
-- A change that touches only documentation (Markdown files outside `plugins/` and `.claude/`). The plugin's own prompts and skills are Markdown too, and those are reviewed like code.
+- A change that touches only documentation (Markdown files outside `plugins/` and `.claude/`). The plugin's own prompts and skills, CLAUDE.md and REVIEW.md are Markdown too, but they instruct Claude, so they are reviewed like code.
 - A PR from a branch with nothing uncommitted and nothing unpushed: its commits are already on the remote, through the push gate or a push the user made outside it.
 - A push that sends only commits already on `origin/main` or `origin/develop`, which arrived through reviewed pull requests. This covers bringing `main` back into `develop`; the release PR is the case above.
 
 The `cardan` plugin's hook enforces it: it blocks those commands until the `cardan:cardan-reviewer` agent, or the `cardan:plugin-reviewer` for a change to the Claude Code setup alone, has reviewed the files exactly as they are now. When that agent finishes, the hook records the state of the working tree; any change after that, a fix included, needs a new review. Never record that state yourself. A review counts for the repository the reviewer names on its last line (`Reviewed repository: <path>`): the session's own, or a Cardan repository (one with a REVIEW.md) in the same parent folder, so one session can work across the checkouts that sit side by side. Skip the review only when the user explicitly says to skip it for this change, by putting `SKIP_REVIEW=1` in front of the command; "commit this" or "push" is not a skip. The hook only sees the commands Claude runs: a push from the user's own terminal is not gated. Every commit is a review round, so commit a finished piece of work, not each step of it.
 
-1. **Run the checks first**: `pnpm run lint`, plus `pnpm run typecheck` and `pnpm test` where the project has those scripts. REVIEW.md leaves out what ESLint enforces, so lint must pass on its own.
-2. **Start the reviewer**: launch the `cardan:cardan-reviewer` agent with the Agent tool (`subagent_type: "cardan:cardan-reviewer"`). When every uncommitted change is to the Claude Code setup (`plugins/`, `.claude-plugin/`, `.claude/`) or documentation, launch `cardan:plugin-reviewer` instead: it checks the hook, the instructions and their references rather than components, and skips the browser check. Never review your own changes in your own context, and never use a `fork` (it inherits your context).
+1. **Run the checks first**: `pnpm run lint`, plus `pnpm run typecheck` and `pnpm test` where the project has those scripts. REVIEW.md leaves out what ESLint enforces, so lint must pass on its own. Run each test suite the change concerns (`pnpm test`, and `pnpm test:browser` for what only a browser shows) once for a change that does not touch timing, twice when the change touches timing or adds or changes a test, and about five times only for a new browser spec around focus, transitions or observers. A change only to Markdown that no page renders (a CLAUDE.md, REVIEW.md, the plugin's prompts and skills) runs no test suite; Markdown a page shows, such as a project's `content/` or the README.md of Cardan UI's playground, is tested like code. A few repeats catch a flaky test; 15 to 35 cost more than they find.
+2. **Start the reviewer**: launch the `cardan:cardan-reviewer` agent with the Agent tool (`subagent_type: "cardan:cardan-reviewer"`). When every uncommitted change is to the Claude Code setup (`plugins/`, `.claude-plugin/`, `.claude/`, a CLAUDE.md or REVIEW.md) or documentation, launch `cardan:plugin-reviewer` instead: it checks the hook, the instructions and their references rather than components, and skips the browser check. Never review your own changes in your own context, and never use a `fork` (it inherits your context).
 3. **Brief it** (except in the three cases above) with only the repository's absolute path, the diff command and the target branch, never your own reasoning or what you think is fine:
    - Before a commit: every uncommitted change (`git diff HEAD`, plus untracked files). The hook records the whole working tree as reviewed, so review all of it, not only what is staged.
    - Before a push or PR: the whole branch against the branch it will merge into (`git diff origin/<base>`, which includes uncommitted changes), the one the repository's CLAUDE.md names. If every commit on the branch was already reviewed this way and nothing changed since, the commit review covers it and the hook lets the push through.
@@ -57,6 +57,13 @@ The reviewer's report arrives a moment before the hook records it: when a commit
 ## Dependencies
 
 Avoid a new external dependency unless it is necessary. A dependency that Cardan UI already lists is not a new one: reusing it in a project is fine, especially a Nuxt module, and better than writing your own version.
+
+Look up a Nuxt API, config key or official module in the plugin's `nuxt` MCP server (the documentation at `https://nuxt.com/mcp`) rather than from memory.
+
+## Tests in the projects
+
+- **One setup**: a project that extends Cardan UI tests against the sibling checkout `../cardan-ui`: its `$test` block in `nuxt.config.ts` extends the local layer, so `pnpm test` and `pnpm test:layer` (the same single `vitest run`; `test:layer` is what Cardan UI's `pnpm test:projects` calls, `test:watch` watches) and the build of `pnpm test:browser` (`envName: 'test'`) use it, and `pnpm run typecheck` (`NODE_ENV=development`) does through `$development`: a bare `nuxt typecheck` checks against the layer's `main` on GitHub, so always run `pnpm run typecheck`. Production builds extend `github:cardan-a11y/cardan-ui` (`main`); CI checks that `main` out as `../cardan-ui`, so a change that needs a newer layer merges once that release is on `main`.
+- **The layer's helpers** come from the checkout, never copied: `#layer-test/…` in vitest, `../cardan-ui/test/browser/helpers.ts` in Playwright with `test` and `expect` from the project's own `@playwright/test`. happy-dom has no CSS, layout, Popover API or top layer (`../cardan-ui/test/a11y.ts` and `dom.ts`), so Dialog, Popover and top-layer behaviour belong in `test:browser`. A defect a test finds is fixed, or left as a named `it.todo` or `test.fixme` with its cause, never tested around.
 
 ## Browser checks while you work
 

@@ -36,6 +36,23 @@ async function continueToApp() {
   dismissMfaSetup();
   await navigateTo(loginRedirectTarget() || '/');
 }
+
+const signingOut = ref(false);
+const signOutError = ref<ApiErrorData | null>(null);
+
+/** nuxt-auth-sanctum leaves the page once signed out; a refusal shows here. */
+async function signOut() {
+  signOutError.value = null;
+  signingOut.value = true;
+
+  try {
+    await logout();
+  } catch (error) {
+    signOutError.value = extractApiError(error);
+  } finally {
+    signingOut.value = false;
+  }
+}
 </script>
 
 <template>
@@ -59,14 +76,28 @@ async function continueToApp() {
       @done="continueToApp"
     />
 
+    <ErrorMessage
+      v-if="mfaRequired"
+      class="mfa-setup-sign-out-error"
+      :data="signOutError"
+    />
+
     <!-- Without a skip, signing out is the only other way off this page. -->
     <template v-if="mfaRequired" #footer>
       <Button
         variant="link"
         font-size="sm"
         :label="$t('general.sign-out')"
-        @click="logout()"
+        :loading="signingOut"
+        @click="signOut"
       />
     </template>
   </AuthPage>
 </template>
+
+<style>
+.mfa-setup-sign-out-error .error-message {
+  margin-block-start: 1.5rem;
+  margin-inline: auto;
+}
+</style>

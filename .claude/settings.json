@@ -7,7 +7,8 @@
       "source": {
         "source": "github",
         "repo": "cardan-a11y/cardan-ui"
-      }
+      },
+      "autoUpdate": true
     }
   }
 }

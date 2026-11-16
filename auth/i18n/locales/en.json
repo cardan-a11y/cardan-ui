@@ -32,6 +32,7 @@
     "recovery-codes-lost": "Your recovery codes were shown once, when you set up MFA. Lost them? Regenerate them: you will see the new codes once, and the old ones stop working.",
     "recovery-codes-regenerate": "Regenerate recovery codes",
     "recovery-codes-regenerate-description": "New recovery codes replace your current ones, which stop working straight away. You will see the new codes only once, so have a safe place ready to store them.",
+    "recovery-codes-regenerate-unavailable": "Your new recovery codes could not be shown, and your old ones no longer work. Generate new codes again.",
     "recovery-codes-show": "Show recovery codes",
     "recovery-codes-unavailable": "Your recovery codes could not be loaded, so the code was not confirmed yet. Try again.",
     "recovery-codes-missing": "Your recovery codes could not be shown. Create new ones in your account settings with “{action}”.",

@@ -1,0 +1,30 @@
+{
+  "from": "cardan-academy-api: POST /api/v1/checkout/sessions refused by CheckoutSessionRequest, rendered by ApiExceptionRenderer::fromValidation (one JSON:API error per message, the field in source.parameter), in the reader's language (lang/nl/validation.php with the checkout.attributes names), labelled by ApiExceptionRenderer::withContentLanguage",
+  "status": 422,
+  "headers": {
+    "Content-Type": "application/vnd.api+json",
+    "Content-Language": "nl"
+  },
+  "body": {
+    "errors": [
+      {
+        "status": "422",
+        "title": "Unprocessable Entity",
+        "detail": "Het veld e-mailadres van de deelnemer is verplicht.",
+        "source": { "parameter": "participants.0.email" }
+      },
+      {
+        "status": "422",
+        "title": "Unprocessable Entity",
+        "detail": "Het veld plaats is verplicht.",
+        "source": { "parameter": "billing.city" }
+      },
+      {
+        "status": "422",
+        "title": "Unprocessable Entity",
+        "detail": "Het veld e-mailadres voor de factuur moet een geldig e-mailadres zijn.",
+        "source": { "parameter": "billing.email" }
+      }
+    ]
+  }
+}

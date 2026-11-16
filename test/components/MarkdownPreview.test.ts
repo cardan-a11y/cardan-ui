@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
-import { mountSuspended } from '@nuxt/test-utils/runtime';
+import { describe, it, expect, onTestFinished, vi } from 'vitest';
+import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime';
 import { MarkdownPreview } from '#components';
 import { renderMarkdown } from '../../app/components/Markdown/renderer';
-import { checkA11y } from '../a11y';
+import { accessibleName, checkA11y } from '../a11y';
 
 // Counts every use of highlight.js (the component reads `hljs` once per
 // load), so a text without a code block provably does not load it
@@ -80,23 +80,44 @@ describe('MarkdownPreview', () => {
     const [guide, docs] = wrapper.findAll('a');
     expect(guide?.attributes('target')).toBe('_blank');
     expect(guide?.attributes('title')).toBe('The guide');
-    expect(docs?.attributes('title')).toBe('open in new window');
+    expect(docs?.attributes('title')).toBeUndefined();
     expect(guide?.get('.visuallyhidden').text()).toBe('(open in new window)');
     expect(docs?.get('.visuallyhidden').text()).toBe('(open in new window)');
     expect(await checkA11y()).toHaveNoViolations();
   });
 
   it('renders a bare video link as a player, or as a link with videos-as-links', async () => {
-    const content = 'Watch this:\n\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ';
-    const player = await mountSuspended(MarkdownPreview, { props: { content } });
+    // VideoPlayer asks YouTube's oEmbed for the title: answered here, not
+    // over the network. The test environment's fetch serves a registered
+    // endpoint; a stubbed global `$fetch` does not reach the component.
+    const oembed = vi.fn(() => ({
+      title: 'Never Gonna Give You Up',
+      width: 480,
+      height: 270,
+    }));
+    onTestFinished(registerEndpoint('https://youtube.com/oembed', oembed));
+
+    const content =
+      'Watch this:\n\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    const player = await mountSuspended(MarkdownPreview, {
+      props: { content },
+      attachTo: document.body,
+    });
     const link = await mountSuspended(MarkdownPreview, {
       props: { content, videosAsLinks: true },
     });
 
     expect(player.find('a[href*="youtube.com"]').exists()).toBe(false);
+    await vi.waitFor(() =>
+      expect(accessibleName(player.get('button'))).toBe(
+        'Play video: Never Gonna Give You Up',
+      ),
+    );
+    expect(oembed).toHaveBeenCalledOnce();
     expect(link.get('a[href*="youtube.com"]').attributes('target')).toBe(
       '_blank',
     );
+    expect(link.find('button').exists()).toBe(false);
     expect(link.text()).toContain('Watch this:');
   });
 
@@ -135,6 +156,8 @@ describe('MarkdownPreview', () => {
   });
 
   it('leaves a code block in an unknown language plain and escaped', async () => {
+    useHighlight.mockClear();
+
     const wrapper = await mountSuspended(MarkdownPreview, {
       props: { content: '```brainfuck\n<b>+[-]</b>\n```' },
       attachTo: document.body,
@@ -145,8 +168,8 @@ describe('MarkdownPreview', () => {
     expect(code.find('b').exists()).toBe(false);
     expect(code.text()).toContain('<b>+[-]</b>');
 
-    // Nothing to colour: the block keeps its escaped text
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // highlight.js loaded, found no grammar: the block keeps its escaped text
+    await vi.waitFor(() => expect(useHighlight).toHaveBeenCalled());
     expect(code.find('span').exists()).toBe(false);
     expect(await checkA11y()).toHaveNoViolations();
   });

@@ -50,6 +50,11 @@ const ratio = computed(() => {
   return 16 / 9;
 });
 
+/**
+ * `keyboard=0` and `disablekb=1` switch off the players' single-key shortcuts
+ * on purpose: WCAG 2.1.4 Character Key Shortcuts. The players' own buttons
+ * still work with the keyboard.
+ */
 const embedUrl = computed(() => {
   const { provider, id, hash } = video.value;
 
@@ -100,13 +105,18 @@ const iframeTitle = computed(() =>
     : t('video.heading'),
 );
 
-function playVideo() {
+const iframe = useTemplateRef('iframe');
+
+/** The player replaces the play button, so focus moves into it rather than to the body. */
+async function playVideo() {
   started.value = true;
+  await nextTick();
+  iframe.value?.focus();
 }
 </script>
 
 <template>
-  <figure class="video-player" :style="`--aspect-ratio: ${ratio}`">
+  <figure class="video-player" :style="`--video-player-aspect-ratio: ${ratio}`">
     <NuxtImg
       v-if="!started"
       :src="thumbUrl"
@@ -141,6 +151,7 @@ function playVideo() {
 
     <div v-if="started" class="iframe-wrapper">
       <iframe
+        ref="iframe"
         :src="embedUrl"
         :title="iframeTitle"
         allow="autoplay *; fullscreen *; encrypted-media *"
@@ -160,7 +171,7 @@ function playVideo() {
   img {
     cursor: pointer;
     background-color: black;
-    aspect-ratio: var(--aspect-ratio);
+    aspect-ratio: var(--video-player-aspect-ratio);
     width: 100%;
   }
 
@@ -202,7 +213,7 @@ function playVideo() {
 
   .iframe-wrapper {
     width: 100%;
-    aspect-ratio: var(--aspect-ratio);
+    aspect-ratio: var(--video-player-aspect-ratio);
   }
 
   iframe {

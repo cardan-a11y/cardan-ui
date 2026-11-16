@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
+import { defineComponent, h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { FileInput } from '#components';
-import { checkA11y } from '../a11y';
+import { accessibleName, checkA11y, description, expectFocused } from '../a11y';
+import { addToPage } from '../dom';
+import { mountInForm } from '../form';
 
 /**
  * Chooses a file the way the picker does: the input's files, then change. The
@@ -20,8 +23,62 @@ async function choose(input: HTMLInputElement, file: File) {
   await nextTick();
 }
 
+describe('FileInput', () => {
+  it('is a file field named by its label and described by the size it takes', async () => {
+    const wrapper = await mountSuspended(FileInput, {
+      props: { label: 'Profile picture', maxFileSize: 2000 },
+      attachTo: document.body,
+    });
+
+    const input = wrapper.get('input');
+    expect(input.attributes('type')).toBe('file');
+    expect(accessibleName(input)).toBe('Profile picture');
+    expect(description(input)).toBe('(max. 2 MB)');
+    expect(input.attributes('aria-invalid')).toBeUndefined();
+    expect(await checkA11y()).toHaveNoViolations();
+  });
+
+  it('shows that a required file is missing after a failed submit of its form', async () => {
+    const wrapper = await mountInForm(() => [
+      h(FileInput, { label: 'Picture', required: true, maxFileSize: 1000 }),
+    ]);
+    const input = wrapper.get('input');
+    expect(description(input)).toBe('(max. 1 MB)');
+
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+
+    expect(input.attributes('aria-invalid')).toBe('true');
+    expect(description(input)).toBe('(max. 1 MB) Picture is missing');
+    expectFocused(input);
+  });
+
+  it('keeps its label and texts to itself next to another FileInput', async () => {
+    await mountSuspended(
+      defineComponent({
+        setup: () => () => [
+          h(FileInput, { label: 'Photo', maxFileSize: 1000 }),
+          h(FileInput, { label: 'Document', mode: 'document', accept: '.pdf' }),
+        ],
+      }),
+      { attachTo: document.body },
+    );
+
+    const inputs = Array.from(document.querySelectorAll('input'));
+    expect(inputs.map((input) => accessibleName(input))).toEqual([
+      'Photo',
+      'Document',
+    ]);
+    expect(inputs.map((input) => description(input))).toEqual([
+      '(max. 1 MB)',
+      'PDF (max. 5 MB)',
+    ]);
+    expect(await checkA11y()).toHaveNoViolations();
+  });
+});
+
 describe('FileInput with a circle', () => {
-  it('shows the current picture in the zone, with the hint', async () => {
+  it('shows the current picture, with the hint, and no accessibility violations', async () => {
     const wrapper = await mountSuspended(FileInput, {
       props: {
         label: 'Profile picture',
@@ -32,17 +89,8 @@ describe('FileInput with a circle', () => {
       attachTo: document.body,
     });
 
-    const input = wrapper.get('input');
-    expect(wrapper.classes()).toContain('file-input-shape--circle');
-    expect(
-      wrapper.get('.file-input-icon-wrapper .iconify').classes(),
-    ).toContain('i-material-symbols:add-photo-alternate-outline-rounded');
-    expect(wrapper.get('.preview-image').attributes('src')).toBe(
-      '/favicon.svg',
-    );
-    expect(
-      wrapper.get(`#${input.attributes('aria-describedby')}`).text(),
-    ).toContain('max.');
+    expect(wrapper.get('img').attributes('src')).toBe('/favicon.svg');
+    expect(description(wrapper.get('input'))).toContain('max.');
     expect(await checkA11y()).toHaveNoViolations();
   });
 
@@ -56,41 +104,33 @@ describe('FileInput with a circle', () => {
           wrapper.setProps({ modelValue: file }),
       },
     });
-    expect(wrapper.find('.preview-image').exists()).toBe(false);
+    expect(wrapper.find('img').exists()).toBe(false);
 
     await wrapper.setProps({ placeholderUrl: '/current.png' });
-    expect(wrapper.get('.preview-image').attributes('src')).toBe(
-      '/current.png',
-    );
+    expect(wrapper.get('img').attributes('src')).toBe('/current.png');
 
     // A chosen file takes the picture's place until the parent clears it
     const input = wrapper.get('input').element;
     await choose(input, new File(['x'], 'cv.pdf', { type: 'application/pdf' }));
     await nextTick();
-    expect(wrapper.find('.preview-image').exists()).toBe(false);
+    expect(wrapper.find('img').exists()).toBe(false);
 
     await wrapper.setProps({ modelValue: undefined });
-    expect(wrapper.get('.preview-image').attributes('src')).toBe(
-      '/current.png',
-    );
+    expect(wrapper.get('img').attributes('src')).toBe('/current.png');
     expect(input.value).toBe('');
   });
 });
 
 describe('FileInput in document mode', () => {
-  it('lists the accepted types in the instruction of the field', async () => {
+  it('lists the accepted types in the description of the field', async () => {
     const wrapper = await mountSuspended(FileInput, {
       props: { label: 'Document', mode: 'document', accept: 'pdf, .DOCX' },
       attachTo: document.body,
     });
 
     const input = wrapper.get('input');
-    const instruction = wrapper.get(`#${input.attributes('aria-describedby')}`);
     expect(input.attributes('accept')).toBe('.pdf,.docx');
-    expect(
-      wrapper.get('.file-input-icon-wrapper .iconify').classes(),
-    ).toContain('i-material-symbols:upload-file-outline');
-    expect(instruction.text()).toContain('PDF or DOCX');
+    expect(description(input)).toBe('PDF or DOCX (max. 5 MB)');
     expect(await checkA11y()).toHaveNoViolations();
   });
 
@@ -104,15 +144,15 @@ describe('FileInput in document mode', () => {
     await choose(input, new File(['x'], 'photo.png', { type: 'image/png' }));
     expect(wrapper.emitted('select')).toBeUndefined();
     expect(input.getAttribute('aria-invalid')).toBe('true');
-    expect(input.getAttribute('aria-describedby')).toContain(
-      wrapper.get('.error-wrapper').attributes('id'),
+    expect(description(input)).toBe(
+      'PDF (max. 5 MB) This file type is not supported. Choose a file of type PDF.',
     );
-    expect(wrapper.get('.error-wrapper').text()).toContain('PDF');
 
     const pdf = new File(['x'], 'essay.pdf', { type: 'application/pdf' });
     await choose(input, pdf);
     expect(wrapper.emitted('select')).toEqual([[pdf]]);
     expect(input.hasAttribute('aria-invalid')).toBe(false);
+    expect(description(input)).toBe('PDF (max. 5 MB)');
     expect(await checkA11y()).toHaveNoViolations();
   });
 });
@@ -137,8 +177,7 @@ describe('FileInput in image mode', () => {
 
     expect(value).toBeUndefined();
     expect(input.getAttribute('aria-invalid')).toBe('true');
-    expect(input.getAttribute('aria-describedby')).toContain('error-');
-    expect(wrapper.get('.error').text()).not.toBe('');
+    expect(description(input)).toContain('This file is larger than');
     expect(input.value).toBe('');
 
     const small = new File(['x'], 'small.pdf', { type: 'application/pdf' });
@@ -146,6 +185,7 @@ describe('FileInput in image mode', () => {
 
     expect(value).toBe(small);
     expect(input.hasAttribute('aria-invalid')).toBe(false);
+    expect(description(input)).not.toContain('This file is larger than');
 
     // Another rejected file: the field, and the input a form posts, keep it
     await choose(input, big);
@@ -155,8 +195,7 @@ describe('FileInput in image mode', () => {
   });
 
   it('leaves a paste into a text field to that field', async () => {
-    const textarea = document.createElement('textarea');
-    document.body.append(textarea);
+    const textarea = addToPage('<textarea></textarea>');
     const wrapper = await mountSuspended(FileInput, {
       props: { label: 'Picture' },
       attachTo: document.body,
@@ -172,7 +211,6 @@ describe('FileInput in image mode', () => {
 
     expect(wrapper.emitted('paste')).toBeUndefined();
     expect(wrapper.emitted('update:modelValue')).toBeUndefined();
-    textarea.remove();
   });
 });
 

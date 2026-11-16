@@ -7,9 +7,10 @@
  *               `gh pr create` until the cardan:cardan-reviewer agent has
  *               reviewed the files exactly as they are now, or the
  *               cardan:plugin-reviewer agent has, for a change to the
- *               Claude Code setup alone (see `setupOnly`). A change that
- *               touches only documentation (Markdown outside `plugins/`
- *               and `.claude/`) passes without a review, and so do a PR
+ *               Claude Code setup alone (see `setupOnly`), CLAUDE.md and
+ *               REVIEW.md included. A change that touches only
+ *               documentation (other Markdown outside `plugins/` and
+ *               `.claude/`) passes without a review, and so do a PR
  *               from a branch with nothing uncommitted or unpushed and a
  *               push that sends only commits already on `origin/main` or
  *               `origin/develop` (main brought back into develop).
@@ -128,12 +129,21 @@ function nearestRemote(root) {
 }
 
 /**
+ * CLAUDE.md and REVIEW.md, at any depth: instructions that Claude sessions
+ * and the reviewer read, so they are reviewed like the plugin, not passed as
+ * documentation.
+ */
+function isInstructions(file) {
+  return /(^|\/)(CLAUDE|REVIEW)\.md$/.test(file);
+}
+
+/**
  * A Markdown file that is documentation, not behaviour: the plugin's agent
- * prompt and skills under `plugins/` and anything under `.claude/` are
- * Markdown too, and those are reviewed like code.
+ * prompt and skills under `plugins/`, anything under `.claude/`, CLAUDE.md
+ * and REVIEW.md are Markdown too, and those are reviewed like code.
  */
 function isDocumentation(file) {
-  return /\.md$/i.test(file) && !/^(plugins|\.claude)\//.test(file);
+  return /\.md$/i.test(file) && !/^(plugins|\.claude)\//.test(file) && !isInstructions(file);
 }
 
 /**
@@ -155,9 +165,9 @@ function markdownOnly(root) {
   }
 }
 
-/** A file of the Claude Code setup: the cardan plugin, or `.claude/`. */
+/** A file of the Claude Code setup: the cardan plugin, `.claude/`, CLAUDE.md or REVIEW.md. */
 function isSetup(file) {
-  return /^(plugins|\.claude-plugin|\.claude)\//.test(file);
+  return /^(plugins|\.claude-plugin|\.claude)\//.test(file) || isInstructions(file);
 }
 
 /**
@@ -300,9 +310,9 @@ function gate() {
       'Blocked: the files as they are now have not been reviewed. Run the ' +
         'cardan:cardan-reviewer agent as described in the Cardan guidelines ("Review Before ' +
         'Commit, Push and PR"), or the cardan:plugin-reviewer agent for a change to plugins/, ' +
-        '.claude-plugin/ or .claude/ alone; it records the reviewed state when it finishes, and any change ' +
-        'after that needs a new review. Only a change to documentation alone (Markdown outside ' +
-        'plugins/ and .claude/), a PR from a branch with nothing uncommitted or unpushed, and a ' +
+        '.claude-plugin/, .claude/, CLAUDE.md or REVIEW.md alone; it records the reviewed state when it ' +
+        'finishes, and any change after that needs a new review. Only a change to documentation alone ' +
+        '(Markdown outside plugins/ and .claude/, other than CLAUDE.md and REVIEW.md), a PR from a branch with nothing uncommitted or unpushed, and a ' +
         'push that sends only commits already on origin/main or origin/develop need none, each ' +
         'as a command of its own. ' +
         'Only when the user explicitly said to skip the review for this change, put ' +
@@ -438,8 +448,8 @@ function mark() {
 
   if (PLUGIN_REVIEWER.test(input.agent_type ?? '') && !setupOnly(root)) {
     process.stderr.write(
-      'cardan-review: the uncommitted change is empty or touches more than plugins/, .claude-plugin/ ' +
-        'and .claude/, which the cardan:plugin-reviewer does not cover, so the review was not ' +
+      'cardan-review: the uncommitted change is empty or touches more than plugins/, .claude-plugin/, ' +
+        '.claude/, CLAUDE.md, REVIEW.md and other documentation, which the cardan:plugin-reviewer does not cover, so the review was not ' +
         'recorded; run the cardan:cardan-reviewer.\n',
     );
     return;

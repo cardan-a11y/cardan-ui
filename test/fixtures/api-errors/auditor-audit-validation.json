@@ -1,0 +1,15 @@
+{
+  "from": "cardan-auditor-api-v1: POST /api/audits refused by App\\Http\\Requests\\Audit\\AuditStoreRequest. Laravel's own validation shape (message: the first message and how many more, errors per field, an array rule as a nested key), the framework's English lines, no Content-Language (the Auditor sets none)",
+  "status": 422,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "message": "The title field is required. (and 2 more errors)",
+    "errors": {
+      "title": ["The title field is required."],
+      "project_id": ["The project id field is required."],
+      "tool_ids.0": ["The selected tool ids.0 is invalid."]
+    }
+  }
+}

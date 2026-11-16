@@ -1,22 +1,22 @@
 import { describe, it, expect } from 'vitest';
+import { defineComponent, h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Textarea } from '#components';
-import { checkA11y } from '../a11y';
+import { accessibleName, checkA11y, description } from '../a11y';
+import { mountInForm } from '../form';
 
 describe('Textarea', () => {
-  it('labels the field and has no accessibility violations', async () => {
+  it('is named by its label and has no accessibility violations', async () => {
     const wrapper = await mountSuspended(Textarea, {
       props: { label: 'Message', modelValue: '' },
       attachTo: document.body,
     });
 
-    expect(wrapper.get('label').attributes('for')).toBe(
-      wrapper.get('textarea').attributes('id'),
-    );
+    expect(accessibleName(wrapper.get('textarea'))).toBe('Message');
     expect(await checkA11y()).toHaveNoViolations();
   });
 
-  it('shows the error under the field, above the instruction', async () => {
+  it('shows the error under the field, above the instruction, and is described by both', async () => {
     const wrapper = await mountSuspended(Textarea, {
       props: {
         label: 'Message',
@@ -30,24 +30,22 @@ describe('Textarea', () => {
     });
 
     const textarea = wrapper.get('textarea');
-    const error = wrapper.get('.error-wrapper').element;
-    const instruction = wrapper.get('.instruction').element;
-    expect(error.textContent).toContain('Write a message');
-    expect(
-      textarea.element.compareDocumentPosition(error) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(
-      error.compareDocumentPosition(instruction) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+    expect(description(textarea)).toBe(
+      'At most 500 characters Write a message',
+    );
 
-    const describedBy = (textarea.attributes('aria-describedby') ?? '').split(
-      ' ',
-    );
-    expect(describedBy).toEqual(
-      expect.arrayContaining([error.id, instruction.id]),
-    );
+    // In reading order: the field, its error, its instruction
+    const [instruction, error] = (textarea.attributes('aria-describedby') ?? '')
+      .split(' ')
+      .map((id) => document.getElementById(id)!);
+    expect(
+      textarea.element.compareDocumentPosition(error!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      error!.compareDocumentPosition(instruction!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(await checkA11y()).toHaveNoViolations();
   });
 
@@ -64,21 +62,33 @@ describe('Textarea', () => {
 
     // Invalid, but not shown yet: a valid-looking field is not described by it
     const textarea = wrapper.get('textarea');
-    expect(textarea.attributes('aria-describedby')).toBeUndefined();
+    expect(description(textarea)).toBe('');
     expect(textarea.attributes('aria-invalid')).toBeUndefined();
 
     await wrapper.setProps({ showInvalid: true });
 
-    expect(
-      document.getElementById(textarea.attributes('aria-describedby') ?? '')
-        ?.textContent,
-    ).toContain('Write a message');
+    expect(description(textarea)).toBe('Write a message');
     expect(textarea.attributes('aria-invalid')).toBe('true');
     expect(await checkA11y()).toHaveNoViolations();
 
     // Valid: not described, whatever the form shows
     await wrapper.setProps({ modelValue: 'Hello' });
-    expect(textarea.attributes('aria-describedby')).toBeUndefined();
+    expect(description(textarea)).toBe('');
+    expect(textarea.attributes('aria-invalid')).toBeUndefined();
+  });
+
+  it('shows its error after a failed submit of its form', async () => {
+    const wrapper = await mountInForm(() => [
+      h(Textarea, { label: 'Message', modelValue: '', required: true }),
+    ]);
+    const textarea = wrapper.get('textarea');
+    expect(textarea.attributes('aria-invalid')).toBeUndefined();
+
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+
+    expect(textarea.attributes('aria-invalid')).toBe('true');
+    expect(description(textarea)).toBe('Message is missing');
   });
 
   it('shows a custom error, and is described by it, until its value changes', async () => {
@@ -90,25 +100,67 @@ describe('Textarea', () => {
 
     await wrapper.setProps({ customError: 'Looks like spam' });
 
-    const describedBy = textarea.attributes('aria-describedby') ?? '';
-    expect(describedBy).toMatch(/^error-/);
-    expect(document.getElementById(describedBy)?.textContent).toContain(
-      'Looks like spam',
-    );
+    expect(description(textarea)).toBe('Looks like spam');
     expect(textarea.attributes('aria-invalid')).toBe('true');
-    expect(wrapper.get('.form-field-wrapper').classes()).toContain(
-      'custom-error',
-    );
     // The server judges the next submit: the browser does not hold it back
     expect((textarea.element as HTMLTextAreaElement).checkValidity()).toBe(
       true,
     );
+    expect(await checkA11y()).toHaveNoViolations();
 
     await textarea.setValue('Hello, a question about the course');
 
-    expect(textarea.attributes('aria-describedby')).toBeUndefined();
-    expect(wrapper.get('.form-field-wrapper').classes()).not.toContain(
-      'custom-error',
-    );
+    expect(description(textarea)).toBe('');
+    expect(textarea.attributes('aria-invalid')).toBeUndefined();
   });
+
+  it('puts an attribute on the textarea and a class and style on the wrapper', async () => {
+    const wrapper = await mountSuspended(Textarea, {
+      props: { label: 'Message', modelValue: '' },
+      attrs: { 'data-test': 'message', class: 'wide', style: 'color: red' },
+      attachTo: document.body,
+    });
+
+    const textarea = wrapper.get('textarea');
+    expect(textarea.attributes('data-test')).toBe('message');
+    expect(textarea.attributes('class')).not.toContain('wide');
+    expect(textarea.attributes('style') ?? '').not.toContain('color');
+    expect(wrapper.classes()).toContain('wide');
+    expect(wrapper.attributes('style')).toContain('color: red');
+  });
+
+  it('keeps its label and texts to itself next to another Textarea', async () => {
+    await mountSuspended(
+      defineComponent({
+        setup: () => () => [
+          h(Textarea, { label: 'Question', instruction: 'One at a time' }),
+          h(Textarea, { label: 'Context', instruction: 'Optional' }),
+        ],
+      }),
+      { attachTo: document.body },
+    );
+
+    const textareas = Array.from(document.querySelectorAll('textarea'));
+    expect(textareas.map((textarea) => accessibleName(textarea))).toEqual([
+      'Question',
+      'Context',
+    ]);
+    expect(textareas.map((textarea) => description(textarea))).toEqual([
+      'One at a time',
+      'Optional',
+    ]);
+    expect(await checkA11y()).toHaveNoViolations();
+  });
+
+  // Only spaces are left to the API, which trims them and refuses an empty text
+  it.each([true, false])(
+    'lets only spaces through, required: %s',
+    async (required) => {
+      await mountInForm(() => [
+        h(Textarea, { label: 'Message', required, modelValue: ' \n  ' }),
+      ]);
+
+      expect(document.querySelector('textarea')!.checkValidity()).toBe(true);
+    },
+  );
 });

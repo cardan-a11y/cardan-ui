@@ -1,0 +1,38 @@
+{
+  "from": "cardan-academy-api: POST /api/v1/checkout/quotes with a basket that cannot be quoted, CheckoutErrorResponse::quoteRefused (code quote_refused, one error per refusal: a refused line names it in source.parameter, a refusal of the whole basket has no source; lang/nl/checkout.php), labelled by ApiExceptionRenderer::withContentLanguage",
+  "status": 422,
+  "headers": {
+    "Content-Type": "application/vnd.api+json",
+    "Cache-Control": "no-store",
+    "Content-Language": "nl"
+  },
+  "body": {
+    "errors": [
+      {
+        "status": "422",
+        "title": "Unprocessable Entity",
+        "code": "quote_refused",
+        "detail": "De winkelmand bevat prijzen in meer dan één munteenheid. Bestel ze apart.",
+        "meta": {
+          "line": null,
+          "type_line_id": null,
+          "reason": "currency_mismatch",
+          "refer_to_request": false
+        }
+      },
+      {
+        "status": "422",
+        "title": "Unprocessable Entity",
+        "code": "quote_refused",
+        "detail": "Er zijn niet genoeg plaatsen meer vrij op deze datum van Toegankelijk ontwerpen. Kies een andere datum of minder deelnemers.",
+        "source": { "parameter": "lines.1" },
+        "meta": {
+          "line": 1,
+          "type_line_id": "01JC8Z6R9V3W4X5Y6Z7A8B9C0D",
+          "reason": "execution_full",
+          "refer_to_request": false
+        }
+      }
+    ]
+  }
+}

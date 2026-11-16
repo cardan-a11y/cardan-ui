@@ -64,17 +64,31 @@ export function useAuth() {
   function loginRedirectTarget(
     route: RouteLocationNormalized = useRoute(),
   ): string | false {
-
     if (config.redirect.keepRequestedRoute) {
       const requested = route.query.redirect;
 
-      if (
-        typeof requested === 'string' &&
-        requested.startsWith('/') &&
-        !requested.startsWith('//') &&
-        !requested.startsWith('/\\')
-      ) {
-        return requested;
+      if (typeof requested === 'string' && requested.startsWith('/')) {
+        // Read the way the browser reads it: it drops tabs and line breaks
+        // and takes a backslash for a slash, so `/\t/evil.com` is another
+        // site, which navigateTo() would refuse after the sign-in succeeded.
+        // The path it returns is the one the browser would go to.
+        const base = 'http://localhost';
+        const url = new URL(requested, base);
+
+        // Resolving dot segments can still leave a path that starts with two
+        // slashes (`/.//evil.com`, `/%2e//evil.com`), which navigateTo() reads
+        // as another site too; so can decoding it (`/%09/evil.com`). Such a
+        // path is never a page of the app.
+        let decoded: string;
+        try {
+          decoded = decodeURIComponent(url.pathname);
+        } catch {
+          decoded = '//';
+        }
+
+        if (url.origin === base && !/^\/\s*[/\\]/.test(decoded)) {
+          return url.pathname + url.search + url.hash;
+        }
       }
     }
 

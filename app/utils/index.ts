@@ -28,7 +28,7 @@ export function isValidUrl(url?: string): boolean {
 }
 
 export function removeHttp(url?: string) {
-  return url?.replace(/^https?:\/\//, '')?.replace(/www./, '');
+  return url?.replace(/^https?:\/\//, '')?.replace(/^www\./, '');
 }
 
 export function trimUrl(url: string) {
@@ -38,7 +38,7 @@ export function trimUrl(url: string) {
 export function stripUrl(url?: string) {
   return url
     ?.replace(/^https?:\/\//, '')
-    ?.replace(/www./, '')
+    ?.replace(/^www\./, '')
     ?.replace(/[.,]+$/, '')
     ?.replace(/\/$/, '');
 }

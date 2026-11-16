@@ -1,4 +1,14 @@
 <script setup lang="ts">
+/**
+ * A text field. Two values the browser lets through but the Laravel APIs
+ * refuse are invalid here too, through the `pattern` the browser checks, so
+ * the error shows before the submit, not from the server: a required field
+ * of only spaces (the API trims it to empty) is missing, and an e-mail
+ * address whose domain has no dot (`a@b`, which `email:filter` refuses) is
+ * invalid. A project's own `pattern` replaces the dot check; a required
+ * field still refuses only spaces, unless the browser drops the pattern as
+ * invalid (it compiles with the `v` flag: escape `-` in a class).
+ */
 import type { StyleValue } from 'vue';
 
 // An attribute goes to the control; `class` and `style` stay on the wrapper
@@ -92,7 +102,7 @@ function controlAttrs() {
 const computedErrorMessage = computed(() => {
   if (errorMessage) {
     return errorMessage;
-  } else if (required && !model.value) {
+  } else if (required && !String(model.value ?? '').trim()) {
     return t('form.missing-value', { item: label });
   } else if (type === 'email') {
     return t('form.invalid-email');
@@ -125,6 +135,21 @@ const formShowInvalid = inject(formShowInvalidKey, ref(false));
 const isValid = ref(true);
 const customErrorActive = ref(false);
 
+/** Requires a dot in the domain; the browser checks the rest of the address */
+const EMAIL_PATTERN = '.+@.+\\..+';
+/** The browser anchors a pattern, so a lookahead holds for the whole value */
+const NOT_ONLY_SPACES = '(?=.*\\S)';
+
+/**
+ * A mismatch is `:invalid` like a missing value, so Form focuses the field;
+ * `computedErrorMessage` says a value of only spaces is missing
+ */
+const computedPattern = computed(() => {
+  const own = pattern ?? (type === 'email' ? EMAIL_PATTERN : undefined);
+  if (!required) return own;
+  return `${NOT_ONLY_SPACES}(?:${own ?? '.*'})`;
+});
+
 function updateValidity() {
   isValid.value = inputRef.value?.validity.valid ?? true;
 }
@@ -149,7 +174,7 @@ watch(
   [
     model,
     () => required,
-    () => pattern,
+    computedPattern,
     () => min,
     () => max,
     () => step,
@@ -190,6 +215,8 @@ function handleInput(event: Event) {
   // is in range, which the form reports. A model kept at the old value would
   // differ from the number the field shows.
   model.value = target.value;
+  // Not left to the model's watcher: validity can change while the model
+  // does not (`e` in a number field, a space under `v-model.trim`)
   updateValidity();
 }
 
@@ -236,7 +263,7 @@ const emit = defineEmits<{
         :type="type || 'text'"
         :autocomplete="autocomplete"
         :inputmode="inputMode"
-        :pattern="pattern"
+        :pattern="computedPattern"
         :required="required"
         :disabled="disabled"
         :readonly="readonly"
@@ -254,7 +281,6 @@ const emit = defineEmits<{
         @focus="emit('focus', $event)"
         @blur="emit('blur', $event)"
         @input="handleInput"
-        @change="updateValidity"
         @invalid="updateValidity"
       />
 
@@ -264,52 +290,13 @@ const emit = defineEmits<{
 </template>
 
 <style>
-:where(input) {
-  background-color: transparent;
-  filter: none;
-
-  &:-webkit-autofill {
-    -webkit-text-fill-color: var(--color-accent-text);
-    box-shadow: 0 0 0 100px var(--color-accent-bg) inset;
-  }
-}
-
-:where(.form-field-wrapper) {
-  &:has(.input:disabled) {
-    opacity: 35%;
-  }
-
-  .input {
-    font-family: var(--font-family-input, system-ui, sans-serif);
-    font-size: 16px;
-    width: 100%;
-    border: 1px solid var(--color-grey-graphic);
-    border-radius: var(--radius-md);
-
-    &::placeholder {
-      color: var(--color-grey-text);
-    }
-
-    &:focus {
-      outline: 1px solid var(--focus-color);
-      border-color: var(--focus-color);
-    }
-  }
-}
-
+/* The base look of `.input` is in FormField, which SpinButton shares */
 .form-field-wrapper {
   .input-wrapper {
     position: relative;
   }
 
   .input {
-    background-color: var(--color-input-bg);
-
-    &[readonly] {
-      background-color: var(--color-grey-bg);
-      caret-color: transparent;
-    }
-
     &:has(+ .iconify) {
       padding-inline-start: 1.75rem;
     }
@@ -322,34 +309,6 @@ const emit = defineEmits<{
       margin-block: auto;
       color: var(--color-grey-text);
     }
-  }
-}
-
-.input-size--sm {
-  .input {
-    height: 2rem;
-    padding-inline: 0.5em;
-  }
-}
-
-.input-size--md {
-  .input {
-    height: 2.5rem;
-    padding-inline: 0.5em;
-  }
-}
-
-.input-size--lg {
-  .input {
-    height: 2.75rem;
-    padding-inline: 0.65em;
-  }
-}
-
-.input-size--xl {
-  .input {
-    height: 3rem;
-    padding-inline: 0.75em;
   }
 }
 

@@ -1,3 +1,9 @@
+/**
+ * The toasts that ToastManager shows. Not for a message from a modal dialog
+ * (Dialog, MobileMenu): its toast shows under the dialog's backdrop, where it
+ * cannot be clicked and is not announced. Show that inside the dialog, such as
+ * a form's error with ErrorMessage.
+ */
 export function useToast() {
   const toasts = useState<(Toast & { id: string })[]>(
     'cardan-ui:toasts',

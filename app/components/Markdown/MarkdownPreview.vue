@@ -152,7 +152,6 @@ watch(segments, highlightCode, { flush: 'post' });
       <div v-else class="markdown-chunk" v-html="segment.html" />
     </template>
   </div>
-  <!-- eslint-enable vue/no-v-html -->
 </template>
 
 <style>
@@ -167,6 +166,13 @@ watch(segments, highlightCode, { flush: 'post' });
 .cardan-markdown-preview {
   font-size: var(--markdown-preview-font-size, inherit);
 
+  blockquote {
+    border-inline-start: 3px solid var(--color-secondary);
+    margin-inline-start: 0;
+    padding-inline-start: 1.5rem;
+    font-style: italic;
+  }
+
   code {
     font-size: smaller;
 
@@ -180,7 +186,7 @@ watch(segments, highlightCode, { flush: 'post' });
       vertical-align: middle;
       margin-inline-end: 0.25rem;
       margin-block-start: -2px;
-      background-color: var(--color);
+      background-color: var(--markdown-swatch-color);
     }
   }
 
@@ -201,7 +207,7 @@ watch(segments, highlightCode, { flush: 'post' });
       margin-block-start: 1em;
     }
     > * + :is(h1, h2, h3, h4, h5, h6) {
-      margin-block-start: 1.5em;
+      margin-block-start: 2em;
     }
 
     /* The element around the text sets the space outside it. */

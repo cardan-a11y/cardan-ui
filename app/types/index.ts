@@ -178,6 +178,9 @@ declare global {
     'inline-start' | 'center' | 'inline-end' | 'block-start' | 'block-end';
   type MobileMenuPosition = 'inline-start' | 'inline-end';
 
+  /** A link of SkipLink; without a label it reads "Skip to main content" */
+  type SkipLinkItem = { href: string; label?: string };
+
   type DatePickerAriaLabels = {
     toggleOverlay?: string;
     menu?: string;

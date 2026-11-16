@@ -4,7 +4,7 @@ export function useDate() {
   /**
    * How long ago a date was, or how far off it is: "3 hours ago", "in 20
    * minutes", "just now" within a minute; further than a day, the date and
-   * time in full.
+   * time in full. Undefined for a string that is not a date.
    */
   function formatDate(dateString: string): string | undefined {
     const date = new Date(dateString);

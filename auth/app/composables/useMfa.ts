@@ -71,6 +71,19 @@ export function useMfa() {
   }
 
   /**
+   * Re-reads the identity after a change the API has made. A read that fails
+   * leaves the old identity and does not make the change a failure: reported
+   * as one, a retry would repeat what is done already (a spent challenge).
+   */
+  async function refreshIdentityAfterChange() {
+    try {
+      await refreshIdentity();
+    } catch {
+      // The next read of the identity catches up.
+    }
+  }
+
+  /**
    * Clears every trace of a flow: on closing a dialog, on leaving the setup
    * page and once the challenge is solved, so nothing of an abandoned
    * enrolment, its recovery codes above all, survives into the next one.
@@ -121,7 +134,15 @@ export function useMfa() {
       });
       // Read once, right away: the API serves the new codes this one time and
       // an empty list after that.
-      await getRecoveryCodes();
+      const codes = await getRecoveryCodes();
+
+      // The old codes are gone already, so an empty answer is not silence: a
+      // failed request has set the error, an empty one gets one here.
+      if (codes && !codes.length) {
+        mfaError.value = {
+          message: $i18n.t('mfa.recovery-codes-regenerate-unavailable'),
+        };
+      }
     } catch (error) {
       setMfaError(error);
     } finally {
@@ -137,10 +158,12 @@ export function useMfa() {
         method: 'POST',
       });
       mfaStep.value = 2;
-      await refreshIdentity();
     } catch (error) {
       setMfaError(error);
+      return;
     }
+
+    await refreshIdentityAfterChange();
   }
 
   /**
@@ -156,15 +179,16 @@ export function useMfa() {
       await settingsRequest(endpoints.twoFactorAuthentication, {
         method: 'DELETE',
       });
-      if (showResult) mfaStep.value = 6;
-      await refreshIdentity();
-      if (showResult) loadingDisableMfa.value = false;
-      return true;
     } catch (error) {
       setMfaError(error);
       loadingDisableMfa.value = false;
       return false;
     }
+
+    if (showResult) mfaStep.value = 6;
+    await refreshIdentityAfterChange();
+    if (showResult) loadingDisableMfa.value = false;
+    return true;
   }
 
   async function getQrCode() {
@@ -228,18 +252,17 @@ export function useMfa() {
     mfaError.value = null;
     loadingSolveMfaChallenge.value = true;
 
+    // Both read before the request: on a 401, nuxt-auth-sanctum may navigate
+    // before this function gets the answer, and the route is then another
     const route = useRoute();
     const redirect = loginRedirectTarget(route);
+    const requestedRedirect = route.query.redirect;
 
     try {
       await client(endpoints.twoFactorChallenge, {
         method: 'POST',
         body: mfaCredentials.value,
       });
-      await refreshIdentity();
-
-      if (redirect !== false) await navigateTo(redirect);
-      resetMfa();
     } catch (error) {
       if (isUnauthenticated(error)) {
         // The sign-in this challenge belonged to has expired: Fortify no
@@ -253,12 +276,21 @@ export function useMfa() {
         });
         await navigateTo({
           path: '/login',
-          query: { redirect: route.query.redirect },
+          query: { redirect: requestedRedirect },
         });
         return;
       }
 
       setMfaError(error);
+      loadingSolveMfaChallenge.value = false;
+      return;
+    }
+
+    // The code is spent: from here on nothing asks for it again
+    try {
+      await refreshIdentityAfterChange();
+      if (redirect !== false) await navigateTo(redirect);
+      resetMfa();
     } finally {
       loadingSolveMfaChallenge.value = false;
     }

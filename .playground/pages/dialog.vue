@@ -2,8 +2,19 @@
 useHead({ title: 'Modal dialog pattern' });
 
 const dialogRef = useTemplateRef<DialogComponent>('dialog');
+const searchDialogRef = useTemplateRef<DialogComponent>('searchDialog');
 const position = ref<DialogPosition>('center');
 const date = ref();
+
+// On a site the dialog opens by itself until a choice is stored; here it is
+// mounted on the first press of its button only, so a visit does not open it
+const { openCookiesDialog } = useCookiesDialog();
+const cookiesDialogMounted = ref(false);
+
+function showCookiesDialog() {
+  cookiesDialogMounted.value = true;
+  openCookiesDialog();
+}
 
 function makeToast() {
   const { createToast } = useToast();
@@ -117,6 +128,36 @@ function makeToast() {
     </Card>
 
     <Card>
+      <h2>Cookies Dialog</h2>
+
+      <p>
+        The consent dialog of a site: Accept or Deny is stored in a cookie for a
+        year, and a button such as this one opens it again. On a site it opens
+        by itself until a choice is stored; here only from this button.
+      </p>
+
+      <Button label="Open cookies dialog" @click="showCookiesDialog" />
+    </Card>
+
+    <Card>
+      <h2>Dialog with links</h2>
+
+      <p>
+        A search dialog in a header stays on screen while its result opens
+        another page and it closes. Focus then goes to the top of the new page,
+        not back to the button that opened the dialog. Here the result is a page
+        within this one, which stays, with the dialog.
+      </p>
+
+      <Button
+        label="Open search dialog"
+        @click="searchDialogRef?.openDialog()"
+      />
+
+      <NuxtPage />
+    </Card>
+
+    <Card>
       <h2>Accessibility Requirements</h2>
 
       <ul class="a11y-list">
@@ -207,6 +248,26 @@ function makeToast() {
         <DatePicker v-model="date" label="DatePicker" />
       </div>
     </Dialog>
+
+    <Dialog ref="searchDialog" label="Search results">
+      <template #default="{ closeDialog }">
+        <ul role="list">
+          <li>
+            <Button
+              to="/dialog/results"
+              label="Search result"
+              variant="link"
+              @click="closeDialog"
+            />
+          </li>
+        </ul>
+      </template>
+    </Dialog>
+
+    <CookiesDialog
+      v-if="cookiesDialogMounted"
+      description="This cookies dialog is for demo purposes only."
+    />
   </div>
 </template>
 

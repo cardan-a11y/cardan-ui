@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { defineComponent, h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Select } from '#components';
-import { checkA11y } from '../a11y';
+import { accessibleName, checkA11y, description } from '../a11y';
+import { mountInForm } from '../form';
 
 const options = [
   { value: 'red', label: 'Red' },
@@ -9,20 +11,18 @@ const options = [
 ];
 
 describe('Select', () => {
-  it('labels the select and has no accessibility violations', async () => {
+  it('is named by its label and has no accessibility violations', async () => {
     const wrapper = await mountSuspended(Select, {
       props: { label: 'Colour', options, modelValue: 'red' },
       attachTo: document.body,
     });
 
-    expect(wrapper.get('label').attributes('for')).toBe(
-      wrapper.get('select').attributes('id'),
-    );
+    expect(accessibleName(wrapper.get('select'))).toBe('Colour');
     expect(wrapper.findAll('option').map((o) => o.text())).toContain('Green');
     expect(await checkA11y()).toHaveNoViolations();
   });
 
-  it('shows the error under the select, above the instruction', async () => {
+  it('shows the error under the select, above the instruction, and is described by both', async () => {
     const wrapper = await mountSuspended(Select, {
       props: {
         label: 'Colour',
@@ -37,24 +37,20 @@ describe('Select', () => {
     });
 
     const select = wrapper.get('select');
-    const error = wrapper.get('.error-wrapper').element;
-    const instruction = wrapper.get('.instruction').element;
-    expect(error.textContent).toContain('Choose a colour');
-    expect(
-      select.element.compareDocumentPosition(error) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(
-      error.compareDocumentPosition(instruction) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+    expect(description(select)).toBe('The colour of the badge Choose a colour');
 
-    const describedBy = (select.attributes('aria-describedby') ?? '').split(
-      ' ',
-    );
-    expect(describedBy).toEqual(
-      expect.arrayContaining([error.id, instruction.id]),
-    );
+    // In reading order: the select, its error, its instruction
+    const [instruction, error] = (select.attributes('aria-describedby') ?? '')
+      .split(' ')
+      .map((id) => document.getElementById(id)!);
+    expect(
+      select.element.compareDocumentPosition(error!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      error!.compareDocumentPosition(instruction!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(await checkA11y()).toHaveNoViolations();
   });
 
@@ -100,21 +96,39 @@ describe('Select', () => {
 
     // Invalid, but not shown yet: a valid-looking field is not described by it
     const select = wrapper.get('select');
-    expect(select.attributes('aria-describedby')).toBeUndefined();
+    expect(description(select)).toBe('');
     expect(select.attributes('aria-invalid')).toBeUndefined();
 
     await wrapper.setProps({ showInvalid: true });
 
-    expect(
-      document.getElementById(select.attributes('aria-describedby') ?? '')
-        ?.textContent,
-    ).toContain('Choose a colour');
+    expect(description(select)).toBe('Choose a colour');
     expect(select.attributes('aria-invalid')).toBe('true');
     expect(await checkA11y()).toHaveNoViolations();
 
     // Valid: not described, whatever the form shows
     await select.setValue('green');
-    expect(select.attributes('aria-describedby')).toBeUndefined();
+    expect(description(select)).toBe('');
+    expect(select.attributes('aria-invalid')).toBeUndefined();
+  });
+
+  it('shows its error after a failed submit of its form', async () => {
+    const wrapper = await mountInForm(() => [
+      h(Select, {
+        label: 'Colour',
+        options,
+        placeholder: 'Choose',
+        modelValue: '',
+        required: true,
+      }),
+    ]);
+    const select = wrapper.get('select');
+    expect(select.attributes('aria-invalid')).toBeUndefined();
+
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+
+    expect(select.attributes('aria-invalid')).toBe('true');
+    expect(description(select)).toBe('Colour is missing');
   });
 
   it('shows a custom error, and is described by it, until its value changes', async () => {
@@ -126,23 +140,53 @@ describe('Select', () => {
 
     await wrapper.setProps({ customError: 'Red is sold out' });
 
-    const describedBy = select.attributes('aria-describedby') ?? '';
-    expect(describedBy).toMatch(/^error-/);
-    expect(document.getElementById(describedBy)?.textContent).toContain(
-      'Red is sold out',
-    );
+    expect(description(select)).toBe('Red is sold out');
     expect(select.attributes('aria-invalid')).toBe('true');
-    expect(wrapper.get('.form-field-wrapper').classes()).toContain(
-      'custom-error',
-    );
     // The server judges the next submit: the browser does not hold it back
     expect((select.element as HTMLSelectElement).checkValidity()).toBe(true);
+    expect(await checkA11y()).toHaveNoViolations();
 
     await select.setValue('green');
 
-    expect(select.attributes('aria-describedby')).toBeUndefined();
-    expect(wrapper.get('.form-field-wrapper').classes()).not.toContain(
-      'custom-error',
+    expect(description(select)).toBe('');
+    expect(select.attributes('aria-invalid')).toBeUndefined();
+  });
+
+  it('puts an attribute on the select and a class and style on the wrapper', async () => {
+    const wrapper = await mountSuspended(Select, {
+      props: { label: 'Colour', options, modelValue: 'red' },
+      attrs: { 'data-test': 'colour', class: 'wide', style: 'color: red' },
+      attachTo: document.body,
+    });
+
+    const select = wrapper.get('select');
+    expect(select.attributes('data-test')).toBe('colour');
+    expect(select.attributes('class')).not.toContain('wide');
+    expect(select.attributes('style')).toBeUndefined();
+    expect(wrapper.classes()).toContain('wide');
+    expect(wrapper.attributes('style')).toContain('color: red');
+  });
+
+  it('keeps its label and texts to itself next to another Select', async () => {
+    await mountSuspended(
+      defineComponent({
+        setup: () => () => [
+          h(Select, { label: 'Colour', options, instruction: 'Of the badge' }),
+          h(Select, { label: 'Shade', options, instruction: 'Of the text' }),
+        ],
+      }),
+      { attachTo: document.body },
     );
+
+    const selects = Array.from(document.querySelectorAll('select'));
+    expect(selects.map((select) => accessibleName(select))).toEqual([
+      'Colour',
+      'Shade',
+    ]);
+    expect(selects.map((select) => description(select))).toEqual([
+      'Of the badge',
+      'Of the text',
+    ]);
+    expect(await checkA11y()).toHaveNoViolations();
   });
 });

@@ -15,10 +15,12 @@ const youtubeKey = computed(() => {
 </script>
 
 <template>
+  <!-- The placeholder image is decorative: its button carries the name -->
   <ScriptYouTubePlayer
     v-if="youtubeKey"
     :video-id="youtubeKey"
     :above-the-fold="aboveTheFold"
+    :placeholder-attrs="{ alt: '' }"
     class="youtube-player"
   >
     <template #awaitingLoad>
@@ -39,11 +41,9 @@ const youtubeKey = computed(() => {
     </template>
 
     <template #loading>
-      <div
-        :aria-label="$t('general.loading')"
-        aria-live="polite"
-        class="visuallyhidden"
-      />
+      <div role="status" class="visuallyhidden">
+        {{ $t('general.loading') }}
+      </div>
     </template>
 
     <template #error>
