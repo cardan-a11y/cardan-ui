@@ -49,31 +49,29 @@ const PRODUCT_BASELINE = 31.2;
 const showProduct = computed(() => !!product && form === 'full');
 // Always with a capital: 'academy' is shown as Academy
 const productText = computed(() =>
-  product ? `${product.charAt(0).toUpperCase()}${product.slice(1)}` : ''
+  product ? `${product.charAt(0).toUpperCase()}${product.slice(1)}` : '',
 );
 
 // The product name is part of the SVG so the whole lockup scales as one image.
-// Its width is estimated for server rendering and measured once fonts load.
-const productTextRef = useTemplateRef<SVGTextElement>('productTextRef');
-const productWidth = ref(productText.value.length * PRODUCT_FONT_SIZE * 0.55);
+// It has a fixed width, its width in Hanken Grotesk, and textLength fits it to
+// that width in any font: the lockup is the same on the server, while the font
+// loads and after, and the fallback font never clips it.
+const PRODUCT_WIDTHS: Record<string, number> = {
+  Academy: 133,
+  Auditor: 106.1,
+  Support: 115.7,
+  UI: 28.9,
+  'All Access': 146.2,
+};
+// Another name: about 0.5em a letter in Hanken Grotesk (0.45 to 0.57 measured);
+// add it to the table above for its exact width
+const AVERAGE_LETTER_WIDTH = 0.5 * PRODUCT_FONT_SIZE;
 
-function measureProduct() {
-  const width = productTextRef.value?.getComputedTextLength();
-  if (width) productWidth.value = Math.ceil(width);
-}
-
-onMounted(() => {
-  measureProduct();
-  document.fonts?.ready.then(measureProduct);
-  // A font that starts loading later, e.g. once the logo renders, changes the width again
-  document.fonts?.addEventListener('loadingdone', measureProduct);
-});
-
-onBeforeUnmount(() => {
-  document.fonts?.removeEventListener('loadingdone', measureProduct);
-});
-
-watch(productText, () => nextTick(measureProduct));
+const productWidth = computed(
+  () =>
+    PRODUCT_WIDTHS[productText.value] ??
+    productText.value.length * AVERAGE_LETTER_WIDTH,
+);
 
 const viewBoxWidth = computed(() => {
   if (form !== 'full') return LOGO_HEIGHT;
@@ -178,11 +176,12 @@ const computedStyle = computed(() => ({
           :height="LOGO_HEIGHT"
         />
         <text
-          ref="productTextRef"
           class="logo-product"
           :x="PRODUCT_X"
           :y="PRODUCT_BASELINE"
           :font-size="PRODUCT_FONT_SIZE"
+          :textLength="productWidth"
+          lengthAdjust="spacingAndGlyphs"
         >
           {{ productText }}
         </text>

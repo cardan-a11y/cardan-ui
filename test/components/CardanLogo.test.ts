@@ -51,4 +51,22 @@ describe('CardanLogo', () => {
     expect(logo.hasAttribute('aria-label')).toBe(false);
     expect(await checkA11y()).toHaveNoViolations();
   });
+
+  // The name has its width in Hanken Grotesk and is fitted to it in any font,
+  // so the lockup never changes size or clips while the font loads
+  it.each([
+    ['academy', 133],
+    ['auditor', 106.1],
+    ['support', 115.7],
+    ['UI', 28.9],
+    ['All Access', 146.2],
+  ])('fits the product name %s to a fixed width', async (product, width) => {
+    const logo = await mountLogo({ product });
+    const viewBox = logo.querySelector('svg')!.getAttribute('viewBox')!;
+    const text = logo.querySelector('text')!;
+
+    expect(Number(text.getAttribute('textLength'))).toBeCloseTo(width, 3);
+    expect(text.getAttribute('lengthAdjust')).toBe('spacingAndGlyphs');
+    expect(Number(viewBox.split(' ')[2])).toBeCloseTo(292.602 + width, 3);
+  });
 });
