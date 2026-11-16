@@ -166,8 +166,9 @@ useHead({ title: 'Changelog' });
           (focus and Tab, Dialog and Popover, hidden content, token contrast
           and axe on every page in both modes), failed-request bodies of the
           projects' backends as fixtures, and <code>pnpm test:projects</code>,
-          which runs each project's suites against this checkout. CI runs the
-          browser suite on every pull request.
+          which runs each project's suites against this checkout. CI builds
+          the playground on every pull request; the browser suite runs
+          locally.
         </li>
         <li>
           MarkdownEditor keeps its text as typed: it no longer trims it when

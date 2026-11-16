@@ -4,8 +4,8 @@
  *
  * The build goes to node_modules/.cache/cardan-ui-browser, not to
  * .playground/.nuxt and .playground/.output, so it runs next to `pnpm dev`.
- * With PLAYGROUND_OUTPUT set to an existing Nitro output (CI sets
- * `.playground/.output`, which its build step made) it serves that instead.
+ * With PLAYGROUND_OUTPUT set to an existing Nitro output (such as
+ * `.playground/.output` after `pnpm build`) it serves that instead.
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
