@@ -9,7 +9,8 @@
     "url": "git+https://github.com/cardan-a11y/cardan-ui.git"
   },
   "scripts": {
-    "dev": "nuxi dev .playground  --public",
+    "dev": "nuxt dev .playground --host localhost",
+    "dev:public": "nuxt dev .playground --public",
     "dev:prepare": "nuxt prepare .playground",
     "build": "nuxt build .playground",
     "generate": "nuxt generate .playground",
