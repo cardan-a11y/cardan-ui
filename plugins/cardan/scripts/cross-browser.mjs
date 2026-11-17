@@ -198,22 +198,29 @@ async function signIn(page) {
  * The signed-in session, as Playwright storage state that all three browsers
  * load: one sign-in per run at most, in Chrome, since a login throttle (five a
  * minute in Laravel Fortify) turns away a sign-in per browser per run. Kept in
- * the temp folder per origin and account, and reused while the target page
- * does not send it back to the login page.
+ * the temp folder per origin and account, and reused while it is still signed
+ * in: the login page sends a signed-in user on (nuxt-auth-sanctum's global
+ * middleware treats its `onAuthOnly` path as guest-only). Not the target
+ * page: a public page renders for a visitor without
+ * sending an ended session to the login page.
  */
 async function session() {
   const target = new URL(loginUrl ?? '/login', url);
   const file = join(out, `session-${createHash('sha256').update(`${target.origin} ${login}`).digest('hex').slice(0, 12)}.json`);
   const browser = await BROWSERS.Chrome();
   try {
-    const context = await browser.newContext(existsSync(file) ? { storageState: file } : {});
+    const saved = existsSync(file);
+    const context = await browser.newContext(saved ? { storageState: file } : {});
     const page = await context.newPage();
-    await page.goto(url, { waitUntil: 'load', timeout: 30_000 });
-    // An expired session ends on the login page, once the app has checked it
-    const expired = await page
-      .waitForURL((current) => current.pathname === target.pathname, { timeout: 3_000 })
-      .then(() => true, () => false);
-    if (expired || !existsSync(file)) {
+    let signedIn = false;
+    if (saved) {
+      await page.goto(target.href, { waitUntil: 'load', timeout: 30_000 });
+      // Once the app has checked the session
+      signedIn = await page
+        .waitForURL((current) => current.pathname !== target.pathname, { timeout: 5_000 })
+        .then(() => true, () => false);
+    }
+    if (!signedIn) {
       await signIn(page);
       await context.storageState({ path: file });
     }
