@@ -16,6 +16,14 @@ useHead({ title: 'Changelog' });
           ends after the API's idle timeout unless the user asks to be
           remembered.
         </li>
+        <li>
+          A project's typecheck no longer fails on the layer's route types
+          when its vite (or vue) differs from the layer's: the layer maps
+          <code>vue-router</code> to the project's copy, so the project's
+          typed routes reach the layer's files too. Until now TypeScript took
+          the layer's own copy, the same only while vue-router and its peers
+          had the same versions in both.
+        </li>
       </ul>
     </ChangelogEntry>
 
