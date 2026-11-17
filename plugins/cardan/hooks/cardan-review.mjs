@@ -205,6 +205,18 @@ function pushedBranch(root) {
   }
 }
 
+/**
+ * A command line without its redirections (`2>&1`, `>out.txt`, `main>log`,
+ * `&>/dev/null`, `>| f`, `< in`), which change nothing git sends: otherwise
+ * the `&` in `2>&1` ends the command early and `2>` reads as a refspec. A
+ * file descriptor only counts as a word of its own, as in the shell. What
+ * this leaves of other forms (a here-document) reads as no commit and
+ * blocks; `<(…)` becomes a path that git refuses as a refspec.
+ */
+function withoutRedirections(text) {
+  return text.replace(/(?:(?<=\s)(?:\d+|&))?(?:>[>|&]?|<)\s*[^\s;&|)<>]+/g, ' ');
+}
+
 /** Options of `git push` that do not change what it sends. */
 const PUSH_OPTIONS = /^(-u|--set-upstream|-q|--quiet|-v|--verbose)$/;
 
@@ -298,7 +310,7 @@ function gate() {
   // chain, a later commit or push could run in another state or another
   // repository than the one checked.
   const single = command.match(new RegExp(REVIEW_COMMAND.source, 'gm')).length === 1;
-  const rest = command.slice(match.index + match[0].length).split(/[;&|)\n]/)[0];
+  const rest = withoutRedirections(command.slice(match.index + match[0].length)).split(/[;&|)\n]/)[0];
   if (single && (markdownOnly(root) || nothingNew(root, match[0], rest))) return;
 
   // The marker lives in this repository's own .git and holds the state the
