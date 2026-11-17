@@ -45,6 +45,23 @@ export default defineNuxtConfig({
     includeWorkspace: true,
   },
 
+  hooks: {
+    // A project's typecheck reads this layer's files too, whose vue-router
+    // comes from the layer's own node_modules. TypeScript takes that copy
+    // for the project's only when its version and its peers (vue, vite, …)
+    // match, so otherwise the project's typed routes don't reach the
+    // layer's files.
+    // Map vue-router to the folder of the project's copy, which Nuxt resolves
+    // as #vue-router (at this point its runtime file, without types)
+    'prepare:types'({ tsConfig }) {
+      const paths = tsConfig.compilerOptions?.paths;
+      const project = paths?.['#vue-router']?.[0]?.match(
+        /^.*node_modules\/vue-router(?=\/|$)/,
+      )?.[0];
+      if (paths && project) paths['vue-router'] = [project];
+    },
+  },
+
   colorMode: {
     classSuffix: '-mode',
   },
