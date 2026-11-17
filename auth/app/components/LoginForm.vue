@@ -21,7 +21,11 @@ const {
   showPasswordToggle?: boolean;
   /** Rule between the fields and the submit button. */
   divider?: boolean;
-  /** Send `remember: true` with the credentials. */
+  /**
+   * Offer a "Remember me" checkbox, unticked: `remember: true` goes with the
+   * credentials only when it is ticked, so a session otherwise ends after the
+   * API's idle timeout.
+   */
   remember?: boolean;
   errorPosition?: LoginErrorPosition;
   size?: InputSize;
@@ -49,6 +53,7 @@ const { loginWithoutRedirect, refreshIdentity, loginRedirectTarget } =
 
 const password = ref('');
 const showPassword = ref(false);
+const rememberMe = ref(false);
 const submitting = ref(false);
 const shaking = ref(false);
 const error = ref<ApiErrorData | null>(null);
@@ -68,7 +73,7 @@ async function handleLogin() {
     const response = await loginWithoutRedirect({
       email: email.value,
       password: password.value,
-      ...(remember ? { remember: true } : {}),
+      ...(remember && rememberMe.value ? { remember: true } : {}),
     });
 
     if (response?.two_factor) {
@@ -146,7 +151,14 @@ defineExpose({ submitting, error });
       />
     </div>
 
-    <!-- Extra fields, e.g. a remember-me checkbox. -->
+    <Checkbox
+      v-if="remember"
+      v-model="rememberMe"
+      name="remember"
+      :label="$t('auth.remember-me')"
+    />
+
+    <!-- Extra fields after the password. -->
     <slot name="fields" />
 
     <template v-if="errorPosition === 'above-submit'">

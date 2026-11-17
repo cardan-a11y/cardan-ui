@@ -60,7 +60,8 @@
   "auth": {
     "login-title": "Welcome back",
     "login-description": "Sign in to continue.",
-    "confirm-logout": "Are you sure you want to sign out?"
+    "confirm-logout": "Are you sure you want to sign out?",
+    "remember-me": "Remember me"
   },
   "password": {
     "back-to-login": "Back to",

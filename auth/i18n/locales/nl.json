@@ -60,7 +60,8 @@
   "auth": {
     "login-title": "Welkom terug",
     "login-description": "Log in om verder te gaan.",
-    "confirm-logout": "Weet je zeker dat je wilt uitloggen?"
+    "confirm-logout": "Weet je zeker dat je wilt uitloggen?",
+    "remember-me": "Onthoud mij"
   },
   "password": {
     "back-to-login": "Terug naar",
