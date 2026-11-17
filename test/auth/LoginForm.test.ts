@@ -207,17 +207,45 @@ describe.each(scenarios)('LoginForm ($name)', (scenario) => {
     ]);
   });
 
+  it('offers “Remember me”, unticked, and remembers the session only when ticked', async () => {
+    fortify({
+      [login]: () => ({}),
+      [identity]: () => ({ data: scenario.user() }),
+    });
+    const { wrapper, signIn } = await mountForm({ remember: true });
+    const box = wrapper.get<HTMLInputElement>('input[type="checkbox"]');
+
+    expect(accessibleName(box)).toBe('Remember me');
+    expect(box.element.checked).toBe(false);
+    expect(await checkA11y()).toHaveNoViolations();
+
+    await signIn();
+    await box.setValue(true);
+    await signIn();
+
+    expect(requests(login)).toEqual([
+      { email: 'ada@example.com', password: 'secret' },
+      { email: 'ada@example.com', password: 'secret', remember: true },
+    ]);
+  });
+
+  it('has no “Remember me” without the remember prop', async () => {
+    const { wrapper } = await mountForm();
+
+    expect(wrapper.find('input[type="checkbox"]').exists()).toBe(false);
+  });
+
   it('goes to the app’s onLogin without a requested route', async () => {
     fortify({
       [login]: () => ({}),
       [identity]: () => ({ data: scenario.user() }),
     });
-    const { signIn } = await mountForm({ remember: true });
+    const { signIn } = await mountForm();
 
     await signIn();
 
     expect(requests(login)).toEqual([
-      { email: 'ada@example.com', password: 'secret', remember: true },
+      { email: 'ada@example.com', password: 'secret' },
     ]);
     expect(navigate).toHaveBeenCalledExactlyOnceWith(
       scenario.sanctum.redirect.onLogin,

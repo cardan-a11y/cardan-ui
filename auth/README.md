@@ -157,7 +157,7 @@ const { userEmail } = useUserProfileDetails();
 
 #### Making it look like your app
 
-Everything variable is a small prop. The Cardan Academy form remembers the session, shows the error below the button, and holds the spinner through the page transition:
+Everything variable is a small prop. The Cardan Academy form offers "Remember me", shows the error below the button, and holds the spinner through the page transition:
 
 ```vue
 <LoginForm
@@ -175,7 +175,7 @@ The buttons of every form and dialog in this layer have the Cardan look: `black`
 | -------------------- | ------------------------------ | --------------------------------------------------------------------- |
 | `showPasswordToggle` | `true`                         | Reveal-password button beside the password field                      |
 | `divider`            | `false`                        | Rule between the fields and the submit button                         |
-| `remember`           | `false`                        | Send `remember: true` with the credentials                            |
+| `remember`           | `false`                        | Show a "Remember me" checkbox, unticked; sends `remember: true` only when ticked |
 | `errorPosition`      | `'above-submit'`               | Or `'below-submit'`                                                   |
 | `size`               | `'lg'`                         | Input size                                                            |
 | `autofocus`          | `true`                         | Focus the email field on mount                                        |
@@ -186,7 +186,7 @@ The buttons of every form and dialog in this layer have the Cardan look: `black`
 | Slot     | Scope       |                                                              |
 | -------- | ----------- | ------------------------------------------------------------ |
 | `error`  | `{ error }` | The error region, ErrorMessage with the API's error          |
-| `fields` |             | Extra fields after the password, e.g. a remember-me checkbox |
+| `fields` |             | Extra fields after the password (and the remember-me checkbox) |
 | `footer` |             | Anything at the end of the form                              |
 
 | Model / Event   |                                                                                   |

@@ -7,6 +7,18 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.5.1" date="2026-11-17">
+      <ul>
+        <li>
+          Cardan Auth UI: the sign-in page has a "Remember me" checkbox,
+          unticked. LoginForm's <code>remember</code> prop shows it, and sends
+          <code>remember: true</code> only when it is ticked, so a session now
+          ends after the API's idle timeout unless the user asks to be
+          remembered.
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.5.0" date="2026-11-16">
       <p>
         The app shell, a default error page, SpinButton and a second round of
