@@ -335,7 +335,7 @@ async function handleSubmit(formData: FormData) {
         />
 
         <section>
-          <h2>Switch</h2>
+          <h3>Switch</h3>
           <ul role="list" class="switches-list">
             <li>
               <Switch
@@ -377,14 +377,14 @@ async function handleSubmit(formData: FormData) {
         <div class="card-cols">
           <section>
             <div class="title-wrapper">
-              <h2>MultiSelect</h2>
+              <h3>MultiSelect</h3>
 
               <Popover
                 icon="material-symbols:settings-rounded"
                 :max-width="480"
               >
                 <div class="popover-settings-content">
-                  <h2>Props</h2>
+                  <h4>Props</h4>
 
                   <div class="props-wrapper">
                     <Select
@@ -448,7 +448,7 @@ async function handleSubmit(formData: FormData) {
 
           <section>
             <div class="title-wrapper">
-              <h2>DatePicker</h2>
+              <h3>DatePicker</h3>
             </div>
 
             <p>
