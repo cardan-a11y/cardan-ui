@@ -21,10 +21,14 @@ const isChromium = (page: Page) =>
 function parts(page: Page) {
   const trigger = page
     .getByRole('banner')
-    .getByRole('button', { name: 'User menu AL', exact: true });
+    .getByRole('button', { name: 'User menu C', exact: true });
   return {
     trigger,
     panel: page.locator('.user-menu-popover'),
+    // The menu's first item: the checked theme, ThemeSelect's tab stop
+    theme: page
+      .getByRole('group', { name: 'Theme' })
+      .getByRole('radio', { checked: true }),
     english: page.getByRole('radio', { name: 'English' }),
     signOut: page
       .getByRole('navigation', { name: 'User menu' })
@@ -50,14 +54,14 @@ test.beforeEach(async ({ page }) => {
 test('opens from its trigger with focus on the first item, the trigger stays usable and closes it, nothing inert', async ({
   page,
 }) => {
-  const { trigger, panel, english } = parts(page);
+  const { trigger, panel, theme } = parts(page);
   expect(await expanded(page)).toBe(false);
   await expect(panel).toBeHidden();
 
   await trigger.focus();
   await page.keyboard.press('Enter');
   await expect(panel).toBeVisible();
-  await expect(english).toBeFocused();
+  await expect(theme).toBeFocused();
   expect(await expanded(page)).toBe(true);
   expect(await inertElements(page)).toEqual([]);
 
@@ -80,9 +84,11 @@ test('opens from its trigger with focus on the first item, the trigger stays usa
 });
 
 test('Tab past the last item leaves and closes it', async ({ page }) => {
-  const { trigger, panel, english, signOut } = parts(page);
+  const { trigger, panel, theme, english, signOut } = parts(page);
 
   await trigger.click();
+  await expect(theme).toBeFocused();
+  await page.keyboard.press(tabKey(page));
   await expect(english).toBeFocused();
   await page.keyboard.press(tabKey(page));
   await expect(signOut).toBeFocused();
@@ -98,10 +104,10 @@ test('Tab past the last item leaves and closes it', async ({ page }) => {
 test('Escape closes it and gives focus back to the trigger, also after a click opened it', async ({
   page,
 }) => {
-  const { trigger, panel, english } = parts(page);
+  const { trigger, panel, theme } = parts(page);
 
   await trigger.click();
-  await expect(english).toBeFocused();
+  await expect(theme).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(panel).toBeHidden();
   await expect(trigger).toBeFocused();
@@ -114,7 +120,7 @@ test('a click outside it closes it, one on its text does not', async ({
   const { trigger, panel } = parts(page);
 
   await trigger.click();
-  await panel.getByText('ada@example.com').click();
+  await panel.getByText('contact@cardan.com').click();
   await expect(panel).toBeVisible();
 
   await page.getByRole('main').click({ position: { x: 5, y: 5 } });
@@ -177,7 +183,7 @@ for (const width of [320, 1280]) {
 test('Sign out closes the menu, opens the dialog, and closing that gives focus back to the trigger', async ({
   page,
 }) => {
-  const { trigger, panel, english, signOut } = parts(page);
+  const { trigger, panel, theme, signOut } = parts(page);
   const dialog = page.getByRole('dialog', { name: 'Sign out' });
 
   await trigger.click();
@@ -194,7 +200,7 @@ test('Sign out closes the menu, opens the dialog, and closing that gives focus b
   // Signing out closes it the same way
   await trigger.focus();
   await page.keyboard.press('Enter');
-  await expect(english).toBeFocused();
+  await expect(theme).toBeFocused();
   await signOut.focus();
   await page.keyboard.press('Enter');
   await expect(dialog).toBeVisible();

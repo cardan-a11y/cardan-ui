@@ -11,7 +11,6 @@ const chipFontSize = ref<FontSize>('sm');
 const chipIconSize = ref<FontSize>('sm');
 const chipColors: BaseColor[] = [
   'default',
-  'grey',
   'accent',
   'red',
   'orange',
@@ -125,14 +124,6 @@ function makeToast() {
           :font-size="chipFontSize"
           :icon-size="chipIconSize"
           icon="material-symbols:check-rounded"
-          label="Grey"
-          color="grey"
-        />
-        <Chip
-          :size="chipSize"
-          :font-size="chipFontSize"
-          :icon-size="chipIconSize"
-          icon="material-symbols:check-rounded"
           label="Accent"
           color="accent"
         />
@@ -202,15 +193,6 @@ function makeToast() {
           icon="material-symbols:check-rounded"
           variant="outline"
           label="Default"
-        />
-        <Chip
-          :size="chipSize"
-          :font-size="chipFontSize"
-          :icon-size="chipIconSize"
-          icon="material-symbols:check-rounded"
-          variant="outline"
-          label="Grey"
-          color="grey"
         />
         <Chip
           :size="chipSize"
@@ -294,15 +276,6 @@ function makeToast() {
           icon="material-symbols:check-rounded"
           variant="soft"
           label="Default"
-        />
-        <Chip
-          :size="chipSize"
-          :font-size="chipFontSize"
-          :icon-size="chipIconSize"
-          icon="material-symbols:check-rounded"
-          variant="soft"
-          label="Grey"
-          color="grey"
         />
         <Chip
           :size="chipSize"
@@ -683,6 +656,10 @@ function makeToast() {
 .icons-card {
   .default-icons-title {
     margin-block: 2.5rem 1.5rem;
+
+    + P {
+      margin-block-end: 2.5rem;
+    }
   }
 
   .icon-grid {
@@ -694,7 +671,7 @@ function makeToast() {
     > * {
       display: grid;
       align-content: start;
-      min-height: 5rem;
+      min-height: 8rem;
 
       .iconify {
         margin-block-end: 0.5em;

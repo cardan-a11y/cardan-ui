@@ -181,7 +181,8 @@ const isAccordionOpen = ref(false);
 
 <style>
 .demo-page.details {
-  .details-wrapper {
+  .details-wrapper,
+  .accordion-wrapper {
     margin-block-end: 1rem;
   }
 
@@ -190,10 +191,6 @@ const isAccordionOpen = ref(false);
     p {
       margin-block-end: 0;
     }
-  }
-
-  .details-summary {
-    font-weight: var(--font-weight-semibold);
   }
 }
 </style>

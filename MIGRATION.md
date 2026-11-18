@@ -48,6 +48,8 @@ Also a round of audit fixes. Paste the token, rename what a project sets, and ch
 
 ### 2.5.1
 
+- **A grey Chip renders as the default one** (text color on the grey background), RequiredChip too; `color="grey"` stays valid, so nothing breaks. cardan-academy-nuxt#100 and cardan-auditor-nuxt#473 drop their grey chips and put the header on `--color-card-bg`; the Academy's removes CheckoutShell's required-chip override, so it merges only after this release is on `main`.
+- **Inline `code` in the `main.css` template** has `padding-block: 0.125em`: paste it into your `main.css` to match, optional.
 - **Cardan Auth UI: the sign-in page asks before it remembers the session.** LoginForm's `remember` prop, which the layer's `/login` page passes, now shows a "Remember me" checkbox, unticked, and sends `remember: true` only when it is ticked; it always sent it, so no session ended after the API's idle timeout (ISO S2). A user who does not tick it is signed out after that timeout; an app that warns before it, such as cardan-academy-nuxt's session dialog, now gets to show its warning. New message key `auth.remember-me` for an app that overrides the `auth` messages. cardan-academy-nuxt and cardan-auditor-nuxt use the layer's page and need no change. There is no way back to always remembering, on purpose.
 
 ## Upgrading to 2.4

@@ -5,9 +5,9 @@ const userMenuRef = useTemplateRef<UserMenuComponent>('userMenu');
 const showMenu = ref(false);
 
 const user = {
-  name: 'Ada Lovelace',
-  email: 'ada@example.com',
-  initials: 'AL',
+  name: 'Cardan UI Demo',
+  email: 'contact@cardan.com',
+  initials: 'C',
 };
 
 const menuItems = computed<MenuItem[]>(() => [
@@ -41,13 +41,16 @@ function logout() {}
     </div>
     <hr />
 
+    <ThemeSelect />
+    <hr />
+
     <LanguageSelect />
     <hr />
 
     <MenuList
       :aria-label="$t('aria.user-menu')"
       button-size="lg"
-      font-size="xs"
+      font-size="sm"
       icon-size="md"
       :list="menuItems"
     />

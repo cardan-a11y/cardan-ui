@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { size = 'xs', color = 'grey' } = defineProps<{
+const { size = 'xs', color = undefined } = defineProps<{
   size?: ChipSize;
   color?: BaseColor;
 }>();
