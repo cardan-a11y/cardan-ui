@@ -39,7 +39,8 @@ const formattedLabel = computed(() =>
     :class="[
       'chip',
       `chip-variant--${variant}`,
-      `chip-color--${color}`,
+      // grey is deprecated and renders as the default chip
+      color && color !== 'grey' && `chip-color--${color}`,
       `chip-size--${size}`,
       textTransform && `chip-text-transform--${textTransform}`,
     ]"
@@ -136,11 +137,6 @@ const formattedLabel = computed(() =>
   background-color: var(--color-accent-bg);
 }
 
-.chip-variant--flat.chip-color--grey {
-  color: var(--color-grey-text);
-  background-color: var(--color-bg);
-}
-
 .chip-variant--flat.chip-color--red {
   color: var(--color-red-text);
   background-color: var(--color-red-bg);
@@ -186,11 +182,6 @@ const formattedLabel = computed(() =>
 .chip-variant--soft.chip-color--accent {
   color: var(--color-accent-text);
   border-color: var(--color-accent-bg);
-}
-
-.chip-variant--soft.chip-color--grey {
-  color: var(--color-grey-text);
-  border-color: var(--color-grey-bg);
 }
 
 .chip-variant--soft.chip-color--red {
@@ -241,11 +232,6 @@ const formattedLabel = computed(() =>
   border-color: var(--color-accent-graphic);
 }
 
-.chip-variant--outline.chip-color--grey {
-  color: var(--color-grey-text);
-  border-color: var(--color-grey-bg);
-}
-
 .chip-variant--outline.chip-color--red {
   color: var(--color-red-text);
   border-color: var(--color-red-graphic);
@@ -290,11 +276,6 @@ const formattedLabel = computed(() =>
 .chip-variant--solid {
   color: var(--color-white);
   background-color: var(--color-text);
-}
-
-.chip-variant--solid.chip-color--grey {
-  color: var(--color-white);
-  background-color: var(--color-grey-text);
 }
 
 .chip-variant--solid.chip-color--accent {

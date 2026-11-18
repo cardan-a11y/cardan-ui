@@ -69,9 +69,7 @@ const triggerRef = useTemplateRef<HTMLButtonElement>('popoverTrigger');
 function onToggle(event: Event) {
   if ((event as ToggleEvent).newState === 'open') {
     nextTick(() => {
-      popoverContentRef.value
-        ?.querySelector<HTMLElement>(focusableSelector)
-        ?.focus();
+      firstFocusable(popoverContentRef.value)?.focus();
     });
   } else {
     unpark();

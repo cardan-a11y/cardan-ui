@@ -67,11 +67,11 @@ main {
 }
 
 h2 {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-xl);
 }
 
 h3 {
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-lg);
 }
 
 /* The sidebar under the header, beside the page; below 1024px the header's

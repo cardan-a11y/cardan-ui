@@ -44,7 +44,8 @@ defineExpose({
 
 <template>
   <button ref="avatarButton" type="button" class="avatar-button">
-    <span v-if="hiddenLabel" class="visuallyhidden">{{ hiddenLabel }}</span>
+    <!-- The space keeps the label and the initials apart in the name -->
+    <span v-if="hiddenLabel" class="visuallyhidden">{{ `${hiddenLabel} ` }}</span>
 
     <Icon v-if="icon" :name="icon" />
 

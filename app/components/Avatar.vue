@@ -18,7 +18,7 @@ const computedStyle = computed(() => ({
 </script>
 
 <template>
-  <div class="avatar-wrapper" :style="computedStyle">
+  <span class="avatar-wrapper" :style="computedStyle">
     <img
       v-if="src"
       :src="src"
@@ -27,10 +27,10 @@ const computedStyle = computed(() => ({
       :style="computedStyle"
     />
 
-    <div v-else class="avatar">
+    <span v-else class="avatar">
       <span class="avatar-initials">{{ initials }}</span>
-    </div>
-  </div>
+    </span>
+  </span>
 </template>
 
 <style>

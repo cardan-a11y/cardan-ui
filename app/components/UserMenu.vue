@@ -11,8 +11,9 @@ import type AvatarButton from './AvatarButton.vue';
  * - The button is named "User menu" and the initials it shows (WCAG 2.5.3),
  *   toggles the panel and says whether it is open with `aria-expanded`,
  *   which follows the browser's toggle event, as `v-model` does.
- * - When it opens, focus moves to the first focusable element. Escape
- *   closes it and gives focus back to the button; Tab past the last element,
+ * - When it opens, focus moves to what Tab reaches first (of a radio group,
+ *   the checked radio). Escape closes it and gives focus back to the
+ *   button; Tab past the last element,
  *   Shift+Tab from the button, a click outside it and a route change close
  *   it.
  * - It leaves the APG pattern in one place, as Popover does: focus moves
@@ -68,7 +69,7 @@ function onToggle(event: Event) {
 
   if (open) {
     nextTick(() => {
-      contentRef.value?.querySelector<HTMLElement>(focusableSelector)?.focus();
+      firstFocusable(contentRef.value)?.focus();
     });
   } else {
     unpark();

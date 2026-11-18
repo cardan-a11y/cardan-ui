@@ -24,6 +24,25 @@ useHead({ title: 'Changelog' });
           the layer's own copy, the same only while vue-router and its peers
           had the same versions in both.
         </li>
+        <li>
+          Chip no longer has a grey color: <code>color="grey"</code> still
+          works and renders as the default chip, as does RequiredChip, which
+          was grey.
+        </li>
+        <li>
+          Popover and UserMenu open onto what Tab reaches first: of a radio
+          group, such as ThemeSelect's, the checked radio, no longer the first
+          one, from which Tab skipped the rest of the group.
+        </li>
+        <li>
+          Avatar renders <code>span</code>s, valid inside a button, and
+          AvatarButton's name keeps a space between its label and the
+          initials.
+        </li>
+        <li>
+          Inline <code>code</code> in the <code>main.css</code> template has
+          a little padding above and below.
+        </li>
       </ul>
     </ChangelogEntry>
 

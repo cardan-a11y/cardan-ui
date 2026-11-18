@@ -108,6 +108,7 @@ declare global {
 
   type BaseColor =
     | 'default'
+    // Deprecated: a grey Chip renders as the default one
     | 'grey'
     | 'accent'
     | 'red'

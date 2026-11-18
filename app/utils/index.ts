@@ -108,6 +108,22 @@ export const focusableSelector = [
   '[contenteditable]:not([contenteditable="false"])',
 ].join(',');
 
+/**
+ * The element Tab would reach first in `container`: the first focusable one,
+ * or for a radio the checked one of its group, the group's tab stop (the
+ * first one while the checked one is disabled).
+ */
+export function firstFocusable(container?: HTMLElement | null) {
+  const first = container?.querySelector<HTMLElement>(focusableSelector);
+  if (!(first instanceof HTMLInputElement) || first.type !== 'radio') {
+    return first ?? undefined;
+  }
+  const checked = container?.querySelector<HTMLElement>(
+    `input[type='radio'][name="${CSS.escape(first.name)}"]:checked:not([disabled])`,
+  );
+  return checked ?? first;
+}
+
 /** Provided by MenuList to the lists in it, which are then no landmarks of their own */
 export const menuListNestedKey: InjectionKey<boolean> =
   Symbol('menuListNested');

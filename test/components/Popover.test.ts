@@ -49,9 +49,13 @@ function fakePopover(element: HTMLElement) {
   };
 }
 
-async function mountPopover(props: Record<string, unknown> = {}) {
+async function mountPopover({
+  slots,
+  ...props
+}: Record<string, unknown> & { slots?: Record<string, string> } = {}) {
   const wrapper = await mountSuspended(Popover, {
     props: { label: 'Row actions', list, ...props },
+    slots,
     attachTo: document.body,
   });
 
@@ -113,6 +117,22 @@ describe('Popover', () => {
 
     expectFocused(item('Edit'));
     expect(await checkA11y()).toHaveNoViolations();
+  });
+
+  it('moves focus to the checked radio of a group that comes first, its tab stop', async () => {
+    const { content, popover } = await mountPopover({
+      list: undefined,
+      slots: {
+        content: `<fieldset><legend>Theme</legend>
+          <label><input type="radio" name="t" value="light"> Light</label>
+          <label><input type="radio" name="t" value="system" checked> System</label>
+        </fieldset>`,
+      },
+    });
+
+    await popover.show();
+
+    expectFocused(content.querySelector('input[value="system"]')!);
   });
 
   it('closes and emits the item that is chosen', async () => {

@@ -166,6 +166,8 @@ useHead({ title: 'Buttons & Links' });
         <CopyButton size="lg" text="Demo Text" />
       </div>
 
+      <Spacer size="lg" />
+
       <h3>The current page, disabled</h3>
       <p>
         A disabled link has no href, so it cannot be followed or reached with
