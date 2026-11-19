@@ -118,3 +118,60 @@ test('Tooltip: focus moving on closes it', async ({ page }) => {
   await page.keyboard.press('Tab');
   await expect(text).toBeHidden();
 });
+
+test('Popover: opening above its trigger, near the sticky header, does not scroll the page', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: 'More options' });
+  const list = page.getByRole('navigation', { name: 'More options' });
+
+  // 480px high, the lowest where the header sticks, and a menu taller than
+  // the room below the trigger: it opens above, its top near the header.
+  // Chromium scrolled it to the middle of the screen as it took focus, page
+  // and trigger along.
+  await page.setViewportSize({ width: 1280, height: 480 });
+  await page.addStyleTag({
+    content: `main { padding-block: 100vh; }
+      .popover-content .menu-list-item + .menu-list-item { margin-block-start: 3rem !important; }`,
+  });
+  await trigger.click();
+  const menuHeight = (await list.boundingBox())!.height;
+  await page.keyboard.press('Escape');
+
+  const top = Math.min(menuHeight + 40, 480 - 60);
+  await trigger.evaluate((element, top) => {
+    window.scrollBy(0, element.getBoundingClientRect().top - top);
+  }, top);
+  const scrollBefore = await page.evaluate(() => window.scrollY);
+
+  await trigger.click();
+  await expect(page.getByRole('button', { name: 'Edit' })).toBeFocused();
+  const listBox = (await list.boundingBox())!;
+  const triggerBox = (await trigger.boundingBox())!;
+  expect(listBox.y + listBox.height).toBeLessThanOrEqual(triggerBox.y);
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
+});
+
+test('Popover: a menu that fits on neither side of its trigger scrolls its first item into view', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: 'More options' });
+  const edit = page.getByRole('button', { name: 'Edit' });
+
+  // Taller than the room above and below a trigger near the bottom: it opens
+  // below, off screen, as on a phone or zoomed in. Its focused first item
+  // has to come into view.
+  await page.setViewportSize({ width: 1280, height: 480 });
+  await page.addStyleTag({
+    content: `main { padding-block: 100vh; }
+      .popover-content .menu-list-item + .menu-list-item { margin-block-start: 10rem !important; }`,
+  });
+  await trigger.evaluate((element) => {
+    window.scrollBy(0, element.getBoundingClientRect().top - (480 - 60));
+  });
+
+  await trigger.click();
+  await expect(edit).toBeFocused();
+  // The page may scroll smoothly
+  await expect(edit).toBeInViewport({ ratio: 1 });
+});
