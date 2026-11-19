@@ -13,7 +13,10 @@ the detail; don't repeat it here.
 One short bullet per change, the component or area in bold first
 (`**MarkdownPreview**: bare video links play inline`). What changed for
 users of the code, not how the work went. Name the `MIGRATION.md` section or
-version when there is one.
+version when there is one. In a project whose change needs a Cardan UI
+release not yet on `main`, the first line above the summary is
+`Merge after Cardan UI <version> is on main.`; in a Cardan UI release, a
+bullet lists the project PRs that wait for it.
 
 ## Verification
 

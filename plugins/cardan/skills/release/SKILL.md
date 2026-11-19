@@ -59,12 +59,17 @@ projects. See changelog for details.`, without details: the changelog says what 
 6. **Checks and review**: `pnpm run lint`, `pnpm run typecheck`,
    `pnpm test`, and `pnpm test:browser` where `package.json` has that
    script. Then `pnpm test:projects`, which runs the suites of each sibling
-   project against this checkout, one project at a time: its `test:layer`
+   project against this checkout, one project at a time, each on the branch
+   it is on; `--branch <name>` checks out the project branch that waits for
+   this release where it exists, and switches back afterwards: its `test:layer`
    and, once that passes, its `test:browser` (Playwright, on the project's
    own port), unless `--skip-browser` is given, which leaves the browser
    suites out for a quick run. A project it reports as "not checked out",
-   or a suite as "no suite", is skipped, not a failure; only a failed suite
-   stops the release. Then the review as the Cardan guidelines describe.
+   or a suite as "no suite", is skipped, not a failure; a failed suite, or
+   a branch it could not switch to, stops the release. It lists the unmerged local branches it did not
+   test; one that waits for this release is tested with `--branch` before
+   going on. A checkout with uncommitted changes is not switched: ask the
+   user to commit or stash them. Then the review as the Cardan guidelines describe.
 7. **Pull request**: commit, push and open the PR against `main` with the
    `cardan:pr-body` skill. Merge only when the user says so. After the
    merge, the next work starts on `release/<next patch version>`, cut from

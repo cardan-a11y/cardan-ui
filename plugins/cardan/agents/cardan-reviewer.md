@@ -53,6 +53,10 @@ intent.
      it can go; a workaround tied to a dependency's version or internals, or
      to a Cardan UI release, without an entry in the repository's tripwire
      test (`tripwires.test.ts` in its test folder).
+   A project change that needs a Cardan UI release not yet on `main` (a
+   removed workaround, a new prop or key) is not a finding: merging after
+   that release is the standard order. Name the release it waits for in
+   your summary sentence.
 4. The parts of REVIEW.md about pull requests don't apply here: post
    nothing to GitHub. When the brief says this is a re-review after fixes,
    report Important findings only.

@@ -7,6 +7,60 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.5.3" date="2026-11-19">
+      <ul>
+        <li>
+          SpinButton shows its range error as soon as a typed number is above
+          its maximum or below its minimum, not only after a submit.
+        </li>
+        <li>
+          DatePicker renders its own input in the library's
+          <code>dp-input</code> slot, named by its label with the required chip,
+          like Input; <code>placeholder</code> and
+          <code>aria-describedby</code> reach it directly.
+        </li>
+        <li>
+          MultiSelect's dropdown sits in the top layer at the field, so a
+          scrolling or clipping container, such as a filter popover, no longer
+          cuts it off; an option list that loaded empty loads again when the
+          list opens.
+        </li>
+        <li>
+          Button: a slotted icon gives way to the spinner while loading,
+          <code>focusElement()</code> also focuses a link, and the label and
+          slot text are separate words in its name.
+        </li>
+        <li>
+          ErrorMessage shows its offline notice after a page text too, and
+          Dialog's bottom sheet has end padding with the safe-area inset.
+        </li>
+        <li>
+          RadioGroup without a <code>v-model</code> starts with no option
+          checked.
+        </li>
+        <li>
+          FileInput's file-type icons come from Material Symbols, which every
+          project installs, instead of vscode-icons.
+        </li>
+        <li>
+          Cardan Auth UI: the password requirements box shows on a card and in a
+          dialog (<code>--password-requirements-bg</code> sets another
+          background); the MFA-setup redirect no longer holds back the request
+          that triggered it; <code>userInitials</code> takes the first and last
+          name only; the signed-out pages follow <code>?locale=</code>;
+          LoginForm waits its <code>loadingDelay</code> only after a sign-in
+          that navigates on.
+        </li>
+        <li>
+          Shared <code>useCustomError()</code>,
+          <code>useControlAttrs()</code> and
+          <code>useFocusLeave()</code> replace the copies in the field
+          components and the popovers, and the code no longer carries comments
+          that a name or a test can say.
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.5.2" date="2026-11-19">
       <ul>
         <li>
