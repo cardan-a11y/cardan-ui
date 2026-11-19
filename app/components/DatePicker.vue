@@ -13,10 +13,13 @@ import '@vuepic/vue-datepicker/dist/main.css';
 
 /**
  * A date field on @vuepic/vue-datepicker, with our own input in its `dp-input`
- * slot so it follows FormField. An attribute goes to the date picker,
- * `aria-describedby` and `placeholder` to the input, `class` and `style` to the
- * wrapper; `ariaLabels.input`, the classes of `ui.input` and the `invalid`
- * event do not reach the input. Tripwire: test/tripwires.test.ts.
+ * slot so it follows FormField. A date is picked in the calendar and keys do
+ * not type one, as one format cannot take every way a date is written; text
+ * that arrives without a key (a paste, a drop, autofill) the library parses.
+ * An attribute goes to the date picker, `aria-describedby` and `placeholder` to
+ * the input, `class` and `style` to the wrapper; `ariaLabels.input`, the
+ * classes of `ui.input` and the `invalid` event do not reach the input.
+ * Tripwire: test/tripwires.test.ts.
  */
 defineOptions({ inheritAttrs: false });
 
@@ -48,7 +51,6 @@ const {
   instruction = undefined,
   customError = undefined,
   disabled = false,
-  textInput = false,
   label,
 } = defineProps<{
   label: string;
@@ -67,7 +69,6 @@ const {
   escClose?: boolean;
   hideInputIcon?: boolean;
   utc?: boolean;
-  textInput?: boolean;
   enableTimePicker?: boolean;
   showSelect?: boolean;
   showCancel?: boolean;
@@ -133,10 +134,10 @@ const isFocused = ref(false);
 function libraryInputClasses(isMenuOpen: boolean) {
   return {
     'dp--input': true,
-    'dp--pointer': !disabled && !isReadonly() && !textInput,
+    'dp--pointer': !disabled && !isReadonly(),
     'dp--disabled': disabled,
-    'dp--input-readonly': !textInput,
-    'dp--input-reg': !textInput,
+    'dp--input-readonly': true,
+    'dp--input-reg': true,
     'dp--input-not-clearable': !clearable,
     'dp--input-icon-pad': !hideInputIcon,
     'dp--input-focus': isFocused.value || isMenuOpen,
@@ -239,7 +240,7 @@ const computedAriaLabels = computed(() => {
       v-bind="datePickerAttrs()"
       auto-apply
       :esc-close="escClose"
-      :text-input="textInput"
+      :text-input="false"
       :timezone="utc ? 'utc' : undefined"
       :time-config="{ enableTimePicker: enableTimePicker }"
       :formats="formats"
@@ -285,6 +286,7 @@ const computedAriaLabels = computed(() => {
           :required="required"
           :disabled="disabled"
           :readonly="isReadonly()"
+          inputmode="none"
           role="combobox"
           aria-haspopup="dialog"
           :aria-expanded="isMenuOpen"

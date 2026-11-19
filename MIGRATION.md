@@ -49,6 +49,7 @@ Also a round of audit fixes. Paste the token, rename what a project sets, and ch
 ### 2.5.3
 
 - **A DatePicker's name includes its required chip**, like Input's ("Start date required"): a test that finds a required DatePicker by its bare label adds the chip's text. cardan-auditor-nuxt's AuditForm test does so on `chore/comment-cleanup`.
+- **DatePicker's `text-input` prop is gone**: a date is picked in the calendar and the keyboard does not type one, since typed text in another format than the field's was dropped without a message. No project set it; a `text-input` attribute is ignored. Text that arrives without a key (a paste from the context menu, a drop, autofill) still goes to the library's parser, as before.
 - **SpinButton shows its range error while the user types**, not only after a submit: a test that typed an out-of-range number and expected no error yet expects it now.
 - **MultiSelect's list is in the top layer**: a project's `overflow: visible` or `z-index` to keep it from being cut off can go (cardan-auditor-nuxt's filter popover), as can a project's `@open` that loaded empty async options again.
 - **Button**: a project's guard that hid a slotted icon while loading, an empty string or space to separate the label from slot text, and its own focus call on a link Button can go (cardan-cms-nuxt, cardan-academy-nuxt).

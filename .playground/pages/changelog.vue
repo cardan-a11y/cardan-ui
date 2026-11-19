@@ -17,7 +17,10 @@ useHead({ title: 'Changelog' });
           DatePicker renders its own input in the library's
           <code>dp-input</code> slot, named by its label with the required chip,
           like Input; <code>placeholder</code> and
-          <code>aria-describedby</code> reach it directly.
+          <code>aria-describedby</code> reach it directly. Its
+          <code>text-input</code> prop is gone: a date is picked in the calendar
+          and the keyboard does not type one, since a typed date in another
+          format than the field's was dropped without a message.
         </li>
         <li>
           MultiSelect's dropdown sits in the top layer at the field, so a
@@ -87,17 +90,16 @@ useHead({ title: 'Changelog' });
           remembered.
         </li>
         <li>
-          A project's typecheck no longer fails on the layer's route types
-          when its vite (or vue) differs from the layer's: the layer maps
-          <code>vue-router</code> to the project's copy, so the project's
-          typed routes reach the layer's files too. Until now TypeScript took
-          the layer's own copy, the same only while vue-router and its peers
-          had the same versions in both.
+          A project's typecheck no longer fails on the layer's route types when
+          its vite (or vue) differs from the layer's: the layer maps
+          <code>vue-router</code> to the project's copy, so the project's typed
+          routes reach the layer's files too. Until now TypeScript took the
+          layer's own copy, the same only while vue-router and its peers had the
+          same versions in both.
         </li>
         <li>
-          Chip no longer has a grey color: <code>color="grey"</code> still
-          works and renders as the default chip, as does RequiredChip, which
-          was grey.
+          Chip no longer has a grey color: <code>color="grey"</code> still works
+          and renders as the default chip, as does RequiredChip, which was grey.
         </li>
         <li>
           Popover and UserMenu open onto what Tab reaches first: of a radio
@@ -106,12 +108,11 @@ useHead({ title: 'Changelog' });
         </li>
         <li>
           Avatar renders <code>span</code>s, valid inside a button, and
-          AvatarButton's name keeps a space between its label and the
-          initials.
+          AvatarButton's name keeps a space between its label and the initials.
         </li>
         <li>
-          Inline <code>code</code> in the <code>main.css</code> template has
-          a little padding above and below.
+          Inline <code>code</code> in the <code>main.css</code> template has a
+          little padding above and below.
         </li>
       </ul>
     </ChangelogEntry>
@@ -119,14 +120,14 @@ useHead({ title: 'Changelog' });
     <ChangelogEntry v="2.5.0" date="2026-11-16">
       <p>
         The app shell, a default error page, SpinButton and a second round of
-        audit fixes, with an accessibility test suite that the projects run
-        too. <code>MIGRATION.md</code> has what a project must do.
+        audit fixes, with an accessibility test suite that the projects run too.
+        <code>MIGRATION.md</code> has what a project must do.
       </p>
       <ul>
         <li>
           New app shell, the layout rules the apps share, with the look left to
-          each app's CSS variables (<code>/layout</code> in the playground, which
-          uses all four):
+          each app's CSS variables (<code>/layout</code> in the playground,
+          which uses all four):
           <ul>
             <li>
               AppShell holds the route announcer and the skip link, and moves
@@ -145,18 +146,18 @@ useHead({ title: 'Changelog' });
               (WCAG 2.4.11).
             </li>
             <li>
-              AppSidebar is the side navigation: sticky, scrolling on its own and
-              never sideways, collapsible to a rail of icons, the choice kept in
-              the browser (<code>useAppSidebar()</code>) and applied from the
-              first paint.
+              AppSidebar is the side navigation: sticky, scrolling on its own
+              and never sideways, collapsible to a rail of icons, the choice
+              kept in the browser (<code>useAppSidebar()</code>) and applied
+              from the first paint.
             </li>
             <li>
               SidebarLayout is a page in two columns whose sticky side panel
               runs from under the header to the bottom of the viewport and
               scrolls on its own. With the new <code>side-label</code> prop a
               panel of text only is a named <code>aside</code> and, while it
-              scrolls, a tab stop, so the keyboard scrolls it in Safari too (WCAG
-              2.1.1).
+              scrolls, a tab stop, so the keyboard scrolls it in Safari too
+              (WCAG 2.1.1).
             </li>
             <li>
               New <code>useResultsFocus()</code> brings a list of results to the
@@ -209,9 +210,9 @@ useHead({ title: 'Changelog' });
               <code>custom-error</code>, and is described by its error only
               while it shows. MultiSelect and DatePicker put an attribute on the
               control, <code>class</code> and <code>style</code> on the wrapper;
-              DatePicker's input is named by its <code>label</code>; Escape in an
-              open MultiSelect or DatePicker closes it and no longer the Dialog
-              around it.
+              DatePicker's input is named by its <code>label</code>; Escape in
+              an open MultiSelect or DatePicker closes it and no longer the
+              Dialog around it.
             </li>
             <li>
               A required Input refuses a value of only spaces, and an e-mail
@@ -251,14 +252,15 @@ useHead({ title: 'Changelog' });
               <code>title</code>, only its hidden "(open in new window)";
               VideoPlayer switches off the players' single-key shortcuts (WCAG
               2.1.4); CookiesDialog asks nothing of Google without a
-              <code>gtmId</code>; <code>extractApiError()</code> reads Statamic's
-              failed form posts; <code>useDate()</code> and the date utilities
-              return nothing for a string that is not a date.
+              <code>gtmId</code>; <code>extractApiError()</code> reads
+              Statamic's failed form posts; <code>useDate()</code> and the date
+              utilities return nothing for a string that is not a date.
             </li>
             <li>
               Cardan Auth UI: the MFA challenge starts fresh on every sign-in,
               the setup secret and the codes go when a page is left with the
-              browser's Back, and <code>useMfaDialog().loadingMfaDisableDialog</code>
+              browser's Back, and
+              <code>useMfaDialog().loadingMfaDisableDialog</code>
               is new for a project's own Disable MFA button.
             </li>
             <li>
@@ -269,22 +271,21 @@ useHead({ title: 'Changelog' });
           </ul>
         </li>
         <li>
-          An accessibility test suite: shared helpers in <code>test/</code>
-          that the projects import, vitest tests for every component, a
-          Playwright suite in <code>test/browser/</code> on the built playground
-          (focus and Tab, Dialog and Popover, hidden content, token contrast
-          and axe on every page in both modes), failed-request bodies of the
-          projects' backends as fixtures, and <code>pnpm test:projects</code>,
-          which runs each project's suites against this checkout. CI builds
-          the playground on every pull request; the browser suite runs
-          locally.
+          An accessibility test suite: shared helpers in <code>test/</code> that
+          the projects import, vitest tests for every component, a Playwright
+          suite in <code>test/browser/</code> on the built playground (focus and
+          Tab, Dialog and Popover, hidden content, token contrast and axe on
+          every page in both modes), failed-request bodies of the projects'
+          backends as fixtures, and <code>pnpm test:projects</code>, which runs
+          each project's suites against this checkout. CI builds the playground
+          on every pull request; the browser suite runs locally.
         </li>
         <li>
           MarkdownEditor keeps its text as typed: it no longer trims it when
           focus leaves, which took the space before a word being written when
-          the writer switched windows or used the toolbar. A required editor
-          of only spaces is still missing. A long URL shows in full while
-          editing, no longer as "..." (md-editor-v3's link shortener is off).
+          the writer switched windows or used the toolbar. A required editor of
+          only spaces is still missing. A long URL shows in full while editing,
+          no longer as "..." (md-editor-v3's link shortener is off).
         </li>
         <li>
           The layer holds every message key that two projects use: new

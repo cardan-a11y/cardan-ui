@@ -26,7 +26,7 @@ const tripwires: Tripwire[] = [
     checked: '14.0',
     where: 'app/components/DatePicker.vue, test/browser/containers.spec.ts',
     check:
-      'the `dp-input` slot props and the key handler the input calls, the classes of the library input; whether Shift+Tab out of the calendar still drops focus (the test.fixme)',
+      'the `dp-input` slot props and the key handler the input calls, the classes of the library input; whether the input handler still parses text that arrives without a key (a paste, a drop) while text input is off; whether Shift+Tab out of the calendar still drops focus (the test.fixme)',
   },
   {
     name: 'MultiSelect fixes Escape, the empty options and the dropdown placement',

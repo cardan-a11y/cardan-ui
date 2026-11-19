@@ -207,9 +207,11 @@ describe('DatePicker', () => {
     ]);
   });
 
-  it('leaves Escape to a parent while the calendar is closed, and cancels typing without text input', async () => {
-    const wrapper = await mountPicker();
+  it('leaves Escape to a parent while the calendar is closed, and cancels typing, also with a text-input attribute', async () => {
+    const wrapper = await mountPicker({}, { 'text-input': true });
     const input = wrapper.get('input').element;
+
+    expect(input.getAttribute('inputmode')).toBe('none');
 
     const seen: KeyboardEvent[] = [];
     const listener = (event: Event) => seen.push(event as KeyboardEvent);
