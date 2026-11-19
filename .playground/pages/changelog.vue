@@ -39,6 +39,11 @@ useHead({ title: 'Changelog' });
           checked.
         </li>
         <li>
+          New message keys <code>general.first-name</code> and
+          <code>general.last-name</code>, for a first and a last name in two
+          fields.
+        </li>
+        <li>
           FileInput's file-type icons come from Material Symbols, which every
           project installs, instead of vscode-icons.
         </li>

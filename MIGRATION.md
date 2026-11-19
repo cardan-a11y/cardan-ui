@@ -55,6 +55,7 @@ Also a round of audit fixes. Paste the token, rename what a project sets, and ch
 - **Cardan Auth UI**: `userInitials` is the first and last initial ("JB" for "Jan van den Berg"); the signed-out pages take `?locale=`, so a project's own `locale-from-query` middleware can go; a project's leave guard no longer needs to let `/mfa-setup` and `/login` through; a project's background override for the password requirements box can go (`--password-requirements-bg` sets another).
 - **ErrorMessage shows the offline notice after a `text` too**, and Dialog's bottom sheet has its own end padding: a project that added either removes it, or it shows twice.
 - cardan-academy-nuxt, cardan-auditor-nuxt and cardan-cms-nuxt drop these workarounds on `chore/comment-cleanup`, which merges only after this release is on `main`.
+- **New message keys `general.first-name` and `general.last-name`** ("First name" / "Voornaam", "Last name" / "Achternaam"), for the two name fields the Cardan Academy API takes instead of one name since ACI-158 (`first_name` and `last_name`). cardan-academy-nuxt uses them on `feature/aci-158-first-last-name`, which merges only after this release is on `main`.
 
 ### 2.5.2
 
