@@ -85,12 +85,11 @@ function closeDialog(): Promise<void> {
   // the closure keeps working if the component is torn down mid-close.
   closing = Promise.allSettled(
     dialog.getAnimations().map((a) => a.finished),
-  ).then(async () => {
+  ).then(() => {
     dialog.removeAttribute('closing');
-    // The loop first, and its render, so the page is not inert when the
-    // browser gives focus back to the element that opened the dialog
+    // Before the close, so the exposed `isVisible`, which pages watch, is
+    // false by the time the dialog has closed
     isVisible.value = false;
-    await nextTick();
     dialog.close();
   });
 
@@ -115,8 +114,8 @@ function preventEscape(event: Event) {
     return;
   }
 
-  // Escape closes the dialog right after this event: the loop first, so the
-  // page is not inert when the browser gives focus back to the opener
+  // Escape closes the dialog right after this event: the exposed
+  // `isVisible` turns false first, as with `closeDialog()`
   isVisible.value = false;
 }
 
@@ -181,7 +180,6 @@ defineExpose({
 </template>
 
 <style>
-/* disable background scrolling */
 html:has(.dialog[open]) {
   overflow: hidden;
 }
@@ -259,7 +257,6 @@ html:has(.dialog[open]) {
     > .button {
       flex: 1;
       min-width: fit-content;
-      /* CSS taken from https://www.youtube.com/watch?v=3ugXM3ZDUuE */
     }
   }
 }

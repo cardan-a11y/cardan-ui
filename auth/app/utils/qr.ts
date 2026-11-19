@@ -43,7 +43,6 @@ export function sanitizeQrSvg(svg: string): string {
         child.nodeType !== Node.ELEMENT_NODE ||
         !QR_ELEMENTS.includes((child as Element).localName)
       ) {
-        // A comment, text or an element that is not part of a code
         child.remove();
       } else {
         clean(child as Element);

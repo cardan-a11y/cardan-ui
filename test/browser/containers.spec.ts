@@ -121,7 +121,8 @@ for (const [name, open] of Object.entries(popups)) {
     // intermittent. Focusing the input on the library's `closed` does not
     // fix it: `closed` can fire on a Tab from the input while the calendar
     // stays shown, and then not again when this Shift+Tab hides it. Skipped
-    // until then: as a failing test it would pass and fail by turns.
+    // until the library or the wrapper keeps focus on a Tab out of the
+    // calendar: as a failing test it would pass and fail by turns.
     test.fixme(
       name === 'DatePicker',
       'Tab out of the DatePicker calendar can drop focus on the body',

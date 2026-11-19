@@ -76,7 +76,6 @@ test('opens from its trigger with focus on the first item, the trigger stays usa
   await expect(trigger).toBeFocused();
   expect(await expanded(page)).toBe(false);
 
-  // And with the mouse
   await trigger.click();
   await expect(panel).toBeVisible();
   await trigger.click();
@@ -150,9 +149,7 @@ for (const width of [320, 1280]) {
     expect(box.x + box.width).toBeLessThanOrEqual(width);
     expect(box.y + box.height).toBeLessThanOrEqual(640);
     // Right under the header's line
-    expect(Math.abs(box.y - (header.y + header.height))).toBeLessThanOrEqual(
-      1,
-    );
+    expect(Math.abs(box.y - (header.y + header.height))).toBeLessThanOrEqual(1);
 
     // What the pointer hits at its corners and its center is the panel
     const covered = await panel.evaluate((el) => {

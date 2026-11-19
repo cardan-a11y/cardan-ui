@@ -102,7 +102,11 @@ watch(
   { flush: 'post' },
 );
 
-/** In the tab order while it scrolls */
+/**
+ * In the tab order while it scrolls, for Safari, which does not focus a scroll
+ * container itself. Once WebKit does, as Chromium and Firefox do, this tab
+ * stop can go.
+ */
 function sideTabindex() {
   if (!sideLabel) return undefined;
   if (scrolls.value) return 0;
@@ -173,7 +177,6 @@ const sideAttrs = computed(() => ({
   grid-template-columns:
     var(--sidebar-layout-beside)
     var(--sidebar-layout-tracks);
-  /* Between the columns, beside each other or stacked */
   gap: var(--sidebar-layout-gap, 1.5rem);
 
   &.has-side {

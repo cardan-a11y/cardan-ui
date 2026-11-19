@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// The attributes go to the dialog, not to the wrapper too
 defineOptions({ inheritAttrs: false });
 
 const { isLargeScreen } = useScreenSize();
@@ -224,7 +223,6 @@ const emit = defineEmits<{
 </template>
 
 <style>
-/* disable background scrolling */
 body:has(.mobile-dialog[open]) {
   overflow: hidden;
 }

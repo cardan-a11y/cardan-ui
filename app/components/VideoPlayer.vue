@@ -11,7 +11,10 @@ const { t } = useI18n();
 
 const started = ref(false);
 
-/** A URL that is no video keeps the YouTube embed with a dummy id, so the figure still renders. */
+/**
+ * For a URL that is no video the component has no state of its own yet: it
+ * renders the YouTube embed with a dummy id, so the figure still renders.
+ */
 const video = computed<VideoSource>(
   () => parseVideoUrl(props.url) ?? { provider: 'youtube', id: 'e' },
 );
@@ -65,7 +68,6 @@ const embedUrl = computed(() => {
   return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&disablekb=1`;
 });
 
-/** How many thumbnails of the video failed to load. */
 const thumbFailures = ref(0);
 
 /**

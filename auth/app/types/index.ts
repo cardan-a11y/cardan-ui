@@ -33,7 +33,6 @@ declare global {
     max_length: number;
   };
 
-  /** HTTP method of the update-password endpoint, see `CardanAuthConfig`. */
   type UpdatePasswordMethod = 'PATCH' | 'PUT' | 'POST';
 
   /**

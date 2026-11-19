@@ -17,7 +17,6 @@ async function addButton(container: Locator, name: string) {
   return container.getByRole('button', { name, includeHidden: true });
 }
 
-/** The panel a control points at with `aria-controls` */
 function controlled(page: Page, control: Locator) {
   return control
     .getAttribute('aria-controls')

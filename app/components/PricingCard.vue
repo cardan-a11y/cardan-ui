@@ -61,7 +61,9 @@ const formattedPrice = computed(() =>
 
       <div class="price">
         <template v-if="price !== undefined || priceText">
-          <span v-if="price !== undefined" class="price">{{ formattedPrice }}</span>
+          <span v-if="price !== undefined" class="price">{{
+            formattedPrice
+          }}</span>
 
           <span v-else-if="priceText" class="price-text">{{ priceText }}</span>
 
@@ -179,7 +181,6 @@ const formattedPrice = computed(() =>
     width: 100%;
     margin-block-start: 2.5rem;
     align-self: end;
-    /* justify-self: end; */
   }
 }
 </style>

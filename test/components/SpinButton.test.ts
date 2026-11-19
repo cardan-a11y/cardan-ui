@@ -14,7 +14,6 @@ async function mountSpinButton(props: Record<string, unknown> = {}) {
     attachTo: document.body,
   });
 
-  /** The button with this name */
   const button = (name: string) => {
     const found = wrapper
       .findAll('button')

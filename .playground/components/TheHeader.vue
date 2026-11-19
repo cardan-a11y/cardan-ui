@@ -26,9 +26,6 @@ watch(
     </template>
 
     <template #end>
-      <!-- <ClientOnly>
-        <CookiesButton />
-      </ClientOnly> -->
       <ThemeSwitch />
       <AppUserMenu />
     </template>

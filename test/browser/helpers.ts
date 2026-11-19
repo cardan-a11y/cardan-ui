@@ -246,7 +246,8 @@ export async function runAxe(
         { resultTypes: ['violations'] },
       );
 
-    // One run at a time per page: wait for one the page started itself
+    // axe runs one at a time per page, and a page may run its own: the
+    // playground's vue-axe plugin runs axe on every page. Wait for that run
     let results: AxeResults | undefined;
     for (let attempt = 0; !results; attempt++) {
       try {

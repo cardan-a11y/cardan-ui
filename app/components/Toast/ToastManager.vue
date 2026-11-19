@@ -17,7 +17,10 @@ let focusOrigin: HTMLElement | null = null;
 function rememberFocusOrigin(event: FocusEvent) {
   const previous = event.relatedTarget;
 
-  if (previous instanceof HTMLElement && !managerRef.value?.contains(previous)) {
+  if (
+    previous instanceof HTMLElement &&
+    !managerRef.value?.contains(previous)
+  ) {
     focusOrigin = previous;
   }
 }
@@ -49,7 +52,8 @@ function hide(id: string) {
 
 /**
  * A leaving toast collapses so the others slide into its place. Its height is
- * fixed first, because a height of `auto` cannot be animated.
+ * fixed first, because a height of `auto` cannot be animated without
+ * `interpolate-size`. Once every target browser has it, this can go.
  */
 function lockHeight(element: Element) {
   if (element instanceof HTMLElement) {

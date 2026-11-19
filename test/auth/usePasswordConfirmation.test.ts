@@ -33,7 +33,6 @@ async function mountDialog() {
   });
   const dialog = wrapper.get('dialog');
 
-  /** Types the password and confirms it */
   async function confirmWith(password: string) {
     await dialog.get('input[name="password"]').setValue(password);
     await buttonNamed(dialog, 'Confirm').trigger('click');

@@ -25,7 +25,6 @@ async function expectModalPattern(
   await trigger.click();
   await expect(dialog).toBeVisible();
 
-  // Focus moves inside
   await expect
     .poll(async () => (await focusStop(page, dialog)).inside)
     .toBe(true);
@@ -38,7 +37,6 @@ async function expectModalPattern(
     expect(stops.map((stop) => stop.key)).toContain(first.key);
   }
 
-  // Escape closes, focus goes back to the trigger, nothing stays inert
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();

@@ -9,8 +9,9 @@ import { addToPage } from '../dom';
 /**
  * The toasts and their one live region. The timer is a CSS animation:
  * happy-dom runs none, so these tests read the play state the component
- * sets and send the `animationend` the browser would; that a paused toast
- * really waits (WCAG 2.2.1) is for the browser suite.
+ * sets and send the `animationend` the browser would. They do not prove
+ * that a paused toast really waits (WCAG 2.2.1): no browser test covers
+ * that yet.
  */
 function timer(wrapper: { find: (selector: string) => { element: Element } }) {
   return wrapper.find('.toast__timer').element as HTMLElement;
@@ -24,7 +25,6 @@ function playState(wrapper: {
     .trim();
 }
 
-/** The live region of the manager, teleported to #teleports */
 function liveRegion() {
   return document.querySelector('#teleports [aria-live]');
 }

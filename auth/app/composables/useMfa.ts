@@ -10,8 +10,8 @@ export function useMfa() {
   const { withPasswordConfirmation } = usePasswordConfirmation();
   const { endpoints } = useCardanAuthConfig();
   const { createToast } = useToast();
-  // Not `useI18n()`: that needs a component, and the challenge and setup
-  // pages are not the only callers
+  // Not `useI18n()`: that needs a component's setup, and this also runs
+  // outside one, as in its tests
   const { $i18n } = useNuxtApp();
 
   const mfaStep = useState<MfaStep>('mfaStep', () => 1);
@@ -212,10 +212,10 @@ export function useMfa() {
 
     try {
       // Fetched before confirming, shown after: Fortify creates the codes when
-      // MFA is enabled and confirming keeps them. A backend may end a
-      // confirmation that only covered setting MFA up (one that came from
-      // signing in) once it is confirmed, and the codes still belong to this
-      // enrolment. This is the one read of the codes that the setup gets.
+      // MFA is enabled and confirming keeps them. For a backend that ends the
+      // password confirmation once MFA is confirmed (stock Fortify does not),
+      // the codes route is closed after this step; they still belong to this
+      // enrolment.
       const codes = await getRecoveryCodes();
 
       // Without them the enrolment stops here, on the code step: confirming
@@ -252,8 +252,9 @@ export function useMfa() {
     mfaError.value = null;
     loadingSolveMfaChallenge.value = true;
 
-    // Both read before the request: on a 401, nuxt-auth-sanctum may navigate
-    // before this function gets the answer, and the route is then another
+    // Both read before the request: on a 401 with `redirectIfUnauthenticated`,
+    // nuxt-auth-sanctum (3.1.5) navigates before this function gets the
+    // answer, and the route is then another
     const route = useRoute();
     const redirect = loginRedirectTarget(route);
     const requestedRedirect = route.query.redirect;
@@ -268,7 +269,8 @@ export function useMfa() {
         // The sign-in this challenge belonged to has expired: Fortify no
         // longer knows whose code this is. Back to the login page, with where
         // the user was headed and a word on why. nuxt-auth-sanctum's own 401
-        // handling only knows to go to `redirect.onAuthOnly`, without either.
+        // handling (3.1.5) goes to `redirect.onAuthOnly` without a reason, at
+        // most with this page as `redirect` (`keepRouteOnUnauthenticated`).
         resetMfa();
         createToast({
           label: $i18n.t('mfa.session-expired'),

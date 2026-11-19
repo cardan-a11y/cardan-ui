@@ -125,8 +125,9 @@ describe('Button', () => {
     expect(accessibleName(wrapper.get('a'))).toBe('Documentation');
   });
 
-  // That the link is not followed needs a browser: a NuxtLink in this
-  // environment does not navigate on a click, loading or not
+  // Does not prove the link is not followed: a NuxtLink in this environment
+  // does not navigate on a click, loading or not, and no browser test covers
+  // it yet
   it('says a loading link is busy and ignores its click', async () => {
     const wrapper = await mountSuspended(Button, {
       props: { label: 'Buttons', to: '/buttons', loading: true },

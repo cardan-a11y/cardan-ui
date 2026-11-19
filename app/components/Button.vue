@@ -709,7 +709,6 @@ const emit = defineEmits<{
       border-radius: var(--radius-xs);
     }
 
-    /* The underline grows in; with reduced motion it just appears */
     @media (prefers-reduced-motion: no-preference) {
       transition-timing-function: ease-in-out;
       transition:

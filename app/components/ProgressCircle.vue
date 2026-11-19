@@ -34,13 +34,11 @@ const {
 
 const { t } = useI18n();
 
-/** 0 to 100: how far `value` is on its way from `min` to `max` */
 const percentage = computed(() => {
   const fraction = (value - min) / (max - min);
   return Math.round(Math.min(1, Math.max(0, fraction || 0)) * 100);
 });
 
-/** What the ring shows, in words: "42%", or "7 of 10" with `showValue` */
 const valueText = computed(() =>
   showValue ? t('meter.value-of-max', { value, max }) : `${percentage.value}%`,
 );

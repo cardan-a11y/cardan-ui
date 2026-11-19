@@ -44,10 +44,9 @@ const tooltipContentRef = useTemplateRef<HTMLDivElement | null>(
   'tooltipContent',
 );
 
-// Mirror the native popover's open state into a reactive ref. `@toggle` fires
-// *after* the popover is shown, so gating the content with `v-if="isOpen"` adds
-// the text into the (already visible) aria-live region on open — which is what
-// makes a screen reader announce the toggletip. Focus stays on the trigger.
+// `@toggle` fires after the popover is shown, so the content behind
+// `v-if="isOpen"` is added to the already visible aria-live region on open:
+// that makes a screen reader announce the toggletip. Focus stays on the trigger.
 const isOpen = ref(false);
 
 function onToggle(event: Event) {

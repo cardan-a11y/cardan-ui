@@ -64,7 +64,6 @@ async function mountPopover({
     trigger.attributes('popovertarget')!,
   )!;
 
-  /** The item in the content with this name */
   const item = (name: string) => {
     const found = Array.from(
       content.querySelectorAll<HTMLElement>('a, button'),

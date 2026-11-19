@@ -9,7 +9,6 @@ const { logoutDialogRef, handleLogout } = useLogoutDialog();
 const loading = ref(false);
 const error = ref<ApiErrorData | null>(null);
 
-/** The dialog closes on success; a refusal shows here, with the button at rest. */
 async function signOut() {
   error.value = null;
   loading.value = true;

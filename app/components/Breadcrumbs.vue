@@ -62,11 +62,8 @@ const { items, label = undefined } = defineProps<{
       /*
        * The slash is decoration. The empty string after the second slash is
        * its alternative text, which keeps it out of the accessibility tree,
-       * so a screen reader does not read "slash" between the links. A
-       * browser that does not know that syntax drops the second declaration
-       * and keeps the first.
+       * so a screen reader does not read "slash" between the links.
        */
-      content: '/';
       content: '/' / '';
       color: var(--color-grey-graphic);
     }

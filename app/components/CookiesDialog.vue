@@ -43,7 +43,8 @@ watch(cookiesDialogOpen, (open) => {
  * The parts of @nuxt/scripts this dialog uses. In a project without the
  * module, Nuxt's stubs type its composables as `void`, and they throw when
  * called: the dialog needs the module, which the layer says at startup. Typed
- * here, the dialog type-checks in every project that extends the layer.
+ * here, the dialog type-checks in every project that extends the layer. These
+ * types can go once the layer registers @nuxt/scripts itself.
  */
 type ConsentCommand = [
   command: 'consent',

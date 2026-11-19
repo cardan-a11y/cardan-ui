@@ -47,7 +47,6 @@ const isAuthSubpage = computed(() => authPages.includes(route.path));
 
 <style>
 :root {
-  /* Layout design tokens */
   --app-header-height: 4rem;
   --app-padding-block: 2.5rem;
 }

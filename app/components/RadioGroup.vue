@@ -1,5 +1,9 @@
 <script setup lang="ts" generic="T extends GroupOption">
-const model = defineModel<string | number | boolean>();
+// A default, so Vue does not cast an absent model to false: that would check
+// an option whose value is false, and count as a choice
+const model = defineModel<string | number | boolean | undefined>({
+  default: undefined,
+});
 
 const {
   valueKey = 'value' as keyof T & string,
@@ -45,13 +49,11 @@ const {
 
 const { t } = useI18n();
 
-/** The value of an option, as the radio's `value` */
 function optionValue(option: T) {
   return option[valueKey] as string | number | boolean;
 }
 
-/** A text field of an option, for a prop that takes a string */
-function text(option: T, key?: keyof T & string) {
+function optionText(option: T, key?: keyof T & string) {
   const value = key === undefined ? undefined : option[key];
 
   return value === undefined ? undefined : String(value);
@@ -61,9 +63,6 @@ const message = computed(
   () => errorMessage ?? t('form.missing-value', { item: label }),
 );
 
-// A v-model passes undefined until a choice is made. Without any v-model, Vue
-// casts the absent value to false, since the type allows a boolean, and that
-// would count as a choice; a group that posts natively still shows its error.
 const hasChoice = computed(
   () => model.value !== undefined && model.value !== '',
 );
@@ -83,7 +82,6 @@ function applyCustomError() {
 onMounted(applyCustomError);
 watch(() => customError, applyCustomError, { flush: 'post' });
 
-/** The error text shows after a failed submit, or for a custom error */
 const errorShown = computed(
   () =>
     customErrorActive.value ||
@@ -99,7 +97,6 @@ const errorShown = computed(
       customErrorActive && 'custom-error',
     ]"
   >
-    <!-- The error describes the group only while it shows -->
     <fieldset
       v-if="options?.length"
       :aria-describedby="errorShown ? `error-${id}` : undefined"
@@ -130,9 +127,9 @@ const errorShown = computed(
           <Radio
             v-model="model"
             :value="optionValue(option)"
-            :label="text(option, labelKey)"
+            :label="optionText(option, labelKey)"
             :disabled="disabled || !!option.disabled"
-            :title="text(option, titleKey)"
+            :title="optionText(option, titleKey)"
             :lang="option.lang"
             :name="name ?? id"
             :tabindex="tabindex"

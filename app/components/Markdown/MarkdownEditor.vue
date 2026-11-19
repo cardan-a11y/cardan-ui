@@ -54,46 +54,24 @@ const {
   customError?: string;
 }>();
 
-const footers: Footers[] = [
-  // 'markdownTotal',
-  // '=',
-  // 'scrollSwitch',
-];
+const footers: Footers[] = [];
 
 const toolbars: ToolbarNames[] = [
   'bold',
-  // 'underline',
   'italic',
-  // 'strikeThrough',
   '-',
-  // 'title',
-  // 'sub',
-  // 'sup',
   'unorderedList',
   'orderedList',
   'quote',
-  // 'task',
   '-',
   'codeRow',
   'code',
-  // 'link',
-  // 'image',
-  // 'table',
-  // 'mermaid',
-  // 'katex',
   '-',
   'revoke',
   'next',
-  // 'save',
   '=',
-  // 'prettier',
   'pageFullscreen',
-  // 'fullscreen',
   'preview',
-  // 'previewOnly',
-  // 'htmlPreview',
-  // 'catalog',
-  // 'github',
 ];
 
 const { t, locale } = useI18n();
@@ -106,7 +84,8 @@ if (!configured) {
   config({
     markdownItConfig(mdit) {
       // md-editor-v3 types its instance with markdown-it 14, the plugins expect the
-      // types of markdown-it 15; both run on the same API
+      // types of markdown-it 15; both run on the same API. The cast can go once
+      // md-editor-v3 depends on markdown-it 15.
       const md = mdit as unknown as MarkdownIt;
 
       md.use(swatchExtension);
@@ -162,7 +141,6 @@ function applyCustomError() {
 onMounted(applyCustomError);
 watch(() => customError, applyCustomError, { flush: 'post' });
 
-/** The error text shows after a failed submit, or for a custom error */
 const errorShown = computed(
   () =>
     customErrorActive.value ||

@@ -143,7 +143,6 @@ async function toggleUseRecoveryCode() {
     }
 
     p {
-      /* max-width: 40ch; */
       margin-inline: auto;
       margin-block-end: 2.5rem;
       color: var(--color-grey-text);

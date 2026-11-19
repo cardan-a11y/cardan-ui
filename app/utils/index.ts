@@ -96,7 +96,7 @@ export const formShowInvalidKey: InjectionKey<Readonly<Ref<boolean>>> =
 export const formSyncKey: InjectionKey<(sync: () => boolean) => () => void> =
   Symbol('formSync');
 
-/** The elements that take keyboard focus: a loop, a popover and a tab panel look for them */
+/** The elements that take keyboard focus, for FocusLoop */
 export const focusableSelector = [
   ...['input', 'select', 'button', 'textarea'].map(
     (field) => `${field}:not([disabled])`,

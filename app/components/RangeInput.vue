@@ -45,7 +45,6 @@ const ratio = computed(() => (value.value - min) / range.value);
 
 const ticksLength = computed(() => range.value / step + 1);
 
-// Every tick as { value, label }, whether it was passed as a number or an object
 const ticksList = computed(() =>
   (
     ticks ?? Array.from({ length: ticksLength.value }, (_, i) => i * step + min)

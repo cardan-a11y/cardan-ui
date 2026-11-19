@@ -43,7 +43,6 @@ async function mountDialog() {
   });
   const dialog = wrapper.get('dialog').element as HTMLDialogElement;
 
-  /** The button in the dialog with this name */
   const button = (name: string) => {
     const found = Array.from(dialog.querySelectorAll('button')).find(
       (button) => accessibleName(button) === name,

@@ -5,8 +5,9 @@ import { useStorage } from '@vueuse/core';
  * A layout reads it to follow the sidebar, for a class of its own.
  */
 export function useAppSidebar() {
-  // A page hydrated from server HTML never knows this browser's choice: read
-  // it after mounting there, or the classes would not match. Until then the
+  // The choice is kept in localStorage, which the server cannot read, so a
+  // page hydrated from server HTML reads it after mounting, or the classes
+  // would not match (a cookie would let the server render it). Until then the
   // hint class shows the choice (`appSidebarHintScript`); it goes once the
   // class it stands in for is on the sidebar. A single-page app renders in
   // the browser from an empty shell: Nuxt counts its first render as

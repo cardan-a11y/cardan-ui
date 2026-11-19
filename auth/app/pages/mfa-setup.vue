@@ -31,7 +31,6 @@ const { mfaStep } = useMfa();
  */
 const isPastIntro = computed(() => mfaStep.value > 1);
 
-/** On to where the sign-in was headed. */
 async function continueToApp() {
   dismissMfaSetup();
   await navigateTo(loginRedirectTarget() || '/');

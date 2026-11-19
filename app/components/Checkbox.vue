@@ -61,7 +61,6 @@ function applyCustomError() {
 onMounted(applyCustomError);
 watch(() => customError, applyCustomError, { flush: 'post' });
 
-/** The error text shows after a failed submit, or for a custom error */
 const errorShown = computed(
   () =>
     customErrorActive.value ||

@@ -92,8 +92,7 @@ const {
 
 const attrs = useAttrs();
 
-/** The attributes for the control, without the wrapper's `class` and `style` */
-function controlAttrs() {
+function inputAttrs() {
   return Object.fromEntries(
     Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'),
   );
@@ -169,7 +168,6 @@ onMounted(() => {
 });
 watch(() => customError, applyCustomError, { flush: 'post' });
 
-// A value or a constraint the parent changes
 watch(
   [
     model,
@@ -186,14 +184,12 @@ watch(
   { flush: 'post' },
 );
 
-/** The error text shows after a failed submit, or for a custom error */
 const errorShown = computed(
   () =>
     customErrorActive.value ||
     ((showInvalid || formShowInvalid.value) && !isValid.value),
 );
 
-// The error describes the field only while it shows
 const computedAriaDescribedby = computed(
   () =>
     [
@@ -211,7 +207,6 @@ function handleInput(event: Event) {
 }
 
 function takeValue(target: HTMLInputElement) {
-  // A new value clears the custom error, until the parent sets one again
   customErrorActive.value = false;
 
   // Also a number outside min and max: the field is invalid until the number
@@ -264,7 +259,7 @@ const emit = defineEmits<{
         :id="id"
         ref="input"
         class="input"
-        v-bind="controlAttrs()"
+        v-bind="inputAttrs()"
         :value="model"
         :name="name"
         :title="title"

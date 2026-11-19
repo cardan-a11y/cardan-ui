@@ -4,7 +4,8 @@
 import type { AxeMatchers } from 'vitest-axe/matchers';
 
 // vitest-axe 0.1 types the `Vi` namespace of old vitest versions; vitest 5
-// reads the matchers from this module instead.
+// reads the matchers from this module instead. Remove once a vitest-axe
+// release augments `vitest` itself (0.1.0 is its latest).
 declare module 'vitest' {
   interface Assertion<T = unknown> extends AxeMatchers {}
   interface AsymmetricMatchersContaining extends AxeMatchers {}

@@ -3,8 +3,8 @@
  * Email + password sign-in, wired to nuxt-auth-sanctum and aware of a pending
  * second factor.
  *
- * Only the form lives here: the surrounding page (heading, tabs,
- * forgot-password link) stays with the app.
+ * Only the form lives here: the surrounding page (heading, forgot-password
+ * link) is the layer's login page, or an app's own.
  */
 const {
   showPasswordToggle = true,
@@ -36,15 +36,15 @@ const {
   twoFactorPath?: string;
   /**
    * Hold the submit button in its loading state this many milliseconds after
-   * the request settles — useful when a page transition follows the redirect.
+   * a sign-in that navigates on, while the page transition plays.
    */
   loadingDelay?: number;
 }>();
 
 /**
- * Bindable so an app can share the typed address with a sibling form — the
- * Auditor login page keeps its forgot-password tab on the same state. Falls
- * back to its own local state when nothing is bound.
+ * Bindable so a page can share the typed address with another form, as the
+ * layer's login page does with `useLoginEmail()`. Falls back to its own local
+ * state when nothing is bound.
  */
 const email = defineModel<string>('email', { default: '' });
 
@@ -68,6 +68,7 @@ async function handleLogin() {
   shaking.value = false;
   error.value = null;
   submitting.value = true;
+  let navigating = false;
 
   try {
     const response = await loginWithoutRedirect({
@@ -79,6 +80,7 @@ async function handleLogin() {
     if (response?.two_factor) {
       emit('twoFactor');
 
+      navigating = true;
       return await navigateTo({
         path: twoFactorPath,
         query: { redirect: route.query.redirect },
@@ -90,15 +92,18 @@ async function handleLogin() {
 
     const target = loginRedirectTarget();
 
-    if (target !== false) return await navigateTo(target);
+    if (target !== false) {
+      navigating = true;
+      return await navigateTo(target);
+    }
   } catch (e) {
     error.value = extractApiError(e);
     shaking.value = true;
     emit('error', error.value);
   } finally {
-    if (loadingDelay > 0) {
-      // Keeps the spinner up while the redirect's page transition plays, so
-      // the button does not flick back to its resting state first.
+    if (navigating && loadingDelay > 0) {
+      // Keeps the spinner up while the page transition plays, so the button
+      // does not flick back to its resting state first
       setTimeout(() => {
         submitting.value = false;
       }, loadingDelay);
@@ -158,7 +163,6 @@ defineExpose({ submitting, error });
       :label="$t('auth.remember-me')"
     />
 
-    <!-- Extra fields after the password. -->
     <slot name="fields" />
 
     <template v-if="errorPosition === 'above-submit'">

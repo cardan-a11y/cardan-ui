@@ -176,7 +176,6 @@ export function usePasswordConfirmation() {
     return true;
   }
 
-  /** The dialog has closed: answers the confirmation it was open for. */
   function passwordConfirmationDialogClosed() {
     settle(confirmedPending);
   }

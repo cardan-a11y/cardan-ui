@@ -76,7 +76,6 @@ const segments = computed<MarkdownSegment[]>(() =>
     : renderMarkdownSegments(content, options.value),
 );
 
-/** The whole text as one string of HTML, unless it has videos. */
 const html = computed(() => {
   const [segment, ...rest] = segments.value;
 

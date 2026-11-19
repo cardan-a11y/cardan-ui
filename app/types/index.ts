@@ -31,7 +31,7 @@ declare global {
   type ApiErrorData = {
     message?: string;
     errors?: Record<string, string[]>;
-    /** The language the API wrote the messages in */
+    /** The API's `Content-Language`, `en` without one */
     language?: string;
     /** No answer came: the browser was offline when the request failed */
     offline?: boolean;
@@ -159,7 +159,6 @@ declare global {
 
   type ChipVariant = 'flat' | 'outline' | 'soft' | 'solid';
 
-  /** The CSS text-transform keywords */
   type TextTransform = 'uppercase' | 'lowercase' | 'capitalize';
   type CalloutVariant = 'solid' | 'outline';
   type CardanLogoForm = 'full' | 'symbol' | 'tile';

@@ -79,7 +79,6 @@ onMounted(() => {
   background-color: var(--color-secondary);
 
   .auth-page-copy {
-    /* The rule above the footer */
     > hr {
       block-size: 1px;
       border: 0;
@@ -111,7 +110,6 @@ onMounted(() => {
 }
 
 .auth-page-description {
-  /* max-width: 40ch; */
   margin-inline: auto;
   margin-block-end: 2.5rem;
   text-align: center;

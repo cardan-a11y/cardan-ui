@@ -34,8 +34,6 @@ export function useRouteFocus(
   let stopWaiting = () => {};
   onScopeDispose(() => stopWaiting());
 
-  // In the browser only: a navigation while rendering on the server has no
-  // focus to remember
   if (import.meta.client) {
     const removeGuard = router.beforeEach(() => {
       focusBefore = document.activeElement;

@@ -18,11 +18,10 @@ export function useAutofillSync(
   control: Readonly<Ref<Control | null>>,
   take: (control: Control) => void,
 ) {
-  /** The control's value when the model last agreed with it */
-  let known: string | undefined;
+  let lastSyncedValue: string | undefined;
 
   function remember() {
-    known = control.value?.value;
+    lastSyncedValue = control.value?.value;
   }
 
   /**
@@ -31,7 +30,7 @@ export function useAutofillSync(
    */
   function sync() {
     const element = control.value;
-    if (!element || element.value === known) return false;
+    if (!element || element.value === lastSyncedValue) return false;
     take(element);
     remember();
     return true;

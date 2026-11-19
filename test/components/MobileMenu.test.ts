@@ -36,7 +36,6 @@ async function mountMenu(props: Record<string, unknown> = {}) {
     trigger.attributes('aria-controls')!,
   ) as HTMLDialogElement;
 
-  /** The button in the menu with this name */
   const button = (name: string) => {
     const found = Array.from(dialog.querySelectorAll('button')).find(
       (button) => accessibleName(button) === name,

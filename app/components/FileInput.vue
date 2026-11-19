@@ -54,8 +54,7 @@ const {
   maxHeight?: number;
 }>();
 
-/** Until a file is chosen, a picture in image mode */
-const icon = computed(() =>
+const zoneIcon = computed(() =>
   !model.value && mode === 'image'
     ? 'material-symbols:add-photo-alternate-outline-rounded'
     : fileTypeIcon(model.value),
@@ -66,8 +65,7 @@ const imagePreview = ref(placeholderUrl);
 const dragover = ref(false);
 const validity = ref(true);
 
-/** The extensions in `accept` in document mode, without the dot */
-const extensions = computed(() =>
+const acceptedExtensions = computed(() =>
   mode === 'document' && accept
     ? accept
         .split(',')
@@ -79,7 +77,7 @@ const extensions = computed(() =>
 /** "PDF, DOCX or ODT" */
 const typesLabel = computed(() =>
   new Intl.ListFormat(locale.value, { type: 'disjunction' }).format(
-    extensions.value.map((extension) => extension.toUpperCase()),
+    acceptedExtensions.value.map((extension) => extension.toUpperCase()),
   ),
 );
 
@@ -87,8 +85,7 @@ const maxSizeLabel = computed(() => formatFileSize(maxFileSize * 1000));
 
 const formShowInvalid = inject(formShowInvalidKey, ref(false));
 
-/** A required image field without a file, once its form shows the errors */
-const missing = computed(
+const missingImage = computed(
   () =>
     required &&
     mode !== 'document' &&
@@ -97,7 +94,7 @@ const missing = computed(
 );
 
 // A rejected file shows its error at once, in both modes
-const showError = computed(() => !validity.value || missing.value);
+const showError = computed(() => !validity.value || missingImage.value);
 
 const shownErrorMessage = computed(
   () => errorMessage.value || t('form.missing-value', { item: label }),
@@ -236,7 +233,10 @@ function validateFile(file: File) {
   }
 
   const extension = getFileExtension(file.name)?.toLowerCase() ?? '';
-  if (extensions.value.length && !extensions.value.includes(extension)) {
+  if (
+    acceptedExtensions.value.length &&
+    !acceptedExtensions.value.includes(extension)
+  ) {
     validity.value = false;
     errorMessage.value = t('files.wrong-type', { types: typesLabel.value });
     return;
@@ -363,8 +363,8 @@ function removeFile() {
         :required="required && mode !== 'document'"
         :autofocus="autofocus"
         :accept="
-          extensions.length
-            ? extensions.map((extension) => `.${extension}`).join(',')
+          acceptedExtensions.length
+            ? acceptedExtensions.map((extension) => `.${extension}`).join(',')
             : accept
         "
         :disabled="disabled"
@@ -392,7 +392,7 @@ function removeFile() {
         ]"
       >
         <span class="file-input-icon-wrapper">
-          <Icon :name="icon" />
+          <Icon :name="zoneIcon" />
         </span>
 
         <span class="button-text">
@@ -400,7 +400,9 @@ function removeFile() {
             {{ $t('files.button-text') }}
           </span>
           <span :id="`instruction-${id}`">
-            <template v-if="extensions.length">{{ typesLabel }} </template>
+            <template v-if="acceptedExtensions.length"
+              >{{ typesLabel }}
+            </template>
             (max. {{ maxSizeLabel }})
           </span>
         </span>
@@ -581,7 +583,6 @@ function removeFile() {
   }
 }
 
-/* The preview replaces the zone, at its own size */
 .file-input-shape--default {
   .file-input-button {
     .preview-image {

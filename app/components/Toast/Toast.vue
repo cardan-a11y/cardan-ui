@@ -23,7 +23,6 @@ const timerElementRef = useTemplateRef('timerElement');
 const toastHover = ref(false);
 const { focused: toastFocused } = useFocusWithin(toastElementRef);
 
-/** The timer waits while the pointer or keyboard focus is on the toast, or the window is in the background. */
 const timerPaused = computed(
   () =>
     toastHover.value ||

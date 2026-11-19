@@ -52,9 +52,9 @@ export function errorPageKind(status: number) {
  * the router clears the error; a referrer is loaded as a link. When page
  * middleware refused the page the user was going to, Nuxt stops the
  * navigation, the address stays on the page with the link, and back clears
- * the error to show that page again. Home is a full page load: on an error page without a page
- * before, nothing is lost, and nothing of the page that failed (an await in
- * its setup that throws again later) can overtake it.
+ * the error to show that page again. Home is a full page load: on an error
+ * page without a page before, nothing is lost, and nothing of the page that
+ * failed (an await in its setup that throws again later) can overtake it.
  *
  * `text` is a text in the page's language that says more than the status,
  * such as which item was not found; it replaces the status's own text. A
@@ -97,8 +97,7 @@ const heading = computed(() => t(`${kind.value}.heading`));
 
 useHead({ title: heading });
 
-/** The homepage, in the current locale where the app has prefixed routes */
-const home = computed(
+const localeHome = computed(
   () => (i18n && nuxtApp.$localePath?.({ path: '/' })) || '/',
 );
 
@@ -156,7 +155,7 @@ function findPrevious() {
 }
 
 const href = computed(
-  () => previous.value?.href ?? router.resolve(home.value).href,
+  () => previous.value?.href ?? router.resolve(localeHome.value).href,
 );
 
 /**
@@ -190,7 +189,6 @@ function follow(event: MouseEvent) {
   router.back();
 }
 
-/** Development only: what was thrown, in English, with its stack */
 const details = computed(() => {
   if (!import.meta.dev || !error) return '';
 

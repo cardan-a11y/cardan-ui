@@ -46,13 +46,11 @@ const {
 
 const { t } = useI18n();
 
-/** The value of an option, as the box's `value` */
 function optionValue(option: T) {
   return option[valueKey] as string | number;
 }
 
-/** A text field of an option, for a prop that takes a string */
-function text(option: T, key?: keyof T & string) {
+function optionText(option: T, key?: keyof T & string) {
   const value = key === undefined ? undefined : option[key];
 
   return value === undefined ? undefined : String(value);
@@ -81,7 +79,6 @@ function applyCustomError() {
 onMounted(applyCustomError);
 watch(() => customError, applyCustomError, { flush: 'post' });
 
-/** The error text shows after a failed submit, or for a custom error */
 const errorShown = computed(
   () =>
     customErrorActive.value ||
@@ -122,7 +119,6 @@ watch([hasSelection, message, () => required, () => options], applyValidity, {
     ]"
   >
     <template v-if="options?.length">
-      <!-- The error describes the group only while it shows -->
       <fieldset
         :aria-describedby="errorShown ? `error-${id}` : undefined"
         @change="customErrorActive = false"
@@ -144,10 +140,10 @@ watch([hasSelection, message, () => required, () => options], applyValidity, {
             <Checkbox
               v-model="model"
               :value="optionValue(option)"
-              :label="text(option, labelKey)"
+              :label="optionText(option, labelKey)"
               :disabled="disabled || !!option[disabledKey]"
-              :title="text(option, titleKey)"
-              :name="name || text(option, nameKey)"
+              :title="optionText(option, titleKey)"
+              :name="name || optionText(option, nameKey)"
               :hide-label="option.hideLabel"
               :tabindex="tabindex"
               :variant="variant"

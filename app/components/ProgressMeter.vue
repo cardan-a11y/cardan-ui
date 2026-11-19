@@ -32,13 +32,11 @@ const {
 
 const { t } = useI18n();
 
-/** 0 to 100: how far `value` is on its way from `min` to `max` */
 const percentage = computed(() => {
   const fraction = (value - min) / (max - min);
   return Math.round(Math.min(1, Math.max(0, fraction || 0)) * 100);
 });
 
-/** What the bar shows, in words: "7 of 10", or "70%" with `showPercentage` */
 const valueText = computed(() =>
   showPercentage
     ? `${percentage.value}%`

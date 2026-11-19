@@ -66,8 +66,7 @@ export default defineNuxtConfig({
     classSuffix: '-mode',
   },
 
-  // The icons the components show on first paint, in every project's client
-  // bundle; a project's own list is merged with it
+  // See bundledIcons; a project's own list is merged with it
   icon: {
     clientBundle: {
       icons: bundledIcons,

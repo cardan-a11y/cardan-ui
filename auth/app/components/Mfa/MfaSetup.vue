@@ -55,7 +55,6 @@ const {
 const formId = useId();
 const headingRef = useTemplateRef<HTMLHeadingElement>('heading');
 
-/** Headings inside a step sit one level below the step heading. */
 const subheadingLevel = computed(() => (headingLevel + 1) as 2 | 3);
 const loadingEnable = ref(false);
 
@@ -93,7 +92,6 @@ function finish() {
   emit('done');
 }
 
-// Each step replaces the content focus was in, so it moves to the new heading
 useMfaStepFocus(headingRef);
 
 // A fresh flow on arrival, and nothing of this one left behind on leaving:

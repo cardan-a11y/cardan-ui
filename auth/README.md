@@ -171,23 +171,23 @@ Everything variable is a small prop. The Cardan Academy form offers "Remember me
 
 The buttons of every form and dialog in this layer have the Cardan look: `black` for the main actions (sign in, enable, continue, confirm, done), `ghost` for skip, back and cancel, and `danger` for disabling MFA.
 
-| Prop                 | Default                        |                                                                       |
-| -------------------- | ------------------------------ | --------------------------------------------------------------------- |
-| `showPasswordToggle` | `true`                         | Reveal-password button beside the password field                      |
-| `divider`            | `false`                        | Rule between the fields and the submit button                         |
-| `remember`           | `false`                        | Show a "Remember me" checkbox, unticked; sends `remember: true` only when ticked |
-| `errorPosition`      | `'above-submit'`               | Or `'below-submit'`                                                   |
-| `size`               | `'lg'`                         | Input size                                                            |
-| `autofocus`          | `true`                         | Focus the email field on mount                                        |
-| `shake`              | `true`                         | Shake the fields when credentials are rejected                        |
-| `twoFactorPath`      | `'/two-factor-authentication'` | Where to go when a second factor is needed                            |
-| `loadingDelay`       | `0`                            | Hold the submit button loading this many ms after the request settles |
+| Prop                 | Default                        |                                                                                                                |
+| -------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `showPasswordToggle` | `true`                         | Reveal-password button beside the password field                                                               |
+| `divider`            | `false`                        | Rule between the fields and the submit button                                                                  |
+| `remember`           | `false`                        | Show a "Remember me" checkbox, unticked; sends `remember: true` only when ticked                               |
+| `errorPosition`      | `'above-submit'`               | Or `'below-submit'`                                                                                            |
+| `size`               | `'lg'`                         | Input size                                                                                                     |
+| `autofocus`          | `true`                         | Focus the email field on mount                                                                                 |
+| `shake`              | `true`                         | Shake the fields when credentials are rejected                                                                 |
+| `twoFactorPath`      | `'/two-factor-authentication'` | Where to go when a second factor is needed                                                                     |
+| `loadingDelay`       | `0`                            | Hold the submit button loading this many ms after a sign-in that navigates on, while the page transition plays |
 
-| Slot     | Scope       |                                                              |
-| -------- | ----------- | ------------------------------------------------------------ |
-| `error`  | `{ error }` | The error region, ErrorMessage with the API's error          |
+| Slot     | Scope       |                                                                |
+| -------- | ----------- | -------------------------------------------------------------- |
+| `error`  | `{ error }` | The error region, ErrorMessage with the API's error            |
 | `fields` |             | Extra fields after the password (and the remember-me checkbox) |
-| `footer` |             | Anything at the end of the form                              |
+| `footer` |             | Anything at the end of the form                                |
 
 | Model / Event   |                                                                                   |
 | --------------- | --------------------------------------------------------------------------------- |

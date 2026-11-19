@@ -12,7 +12,6 @@ const List = defineComponent({
   },
 });
 
-/** What the list exposes: the composable's two functions */
 type Exposed = ReturnType<typeof useResultsFocus>;
 
 /** Puts the list's top at a place in the viewport */

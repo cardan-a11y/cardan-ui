@@ -7,7 +7,8 @@ export function sort<T>(arr: T[] | undefined, prop: string, order = 'asc') {
   const keys = prop.split('.');
 
   arr?.sort(function (itemA, itemB) {
-    // `<` and `>` order whatever the path holds; the cast is for TypeScript only
+    // The cast is for TypeScript only: mixed types and undefined compare as
+    // JavaScript's `<` and `>` do
     const a = valueAt(itemA, keys) as number | string;
     const b = valueAt(itemB, keys) as number | string;
     if (a < b) {

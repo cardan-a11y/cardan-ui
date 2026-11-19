@@ -87,6 +87,33 @@ describe('RadioGroup', () => {
     expect(description(group)).toBe('Answer is missing');
   });
 
+  it('without a v-model, checks nothing and is missing a choice until one is made', async () => {
+    const wrapper = await mountInForm(() => [
+      h(RadioGroup, {
+        label: 'Coffee',
+        required: true,
+        options: [
+          { value: true, label: 'Yes' },
+          { value: false, label: 'No' },
+        ],
+      }),
+    ]);
+    const group = wrapper.get('fieldset');
+    const radios = wrapper.findAll<HTMLInputElement>('input[type="radio"]');
+
+    expect(radios.map((radio) => radio.element.checked)).toEqual([
+      false,
+      false,
+    ]);
+
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+    expect(description(group)).toBe('Coffee is missing');
+
+    await radios[1]!.setValue(true);
+    expect(description(group)).toBe('');
+  });
+
   it('shows a custom error, and is described by it, until another option is chosen', async () => {
     const wrapper = await mountSuspended(RadioGroup, {
       props: {

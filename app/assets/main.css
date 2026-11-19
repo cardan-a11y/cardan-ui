@@ -60,7 +60,8 @@
     var(--cardan-dark-text)
   );
   --color-accent-graphic: var(--cardan-purple-text-on-dark);
-  /* Purple fill with white text in both modes, for the primary Button: 5.1:1 */
+  /* White text on the purple fill of the primary Button in both modes: 5.1:1
+     on --color-accent, 6.3:1 on this hover */
   --color-accent-hover: color-mix(
     in srgb,
     var(--cardan-purple-on-dark) 85%,
@@ -83,7 +84,8 @@
   --color-white: var(--cardan-black);
 
   /* Dark surfaces the brand book does not define are 25% of the color over the
-     dark background. Purple uses 15%, so purple text on it keeps 4.5:1 */
+     dark background, green 20%. Purple uses 15%, so purple text on it keeps
+     4.5:1 */
 
   /* Not in the brand book: dark error text and graphics are computed with color-mix */
   --color-red: var(--cardan-error);
@@ -275,31 +277,31 @@
   --line-height-ui: 1.25;
 
   /* Font size design tokens */
-  --font-size-xxxxl: 4rem; /* 64px */
-  --font-size-xxxl: 3rem; /* 48px */
-  --font-size-xxl: 2rem; /* 32px */
-  --font-size-xl: 1.5rem; /* 24px */
-  --font-size-lg: 1.125rem; /* 18px */
-  --font-size-md: 1rem; /* 16px */
-  --font-size-sm: 0.875rem; /* 14px */
-  --font-size-xs: 0.75rem; /* 12px */
-  --font-size-xxs: 0.625rem; /* 10px */
+  --font-size-xxxxl: 4rem;
+  --font-size-xxxl: 3rem;
+  --font-size-xxl: 2rem;
+  --font-size-xl: 1.5rem;
+  --font-size-lg: 1.125rem;
+  --font-size-md: 1rem;
+  --font-size-sm: 0.875rem;
+  --font-size-xs: 0.75rem;
+  --font-size-xxs: 0.625rem;
 
   /* Size design tokens - only used by Skeleton and Spacer components */
-  --size-xxxxl: 12rem; /* 192px */
-  --size-xxxl: 8rem; /* 128px */
-  --size-xxl: 4rem; /* 64px */
-  --size-xl: 2.5rem; /* 40px */
-  --size-lg: 1.5rem; /* 24px */
-  --size-md: 1.25rem; /* 20px */
-  --size-sm: 1rem; /* 16px */
-  --size-xs: 0.75rem; /* 12px */
-  --size-xxs: 0.5rem; /* 8px */
-  --size-xxxs: 0.25rem; /* 4px */
+  --size-xxxxl: 12rem;
+  --size-xxxl: 8rem;
+  --size-xxl: 4rem;
+  --size-xl: 2.5rem;
+  --size-lg: 1.5rem;
+  --size-md: 1.25rem;
+  --size-sm: 1rem;
+  --size-xs: 0.75rem;
+  --size-xxs: 0.5rem;
+  --size-xxxs: 0.25rem;
 
   /* Inline padding of the app, also of MobileMenu's content */
   --app-padding-inline: 0.75rem;
-  /* The height of the app header: UserMenu sits under it */
+  /* The height of the app header: SidebarLayout sticks under it, UserMenu opens under it */
   --app-header-height: 3.5rem;
   /* The width of the app's content: AppHeader keeps its content within it */
   --app-max-width: 1280px;

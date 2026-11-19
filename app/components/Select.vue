@@ -63,7 +63,6 @@ const {
 
 const attrs = useAttrs();
 
-/** The attributes for the control, without the wrapper's `class` and `style` */
 function controlAttrs() {
   return Object.fromEntries(
     Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'),
@@ -105,7 +104,6 @@ watch([model, () => required, () => options], updateValidity, {
   flush: 'post',
 });
 
-/** The error text shows after a failed submit, or for a custom error */
 const errorShown = computed(
   () =>
     customErrorActive.value ||

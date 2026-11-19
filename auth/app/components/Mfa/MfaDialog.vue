@@ -31,8 +31,6 @@ const dialogLabel = computed(() => {
   return 'mfa.heading';
 });
 
-// A step replaces the content focus was in (the Enable button, the code form)
-// with the next step's, so focus moves to that content
 const stepRef = useTemplateRef<HTMLDivElement>('step');
 useMfaStepFocus(stepRef);
 

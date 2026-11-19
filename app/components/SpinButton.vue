@@ -66,7 +66,6 @@ const emit = defineEmits<{
 
 const attrs = useAttrs();
 
-/** The attributes for the control, without the wrapper's `class` and `style` */
 function controlAttrs() {
   return Object.fromEntries(
     Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'),
@@ -80,7 +79,6 @@ function toText(value: number | undefined) {
 /** What the field shows: the model, or the digits being typed */
 const text = ref(toText(model.value));
 
-/** The number in the field; none while it is empty */
 const value = computed(() =>
   text.value === '' ? undefined : Number(text.value),
 );
@@ -131,7 +129,6 @@ function applyCustomError() {
 onMounted(applyCustomError);
 watch(() => customError, applyCustomError, { flush: 'post' });
 
-/** The error text shows after a failed submit, with `show-invalid`, or for a custom error */
 const errorShown = computed(
   () =>
     customErrorActive.value ||
@@ -217,7 +214,6 @@ const atMax = computed(
   () => max !== undefined && value.value !== undefined && value.value >= max,
 );
 
-/** For the live region: the number after a button was pressed */
 const announcement = ref('');
 let announcementTimer: ReturnType<typeof setTimeout> | undefined;
 

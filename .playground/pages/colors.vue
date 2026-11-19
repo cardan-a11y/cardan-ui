@@ -15,7 +15,6 @@ useHead({ title: 'Colors' });
         <ColorSwatch color="accent-text" />
         <ColorSwatch color="accent-text-hover" />
         <ColorSwatch color="accent-graphic" />
-        <!-- <ColorSwatch color="on-accent" /> -->
       </div>
 
       <h2>Neutral</h2>
@@ -81,8 +80,8 @@ useHead({ title: 'Colors' });
         <h2 id="gradient-title">Gradient</h2>
         <p>
           The brand gradient, <code>--gradient-bg</code>, from
-          <code>--color-accent-bg</code> to <code>--color-green-bg</code>:
-          once per page, under a card, in both modes.
+          <code>--color-accent-bg</code> to <code>--color-green-bg</code>: once
+          per page, under a card, in both modes.
         </p>
       </Card>
     </section>

@@ -151,7 +151,6 @@ function getFocusableElements() {
   );
 }
 
-/** Whether the element that had focus before is in the content */
 function cameFromContent(event: FocusEvent) {
   const previous = event.relatedTarget;
   return previous instanceof Node && !!contentRef.value?.contains(previous);

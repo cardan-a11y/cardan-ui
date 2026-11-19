@@ -12,8 +12,7 @@ type MfaUserFields = {
 
 const STORAGE_KEY = 'mfa-setup-reminder';
 
-/** Whether the pending reminder was read from sessionStorage, once per page load */
-let storageRead = false;
+let reminderReadFromStorage = false;
 
 /**
  * Whether the MFA setup page stands between the user and the app.
@@ -41,8 +40,8 @@ export function useMfaSetupReminder() {
   // initializer runs on the server, where there is no sessionStorage, and its
   // null reaches the client in the payload. Nothing renders from it, so a read
   // during hydration changes no markup.
-  if (import.meta.client && !storageRead) {
-    storageRead = true;
+  if (import.meta.client && !reminderReadFromStorage) {
+    reminderReadFromStorage = true;
     pendingFor.value = sessionStorage.getItem(STORAGE_KEY);
   }
 
@@ -50,12 +49,10 @@ export function useMfaSetupReminder() {
   const mfaRequired = computed(() => !!fields.value?.mfa_required);
   const mfaExempt = computed(() => !!fields.value?.mfa_exempt);
 
-  /** The API takes part, MFA is off, and the account is not exempted. */
+  const apiReportsMfa = computed(() => fields.value?.mfa_enabled !== undefined);
+
   const needsMfaSetup = computed(
-    () =>
-      fields.value?.mfa_enabled !== undefined &&
-      !mfaEnabled.value &&
-      !mfaExempt.value,
+    () => apiReportsMfa.value && !mfaEnabled.value && !mfaExempt.value,
   );
 
   /**

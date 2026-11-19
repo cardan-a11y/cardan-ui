@@ -15,7 +15,9 @@
  * `app.head` or a plugin that reads `useError()`, not in a layout's
  * `useHead()`: Nuxt removes an unmounted component's head entries only once
  * a running page transition has finished, and a page that fails while
- * pending behind one leaves it unfinished, so its entries stay.
+ * pending behind one leaves it unfinished, so its entries stay. This holds
+ * for Nuxt 4.6.4, whose client head defers an entry's `dispose` until the
+ * transition's promise settles.
  *
  * A page says more in the page's language with `data: { text }`:
  * `createError({ status: 404, data: { text: t('audit.not-found') } })`.

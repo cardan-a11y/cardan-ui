@@ -43,7 +43,6 @@ describe('MenuList', () => {
       ['button', 'Sign out'],
     ]);
 
-    // No menu roles
     expect(wrapper.find('[role^="menu"]').exists()).toBe(false);
 
     expect(await checkA11y()).toHaveNoViolations();

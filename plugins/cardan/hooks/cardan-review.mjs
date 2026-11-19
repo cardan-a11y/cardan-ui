@@ -76,7 +76,6 @@ function git(cwd, ...args) {
   }).trim();
 }
 
-/** The GitHub name of the repository at `dir`, or undefined. */
 function repositoryName(dir) {
   try {
     const remote = git(dir, 'remote', 'get-url', 'origin');
@@ -333,7 +332,6 @@ function gate() {
   }
 }
 
-/** The repository the session started in, or undefined outside one. */
 function sessionRoot(input) {
   try {
     return git(process.env.CLAUDE_PROJECT_DIR ?? input.cwd ?? process.cwd(), 'rev-parse', '--show-toplevel');

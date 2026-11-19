@@ -43,7 +43,6 @@ const folder = resolve(
   args.find((arg) => !arg.startsWith('--')) ?? join(root, '..'),
 );
 
-/** The scripts in the project's package.json, empty without one */
 function scriptsOf(dir) {
   try {
     const { scripts } = JSON.parse(
@@ -55,7 +54,6 @@ function scriptsOf(dir) {
   }
 }
 
-/** Runs the project's script, with its output on this terminal */
 function run(name, dir, script) {
   console.log(`\n▶ ${name}: pnpm run ${script}\n`);
   const { status } = spawnSync('pnpm', ['run', script], {

@@ -14,8 +14,9 @@
  * a container. It gives the content it covers a `scroll-margin-block-start`
  * of its height instead, set in the same container query (through an
  * inherited variable where that content holds a container of its own,
- * which its rules would query instead). The look is the app's: `--app-header-bg`, `--app-header-border-color`,
- * `--app-header-max-width` and `--app-header-gap`.
+ * which its rules would query instead). The look is the app's:
+ * `--app-header-bg`, `--app-header-border-color`, `--app-header-max-width`
+ * and `--app-header-gap`.
  */
 </script>
 

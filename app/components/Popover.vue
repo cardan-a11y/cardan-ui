@@ -37,7 +37,6 @@ const {
   id?: string;
 }>();
 
-// The smallest triggers have the small radius
 const computedStyle = computed(() => ({
   '--popover-font-size': fontSize && `var(--font-size-${fontSize})`,
   '--popover-icon-size': iconSize && `var(--font-size-${iconSize})`,

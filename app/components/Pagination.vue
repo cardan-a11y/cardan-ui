@@ -48,8 +48,8 @@ function moveFocusOn() {
   const index = active ? buttons.indexOf(active) : -1;
   if (index === -1 || !active?.disabled) return;
 
-  // first, previous | next, last
-  const other = buttons[index < 2 ? 2 : 1];
+  const [first, previous, next] = buttons;
+  const other = active === first || active === previous ? next : previous;
   if (other && !other.disabled) other.focus();
   else pageTextRef.value?.focus();
 }

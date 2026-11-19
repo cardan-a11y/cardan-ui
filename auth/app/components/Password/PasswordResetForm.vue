@@ -19,7 +19,6 @@ const { remindMfaSetup } = useMfaSetupReminder();
 const { createToast } = useToast();
 const { t } = useI18n();
 
-/** The address in the reset link, when the mail carries one. */
 const linkEmail = computed(() => String(route.query.email ?? ''));
 const token = computed(() => String(route.query.token ?? ''));
 

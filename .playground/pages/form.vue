@@ -492,7 +492,6 @@ async function handleSubmit(formData: FormData) {
       <template v-if="raw">
         <hr class="demo-divider" />
         <pre><code>{{ raw }}</code></pre>
-        <!-- <MarkdownPreview :content="'```ts\n' + raw + '\n```'" /> -->
       </template>
     </Card>
 

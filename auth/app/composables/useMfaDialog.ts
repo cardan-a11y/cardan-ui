@@ -7,19 +7,12 @@ export function useMfaDialog() {
   const { isPasswordConfirmed, requestPasswordConfirmation } =
     usePasswordConfirmation();
 
-  /**
-   * Loading state for whatever opens the recovery codes dialog, while it checks
-   * whether the password was confirmed recently.
-   */
+  // While opening checks whether the password was confirmed recently
   const loadingMfaRecoveryCodesDialog = useState(
     'loadingMfaRecoveryCodesDialog',
     () => false,
   );
 
-  /**
-   * Loading state for whatever opens the disable dialog, while it checks
-   * whether the password was confirmed recently.
-   */
   const loadingMfaDisableDialog = useState(
     'loadingMfaDisableDialog',
     () => false,

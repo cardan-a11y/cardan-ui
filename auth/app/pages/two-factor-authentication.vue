@@ -8,7 +8,8 @@
 definePageMeta({
   // Read by nuxt-auth-sanctum's global middleware, so it lets the
   // not-yet-authenticated user through instead of sending them back to login.
-  // `sanctum:guest` can't be used here: global mode doesn't register it.
+  // `sanctum:guest` can't be used here: nuxt-auth-sanctum (3.1.5) registers it
+  // only with `globalMiddleware` off.
   sanctum: { guestOnly: true },
 });
 

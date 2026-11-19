@@ -20,8 +20,7 @@ onBeforeUnmount(resetMfa);
 
 const codeListRef = useTemplateRef<{ focusHeading: () => void }>('codeList');
 
-/** Asking to replace the codes, before the new ones are there. */
-const isConfirming = computed(() => !recoveryCodes.value.length);
+const awaitingNewCodes = computed(() => !recoveryCodes.value.length);
 
 /**
  * The generate button gives way to the new codes, so focus moves to their
@@ -46,7 +45,10 @@ async function handleGenerate() {
     :click-outside="false"
     @close="resetMfa()"
   >
-    <p v-if="isConfirming" class="mfa-recovery-codes-regenerate-description">
+    <p
+      v-if="awaitingNewCodes"
+      class="mfa-recovery-codes-regenerate-description"
+    >
       {{ $t('mfa.recovery-codes-regenerate-description') }}
     </p>
 
@@ -62,7 +64,7 @@ async function handleGenerate() {
 
     <template #buttons>
       <Button
-        v-if="isConfirming"
+        v-if="awaitingNewCodes"
         variant="black"
         :label="$t('mfa.recovery-codes-generate')"
         icon="material-symbols:refresh-rounded"

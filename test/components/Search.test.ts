@@ -16,7 +16,6 @@ async function mountSearch(props: Record<string, unknown> = {}) {
     attachTo: document.body,
   });
 
-  /** The button with this name, if there is one */
   const button = (name: string) =>
     wrapper.findAll('button').find((button) => accessibleName(button) === name);
 

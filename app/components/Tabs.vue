@@ -24,7 +24,6 @@ const id = useId();
 const tablistRef = useTemplateRef<HTMLElement>('tablist');
 const tabpanelRef = useTemplateRef('tabpanel');
 
-/** The enabled tabs in the order they are on the page */
 function enabledTabElements() {
   return Array.from(
     tablistRef.value?.querySelectorAll<HTMLButtonElement>(
@@ -184,7 +183,7 @@ defineExpose({
     transition-duration: var(--duration-sm);
     transition-timing-function: ease-in-out;
 
-    /* disable focus outline on tab */
+    /* The focus ring is on the tab list, below */
     outline-color: transparent;
 
     .iconify {
@@ -214,7 +213,6 @@ defineExpose({
     }
   }
 
-  /* show focus outline on tab list */
   &:has(:focus-visible) {
     outline-offset: 2px;
     outline: 2px solid var(--focus-color);

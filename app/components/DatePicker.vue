@@ -24,7 +24,6 @@ const dateFnsLocales: Record<string, DateFnsLocale> = { nl, en: enGB };
 
 const computedLocale = computed(() => dateFnsLocales[locale.value] ?? enGB);
 
-// https://vue3datepicker.com/props/modes/
 const {
   formats = { input: 'yyyy-MM-dd', preview: 'yyyy-MM-dd' },
   enableTimePicker = false,
@@ -113,7 +112,6 @@ function applyCustomError() {
 
 watch(() => customError, applyCustomError, { flush: 'post' });
 
-/** The error text shows after a failed submit, or for a custom error */
 const errorShown = computed(
   () =>
     customErrorActive.value ||
@@ -122,8 +120,7 @@ const errorShown = computed(
 
 const attrs = useAttrs();
 
-/** The attributes for the date picker, without the wrapper's and the input's */
-function controlAttrs() {
+function datePickerAttrs() {
   return Object.fromEntries(
     Object.entries(attrs).filter(
       ([key]) =>
@@ -135,11 +132,12 @@ function controlAttrs() {
 }
 
 /**
- * The library takes no `aria-describedby` or `aria-invalid` for its input,
- * so they are set on the input itself. The error describes the input only
- * while it shows; a project's own `aria-describedby` comes first. `attrs` is
- * not reactive, so this runs after every render, which a changed attribute
- * causes, and when the error shows or hides.
+ * @vuepic/vue-datepicker 14 takes no `aria-describedby` or `aria-invalid` in
+ * `inputAttrs`, so they are set on its input itself. The library's `dp-input`
+ * slot, with an input of our own, is the alternative. The error describes
+ * the input only while it shows; a project's own `aria-describedby` comes
+ * first. `attrs` is not reactive, so this runs after every render, which a
+ * changed attribute causes, and when the error shows or hides.
  */
 function describeInput() {
   const input = document.getElementById(inputId);
@@ -182,11 +180,13 @@ function preventEscape(event: KeyboardEvent) {
 }
 
 /**
- * The library cancels every key but Tab in its input while text input is
- * off, Escape included, so a Dialog around it never got its `cancel`. While
- * the calendar is closed, the input's own handler cannot cancel Escape (from
- * the capture phase until the event leaves the wrapper), so the browser
- * closes the dialog; a handler further up can still cancel it.
+ * A patch for @vuepic/vue-datepicker 14, which cancels every key but Tab in
+ * its input while text input is off, Escape included, so a Dialog around it
+ * never got its `cancel`. While the calendar is closed, the input's own
+ * handler cannot cancel Escape (from the capture phase until the event leaves
+ * the wrapper), so the browser closes the dialog; a handler further up can
+ * still cancel it. It can go once the library leaves Escape alone, or once
+ * the field renders its own input in the library's `dp-input` slot.
  */
 function releaseEscape(event: KeyboardEvent) {
   if (
@@ -278,7 +278,7 @@ const computedAriaLabels = computed(() => {
       :id="id"
       ref="datepicker"
       v-model="model"
-      v-bind="controlAttrs()"
+      v-bind="datePickerAttrs()"
       auto-apply
       :esc-close="escClose"
       :text-input="textInput"
@@ -413,7 +413,6 @@ const computedAriaLabels = computed(() => {
   outline: 1px solid var(--color-red-graphic);
 }
 
-/* Sizes */
 .datepicker-size--sm .dp--input {
   min-height: 2rem;
 }

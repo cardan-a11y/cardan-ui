@@ -81,7 +81,6 @@ async function mountUserMenu(logout = vi.fn()) {
     trigger.getAttribute('popovertarget')!,
   )!;
 
-  /** The element in the panel with this name */
   const item = (name: string) => {
     const found = Array.from(
       panel.querySelectorAll<HTMLElement>('a, button'),

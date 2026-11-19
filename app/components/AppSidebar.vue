@@ -31,8 +31,7 @@ const {
 
 const { isCollapsed, toggle } = useAppSidebar();
 
-/** Of the landmark, and of the button that folds it */
-const name = computed(() => label || $t('aria.sidebar'));
+const accessibleName = computed(() => label || $t('aria.sidebar'));
 
 // The server knows nothing of this browser's choice: this script puts it on
 // `<html>` before the first paint, so the page does not open wide and slide
@@ -47,7 +46,7 @@ if (import.meta.server && collapsible) {
 <template>
   <aside
     :id="id"
-    :aria-label="name"
+    :aria-label="accessibleName"
     :class="[
       'app-sidebar',
       collapsible && 'is-collapsible',
@@ -71,7 +70,7 @@ if (import.meta.server && collapsible) {
         @click="toggle"
       >
         <Icon name="material-symbols:dock-to-right-outline-rounded" />
-        <span class="visuallyhidden">{{ name }}</span>
+        <span class="visuallyhidden">{{ accessibleName }}</span>
       </button>
     </div>
   </aside>

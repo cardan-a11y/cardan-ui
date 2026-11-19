@@ -47,7 +47,6 @@ const PRODUCT_FONT_SIZE = 32;
 const PRODUCT_BASELINE = 31.2;
 
 const showProduct = computed(() => !!product && form === 'full');
-// Always with a capital: 'academy' is shown as Academy
 const productText = computed(() =>
   product ? `${product.charAt(0).toUpperCase()}${product.slice(1)}` : '',
 );
@@ -108,7 +107,6 @@ const computedStyle = computed(() => ({
     >
       <circle v-if="round" class="logo-tile" cx="20" cy="20" r="20" />
       <rect v-else class="logo-tile" width="40" height="40" rx="5" />
-      <!-- Symbol at 56% of the tile, 60% in a round tile -->
       <g
         :transform="
           round ? 'translate(8 8) scale(0.6)' : 'translate(8.8 8.8) scale(0.56)'
@@ -283,7 +281,6 @@ const computedStyle = computed(() => ({
   --logo-product: #141413;
 }
 
-/* Purple symbol */
 .cardan-logo-variant--purple {
   --logo-green: #8e40b5;
   --logo-purple: #8e40b5;

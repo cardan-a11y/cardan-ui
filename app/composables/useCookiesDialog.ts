@@ -24,7 +24,7 @@ export function useCookiesDialog() {
     }),
   );
 
-  // The choice is remembered for a year; the cookie keeps its name
+  // The name stays, so consents given before still apply
   const consentCookie = useCookie<CookieConsent | null>('cookieConsent', {
     maxAge: 60 * 60 * 24 * 365,
   });

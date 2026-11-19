@@ -79,7 +79,6 @@ function applyCustomError() {
 onMounted(applyCustomError);
 watch(() => customError, applyCustomError, { flush: 'post' });
 
-/** The error text shows after a failed submit, or for a custom error */
 const errorShown = computed(
   () =>
     customErrorActive.value ||
@@ -154,14 +153,12 @@ const isExpanded = ref(false);
 
 const attrs = useAttrs();
 
-/** The attributes for the control, without the wrapper's `class` and `style` */
 function controlAttrs() {
   return Object.fromEntries(
     Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'),
   );
 }
 
-// An open-direction passed by the parent wins over the automatic placement
 const fixedOpenDirection = computed(
   () =>
     (attrs.openDirection ?? attrs['open-direction']) as
@@ -174,6 +171,8 @@ const availableHeight = ref<number>();
 // Opens the dropdown upwards when it doesn't fit below the field but there is
 // more room above, and caps its height to the room on that side. Inside a
 // popover the page can't scroll, so a dropdown past the viewport is unreachable.
+// The library has no placement of its own; `position-try-fallbacks` can take
+// this over once every target browser has anchor positioning (README).
 async function placeDropdown() {
   if (fixedOpenDirection.value) return;
 
@@ -230,8 +229,6 @@ function restoreBlur(event: KeyboardEvent) {
     Reflect.deleteProperty(event.target as HTMLElement, 'blur');
   }
 }
-
-// https://github.com/vueform/multiselect#events
 </script>
 
 <template>
@@ -266,6 +263,7 @@ function restoreBlur(event: KeyboardEvent) {
     @keydown.capture="keepFocusOnEscape"
     @keydown="restoreBlur"
   >
+    <!-- Its events: https://github.com/vueform/multiselect#events -->
     <Multiselect
       v-bind="controlAttrs()"
       :id="id"
@@ -372,7 +370,6 @@ function restoreBlur(event: KeyboardEvent) {
   --ms-border-color: var(--color-grey-graphic);
   --ms-border-width: 1px;
   --ms-border-color-active: var(--color-grey-graphic);
-  /* --ms-border-width-active: 1px; */
   --ms-radius: var(--radius-md);
   --ms-py: 0.35em;
   --ms-px: 0.5em;
@@ -387,32 +384,18 @@ function restoreBlur(event: KeyboardEvent) {
   --ms-clear-color-hover: var(--color-text);
 
   --ms-tag-font-size: var(--font-size-xs);
-  /* --ms-tag-line-height: 1.25rem; */
   --ms-tag-font-weight: var(--font-weight-medium);
   --ms-tag-bg: var(--color-accent-bg);
   --ms-tag-bg-disabled: var(--color-grey-bg);
   --ms-tag-color: var(--color-accent-text);
   --ms-tag-color-disabled: var(--color-grey-graphic);
   --ms-tag-radius: var(--radius-sm);
-  /* --ms-tag-py: 0.125rem; */
-  /* --ms-tag-px: 0.5rem; */
-  /* --ms-tag-my: 0.25rem; */
-  /* --ms-tag-mx: 0.25rem; */
-
-  /* --ms-tag-remove-radius: 4px; */
-  /* --ms-tag-remove-py: 0.25rem; */
-  /* --ms-tag-remove-px: 0.25rem; */
-  /* --ms-tag-remove-my: 0rem; */
-  /* --ms-tag-remove-mx: 0.125rem; */
 
   --ms-dropdown-bg: var(--color-card-bg);
   --ms-dropdown-border-color: var(--color-grey-graphic);
   --ms-dropdown-border-width: 1px;
   --ms-dropdown-radius: var(--radius-md);
 
-  /* --ms-group-label-py: 0.3rem; */
-  /* --ms-group-label-px: 0.75rem; */
-  /* --ms-group-label-line-height: 1.375; */
   --ms-group-label-bg: var(--color-white);
   --ms-group-label-color: var(--color-grey-text);
   --ms-group-label-bg-pointed: var(--color-grey-bg);
@@ -423,11 +406,8 @@ function restoreBlur(event: KeyboardEvent) {
   --ms-group-label-color-selected: var(--color-white);
   --ms-group-label-bg-selected-pointed: var(--color-accent-text);
   --ms-group-label-color-selected-pointed: var(--color-white);
-  /* --ms-group-label-bg-selected-disabled: #75cfb1; */
-  /* --ms-group-label-color-selected-disabled: #d1fae5; */
 
   --ms-option-font-size: var(--font-size-sm);
-  /* --ms-option-line-height: 1.375; */
   /* The pointed (hovered or keyboard-highlighted) option needs a 3:1 contrast change */
   --ms-option-bg-pointed: var(--color-accent-bg);
   --ms-option-color-pointed: var(--color-accent-text);
@@ -439,10 +419,6 @@ function restoreBlur(event: KeyboardEvent) {
   --ms-option-color-selected-pointed: var(--color-red-text);
   --ms-option-bg-selected-disabled: var(--color-grey-bg);
   --ms-option-color-selected-disabled: var(--color-grey-graphic);
-  /* --ms-option-py: 0.5rem; */
-  /* --ms-option-px: 0.75rem; */
-
-  /* --ms-empty-color: #4B5563; */
 }
 
 .multiselect-wrapper {
@@ -462,11 +438,7 @@ function restoreBlur(event: KeyboardEvent) {
 
   overflow: auto;
   scroll-snap-type: x mandatory;
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
-  &::-webkit-scrollbar {
-    display: none; /* Chrome and Safari */
-  }
+  scrollbar-width: none;
 }
 
 .cardan-multiselect {

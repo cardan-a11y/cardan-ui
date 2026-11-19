@@ -20,7 +20,7 @@ export function useLogoutDialog() {
    */
   async function handleLogout() {
     // Nothing to end: a session that already expired. nuxt-auth-sanctum
-    // refuses to sign out then; the dialog has done its job.
+    // (3.1.5) throws on `logout()` then; the dialog has done its job.
     if (isAuthenticated.value) {
       // nuxt-auth-sanctum awaits this hook after the API signed out, before
       // it goes to `redirect.onLogout`: the dialog finishes closing on its own

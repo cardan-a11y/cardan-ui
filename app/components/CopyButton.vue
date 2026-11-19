@@ -52,7 +52,6 @@ async function handleClick() {
 
 onUnmounted(() => clearTimeout(reset));
 
-/** "Copied" or "Copy failed" for a moment after a click, "Copy" otherwise */
 const label = computed(() => {
   if (copied.value) return t('general.copied');
   if (failed.value) return t('general.copy-failed');

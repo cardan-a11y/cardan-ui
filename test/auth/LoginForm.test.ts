@@ -271,6 +271,16 @@ describe.each(scenarios)('LoginForm ($name)', (scenario) => {
     expect(requests(identity)).toEqual([]);
   });
 
+  it('is no longer busy once a sign-in fails, also with a loading delay', async () => {
+    fortify({ [login]: refuseWith(scenario.loginRefused) });
+    const { wrapper, submit, signIn } = await mountForm({ loadingDelay: 1000 });
+
+    await signIn();
+
+    expect(wrapper.find('[role="alert"]').exists()).toBe(true);
+    expect(submit.attributes('aria-busy')).toBeUndefined();
+  });
+
   it('is busy while the API answers, and a second click sends nothing', async () => {
     const answer = pending({});
     fortify({ [login]: answer.handler, [identity]: refuse(500) });

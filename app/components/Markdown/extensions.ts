@@ -66,10 +66,10 @@ function isExternal(href: string, origin?: unknown) {
 /**
  * A link to another site opens in a new window and says so in hidden text at
  * its end, and not in a title too, which a screen reader would read again, as
- * Button does. The text comes
- * from `env.newWindowLabel` (MarkdownPreview, per render) or the `label`
- * option (MarkdownEditor, whose preview renders without an env). A link that
- * already has `target="_blank"` (a trusted text) gets the hidden text too.
+ * Button does. The text comes from `env.newWindowLabel` (MarkdownPreview, per
+ * render) or the `label` option (MarkdownEditor, whose preview renders without
+ * an env). A link that already has `target="_blank"` (a trusted text) gets the
+ * hidden text too.
  */
 export function targetBlankExtension(
   md: MarkdownIt,
