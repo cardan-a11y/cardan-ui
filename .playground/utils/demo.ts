@@ -21,6 +21,11 @@ export const navList: MenuItem[] = [
     label: 'Error page',
   },
   {
+    id: 'announcer',
+    to: '/announcer',
+    label: 'Status messages',
+  },
+  {
     id: 'colors',
     to: '/colors',
     label: 'Colors',

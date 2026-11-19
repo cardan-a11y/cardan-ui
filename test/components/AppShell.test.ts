@@ -5,6 +5,7 @@ import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { AppHeader, AppShell, Dialog, MobileMenu } from '#components';
 import { accessibleName, checkA11y, expectFocused, roleOf } from '../a11y';
 import { afterRouteFocus } from '../dom';
+import { useAnnounce } from '#imports';
 
 /**
  * AppShell puts the skip link first and takes focus after a navigation
@@ -52,6 +53,23 @@ describe('AppShell', () => {
     expect(target.getAttribute('tabindex')).toBe('-1');
 
     expect(await checkA11y()).toHaveNoViolations();
+  });
+
+  it('provides the polite and the assertive live region of useAnnounce()', async () => {
+    await mountSuspended(AppShell, {
+      slots: { default: page },
+      attachTo: document.body,
+    });
+    useAnnounce().assertive('Email is required');
+    await nextTick();
+
+    const regions = document.querySelectorAll('#teleports [aria-live]');
+    expect(Array.from(regions, (r) => r.getAttribute('aria-live'))).toEqual([
+      'polite',
+      'assertive',
+    ]);
+    expect(regions[1]!.textContent).toContain('Email is required');
+    useAnnounce().announcements.value = { polite: [], assertive: [] };
   });
 
   it('takes its own skip links, in order', async () => {

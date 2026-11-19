@@ -39,6 +39,12 @@ useHead({ title: 'Changelog' });
           checked.
         </li>
         <li>
+          New: <NuxtLink to="/announcer">useAnnounce()</NuxtLink> reads out a
+          status message in one of two fixed live regions, polite or assertive,
+          which AppShell renders; a message equal to the previous one is read
+          out again.
+        </li>
+        <li>
           New message keys <code>general.first-name</code> and
           <code>general.last-name</code>, for a first and a last name in two
           fields.

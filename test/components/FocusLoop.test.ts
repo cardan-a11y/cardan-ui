@@ -90,11 +90,11 @@ describe('FocusLoop', () => {
     expect(document.querySelectorAll('[inert]')).toHaveLength(0);
   });
 
-  it('keeps the toasts reachable inside #teleports, and nothing else for a live region deeper down', async () => {
+  it('keeps the toasts and the announcer reachable inside #teleports, and nothing else for a live region deeper down', async () => {
     const { header } = addPage();
     const teleports = document.createElement('div');
     teleports.innerHTML =
-      '<div class="toast-manager" aria-live="polite"><button>Close</button></div><div id="other"></div>';
+      '<div class="toast-manager" aria-live="polite"><button>Close</button></div><div class="announcer" role="log" aria-live="assertive"></div><div id="other"></div>';
     // A page section with a tooltip in it: inert as a whole, trigger included
     const section = document.createElement('section');
     section.innerHTML =
@@ -106,6 +106,7 @@ describe('FocusLoop', () => {
     expect(inert(header)).toBe(true);
     expect(inert(teleports)).toBe(false);
     expect(inert(teleports.querySelector('.toast-manager')!)).toBe(false);
+    expect(inert(teleports.querySelector('.announcer')!)).toBe(false);
     expect(inert(teleports.querySelector('#other')!)).toBe(true);
     expect(inert(section)).toBe(true);
 

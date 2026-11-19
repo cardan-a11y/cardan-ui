@@ -56,7 +56,7 @@ function elementsOutside(container: HTMLElement) {
   function take(element: Element) {
     if (element.hasAttribute('aria-live')) return;
 
-    if (element.querySelector('.toast-manager')) {
+    if (element.querySelector('.toast-manager, .announcer')) {
       for (const child of element.children) take(child);
       return;
     }
