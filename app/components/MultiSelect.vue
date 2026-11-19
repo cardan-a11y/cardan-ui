@@ -64,25 +64,12 @@ const hasValue = computed(() =>
     : model.value !== undefined && model.value !== null && model.value !== '',
 );
 
-const formShowInvalid = inject(formShowInvalidKey, ref(false));
-const customErrorActive = ref(false);
-
-/**
- * The custom error shows like the missing value, and describes the field,
- * but does not keep the form from submitting again: the server judges the
- * next attempt, and the parent moves focus to the field (`focusElement()`)
- */
-function applyCustomError() {
-  customErrorActive.value = !!customError;
-}
-
-onMounted(applyCustomError);
-watch(() => customError, applyCustomError, { flush: 'post' });
-
-const errorShown = computed(
-  () =>
-    customErrorActive.value ||
-    (required && !hasValue.value && (showInvalid || formShowInvalid.value)),
+const { customErrorActive, clearCustomError, errorShown } = useCustomError(
+  () => customError,
+  {
+    invalid: () => required && !hasValue.value,
+    showInvalid: () => showInvalid,
+  },
 );
 
 // The error describes the field only while it shows
@@ -151,13 +138,7 @@ defineExpose({
 
 const isExpanded = ref(false);
 
-const attrs = useAttrs();
-
-function controlAttrs() {
-  return Object.fromEntries(
-    Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'),
-  );
-}
+const { attrs, controlAttrs } = useControlAttrs();
 
 const fixedOpenDirection = computed(
   () =>
@@ -284,7 +265,7 @@ function restoreBlur(event: KeyboardEvent) {
       :multiple-label="formatMultipleLabels"
       :open-direction="fixedOpenDirection ?? openDirection"
       @focusin="handleFocusIn"
-      @change="customErrorActive = false"
+      @change="clearCustomError"
       @open="
         isExpanded = true;
         placeDropdown();

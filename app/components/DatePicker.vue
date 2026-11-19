@@ -11,8 +11,15 @@ import type { Day, Locale as DateFnsLocale } from 'date-fns';
 import type { StyleValue } from 'vue';
 import '@vuepic/vue-datepicker/dist/main.css';
 
-// An attribute goes to the date picker, `aria-describedby` to its input;
-// `class` and `style` stay on the wrapper
+/**
+ * A date field on @vuepic/vue-datepicker. The input is our own, in the
+ * library's `dp-input` slot, so that its label, description, error state and
+ * keys follow FormField like the other fields; the library keeps the calendar,
+ * the icon and the clear button. An attribute goes to the date picker,
+ * `aria-describedby` and `placeholder` to the input, `class` and `style` to the
+ * wrapper. What the library put on its own input does not reach this one:
+ * `ariaLabels.input`, the classes of `ui.input` and its `invalid` event.
+ */
 defineOptions({ inheritAttrs: false });
 
 const model = defineModel<ModelValue>();
@@ -43,9 +50,11 @@ const {
   showInvalid = false,
   instruction = undefined,
   customError = undefined,
+  disabled = false,
+  textInput = false,
   label,
 } = defineProps<{
-  /** Names the input, also for the library's own label of it */
+  /** Names the input through its `<label>` */
   label: string;
   formats?: Partial<FormatsConfig>;
   disabled?: boolean;
@@ -79,89 +88,90 @@ const {
 }>();
 
 const inputId = `dp-input-${id}`;
+const menuId = `dp-menu-${id}`;
 
-const computedInputAttrs = computed(() => {
-  return {
-    // The label points to this id
-    id: inputId,
-    required: required,
-    name: name,
-    autocomplete: autocomplete,
-    clearable: clearable,
-    alwaysClearable: alwaysClearable,
-    hideInputIcon: hideInputIcon,
-  };
-});
+// The library still reads these for its icon and clear button; our own input
+// in the `dp-input` slot takes the rest
+const computedInputAttrs = computed(() => ({
+  clearable,
+  alwaysClearable,
+  hideInputIcon,
+}));
 
 const datepickerRef = useTemplateRef('datepicker');
 const colorMode = useColorMode();
 const isMounted = ref(false);
 const isDark = computed(() => isMounted.value && colorMode.value === 'dark');
 
-const formShowInvalid = inject(formShowInvalidKey, ref(false));
-const customErrorActive = ref(false);
-
-/**
- * The custom error shows like the missing date, and describes the field,
- * but does not keep the form from submitting again: the server judges the
- * next attempt
- */
-function applyCustomError() {
-  customErrorActive.value = !!customError;
-}
-
-watch(() => customError, applyCustomError, { flush: 'post' });
-
-const errorShown = computed(
-  () =>
-    customErrorActive.value ||
-    (required && !model.value && (showInvalid || formShowInvalid.value)),
+const { customErrorActive, clearCustomError, errorShown } = useCustomError(
+  () => customError,
+  { invalid: () => required && !model.value, showInvalid: () => showInvalid },
 );
 
-const attrs = useAttrs();
+// The input takes these itself; the rest goes to the date picker
+const { attrs, controlAttrs: datePickerAttrs } = useControlAttrs([
+  'aria-describedby',
+  'ariaDescribedby',
+  'placeholder',
+]);
 
-function datePickerAttrs() {
-  return Object.fromEntries(
-    Object.entries(attrs).filter(
-      ([key]) =>
-        !['class', 'style', 'aria-describedby', 'ariaDescribedby'].includes(
-          key,
-        ),
-    ),
+/**
+ * A project's own `aria-describedby` comes first, then the instruction, then
+ * the error while it shows. A function, not a computed: `attrs` is not
+ * reactive, but the template that calls it renders again when they change.
+ */
+function describedBy() {
+  return (
+    [
+      attrs['aria-describedby'] ?? attrs.ariaDescribedby,
+      instruction && `instruction-${id}`,
+      errorShown.value && `error-${id}`,
+    ]
+      .filter(Boolean)
+      .join(' ') || undefined
   );
 }
 
-/**
- * @vuepic/vue-datepicker 14 takes no `aria-describedby` or `aria-invalid` in
- * `inputAttrs`, so they are set on its input itself. The library's `dp-input`
- * slot, with an input of our own, is the alternative. The error describes
- * the input only while it shows; a project's own `aria-describedby` comes
- * first. `attrs` is not reactive, so this runs after every render, which a
- * changed attribute causes, and when the error shows or hides.
- */
-function describeInput() {
-  const input = document.getElementById(inputId);
-  if (!input) return;
-
-  const describedBy = [
-    attrs['aria-describedby'] ?? attrs.ariaDescribedby,
-    instruction && `instruction-${id}`,
-    errorShown.value && `error-${id}`,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
-  if (describedBy) input.setAttribute('aria-describedby', describedBy);
-  else input.removeAttribute('aria-describedby');
-
-  if (errorShown.value) input.setAttribute('aria-invalid', 'true');
-  else input.removeAttribute('aria-invalid');
+function placeholder() {
+  return attrs.placeholder as string | undefined;
 }
 
-watch(errorShown, describeInput, { flush: 'post' });
-onUpdated(describeInput);
+function isReadonly() {
+  const value = attrs.readonly;
+  return value !== undefined && value !== false && value !== 'false';
+}
 
 const isExpanded = ref(false);
+const isFocused = ref(false);
+
+/** The classes the library gives its own input, which its CSS and ours use */
+function inputClasses(isMenuOpen: boolean) {
+  return {
+    'dp--input': true,
+    'dp--pointer': !disabled && !isReadonly() && !textInput,
+    'dp--disabled': disabled,
+    'dp--input-readonly': !textInput,
+    'dp--input-reg': !textInput,
+    'dp--input-not-clearable': !clearable,
+    'dp--input-icon-pad': !hideInputIcon,
+    'dp--input-focus': isFocused.value || isMenuOpen,
+  };
+}
+
+/**
+ * The library's key handler opens the calendar on Enter, submits a typed date
+ * on Tab and Enter, and cancels every other key while text input is off. It
+ * does not get Escape while the calendar is closed, so the browser can still
+ * close a Dialog around the field.
+ */
+function handleKeydown(
+  event: KeyboardEvent,
+  isMenuOpen: boolean,
+  libraryHandler: (event: KeyboardEvent) => void,
+) {
+  if (event.key === 'Escape' && !isMenuOpen) return;
+  libraryHandler(event);
+}
 
 function handleOpen() {
   isExpanded.value = true;
@@ -171,6 +181,7 @@ function handleClose() {
   isExpanded.value = false;
 }
 
+// Escape in the open calendar closes it, not a Dialog around the field
 function preventEscape(event: KeyboardEvent) {
   if (event.key === 'Escape' && isExpanded.value) {
     event.preventDefault();
@@ -179,33 +190,8 @@ function preventEscape(event: KeyboardEvent) {
   }
 }
 
-/**
- * A patch for @vuepic/vue-datepicker 14, which cancels every key but Tab in
- * its input while text input is off, Escape included, so a Dialog around it
- * never got its `cancel`. While the calendar is closed, the input's own
- * handler cannot cancel Escape (from the capture phase until the event leaves
- * the wrapper), so the browser closes the dialog; a handler further up can
- * still cancel it. It can go once the library leaves Escape alone, or once
- * the field renders its own input in the library's `dp-input` slot.
- */
-function releaseEscape(event: KeyboardEvent) {
-  if (
-    event.key === 'Escape' &&
-    !isExpanded.value &&
-    (event.target as Element).id === inputId
-  ) {
-    event.preventDefault = () => {};
-  }
-}
-
-function restoreEscape(event: KeyboardEvent) {
-  Reflect.deleteProperty(event, 'preventDefault');
-}
-
 onMounted(() => {
   isMounted.value = true;
-  applyCustomError();
-  describeInput();
   document.addEventListener('keydown', preventEscape);
 });
 
@@ -229,8 +215,6 @@ const computedAriaLabels = computed(() => {
       computedLocale.value.localize.day(((day + weekStart.value) % 7) as Day, {
         width: 'wide',
       }),
-    // The library's `aria-label` on the input wins over the `<label>`
-    input: label,
     clearInput: t('datepicker.clearInput'),
     toggleOverlay: t('datepicker.toggleOverlay'),
     calendarWrap: t('datepicker.calendarWrap'),
@@ -271,8 +255,6 @@ const computedAriaLabels = computed(() => {
     "
     :show-invalid="showInvalid"
     :custom-error="customErrorActive"
-    @keydown.capture="releaseEscape"
-    @keydown="restoreEscape"
   >
     <VueDatePicker
       :id="id"
@@ -286,6 +268,7 @@ const computedAriaLabels = computed(() => {
       :time-config="{ enableTimePicker: enableTimePicker }"
       :formats="formats"
       :input-attrs="computedInputAttrs"
+      :menu-id="menuId"
       :disabled="disabled"
       :month-change-on-scroll="monthChangeOnScroll"
       :action-row="{
@@ -303,8 +286,48 @@ const computedAriaLabels = computed(() => {
       class="cardan-datepicker"
       @open="handleOpen"
       @closed="handleClose"
-      @update:model-value="customErrorActive = false"
+      @update:model-value="clearCustomError"
     >
+      <template
+        #dp-input="{
+          value,
+          isMenuOpen,
+          onInput,
+          onKeypress,
+          onBlur,
+          onFocus,
+          onPaste,
+        }"
+      >
+        <input
+          :id="inputId"
+          :class="inputClasses(isMenuOpen)"
+          :name="name"
+          :value="value"
+          :placeholder="placeholder()"
+          :autocomplete="autocomplete"
+          :required="required"
+          :disabled="disabled"
+          :readonly="isReadonly()"
+          role="combobox"
+          aria-haspopup="dialog"
+          :aria-expanded="isMenuOpen"
+          :aria-controls="isMenuOpen ? menuId : undefined"
+          :aria-describedby="describedBy()"
+          :aria-invalid="errorShown || undefined"
+          @input="onInput"
+          @keydown="handleKeydown($event, isMenuOpen, onKeypress)"
+          @paste="onPaste"
+          @focus="
+            isFocused = true;
+            onFocus();
+          "
+          @blur="
+            isFocused = false;
+            onBlur();
+          "
+        />
+      </template>
       <template #input-icon>
         <Icon name="material-symbols:calendar-month-outline-rounded" />
       </template>

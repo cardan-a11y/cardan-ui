@@ -53,6 +53,8 @@ test('a missing address answers 404, in the layout, with a link home on a direct
 test('the skip link and then the link home, on a page that errors after an await, end on the homepage', async ({
   page,
 }) => {
+  // The page's data is a timer (200ms); a fake clock lets the test run it out
+  await page.clock.install();
   // A fresh context each time: the page's data is not in the browser yet
   await gotoHydrated(page, '/error-page/demo?status=404');
   const heading = page.getByRole('heading', { level: 1 });
@@ -71,9 +73,11 @@ test('the skip link and then the link home, on a page that errors after an await
 
   await expect(page).toHaveURL(/\/$/);
   await expect(heading).toHaveText('Cardan UI');
-  // Not overtaken by the failed page's own error once its data arrives
-  await page.waitForTimeout(500);
+  // Not overtaken by the failed page's own error once its data arrives: had
+  // the skip link loaded it again, its timer fires within this second
+  await page.clock.runFor(1000);
   await expect(heading).toHaveText('Cardan UI');
+  await expect(page).toHaveURL(/\/$/);
 });
 
 test('after an error in the browser, focus and the announcement are those of a new page, and back returns to the page before', async ({
@@ -247,8 +251,6 @@ for (const colorScheme of ['light', 'dark'] as const) {
       new RegExp(`${colorScheme}-mode`),
     );
 
-    expect(
-      await runAxe(page, { exclude: ['.va-popup-btn', '.va-popup'] }),
-    ).toEqual([]);
+    expect(await runAxe(page)).toEqual([]);
   });
 }

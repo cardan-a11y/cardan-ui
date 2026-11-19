@@ -90,13 +90,7 @@ const {
   variant?: InputVariant;
 }>();
 
-const attrs = useAttrs();
-
-function inputAttrs() {
-  return Object.fromEntries(
-    Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'),
-  );
-}
+const { controlAttrs } = useControlAttrs();
 
 const computedErrorMessage = computed(() => {
   if (errorMessage) {
@@ -130,9 +124,7 @@ const chipSize = computed(() => {
 });
 
 const inputRef = useTemplateRef<HTMLInputElement>('input');
-const formShowInvalid = inject(formShowInvalidKey, ref(false));
 const isValid = ref(true);
-const customErrorActive = ref(false);
 
 /** Requires a dot in the domain; the browser checks the rest of the address */
 const EMAIL_PATTERN = '.+@.+\\..+';
@@ -153,20 +145,13 @@ function updateValidity() {
   isValid.value = inputRef.value?.validity.valid ?? true;
 }
 
-/**
- * The custom error shows like the browser's own, and describes the field,
- * but does not keep the form from submitting again: the server judges the
- * next attempt, and the parent moves focus to the field (`focusElement()`)
- */
-function applyCustomError() {
-  customErrorActive.value = !!customError;
-}
+// The parent moves focus to the field with a custom error (`focusElement()`)
+const { customErrorActive, clearCustomError, errorShown } = useCustomError(
+  () => customError,
+  { invalid: () => !isValid.value, showInvalid: () => showInvalid },
+);
 
-onMounted(() => {
-  applyCustomError();
-  updateValidity();
-});
-watch(() => customError, applyCustomError, { flush: 'post' });
+onMounted(updateValidity);
 
 watch(
   [
@@ -182,12 +167,6 @@ watch(
   ],
   updateValidity,
   { flush: 'post' },
-);
-
-const errorShown = computed(
-  () =>
-    customErrorActive.value ||
-    ((showInvalid || formShowInvalid.value) && !isValid.value),
 );
 
 const computedAriaDescribedby = computed(
@@ -207,7 +186,7 @@ function handleInput(event: Event) {
 }
 
 function takeValue(target: HTMLInputElement) {
-  customErrorActive.value = false;
+  clearCustomError();
 
   // Also a number outside min and max: the field is invalid until the number
   // is in range, which the form reports. A model kept at the old value would
@@ -259,7 +238,7 @@ const emit = defineEmits<{
         :id="id"
         ref="input"
         class="input"
-        v-bind="inputAttrs()"
+        v-bind="controlAttrs()"
         :value="model"
         :name="name"
         :title="title"

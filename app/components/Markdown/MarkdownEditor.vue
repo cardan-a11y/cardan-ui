@@ -126,25 +126,10 @@ function focusEditor() {
   markdownEditorRef.value?.focus();
 }
 
-const formShowInvalid = inject(formShowInvalidKey, ref(false));
-const customErrorActive = ref(false);
-
-/**
- * The custom error shows like the missing text, and describes the field, but
- * does not keep the form from submitting again: the server judges the next
- * attempt, and the parent moves focus to the field (`focusEditor()`)
- */
-function applyCustomError() {
-  customErrorActive.value = !!customError;
-}
-
-onMounted(applyCustomError);
-watch(() => customError, applyCustomError, { flush: 'post' });
-
-const errorShown = computed(
-  () =>
-    customErrorActive.value ||
-    (!!required && !content.value?.trim() && formShowInvalid.value),
+// The parent moves focus to the field with a custom error (`focusEditor()`)
+const { customErrorActive, clearCustomError, errorShown } = useCustomError(
+  () => customError,
+  { invalid: () => !!required && !content.value?.trim() },
 );
 
 /**
@@ -200,11 +185,6 @@ const computedErrorMessage = computed(() => {
 const emit = defineEmits<{
   blur: [value: Event];
 }>();
-
-/** A new text clears the custom error, until the parent sets one again */
-function handleChange() {
-  customErrorActive.value = false;
-}
 </script>
 
 <template>
@@ -237,7 +217,7 @@ function handleChange() {
         no-katex
         no-echarts
         no-prettier
-        @change="handleChange"
+        @change="clearCustomError"
         @blur="emit('blur', $event)"
       />
 

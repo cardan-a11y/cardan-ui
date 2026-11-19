@@ -45,13 +45,7 @@ const {
   variant?: InputVariant;
 }>();
 
-const attrs = useAttrs();
-
-function controlAttrs() {
-  return Object.fromEntries(
-    Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'),
-  );
-}
+const { controlAttrs } = useControlAttrs();
 
 const computedErrorMessage = computed(() => {
   if (errorMessage) return errorMessage;
@@ -62,9 +56,7 @@ const computedErrorMessage = computed(() => {
 });
 
 const textareaRef = useTemplateRef<HTMLTextAreaElement>('textarea');
-const formShowInvalid = inject(formShowInvalidKey, ref(false));
 const isValid = ref(true);
-const customErrorActive = ref(false);
 
 /**
  * The browser's constraints only: a required text of only spaces passes here
@@ -75,27 +67,14 @@ function updateValidity() {
   isValid.value = textareaRef.value?.validity.valid ?? true;
 }
 
-/**
- * The custom error shows like the browser's own, and describes the field,
- * but does not keep the form from submitting again: the server judges the
- * next attempt, and the parent moves focus to the field (`focusElement()`)
- */
-function applyCustomError() {
-  customErrorActive.value = !!customError;
-}
-
-onMounted(() => {
-  applyCustomError();
-  updateValidity();
-});
-watch(() => customError, applyCustomError, { flush: 'post' });
-watch([model, () => required], updateValidity, { flush: 'post' });
-
-const errorShown = computed(
-  () =>
-    customErrorActive.value ||
-    ((showInvalid || formShowInvalid.value) && !isValid.value),
+// The parent moves focus to the field with a custom error (`focusElement()`)
+const { customErrorActive, clearCustomError, errorShown } = useCustomError(
+  () => customError,
+  { invalid: () => !isValid.value, showInvalid: () => showInvalid },
 );
+
+onMounted(updateValidity);
+watch([model, () => required], updateValidity, { flush: 'post' });
 
 // The error describes the field only while it shows
 const computedAriaDescribedby = computed(
@@ -115,8 +94,7 @@ function handleInput(event: Event) {
 }
 
 function takeValue(target: HTMLTextAreaElement) {
-  // A new value clears the custom error, until the parent sets one again
-  customErrorActive.value = false;
+  clearCustomError();
 
   model.value = target.value;
   // Not left to the model's watcher: under `v-model.trim` a space changes

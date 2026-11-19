@@ -154,6 +154,7 @@ useHead({ title: 'Buttons & Links' });
       <h2>States</h2>
       <div class="flex-wrapper">
         <Button size="lg" loading label="Loading" />
+        <Button size="lg" loading label="Loading link" to="/" />
         <Button size="lg" disabled label="Disabled button" />
         <Button
           size="lg"

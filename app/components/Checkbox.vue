@@ -46,25 +46,12 @@ const isTicked = computed(() =>
     : !!model.value,
 );
 
-const formShowInvalid = inject(formShowInvalidKey, ref(false));
-const customErrorActive = ref(false);
-
-/**
- * The custom error shows like the browser's own, and describes the box, but
- * does not keep the form from submitting again: the server judges the next
- * attempt
- */
-function applyCustomError() {
-  customErrorActive.value = !!customError;
-}
-
-onMounted(applyCustomError);
-watch(() => customError, applyCustomError, { flush: 'post' });
-
-const errorShown = computed(
-  () =>
-    customErrorActive.value ||
-    (required && !isTicked.value && (showInvalid || formShowInvalid.value)),
+const { customErrorActive, clearCustomError, errorShown } = useCustomError(
+  () => customError,
+  {
+    invalid: () => required && !isTicked.value,
+    showInvalid: () => showInvalid,
+  },
 );
 </script>
 
@@ -89,7 +76,7 @@ const errorShown = computed(
       :aria-describedby="errorShown ? `error-${id}` : undefined"
       :aria-invalid="errorShown || undefined"
       type="checkbox"
-      @change="customErrorActive = false"
+      @change="clearCustomError"
     />
 
     <label

@@ -4,7 +4,7 @@ import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { UserMenu } from '#components';
 import { useNuxtApp, useRouter } from '#imports';
 import { accessibleName, checkA11y, expectFocused, roleOf } from '../a11y';
-import { addToPage, press, toggle } from '../dom';
+import { addToPage, fakePopover, leave, press } from '../dom';
 
 /**
  * A non-modal disclosure (see its docblock): a button that shows the links
@@ -14,46 +14,6 @@ import { addToPage, press, toggle } from '../dom';
  * the browser suite (usermenu.spec.ts); this pins what the component does on
  * the browser's events.
  */
-
-/**
- * The Popover API, as far as the component uses it: the open state that
- * `:popover-open` reads, and `showPopover()` and `hidePopover()`, which fire
- * the toggle event
- */
-function fakePopover(element: HTMLElement) {
-  let open = false;
-  const matches = element.matches.bind(element);
-  element.matches = ((selector: string) =>
-    selector === ':popover-open'
-      ? open
-      : matches(selector)) as typeof element.matches;
-
-  const showPopover = vi.fn(() => {
-    if (open) return;
-    open = true;
-    void toggle(element, 'open');
-  });
-  const hidePopover = vi.fn(() => {
-    if (!open) return;
-    open = false;
-    void toggle(element, 'closed');
-  });
-  element.showPopover = showPopover;
-  element.hidePopover = hidePopover;
-
-  return {
-    showPopover,
-    hidePopover,
-    isOpen: () => open,
-    /** Opened by the browser: a click on the trigger */
-    async show() {
-      open = true;
-      await toggle(element, 'open');
-      // The component focuses the first item in the tick after the event
-      await nextTick();
-    },
-  };
-}
 
 async function mountUserMenu(logout = vi.fn()) {
   const wrapper = await mountSuspended(UserMenu, {
@@ -99,13 +59,6 @@ async function mountUserMenu(logout = vi.fn()) {
     logout,
     popover: fakePopover(panel),
   };
-}
-
-/** Focus leaving one element for another, as the browser reports it */
-function leave(from: Element, to: Element | null) {
-  from.dispatchEvent(
-    new FocusEvent('focusout', { relatedTarget: to, bubbles: true }),
-  );
 }
 
 const inert = () => document.querySelectorAll('[inert]').length;

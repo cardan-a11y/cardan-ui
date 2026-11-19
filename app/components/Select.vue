@@ -61,13 +61,7 @@ const {
   variant?: InputVariant;
 }>();
 
-const attrs = useAttrs();
-
-function controlAttrs() {
-  return Object.fromEntries(
-    Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'),
-  );
-}
+const { controlAttrs } = useControlAttrs();
 
 const computedErrorMessage = computed(() => {
   if (errorMessage) return errorMessage;
@@ -78,37 +72,22 @@ const computedErrorMessage = computed(() => {
 });
 
 const selectRef = useTemplateRef<HTMLSelectElement>('select');
-const formShowInvalid = inject(formShowInvalidKey, ref(false));
 const isValid = ref(true);
-const customErrorActive = ref(false);
 
 function updateValidity() {
   isValid.value = selectRef.value?.validity.valid ?? true;
 }
 
-/**
- * The custom error shows like the browser's own, and describes the field,
- * but does not keep the form from submitting again: the server judges the
- * next attempt, and the parent moves focus to the field (`focusElement()`)
- */
-function applyCustomError() {
-  customErrorActive.value = !!customError;
-}
+// The parent moves focus to the field with a custom error (`focusElement()`)
+const { customErrorActive, clearCustomError, errorShown } = useCustomError(
+  () => customError,
+  { invalid: () => !isValid.value, showInvalid: () => showInvalid },
+);
 
-onMounted(() => {
-  applyCustomError();
-  updateValidity();
-});
-watch(() => customError, applyCustomError, { flush: 'post' });
+onMounted(updateValidity);
 watch([model, () => required, () => options], updateValidity, {
   flush: 'post',
 });
-
-const errorShown = computed(
-  () =>
-    customErrorActive.value ||
-    ((showInvalid || formShowInvalid.value) && !isValid.value),
-);
 
 // The error describes the field only while it shows
 const computedAriaDescribedby = computed(
@@ -122,9 +101,8 @@ const computedAriaDescribedby = computed(
       .join(' ') || undefined,
 );
 
-// A new choice clears the custom error, until the parent sets one again
 function handleChange() {
-  customErrorActive.value = false;
+  clearCustomError();
   updateValidity();
   remember();
 }

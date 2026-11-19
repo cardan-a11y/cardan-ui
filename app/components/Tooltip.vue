@@ -57,56 +57,17 @@ function onToggle(event: Event) {
 const triggerRef = useTemplateRef<HTMLButtonElement>('trigger');
 
 /**
- * Whether a mousedown in the tooltip is moving focus: its default action
- * moves focus, from the tooltip's text to the nearest focusable element
- * around it, such as a `<main tabindex="-1">`. Until the next task.
- */
-let pressedInside = false;
-
-function onContentMousedown() {
-  pressedInside = true;
-  setTimeout(() => {
-    pressedInside = false;
-  });
-}
-
-/** The element around the tooltip that a press in it gave focus to */
-let parked: Element | null = null;
-
-function unpark() {
-  parked?.removeEventListener('focusout', onFocusOut);
-  parked = null;
-}
-
-/**
  * Native `popover=auto` dismisses on Escape and an outside press but not on
- * focus leaving the trigger, so close it when focus moves on to an element
- * outside the trigger and the tooltip, as Popover does. Not when it moves
- * nowhere, or because of a press in the tooltip, to select its text or
- * follow a link in it: it then closes on Escape, an outside press, or when
- * focus leaves the element the press gave it to for the page (the next Tab).
+ * focus leaving the trigger, so it closes when focus moves on to the page, as
+ * Popover does. Not on a press in the tooltip, to select its text or follow a
+ * link in it. Only the content takes the press: a press on the trigger
+ * toggles it.
  */
-function onFocusOut(event: Event) {
-  const next = (event as FocusEvent).relatedTarget;
-  const content = tooltipContentRef.value;
-  if (!content?.matches(':popover-open') || !(next instanceof Element)) return;
-
-  if (content.contains(next) || triggerRef.value?.contains(next)) {
-    unpark();
-    return;
-  }
-
-  if (pressedInside) {
-    unpark();
-    parked = next;
-    next.addEventListener('focusout', onFocusOut);
-    return;
-  }
-
-  content.hidePopover();
-}
-
-onBeforeUnmount(unpark);
+const { onPress, onFocusOut, unpark } = useFocusLeave({
+  elements: () => [tooltipContentRef.value, triggerRef.value],
+  close: () => tooltipContentRef.value?.hidePopover(),
+  isOpen: () => !!tooltipContentRef.value?.matches(':popover-open'),
+});
 </script>
 
 <template>
@@ -147,7 +108,7 @@ onBeforeUnmount(unpark);
       :data-span="span"
       :style="contentStyle"
       @toggle="onToggle"
-      @mousedown="onContentMousedown"
+      @mousedown="onPress"
       @focusout="onFocusOut"
     >
       <div v-if="isOpen" class="tooltip-content">

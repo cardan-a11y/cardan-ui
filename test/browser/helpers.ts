@@ -233,31 +233,16 @@ export async function runAxe(
   page: Page,
   { exclude = [] as string[] } = {},
 ): Promise<AxeViolation[]> {
-  // Our own axe-core, also where the page has one (vue-axe in the playground)
   await page.addScriptTag({ content: axeSource() });
 
   return page.evaluate(async (exclude) => {
     const { axe } = window as unknown as {
       axe: { run: (context: unknown, options: unknown) => Promise<AxeResults> };
     };
-    const run = () =>
-      axe.run(
-        { exclude: exclude.map((selector) => [selector]) },
-        { resultTypes: ['violations'] },
-      );
-
-    // axe runs one at a time per page, and a page may run its own: the
-    // playground's vue-axe plugin runs axe on every page. Wait for that run
-    let results: AxeResults | undefined;
-    for (let attempt = 0; !results; attempt++) {
-      try {
-        results = await run();
-      } catch (error) {
-        if (attempt > 20 || !String(error).includes('already running'))
-          throw error;
-        await new Promise((resolve) => setTimeout(resolve, 250));
-      }
-    }
+    const results = await axe.run(
+      { exclude: exclude.map((selector) => [selector]) },
+      { resultTypes: ['violations'] },
+    );
 
     return results.violations.flatMap((violation) =>
       violation.nodes.map((node) => ({

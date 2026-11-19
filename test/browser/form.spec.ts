@@ -52,3 +52,23 @@ test('an e-mail address without a dot in its domain holds the submit back, with 
   await expect(email).not.toHaveAttribute('aria-invalid');
   await expect(page.locator('pre code')).toContainText('"email"');
 });
+
+test('SpinButton shows its range error while a number is typed, and hides it in range', async ({
+  page,
+}) => {
+  await gotoHydrated(page, '/form');
+  const field = page.getByRole('spinbutton', { name: 'Spin button' });
+  const error = page.getByText('Enter 20 or less');
+
+  await field.fill('');
+  await field.pressSequentially('25');
+  // Still in the field: the error shows without a blur or a submit
+  await expect(field).toBeFocused();
+  await expect(error).toBeVisible();
+  await expect(field).toHaveAttribute('aria-invalid', 'true');
+  await expect(field).toHaveAccessibleDescription(/Enter 20 or less/);
+
+  await field.press('Backspace');
+  await expect(error).toBeHidden();
+  await expect(field).not.toHaveAttribute('aria-invalid');
+});

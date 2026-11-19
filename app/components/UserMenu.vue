@@ -77,53 +77,13 @@ function onToggle(event: Event) {
 }
 
 /**
- * Whether a mousedown in the panel or on the trigger is moving focus: on the
- * panel's text, or on the trigger in Safari, where a click does not focus a
- * button, it moves focus to the nearest focusable element around the menu,
- * such as the AppShell. Until the next task.
- */
-let pressedInside = false;
-
-function onPress() {
-  pressedInside = true;
-  setTimeout(() => {
-    pressedInside = false;
-  });
-}
-
-/** The element around the menu that a press in it gave focus to */
-let parked: Element | null = null;
-
-function unpark() {
-  parked?.removeEventListener('focusout', handleFocusOut);
-  parked = null;
-}
-
-/**
  * Focus that leaves the panel or the trigger for the page closes the menu,
- * as in Popover: a move between the two keeps it open, and so does the move
- * a press in the panel or on the trigger makes, until focus leaves that
- * element for the page. A press on the trigger then closes it with the
- * click, instead of closing it on mousedown for the click to open it again.
+ * as in Popover. A press in either does not.
  */
-function handleFocusOut(event: Event) {
-  const next = (event as FocusEvent).relatedTarget;
-  if (!(next instanceof Element)) return;
-
-  if (contentRef.value?.contains(next) || triggerElement()?.contains(next)) {
-    unpark();
-    return;
-  }
-
-  if (pressedInside) {
-    unpark();
-    parked = next;
-    next.addEventListener('focusout', handleFocusOut);
-    return;
-  }
-
-  showMenu.value = false;
-}
+const { onPress, onFocusOut, unpark } = useFocusLeave({
+  elements: () => [contentRef.value, triggerElement()],
+  close: () => (showMenu.value = false),
+});
 
 // The menu does not stay open over the next page, also when focus did not move
 const route = useRoute();
@@ -131,8 +91,6 @@ watch(
   () => route.path,
   () => (showMenu.value = false),
 );
-
-onBeforeUnmount(unpark);
 
 function handleLogout() {
   if (props.logout) {
@@ -188,7 +146,7 @@ defineExpose({
       :avatar="avatar"
       :initials="initials"
       @mousedown="onPress"
-      @focusout="handleFocusOut"
+      @focusout="onFocusOut"
     />
 
     <div
@@ -198,7 +156,7 @@ defineExpose({
       class="user-menu-popover"
       @toggle="onToggle"
       @mousedown="onPress"
-      @focusout="handleFocusOut"
+      @focusout="onFocusOut"
       @keydown.esc="hideMenu"
     >
       <div class="user-menu-content">

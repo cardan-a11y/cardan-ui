@@ -64,25 +64,12 @@ const hasSelection = computed(() =>
   Array.isArray(model.value) ? model.value.length > 0 : !!model.value,
 );
 
-const formShowInvalid = inject(formShowInvalidKey, ref(false));
-const customErrorActive = ref(false);
-
-/**
- * The custom error shows like the group's own, and describes the group, but
- * does not keep the form from submitting again: the server judges the next
- * attempt
- */
-function applyCustomError() {
-  customErrorActive.value = !!customError;
-}
-
-onMounted(applyCustomError);
-watch(() => customError, applyCustomError, { flush: 'post' });
-
-const errorShown = computed(
-  () =>
-    customErrorActive.value ||
-    (required && !hasSelection.value && (showInvalid || formShowInvalid.value)),
+const { customErrorActive, clearCustomError, errorShown } = useCustomError(
+  () => customError,
+  {
+    invalid: () => required && !hasSelection.value,
+    showInvalid: () => showInvalid,
+  },
 );
 
 const listRef = useTemplateRef<HTMLElement>('list');
@@ -121,7 +108,7 @@ watch([hasSelection, message, () => required, () => options], applyValidity, {
     <template v-if="options?.length">
       <fieldset
         :aria-describedby="errorShown ? `error-${id}` : undefined"
-        @change="customErrorActive = false"
+        @change="clearCustomError"
       >
         <legend
           v-if="label"

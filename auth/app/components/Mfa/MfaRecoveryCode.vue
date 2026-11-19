@@ -9,7 +9,6 @@ const { mfaCredentials, mfaError, recoveryCodeInputRef } = useMfa();
       ref="recoveryCodeInputRef"
       v-model="mfaCredentials.recovery_code"
       required
-      autofocus
       autocomplete="off"
       name="recovery_code"
       :label="$t('mfa.recovery-code')"

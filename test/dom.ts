@@ -1,4 +1,4 @@
-import { onTestFinished } from 'vitest';
+import { onTestFinished, vi } from 'vitest';
 import { nextTick } from 'vue';
 import type { Target } from './a11y';
 
@@ -85,6 +85,61 @@ export async function toggle(
   });
   element.dispatchEvent(event);
   await nextTick();
+}
+
+/**
+ * The Popover API on `element`, as far as the components use it: the open
+ * state that `:popover-open` reads, and `showPopover()` and `hidePopover()`
+ * (spies), which fire the toggle event through `toggle()`. `show()` is the
+ * browser opening it, such as a click on the trigger; it waits for the tick
+ * in which a component moves focus into it.
+ *
+ * It proves what the component does with that state and on its events, not
+ * that the browser opens the popover, puts it in the top layer, anchors it,
+ * light-dismisses it, or hides it from the accessibility tree while closed.
+ */
+export function fakePopover(element: HTMLElement) {
+  let open = false;
+  const matches = element.matches.bind(element);
+  element.matches = ((selector: string) =>
+    selector === ':popover-open'
+      ? open
+      : matches(selector)) as typeof element.matches;
+
+  const showPopover = vi.fn(() => {
+    if (open) return;
+    open = true;
+    void toggle(element, 'open');
+  });
+  const hidePopover = vi.fn(() => {
+    if (!open) return;
+    open = false;
+    void toggle(element, 'closed');
+  });
+  element.showPopover = showPopover;
+  element.hidePopover = hidePopover;
+
+  return {
+    showPopover,
+    hidePopover,
+    isOpen: () => open,
+    async show() {
+      open = true;
+      await toggle(element, 'open');
+      await nextTick();
+    },
+  };
+}
+
+/**
+ * Focus leaving `from` for `to`, as the browser reports it: a bubbling
+ * `focusout` with `to` as its `relatedTarget` (`null`: to nowhere). It does
+ * not move focus, and sends no `focusin` or `focus` on `to`.
+ */
+export function leave(from: Element, to: Element | null) {
+  from.dispatchEvent(
+    new FocusEvent('focusout', { relatedTarget: to, bubbles: true }),
+  );
 }
 
 /**

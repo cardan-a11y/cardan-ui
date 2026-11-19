@@ -57,12 +57,14 @@ const sizeOptions: { value: FontSize; label: string }[] = [
   },
 ];
 
-function makeToast() {
+/** Without a timeout a toast stays until it is closed */
+function makeToast(timeout?: number) {
   const { createToast } = useToast();
 
   createToast({
     color: 'green',
     label: 'Lorem ipsum dolor sit amet consectetur adipisicing elit',
+    timeout,
   });
 }
 </script>
@@ -476,12 +478,20 @@ function makeToast() {
         <div class="section-topbar">
           <h2>Toast</h2>
 
-          <Button
-            icon="material-symbols:add-circle-rounded"
-            variant="outline"
-            label="Add Toast"
-            @click="makeToast"
-          />
+          <div class="flex-wrapper" style="--flex-grow: 0">
+            <Button
+              icon="material-symbols:add-circle-rounded"
+              variant="outline"
+              label="Add Toast"
+              @click="makeToast()"
+            />
+            <Button
+              icon="material-symbols:timer-outline-rounded"
+              variant="outline"
+              label="Add Toast with a 5s timeout"
+              @click="makeToast(5000)"
+            />
+          </div>
         </div>
 
         <Toast label="Success message in a toast notification" color="green" />

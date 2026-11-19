@@ -38,9 +38,6 @@ const KNOWN_VIOLATIONS: {
   },
 ];
 
-/** The playground's own axe tool (vue-axe), not part of the layer */
-const EXCLUDE = ['.va-popup-btn', '.va-popup'];
-
 const modes = [
   { name: 'light', colorScheme: 'light', className: 'light-mode' },
   { name: 'dark', colorScheme: 'dark', className: 'dark-mode' },
@@ -73,7 +70,7 @@ for (const mode of modes) {
         const known = KNOWN_VIOLATIONS.filter(
           (k) => k.route === route && (!k.mode || k.mode === mode.name),
         );
-        const violations = await runAxe(page, { exclude: EXCLUDE });
+        const violations = await runAxe(page);
         const isKnown = (v: AxeViolation) =>
           known.some((k) => k.rule === v.rule && k.target.test(v.target));
 

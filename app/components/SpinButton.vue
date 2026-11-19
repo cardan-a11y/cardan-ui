@@ -17,7 +17,9 @@ import type { StyleValue } from 'vue';
  * to its maximum.
  *
  * A typed number outside `min` and `max` reaches the model, as in Input: the
- * field is invalid until the number is in range, which its Form reports.
+ * field is invalid until the number is in range, which its Form reports. Its
+ * error shows as soon as a typed number is out of range, without a submit,
+ * and goes as soon as the number is in range again.
  */
 
 // An attribute goes to the control; `class` and `style` stay on the wrapper
@@ -64,13 +66,7 @@ const emit = defineEmits<{
   change: [value: number | undefined];
 }>();
 
-const attrs = useAttrs();
-
-function controlAttrs() {
-  return Object.fromEntries(
-    Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'),
-  );
-}
+const { attrs, controlAttrs } = useControlAttrs();
 
 function toText(value: number | undefined) {
   return value === undefined ? '' : String(value);
@@ -114,25 +110,20 @@ watchPostEffect(() => {
   inputRef.value?.setCustomValidity(rangeError.value ?? '');
 });
 
-const formShowInvalid = inject(formShowInvalidKey, ref(false));
-const customErrorActive = ref(false);
+/** A typed number outside the range, whose error shows without a submit */
+const rangeErrorShown = ref(false);
 
-/**
- * The custom error shows like the field's own, and describes the field, but
- * does not keep the form from submitting again: the server judges the next
- * attempt, and the parent moves focus to the field (`focusElement()`)
- */
-function applyCustomError() {
-  customErrorActive.value = !!customError;
-}
+watch(rangeError, (error) => {
+  if (!error) rangeErrorShown.value = false;
+});
 
-onMounted(applyCustomError);
-watch(() => customError, applyCustomError, { flush: 'post' });
-
-const errorShown = computed(
-  () =>
-    customErrorActive.value ||
-    ((showInvalid || formShowInvalid.value) && invalid.value),
+// The parent moves focus to the field with a custom error (`focusElement()`)
+const { customErrorActive, clearCustomError, errorShown } = useCustomError(
+  () => customError,
+  {
+    invalid: () => invalid.value,
+    showInvalid: () => showInvalid || rangeErrorShown.value,
+  },
 );
 
 // The error describes the field only while it shows; a project's own
@@ -170,8 +161,8 @@ function handleInput(event: Event) {
 
   text.value = number;
   model.value = value.value;
-  // A new value clears the custom error, until the parent sets one again
-  customErrorActive.value = false;
+  if (rangeError.value) rangeErrorShown.value = true;
+  clearCustomError();
 }
 
 /** A typed number is final on blur or Enter: "007" reads "7" from then on */
@@ -185,7 +176,7 @@ function setValue(newValue: number) {
 
   text.value = toText(newValue);
   model.value = newValue;
-  customErrorActive.value = false;
+  clearCustomError();
   emit('change', newValue);
 }
 
@@ -256,7 +247,7 @@ defineExpose({
     :chip-size="chipSize"
     :instruction="instruction"
     :error-text="customErrorActive ? customError : errorText"
-    :show-invalid="showInvalid"
+    :show-invalid="showInvalid || rangeErrorShown"
     :custom-error="customErrorActive"
   >
     <div class="spin-button-control">

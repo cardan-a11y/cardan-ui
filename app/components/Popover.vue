@@ -89,59 +89,14 @@ function onToggle(event: Event) {
 }
 
 /**
- * Whether a mousedown in the content or on the trigger is moving focus: its
- * default action moves focus, outside the items (or from the trigger in
- * Safari, where a click does not focus a button) to the nearest focusable
- * element around the popover, such as a `<main tabindex="-1">`. Until the
- * next task.
- */
-let pressedInside = false;
-
-function onPress() {
-  pressedInside = true;
-  setTimeout(() => {
-    pressedInside = false;
-  });
-}
-
-/** The element around the popover that a press in it gave focus to */
-let parked: Element | null = null;
-
-function unpark() {
-  parked?.removeEventListener('focusout', handleFocusOut);
-  parked = null;
-}
-
-/**
  * Focus that leaves the content or the trigger for the page closes the
- * popover: Tab past the last element, or Shift+Tab from the trigger. A move
- * between the two keeps it open, and so does the move a press in the content
- * or on the trigger makes: the popover then closes when focus leaves that
- * element for the page, as it does after a navigation, when AppShell focuses
- * the shell, and a press on the trigger closes it with the click instead of
- * on mousedown, for the click to open it again.
+ * popover: Tab past the last element, or Shift+Tab from the trigger. A press
+ * in either does not.
  */
-function handleFocusOut(event: Event) {
-  const next = (event as FocusEvent).relatedTarget;
-  if (!(next instanceof Element)) return;
-
-  if (
-    popoverContentRef.value?.contains(next) ||
-    triggerRef.value?.contains(next)
-  ) {
-    unpark();
-    return;
-  }
-
-  if (pressedInside) {
-    unpark();
-    parked = next;
-    next.addEventListener('focusout', handleFocusOut);
-    return;
-  }
-
-  hidePopover();
-}
+const { onPress, onFocusOut, unpark } = useFocusLeave({
+  elements: () => [popoverContentRef.value, triggerRef.value],
+  close: hidePopover,
+});
 
 // A popover does not outlive its page, also when focus did not move
 const route = useRoute();
@@ -151,8 +106,6 @@ watch(
     if (popoverContentRef.value?.matches(':popover-open')) hidePopover();
   },
 );
-
-onBeforeUnmount(unpark);
 
 function handleMenuClick(item: MenuItem) {
   emit('click', item);
@@ -200,7 +153,7 @@ const emit = defineEmits<{
       :style="computedStyle"
       :aria-describedby="ariaDescribedby"
       @mousedown="onPress"
-      @focusout="handleFocusOut"
+      @focusout="onFocusOut"
       @click="ignoreWhileLoading"
     >
       <Icon v-if="loading" name="svg-spinners:90-ring-with-bg" />
@@ -236,7 +189,7 @@ const emit = defineEmits<{
       :style="contentStyle"
       @toggle="onToggle"
       @mousedown="onPress"
-      @focusout="handleFocusOut"
+      @focusout="onFocusOut"
     >
       <div class="popover-content">
         <slot name="default" />

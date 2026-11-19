@@ -9,9 +9,8 @@ import { addToPage } from '../dom';
 /**
  * The toasts and their one live region. The timer is a CSS animation:
  * happy-dom runs none, so these tests read the play state the component
- * sets and send the `animationend` the browser would. They do not prove
- * that a paused toast really waits (WCAG 2.2.1): no browser test covers
- * that yet.
+ * sets and send the `animationend` the browser would. That a paused toast
+ * really waits (WCAG 2.2.1) is in test/browser/toast.spec.ts.
  */
 function timer(wrapper: { find: (selector: string) => { element: Element } }) {
   return wrapper.find('.toast__timer').element as HTMLElement;
