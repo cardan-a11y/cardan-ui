@@ -64,12 +64,25 @@ const triggerRef = useTemplateRef<HTMLButtonElement>('popoverTrigger');
  * keys. It is always rendered: closed, the native popover is `display: none`,
  * so it is out of the accessibility tree and the tab order. When it opens,
  * focus moves to its first element; on Escape, or a choice, the browser
- * gives focus back to the trigger.
+ * gives focus back to the trigger. It scrolls only for an element that is
+ * not fully on screen, as far as needed: a menu that fits on neither side of
+ * its trigger runs off the bottom. A plain focus() made Chromium scroll a
+ * menu that opens above its trigger, on screen, to the middle of it, page
+ * and trigger along, sometimes out of view.
  */
 function onToggle(event: Event) {
   if ((event as ToggleEvent).newState === 'open') {
     nextTick(() => {
-      firstFocusable(popoverContentRef.value)?.focus();
+      const first = firstFocusable(popoverContentRef.value);
+      if (!first) return;
+
+      first.focus({ preventScroll: true });
+      // Read as it starts to slide in: up to 0.5rem from where it ends up
+      const slide = 8;
+      const { top, bottom } = first.getBoundingClientRect();
+      if (top < slide || bottom > window.innerHeight - slide) {
+        first.scrollIntoView({ block: 'nearest' });
+      }
     });
   } else {
     unpark();

@@ -46,6 +46,10 @@ Also a round of audit fixes. Paste the token, rename what a project sets, and ch
 - **Cardan Auth UI**: new message key `mfa.recovery-codes-regenerate-unavailable` for an app that overrides the `mfa` messages. `useMfaDialog().loadingMfaDisableDialog` is new, for a project's own Disable MFA button; cardan-auditor-nuxt's UserProfileForm uses it, so that change merges only after this release is on `main`.
 - **The layer holds every message key that two projects use.** New: `user.profile` ("User profile" / "Gebruikersprofiel") and `toasts.profile-updated` ("Your profile was updated." / "Je profielgegevens zijn bijgewerkt."), which cardan-academy-nuxt and cardan-auditor-nuxt each had with their own text; the Auditor's page titles and toast take the layer's wording, and the Academy's Dutch profile link, title and heading read "Gebruikersprofiel" instead of "Profiel". The Dutch `general.home` is "Homepagina". The error page's texts are new keys under `error-page`. A project no longer repeats a layer key: the Academy drops these two and `aria.sidebar`, the Auditor these two, and cardan-cms-nuxt its copies of `cookies.*`, `pagination.*`, `error.page-not-found`, `general.contact`, `general.email`, `general.home` and `general.loading` (and its unused `general.phone`), on branches that merge only after this release is on `main`. 58 keys that no project, layer component or API used are removed, among them `error.403`, `error.404`, `error.unauthorized`, `theme.toggle`, `datepicker.input` and 39 in `general`; the four projects use none of them on any branch, so none needs a change. A project that wants one back adds it to its own locale files.
 
+### 2.5.2
+
+2.5.2 needs nothing from projects. See changelog for details.
+
 ### 2.5.1
 
 - **A grey Chip renders as the default one** (text color on the grey background), RequiredChip too; `color="grey"` stays valid, so nothing breaks. cardan-academy-nuxt#100 and cardan-auditor-nuxt#473 drop their grey chips and put the header on `--color-card-bg`; the Academy's removes CheckoutShell's required-chip override, so it merges only after this release is on `main`.

@@ -7,6 +7,17 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.5.2" date="2026-11-19">
+      <ul>
+        <li>
+          Popover no longer scrolls the page in Chromium as it opens: a menu
+          that opened above its trigger, near the top of the screen, was
+          scrolled to the middle as its first item took focus, page and trigger
+          along, sometimes out of view.
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.5.1" date="2026-11-17">
       <ul>
         <li>
