@@ -123,6 +123,7 @@ for (const [name, open] of Object.entries(popups)) {
     // stays shown, and then not again when this Shift+Tab hides it. Skipped
     // until the library or the wrapper keeps focus on a Tab out of the
     // calendar: as a failing test it would pass and fail by turns.
+    // Tripwire: test/tripwires.test.ts.
     test.fixme(
       name === 'DatePicker',
       'Tab out of the DatePicker calendar can drop focus on the body',

@@ -9,7 +9,7 @@ definePageMeta({
   // Read by nuxt-auth-sanctum's global middleware, so it lets the
   // not-yet-authenticated user through instead of sending them back to login.
   // `sanctum:guest` can't be used here: nuxt-auth-sanctum (3.1.5) registers it
-  // only with `globalMiddleware` off.
+  // only with `globalMiddleware` off. Tripwire: test/tripwires.test.ts.
   sanctum: { guestOnly: true },
 });
 

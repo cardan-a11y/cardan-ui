@@ -117,6 +117,7 @@ export default defineNuxtConfig({
     // which the server runtime of @nuxtjs/i18n and @nuxt/image still relies
     // on: without them the build fails ("useRuntimeConfig" is not exported by
     // "#imports"). Remove once both build with compatibilityVersion 5 alone.
+    // Tripwire: test/tripwires.test.ts.
     nitroAutoImports: true,
   },
 

@@ -11,7 +11,7 @@
  * location, which matches nothing. It reads Nuxt's private
  * `_processingMiddleware` (Nuxt 4.6), set while middleware runs: without it,
  * in a later Nuxt, nothing is marked and the error page goes back in the
- * history or home, as for any other error.
+ * history or home, as for any other error. Tripwire: test/tripwires.test.ts.
  */
 export default defineNuxtPlugin({
   name: 'cardan-ui:error-origin',

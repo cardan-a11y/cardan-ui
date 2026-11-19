@@ -254,7 +254,7 @@ export function useMfa() {
 
     // Both read before the request: on a 401 with `redirectIfUnauthenticated`,
     // nuxt-auth-sanctum (3.1.5) navigates before this function gets the
-    // answer, and the route is then another
+    // answer, and the route is then another. Tripwire: test/tripwires.test.ts.
     const route = useRoute();
     const redirect = loginRedirectTarget(route);
     const requestedRedirect = route.query.redirect;

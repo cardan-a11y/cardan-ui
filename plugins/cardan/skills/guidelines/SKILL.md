@@ -60,6 +60,14 @@ Avoid a new external dependency unless it is necessary. A dependency that Cardan
 
 Look up a Nuxt API, config key or official module in the plugin's `nuxt` MCP server (the documentation at `https://nuxt.com/mcp`) rather than from memory.
 
+## Comments
+
+A comment says why, not what: what the code cannot say itself, such as a WCAG or APG reason, a business rule or a constraint outside the file. What a better name, an extracted function or a type would say is not a comment. Commented-out code is deleted; git keeps it.
+
+- **A workaround says it is one**: what is wrong or missing (the library and its version, the browser, the API) and when it can go. A workaround tied to a dependency's version or internals gets an entry in the repository's tripwire test, `tripwires.test.ts` in its test folder (Cardan UI's `test/tripwires.test.ts` is the model; create it with the first entry), which fails once that dependency moves to another minor version; its comment points there. A condition on a Cardan UI release ("until 2.5.4 is on `main`") gets an entry that fails once the version in `../cardan-ui/package.json` reaches that release: the full version, since Cardan UI releases are patch versions.
+- **A project never works around Cardan UI.** A flaw or gap in a layer component, composable or token is fixed in cardan-ui, or reported to the user and left. A project does not style the layer's internal class names, provide its internal injection keys or copy its behaviour. When the user accepts a stopgap until a layer release, its comment says so, names that release and has a tripwire.
+- **A change keeps the comments around it true.** When code changes, its comments and the docblock of its function or component are checked against the new code; a comment whose reason is gone is rewritten or deleted, not left to explain code that no longer needs it.
+
 ## Tests in the projects
 
 - **One setup**: a project that extends Cardan UI tests against the sibling checkout `../cardan-ui`: its `$test` block in `nuxt.config.ts` extends the local layer, so `pnpm test` and `pnpm test:layer` (the same single `vitest run`; `test:layer` is what Cardan UI's `pnpm test:projects` calls, `test:watch` watches) and the build of `pnpm test:browser` (`envName: 'test'`) use it, and `pnpm run typecheck` (`NODE_ENV=development`) does through `$development`: a bare `nuxt typecheck` checks against the layer's `main` on GitHub, so always run `pnpm run typecheck`. Production builds extend `github:cardan-a11y/cardan-ui` (`main`); CI checks that `main` out as `../cardan-ui`, so a change that needs a newer layer merges once that release is on `main`.

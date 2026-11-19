@@ -220,6 +220,7 @@ function positionDropdown() {
 // Opens the dropdown upwards when it doesn't fit below the field but there is
 // more room above. The library has no placement of its own; anchor
 // positioning can take this over once every target browser has it (README).
+// Tripwire: test/tripwires.test.ts.
 async function placeDropdown() {
   setDropdownLayer(true);
   positionDropdown();
@@ -271,6 +272,7 @@ function stopFollowing() {
  * The library asks an options function once, as it loads (`resolve-on-load`).
  * When that answer was empty, such as before the data it depends on came in,
  * the list stayed empty: it asks again when it opens without options.
+ * Tripwire: test/tripwires.test.ts.
  */
 function handleOpen(instance: MultiselectProps) {
   isExpanded.value = true;
@@ -316,6 +318,7 @@ onMounted(() => {
  * the field's `blur()` does nothing from the capture phase until the event
  * leaves the wrapper: focus stays on the combobox (APG combobox). With the
  * listbox closed the event goes on as it came, so a Dialog around it closes.
+ * Tripwire: test/tripwires.test.ts.
  */
 function keepFocusOnEscape(event: KeyboardEvent) {
   if (event.key !== 'Escape') return;

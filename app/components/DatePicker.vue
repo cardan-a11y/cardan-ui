@@ -19,6 +19,7 @@ import '@vuepic/vue-datepicker/dist/main.css';
  * `aria-describedby` and `placeholder` to the input, `class` and `style` to the
  * wrapper. What the library put on its own input does not reach this one:
  * `ariaLabels.input`, the classes of `ui.input` and its `invalid` event.
+ * Tripwire: test/tripwires.test.ts.
  */
 defineOptions({ inheritAttrs: false });
 
@@ -162,7 +163,7 @@ function inputClasses(isMenuOpen: boolean) {
  * The library's key handler opens the calendar on Enter, submits a typed date
  * on Tab and Enter, and cancels every other key while text input is off. It
  * does not get Escape while the calendar is closed, so the browser can still
- * close a Dialog around the field.
+ * close a Dialog around the field. Tripwire: test/tripwires.test.ts.
  */
 function handleKeydown(
   event: KeyboardEvent,

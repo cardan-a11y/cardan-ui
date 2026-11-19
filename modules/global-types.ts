@@ -11,6 +11,7 @@ import { defineNuxtModule, createResolver } from 'nuxt/kit';
  * so TypeScript never loads the file and every global fails to resolve. This
  * holds for Nuxt 4.6, whose generated tsconfig excludes the consumer's
  * `node_modules` even though it lists the layer's `app/` in `include`.
+ * Tripwire: test/tripwires.test.ts.
  *
  * A reference is resolved regardless of `include`/`exclude`, and because the
  * file stays in place its relative `.vue` imports keep resolving.

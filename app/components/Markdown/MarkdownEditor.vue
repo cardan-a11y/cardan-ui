@@ -85,7 +85,7 @@ if (!configured) {
     markdownItConfig(mdit) {
       // md-editor-v3 types its instance with markdown-it 14, the plugins expect the
       // types of markdown-it 15; both run on the same API. The cast can go once
-      // md-editor-v3 depends on markdown-it 15.
+      // md-editor-v3 depends on markdown-it 15. Tripwire: test/tripwires.test.ts.
       const md = mdit as unknown as MarkdownIt;
 
       md.use(swatchExtension);

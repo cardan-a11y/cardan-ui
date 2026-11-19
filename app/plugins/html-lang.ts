@@ -1,4 +1,7 @@
-/** The i18n module's `defaultDirection`, which it defines at build time */
+/**
+ * The i18n module's `defaultDirection`, which it defines at build time.
+ * Tripwire: test/tripwires.test.ts.
+ */
 declare const __DEFAULT_DIRECTION__: string | undefined;
 
 type Direction = 'ltr' | 'rtl' | 'auto';
