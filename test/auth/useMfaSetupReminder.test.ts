@@ -6,8 +6,6 @@ describe('useMfaSetupReminder', () => {
     const { user } = useSanctumAuth<{ data: Record<string, unknown> }>();
     const { needsMfaSetup, isMfaSetupRequired } = useMfaSetupReminder();
 
-    // A role requires MFA, but this account is exempted: the setup page
-    // would send it on and the middleware straight back
     user.value = {
       data: {
         email: 'ada@example.com',

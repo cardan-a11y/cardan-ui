@@ -1,9 +1,6 @@
 <script setup lang="ts">
-// The playground's frame, also around the error page (the layer's error.vue;
-// the title template is in nuxt.config.ts, `<html lang>` the layer's own)
 const route = useRoute();
 
-// The Auth UI layer's own pages, demoed full page
 const authPages = [
   '/login',
   '/forgot-password',
@@ -52,12 +49,10 @@ const isAuthSubpage = computed(() => authPages.includes(route.path));
 }
 
 main {
-  /* main has the page's spacing above already (the layer's error.vue) */
+  /* main has the spacing above already */
   --error-page-padding-block: 0 5rem;
 
   container-type: inline-size;
-  /* The page's spacing is main's own and the sidebar's (AppSidebar), not the
-     layout's: the sticky sidebar then runs the whole height of the page */
   padding-block: var(--app-padding-block);
 }
 
@@ -73,12 +68,9 @@ h3 {
   font-size: var(--font-size-lg);
 }
 
-/* The sidebar under the header, beside the page; below 1024px the header's
-   menu holds the navigation (TheHeader) */
 .app-layout {
   --app-sidebar-display: none;
   --app-sidebar-top: calc(var(--app-header-height) + 1px);
-  /* As wide as its longest label, which does not wrap (Button) */
   --app-sidebar-width: max-content;
   --app-sidebar-padding-inline: 0px;
   --app-sidebar-padding-block: var(--app-padding-block);

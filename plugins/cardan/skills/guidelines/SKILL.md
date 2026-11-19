@@ -62,11 +62,15 @@ Look up a Nuxt API, config key or official module in the plugin's `nuxt` MCP ser
 
 ## Comments
 
-A comment says why, not what: what the code cannot say itself, such as a WCAG or APG reason, a business rule or a constraint outside the file. What a better name, an extracted function or a type would say is not a comment. Commented-out code is deleted; git keeps it.
+Code explains itself; a comment is the exception. Before writing one, give a better name, extract a function or a constant, or pin the behaviour with a test whose name says it: a test fails when the behaviour changes, a comment goes stale. Only three kinds of comment stay:
 
-- **A workaround says it is one**: what is wrong or missing (the library and its version, the browser, the API) and when it can go. A workaround tied to a dependency's version or internals gets an entry in the repository's tripwire test, `tripwires.test.ts` in its test folder (Cardan UI's `test/tripwires.test.ts` is the model; create it with the first entry), which fails once that dependency moves to another minor version; its comment points there. A condition on a Cardan UI release ("until 2.5.4 is on `main`") gets an entry that fails once the version in `../cardan-ui/package.json` reaches that release: the full version, since Cardan UI releases are patch versions.
-- **A project never works around Cardan UI.** A flaw or gap in a layer component, composable or token is fixed in cardan-ui, or reported to the user and left. A project does not style the layer's internal class names, provide its internal injection keys or copy its behaviour. When the user accepts a stopgap until a layer release, its comment says so, names that release and has a tripwire.
-- **A change keeps the comments around it true.** When code changes, its comments and the docblock of its function or component are checked against the new code; a comment whose reason is gone is rewritten or deleted, not left to explain code that no longer needs it.
+1. **A workaround**: what is wrong or missing (the library and its version, the browser, the API) and when it can go. One tied to a dependency's version or internals gets an entry in the repository's tripwire test, `tripwires.test.ts` in its test folder (Cardan UI's `test/tripwires.test.ts` is the model; create it with the first entry), which fails once that dependency moves to another minor version; its comment points there. A condition on a Cardan UI release ("until 2.5.4 is on `main`") gets an entry that fails once the version in `../cardan-ui/package.json` reaches that release: the full version, since Cardan UI releases are patch versions.
+2. **A deliberate deviation** from a standard or from the obvious approach (the APG pattern, WCAG, the platform default) that the code cannot show.
+3. **A public docblock** on a component, prop, emit or exported function: what a consumer needs to use it, not how it works inside.
+
+A comment is at most two lines; a public docblock as short as its consumer needs. Reasoning and history go in the commit message or the pull request, conventions in CLAUDE.md, usage in the README or the playground. Commented-out code is deleted; git keeps it. When code changes, the comments on it are checked against the new code and rewritten or deleted.
+
+**A project never works around Cardan UI.** A flaw or gap in a layer component, composable or token is fixed in cardan-ui, or reported to the user and left. A project does not style the layer's internal class names, provide its internal injection keys or copy its behaviour. When the user accepts a stopgap until a layer release, its comment says so, names that release and has a tripwire.
 
 ## Tests in the projects
 

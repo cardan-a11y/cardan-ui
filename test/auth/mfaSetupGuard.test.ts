@@ -34,10 +34,6 @@ const toSetup = (redirect: string) => ({
   query: { redirect },
 });
 
-/**
- * The `mfa-setup` middleware: the setup page stands between the user and
- * the app while MFA is required, and once after a sign-in without it.
- */
 describe('mfa-setup middleware (Academy)', () => {
   useScenario(academy);
 
@@ -83,13 +79,11 @@ describe('mfa-setup middleware (Academy)', () => {
     await navigateToPath('/dashboard');
     expect(navigate).toHaveBeenCalledExactlyOnceWith(toSetup('/dashboard'));
 
-    // Another account signs in on this tab: no reminder of the first's
     navigate.mockClear();
     signIn(academy.user({ email: 'grace@example.com', mfa_enabled: false }));
     await navigateToPath('/dashboard');
     expect(navigate).not.toHaveBeenCalled();
 
-    // Skipped: not again
     signIn(academy.user({ mfa_enabled: false }));
     useMfaSetupReminder().dismissMfaSetup();
     await navigateToPath('/dashboard');
@@ -115,10 +109,6 @@ describe('mfa-setup middleware (Auditor)', () => {
   });
 });
 
-/**
- * The 403 plugin: an API that starts requiring MFA mid-session answers 403
- * with a code; the layer re-reads the user and goes to the setup page.
- */
 describe('mfa-setup-required plugin (Academy)', () => {
   useScenario(academy);
 
@@ -141,8 +131,7 @@ describe('mfa-setup-required plugin (Academy)', () => {
   it('re-reads the user and goes to the setup page, back to where they were', async () => {
     signIn(academy.user({ mfa_enabled: false }));
     fortify({ [identity]: () => ({ data: required }) });
-    // A light page: the navigation loads the page with all it imports, and
-    // /form's took over five seconds in a busy full run and timed out
+    // A light page: /form's imports timed out in a busy full run
     await useRouter().push('/accessibility?step=2');
 
     await refused(403, jsonApi('mfa_setup_required'));
@@ -156,8 +145,6 @@ describe('mfa-setup-required plugin (Academy)', () => {
   it('lets the refused request reject before the navigation finishes', async () => {
     fortify({ [identity]: () => ({ data: required }) });
 
-    // The client rejects the request once this hook has run. A leave guard
-    // that waits for the request holds the navigation until then.
     let rejectRequest!: () => void;
     const rejected = new Promise<void>((resolve) => (rejectRequest = resolve));
     navigate.mockImplementation(() => rejected);
@@ -213,7 +200,6 @@ describe('mfa-setup-required plugin (Academy)', () => {
   it('does not go round when re-reading the user is refused the same way', async () => {
     fortify({
       [identity]: async () => {
-        // The client reports this refusal through the same hook
         await refused(403, jsonApi('mfa_setup_required'));
         throw fetchError(403, jsonApi('mfa_setup_required'));
       },

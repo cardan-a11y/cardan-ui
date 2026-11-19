@@ -1,17 +1,12 @@
 <script setup lang="ts">
 /**
- * A text field. Two values the browser lets through but the Laravel APIs
- * refuse are invalid here too, through the `pattern` the browser checks, so
- * the error shows before the submit, not from the server: a required field
- * of only spaces (the API trims it to empty) is missing, and an e-mail
- * address whose domain has no dot (`a@b`, which `email:filter` refuses) is
- * invalid. A project's own `pattern` replaces the dot check; a required
- * field still refuses only spaces, unless the browser drops the pattern as
- * invalid (it compiles with the `v` flag: escape `-` in a class).
+ * A text field that also refuses what the Laravel APIs refuse: a required
+ * value of only spaces, and an e-mail domain without a dot. A project's own
+ * `pattern` replaces the dot check; it compiles with the `v` flag (escape `-`
+ * in a class).
  */
 import type { StyleValue } from 'vue';
 
-// An attribute goes to the control; `class` and `style` stay on the wrapper
 defineOptions({ inheritAttrs: false });
 
 const { t } = useI18n();
@@ -81,10 +76,7 @@ const {
   instruction?: string;
   /** The error text when the browser finds the field invalid; one per type by default */
   errorMessage?: string;
-  /**
-   * An error the browser cannot find, such as one from the server: the field
-   * shows this text and is described by it until its value changes
-   */
+  /** An error the browser cannot find, such as the server's: shown until the value changes */
   customError?: string;
   tabindex?: string;
   variant?: InputVariant;
@@ -126,15 +118,9 @@ const chipSize = computed(() => {
 const inputRef = useTemplateRef<HTMLInputElement>('input');
 const isValid = ref(true);
 
-/** Requires a dot in the domain; the browser checks the rest of the address */
 const EMAIL_PATTERN = '.+@.+\\..+';
-/** The browser anchors a pattern, so a lookahead holds for the whole value */
 const NOT_ONLY_SPACES = '(?=.*\\S)';
 
-/**
- * A mismatch is `:invalid` like a missing value, so Form focuses the field;
- * `computedErrorMessage` says a value of only spaces is missing
- */
 const computedPattern = computed(() => {
   const own = pattern ?? (type === 'email' ? EMAIL_PATTERN : undefined);
   if (!required) return own;
@@ -145,7 +131,6 @@ function updateValidity() {
   isValid.value = inputRef.value?.validity.valid ?? true;
 }
 
-// The parent moves focus to the field with a custom error (`focusElement()`)
 const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   () => customError,
   { invalid: () => !isValid.value, showInvalid: () => showInvalid },
@@ -188,16 +173,10 @@ function handleInput(event: Event) {
 function takeValue(target: HTMLInputElement) {
   clearCustomError();
 
-  // Also a number outside min and max: the field is invalid until the number
-  // is in range, which the form reports. A model kept at the old value would
-  // differ from the number the field shows.
   model.value = target.value;
-  // Not left to the model's watcher: validity can change while the model
-  // does not (`e` in a number field, a space under `v-model.trim`)
   updateValidity();
 }
 
-// A value an extension filled in without an input event
 const { remember, sync } = useAutofillSync(inputRef, (control) =>
   takeValue(control as HTMLInputElement),
 );
@@ -274,7 +253,6 @@ const emit = defineEmits<{
 </template>
 
 <style>
-/* The base look of `.input` is in FormField, which SpinButton shares */
 .form-field-wrapper {
   .input-wrapper {
     position: relative;

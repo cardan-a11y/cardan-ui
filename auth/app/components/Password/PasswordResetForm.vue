@@ -1,13 +1,7 @@
 <script setup lang="ts">
 /**
- * Sets a new password from the link in the reset email
- * (`endpoints.resetPassword`), with the `token` and `email` from its query,
- * then signs the user in: straight on, or through the sign-in challenge when
- * the account has MFA.
- *
- * A reset mail that names the account fills the address in, out of sight. One
- * that does not (Fortify's own mail only carries the token) gets a visible
- * email field instead.
+ * Sets a new password from the reset link's `token` and `email`, then signs
+ * the user in. Without `email` in the link it shows an email field.
  */
 const route = useRoute();
 const { client, loginWithoutRedirect, refreshIdentity, loginRedirectTarget } =
@@ -50,9 +44,6 @@ async function resetPassword() {
     return;
   }
 
-  // The password is set. A sign-in that fails now is no reason to say the
-  // reset failed: the login page takes over, with the address filled in and
-  // a word that the new password was saved.
   try {
     const response = await loginWithoutRedirect({
       email: email.value,
@@ -80,7 +71,6 @@ async function resetPassword() {
     });
   }
 
-  // Keeps the spinner up while the page transition plays.
   setTimeout(() => {
     loading.value = false;
   }, transitionDuration('lg'));
@@ -89,8 +79,7 @@ async function resetPassword() {
 
 <template>
   <Form class="password-reset-form" @submit="resetPassword">
-    <!-- From the link: out of sight, but it lets a password manager store the
-         new password with the account. -->
+    <!-- For a password manager to store the new password with the account -->
     <input
       v-if="linkEmail"
       type="email"
@@ -112,7 +101,6 @@ async function resetPassword() {
       required
     />
 
-    <!-- One form row: the requirements belong to the field above them -->
     <div class="password-new-field">
       <Input
         v-model="password"
@@ -144,7 +132,6 @@ async function resetPassword() {
         required
       />
 
-      <!-- Reveals both password fields -->
       <PasswordReveal v-model="showPassword" />
     </div>
 

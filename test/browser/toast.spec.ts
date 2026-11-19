@@ -1,10 +1,5 @@
-/**
- * A toast with a timeout waits while the pointer is over it or focus is in
- * it (WCAG 2.2.1 Timing Adjustable), and hides once both have left. Its
- * timer is a CSS animation, which a fake clock does not drive, so the tests
- * move that animation on to just before its end instead of waiting it out.
- * With reduced motion a toast leaves at once, so it is gone, not fading.
- */
+// WCAG 2.2.1. The timer is a CSS animation, which page.clock does not drive:
+// the tests move it on to just before its end.
 import { expect, test, type Page } from '@playwright/test';
 import { focusStop, gotoHydrated, tabKey } from './helpers';
 
@@ -12,7 +7,6 @@ test.use({ reducedMotion: 'reduce' });
 
 const toasts = (page: Page) => page.locator('#teleports [aria-live] section');
 
-/** Adds a toast that hides after 5s, with the pointer away from it */
 async function addToast(page: Page) {
   await gotoHydrated(page, '/text');
   await page
@@ -22,9 +16,8 @@ async function addToast(page: Page) {
   await expect(toasts(page)).toHaveCount(1);
 }
 
-/** Moves the toast's timer on to `left` ms before it ends */
-async function almostRunOut(page: Page, left: number) {
-  await page.evaluate((left) => {
+async function almostRunOut(page: Page, msLeft: number) {
+  await page.evaluate((msLeft) => {
     const timer = document
       .getAnimations()
       .find(
@@ -36,15 +29,12 @@ async function almostRunOut(page: Page, left: number) {
       );
     if (!timer) throw new Error('The toast has no timer');
     timer.currentTime =
-      Number(timer.effect!.getComputedTiming().endTime) - left;
-  }, left);
+      Number(timer.effect!.getComputedTiming().endTime) - msLeft;
+  }, msLeft);
 }
 
-/**
- * The timer has 200ms left: were it running, the toast would be gone well
- * within this wait. A wait is the only way to see that nothing happens.
- */
 async function expectToWait(page: Page) {
+  // Only a wait shows that nothing happens
   await almostRunOut(page, 200);
   await page.waitForTimeout(1000);
   await expect(toasts(page)).toHaveCount(1);

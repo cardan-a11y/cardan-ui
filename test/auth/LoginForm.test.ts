@@ -65,7 +65,6 @@ describe.each(scenarios)('LoginForm ($name)', (scenario) => {
     expect(accessibleName(password)).toMatch(/^Password/);
     expect(password.attributes('autocomplete')).toBe('current-password');
 
-    // The reveal button is a toggle, named for what it does
     const reveal = wrapper
       .findAll('button')
       .find((button) => accessibleName(button) === 'Show password');
@@ -80,8 +79,6 @@ describe.each(scenarios)('LoginForm ($name)', (scenario) => {
   it('shows an empty field as an error on the field and focuses it', async () => {
     const { email, submit } = await mountForm();
 
-    // A click on the submit button submits (also in happy-dom), which the
-    // test of a second click while loading relies on
     await submit.trigger('click');
     await flushPromises();
 
@@ -104,8 +101,7 @@ describe.each(scenarios)('LoginForm ($name)', (scenario) => {
     expect(alert.text()).toContain(message);
     expect(alert.get('[lang]').attributes('lang')).toBe(scenario.errorLanguage);
 
-    // An owner's decision: the server's errors go to the one alert. The
-    // fields the browser found valid stay valid, and focus stays put.
+    // An owner's decision: the server's errors go to the one alert, focus stays put
     expect(email.attributes('aria-invalid')).toBeUndefined();
     expect(password.attributes('aria-invalid')).toBeUndefined();
     expectFocused(submit);
@@ -149,7 +145,6 @@ describe.each(scenarios)('LoginForm ($name)', (scenario) => {
     expect(wrapper.emitted('success')).toHaveLength(1);
     expect(navigate).toHaveBeenCalledExactlyOnceWith('/courses/1');
 
-    // The identity first: the page it goes to needs the user
     const identityCall = client.mock.calls.findIndex(
       ([url]) => url === scenario.sanctum.endpoints.user,
     );
@@ -267,7 +262,6 @@ describe.each(scenarios)('LoginForm ($name)', (scenario) => {
       path: '/two-factor-authentication',
       query: { redirect: '/courses/1' },
     });
-    // The session is not usable before the second factor
     expect(requests(identity)).toEqual([]);
   });
 
@@ -290,7 +284,6 @@ describe.each(scenarios)('LoginForm ($name)', (scenario) => {
 
     expect(submit.attributes('aria-busy')).toBe('true');
     expect(submit.attributes('aria-disabled')).toBe('true');
-    // Still focusable, so focus is not lost while it loads
     expect(submit.attributes('disabled')).toBeUndefined();
 
     await submit.trigger('click');

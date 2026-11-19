@@ -1,7 +1,4 @@
 <script setup lang="ts">
-// The mock Fortify endpoints in server/routes never report the password as
-// confirmed, so every flow starts with the password dialog. Any password
-// confirms it, except 000000.
 const {
   openMfaEnableDialog,
   openMfaDisableDialog,

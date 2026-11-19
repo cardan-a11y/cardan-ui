@@ -36,7 +36,6 @@ const filteredCriteria = computed(() =>
 
 const results = ref(filteredCriteria.value.slice(0, 10));
 
-// A row's actions, as the Auditor's tables have them
 const rowActions: MenuItem[] = [
   { id: 'edit', label: 'Edit', icon: 'material-symbols:edit-outline-rounded' },
   {

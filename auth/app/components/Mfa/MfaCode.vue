@@ -1,10 +1,5 @@
 <script setup lang="ts">
-/**
- * The six-digit code from the authenticator app. `one-time-code` lets the
- * phone fill a code it received by SMS or mail, and a password manager that
- * holds the secret (iCloud Keychain, 1Password, Bitwarden) fill the app's
- * code; the browser's own autofill has nothing to offer here.
- */
+/** The six-digit code from the authenticator app, which the phone or a password manager can fill in. */
 const { mfaCredentials, mfaError, codeInputRef } = useMfa();
 </script>
 

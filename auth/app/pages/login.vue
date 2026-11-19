@@ -9,7 +9,6 @@ useHead({ title: computed(() => t('general.login')) });
 
 const email = useLoginEmail();
 
-// A sign-in without MFA detours past the setup page on its way in.
 const { remindMfaSetup } = useMfaSetupReminder();
 </script>
 

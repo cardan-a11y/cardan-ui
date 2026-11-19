@@ -1,26 +1,13 @@
 /**
- * Closes a popover when focus leaves it for the page: when it moves from its
- * trigger or its content to an element outside both. A move between the two
- * keeps it open, and so does a move to nowhere (the window loses focus).
- *
- * A press inside moves focus too, and that is platform behaviour, not a
- * leave: the default action of a mousedown on content that cannot take focus
- * (text, padding) focuses the nearest focusable element around it, such as a
- * `<main tabindex="-1">` or the AppShell, and Safari, where a click does not
- * focus a button, does the same for a press on the trigger. `onPress`, on the
- * mousedown, marks such a move until the next task; the popover then stays
- * open and closes when focus leaves the element the press gave it to for the
- * page, as it does after a navigation when AppShell focuses the shell. A
- * press on the trigger so closes it with the click, instead of on mousedown
- * for the click to open it again.
- *
- * - `elements`: the trigger and the content.
- * - `close`: closes the popover.
- * - `isOpen`: when given, a focus move while it is false does nothing.
+ * Closes a popover when focus leaves its trigger and content for the page; a
+ * move between the two, or out of the window, keeps it open. A press inside
+ * that moves focus to an element around it (platform behaviour, not a leave)
+ * keeps it open until focus leaves that element.
  *
  * Bind `onFocusOut` to the `focusout` of the trigger and the content, and
- * `onPress` to the `mousedown` of each that a press should not close it
- * from. Call `unpark()` when the popover closes; it is also called on unmount.
+ * `onPress` to the `mousedown` of each that a press should not close it from.
+ * Call `unpark()` when the popover closes. `isOpen`: a focus move while it is
+ * false does nothing.
  */
 export function useFocusLeave({
   elements,
@@ -40,7 +27,6 @@ export function useFocusLeave({
     });
   }
 
-  /** The element around the popover that a press in it gave focus to */
   let parked: Element | null = null;
 
   function unpark() {

@@ -1,7 +1,6 @@
 <script setup lang="ts" generic="T extends SelectOption">
 import type { StyleValue } from 'vue';
 
-// An attribute goes to the control; `class` and `style` stay on the wrapper
 defineOptions({ inheritAttrs: false });
 
 const { t } = useI18n();
@@ -50,10 +49,7 @@ const {
   instruction?: string;
   /** The error text when the browser finds the field invalid; "<label> is missing" by default */
   errorMessage?: string;
-  /**
-   * An error the browser cannot find, such as one from the server: the field
-   * shows this text and is described by it until its value changes
-   */
+  /** An error the browser cannot find, such as the server's: shown until the value changes */
   customError?: string;
   tabindex?: string;
   color?: BaseColor;
@@ -78,7 +74,6 @@ function updateValidity() {
   isValid.value = selectRef.value?.validity.valid ?? true;
 }
 
-// The parent moves focus to the field with a custom error (`focusElement()`)
 const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   () => customError,
   { invalid: () => !isValid.value, showInvalid: () => showInvalid },
@@ -89,7 +84,6 @@ watch([model, () => required, () => options], updateValidity, {
   flush: 'post',
 });
 
-// The error describes the field only while it shows
 const computedAriaDescribedby = computed(
   () =>
     [
@@ -107,8 +101,6 @@ function handleChange() {
   remember();
 }
 
-// A choice an extension made without a change event: the event the select's
-// v-model listens to, which also reads an option's non-string value
 const { remember } = useAutofillSync(selectRef, (control) =>
   control.dispatchEvent(new Event('change')),
 );

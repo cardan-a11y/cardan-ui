@@ -1,8 +1,3 @@
-/**
- * PasswordUpdateForm's requirements box on a card, the surface a Dialog
- * shares: it must stand out from it, in both color modes, while its text
- * keeps its contrast (pages.spec runs axe on the page).
- */
 import { expect, test } from '@playwright/test';
 import { contrastRatio, gotoHydrated } from './helpers';
 
@@ -15,7 +10,6 @@ for (const mode of ['light', 'dark'] as const) {
     const box = page.locator('.card .password-requirements').first();
     await expect(box).toBeVisible();
 
-    // The painted colours: the box's own, possibly translucent, over the card's
     const [boxColor, cardColor] = await box.evaluate((element) => {
       const card = element.closest('.card')!;
       const canvas = document.createElement('canvas');

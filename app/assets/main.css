@@ -1,4 +1,3 @@
-/* Cardan brand palette - primitives, only referenced by the semantic tokens below */
 :where(:root) {
   --cardan-purple: #8e40b5;
   --cardan-purple-hover: #763597;
@@ -21,7 +20,6 @@
   --cardan-beige: #f7f5f2;
   --cardan-beige-mid: #ebe6e0;
   --cardan-beige-sand: #e8e1d9;
-  /* Kaart: the card surface of the brand book */
   --cardan-card: #fbfaf9;
 
   --cardan-error: #cc2828;
@@ -29,7 +27,6 @@
   --cardan-error-border: #d6bcbc;
   --cardan-error-surface: #ffe6e6;
 
-  /* Dark mode variants */
   --cardan-dark-bg: #141415;
   --cardan-dark-card: #19191a;
   --cardan-dark-block: #1e1e1f;
@@ -43,7 +40,6 @@
   --cardan-ochre-on-dark: #d19a55;
 }
 
-/* Color design tokens */
 :where(.dark-mode) {
   --color-scheme: dark;
 
@@ -60,8 +56,6 @@
     var(--cardan-dark-text)
   );
   --color-accent-graphic: var(--cardan-purple-text-on-dark);
-  /* White text on the purple fill of the primary Button in both modes: 5.1:1
-     on --color-accent, 6.3:1 on this hover */
   --color-accent-hover: color-mix(
     in srgb,
     var(--cardan-purple-on-dark) 85%,
@@ -83,9 +77,8 @@
   --color-card-bg: var(--cardan-dark-card);
   --color-white: var(--cardan-black);
 
-  /* Dark surfaces the brand book does not define are 25% of the color over the
-     dark background, green 20%. Purple uses 15%, so purple text on it keeps
-     4.5:1 */
+  /* Dark surfaces the brand book lacks: 25% of the color over the dark
+     background, green 20%, purple 15% */
 
   /* Not in the brand book: dark error text and graphics are computed with color-mix */
   --color-red: var(--cardan-error);
@@ -99,8 +92,6 @@
     var(--cardan-error) 65%,
     var(--cardan-white)
   );
-  /* The same mix as the text: the brand red is 2.2:1 on the track and
-     2.8:1 on the red surface, this is 3.8:1 and 4.9:1 */
   --color-red-graphic: color-mix(
     in srgb,
     var(--cardan-error) 65%,
@@ -211,7 +202,7 @@
   --color-red-text: var(--cardan-error-text);
   --color-red-graphic: var(--cardan-error);
 
-  /* Ochre: data and status only. Ochre 40% mixed with white is the surface, for 4.5:1 with Ochre text */
+  /* Ochre: data and status only */
   --color-orange: var(--cardan-ochre);
   --color-orange-bg: color-mix(
     in srgb,
@@ -261,22 +252,18 @@
 }
 
 :where(:root) {
-  /* Font family design tokens */
   --font-family: 'Hanken Grotesk', Arial, system-ui, sans-serif;
   --font-family-input: system-ui, sans-serif;
 
-  /* Font weight design tokens */
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
 
-  /* Line height design tokens */
   --line-height: 1.55;
   --line-height-heading: 1.25;
   --line-height-ui: 1.25;
 
-  /* Font size design tokens */
   --font-size-xxxxl: 4rem;
   --font-size-xxxl: 3rem;
   --font-size-xxl: 2rem;
@@ -287,7 +274,6 @@
   --font-size-xs: 0.75rem;
   --font-size-xxs: 0.625rem;
 
-  /* Size design tokens - only used by Skeleton and Spacer components */
   --size-xxxxl: 12rem;
   --size-xxxl: 8rem;
   --size-xxl: 4rem;
@@ -299,29 +285,24 @@
   --size-xxs: 0.5rem;
   --size-xxxs: 0.25rem;
 
-  /* Inline padding of the app, also of MobileMenu's content */
   --app-padding-inline: 0.75rem;
-  /* The height of the app header: SidebarLayout sticks under it, UserMenu opens under it */
   --app-header-height: 3.5rem;
-  /* The width of the app's content: AppHeader keeps its content within it */
   --app-max-width: 1280px;
 
   @media (min-width: 480px) {
     --app-padding-inline: 1.5rem;
   }
 
-  /* The brand gradient, from the accent to the green surface: once per page,
-     under a card. Also in dark mode, where the brand book has a solid surface */
+  /* Once per page, under a card; also in dark mode, where the brand book has
+     a solid surface */
   --gradient-bg: linear-gradient(
     in srgb 110.32deg,
     var(--color-accent-bg) 0%,
     var(--color-green-bg) 76.34%
   );
 
-  /* Backdrop behind Dialog and MobileMenu */
   --color-backdrop: rgb(20 20 19 / 60%);
 
-  /* Border radius design tokens */
   --radius-xs: 2px;
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -330,11 +311,9 @@
   --radius-xxl: 24px;
   --radius-full: 999px;
 
-  /* Utility design tokens */
   --focus-color: var(--color-black);
   --color-transparent: transparent;
 
-  /* Transition duration design tokens */
   --duration-xs: 0.1s;
   --duration-sm: 0.2s;
   --duration-md: 0.4s;
@@ -353,7 +332,6 @@
   }
 }
 
-/* CSS Reset */
 *,
 *::after,
 *::before {
@@ -368,7 +346,7 @@
   -moz-text-size-adjust: none;
   text-size-adjust: none;
 
-  /* A11Y: prevent obscured content when using the keyboard to shift focus */
+  /* Keeps focus clear of the viewport's edge and what sticks there (WCAG 2.4.11) */
   scroll-padding-block: 1rem;
 
   @media (min-width: 360px) and (min-height: 360px) {
@@ -407,8 +385,6 @@
 :where(figure) {
   margin: 0;
 }
-
-/* Typography */
 
 :where(button) {
   font: inherit;
@@ -493,8 +469,6 @@
   }
 }
 
-/* Lists */
-
 :where(dl) {
   margin-block: 0;
 }
@@ -536,8 +510,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Code block */
-
 :where(code) {
   color: var(--color-text);
   font-weight: var(--font-weight-regular);
@@ -562,15 +534,11 @@
   padding: 0.75rem 1rem;
 }
 
-/* Address block */
-
 :where(address) {
   display: inline;
   font-style: normal;
   white-space: pre-line;
 }
-
-/* Keyboard key block */
 
 :where(kbd) {
   background-color: var(--color-white);
@@ -584,8 +552,6 @@
     padding-block: 0.2rem 0.05rem;
   }
 }
-
-/* A11Y helper class */
 
 .visuallyhidden {
   position: fixed;

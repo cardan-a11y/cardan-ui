@@ -1,14 +1,10 @@
 <script setup lang="ts">
 /**
- * The wrapper every app renders its header, navigation and pages in. It
- * announces a new page to screen readers, puts the skip link first and takes
- * focus after a navigation (`useRouteFocus()`), so the next Tab is the skip
- * link. The skip link's target is exactly one focusable `id="main"`
- * (`tabindex="-1"`) per page, past all repeated content (WCAG 2.4.1): the
- * app's `<main>`, or the page's own content after what repeats from page to
- * page, such as breadcrumbs or tabs; or the links name another one.
- *
- * It has no layout of its own: a class on it lays out what is in it.
+ * The wrapper of an app's header, navigation and pages: it announces a new
+ * page, puts the skip link first and takes focus after a navigation
+ * (`useRouteFocus()`). A page has exactly one focusable `id="main"`
+ * (`tabindex="-1"`) past all repeated content (WCAG 2.4.1), unless
+ * `skip-links` name another. It has no layout of its own.
  */
 const { skipLinks = undefined } = defineProps<{
   skipLinks?: SkipLinkItem[];
@@ -30,8 +26,7 @@ useRouteFocus(shellRef);
 </template>
 
 <style>
-/* Focus lands here after a navigation, not because the user moved it: no
-   ring around the whole page, but an outline in forced colors. */
+/* No focus ring for focus a navigation put here; an outline in forced colors */
 .app-shell {
   outline: 1px solid transparent;
 }

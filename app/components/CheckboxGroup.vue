@@ -35,10 +35,7 @@ const {
   showInvalid?: boolean;
   /** Under the group when it is required and no box is ticked; "Tick at least one option" by default */
   errorMessage?: string;
-  /**
-   * An error the browser cannot find, such as one from the server: the group
-   * shows this text and is described by it until a box is ticked or unticked
-   */
+  /** An error the browser cannot find, such as the server's: shown until a box changes */
   customError?: string;
   id?: string;
   variant?: 'default' | '3d';
@@ -74,12 +71,8 @@ const { customErrorActive, clearCustomError, errorShown } = useCustomError(
 
 const listRef = useTemplateRef<HTMLElement>('list');
 
-/**
- * The browser's own `required` on a checkbox asks for that box, so on every
- * box of a group it would ask for all of them. The group asks for at least
- * one through the custom validity of its boxes: the form then reports it
- * like any other field and focuses the first box.
- */
+// Not `required` on each box, which would ask for every box: custom validity
+// asks for one
 function applyValidity() {
   const text = required && !hasSelection.value ? message.value : '';
 
@@ -90,7 +83,6 @@ function applyValidity() {
 
 onMounted(applyValidity);
 
-// Deep, so a box added to the options in place gets its validity too
 watch([hasSelection, message, () => required, () => options], applyValidity, {
   deep: true,
   flush: 'post',
@@ -184,8 +176,6 @@ watch([hasSelection, message, () => required, () => options], applyValidity, {
   }
 }
 
-/* A required group without a ticked box, once the form reports its state, or
-   a custom error */
 :where(.checkboxes-wrapper.show-invalid:has(:invalid)),
 :where(.checkboxes-wrapper.custom-error),
 :where(.show-invalid) .checkboxes-wrapper:has(:invalid) {

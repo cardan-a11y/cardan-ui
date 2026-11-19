@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/**
+ * A toggletip, not a hover tooltip: a button that shows its text in a live
+ * region, with focus left on the button.
+ */
 const {
   label = undefined,
   fontSize = undefined,
@@ -44,9 +48,6 @@ const tooltipContentRef = useTemplateRef<HTMLDivElement | null>(
   'tooltipContent',
 );
 
-// `@toggle` fires after the popover is shown, so the content behind
-// `v-if="isOpen"` is added to the already visible aria-live region on open:
-// that makes a screen reader announce the toggletip. Focus stays on the trigger.
 const isOpen = ref(false);
 
 function onToggle(event: Event) {
@@ -56,13 +57,6 @@ function onToggle(event: Event) {
 
 const triggerRef = useTemplateRef<HTMLButtonElement>('trigger');
 
-/**
- * Native `popover=auto` dismisses on Escape and an outside press but not on
- * focus leaving the trigger, so it closes when focus moves on to the page, as
- * Popover does. Not on a press in the tooltip, to select its text or follow a
- * link in it. Only the content takes the press: a press on the trigger
- * toggles it.
- */
 const { onPress, onFocusOut, unpark } = useFocusLeave({
   elements: () => [tooltipContentRef.value, triggerRef.value],
   close: () => tooltipContentRef.value?.hidePopover(),
@@ -250,7 +244,7 @@ const { onPress, onFocusOut, unpark } = useFocusLeave({
   transition: color var(--duration-sm);
 
   &::after {
-    /* increase click target */
+    /* Enlarge the click target to at least 24×24px (WCAG 2.5.8) */
     content: '';
     position: absolute;
     inset: -50%;

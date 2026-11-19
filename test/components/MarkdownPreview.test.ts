@@ -121,6 +121,41 @@ describe('MarkdownPreview', () => {
     expect(link.text()).toContain('Watch this:');
   });
 
+  it('gives a new video in the same place a fresh player, with its own title', async () => {
+    const titles: Record<string, string> = {
+      dQw4w9WgXcQ: 'Never Gonna Give You Up',
+      '9bZkp7q19f0': 'Gangnam Style',
+    };
+    onTestFinished(
+      registerEndpoint('https://youtube.com/oembed', (event) => {
+        const url = new URL(event.node.req.url ?? '', 'https://youtube.com');
+        const id = new URL(url.searchParams.get('url')!).searchParams.get('v')!;
+        return { title: titles[id], width: 480, height: 270 };
+      }),
+    );
+    const wrapper = await mountSuspended(MarkdownPreview, {
+      props: { content: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+      attachTo: document.body,
+    });
+    await vi.waitFor(() =>
+      expect(accessibleName(wrapper.get('button'))).toBe(
+        'Play video: Never Gonna Give You Up',
+      ),
+    );
+
+    await wrapper.get('button').trigger('click');
+    await wrapper.setProps({
+      content: 'https://www.youtube.com/watch?v=9bZkp7q19f0',
+    });
+
+    await vi.waitFor(() =>
+      expect(accessibleName(wrapper.get('button'))).toBe(
+        'Play video: Gangnam Style',
+      ),
+    );
+    expect(wrapper.find('iframe').exists()).toBe(false);
+  });
+
   it('keeps a link to the site itself in the window', async () => {
     const { origin } = window.location;
     const wrapper = await mountSuspended(MarkdownPreview, {

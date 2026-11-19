@@ -1,8 +1,7 @@
 <script setup lang="ts">
 /**
- * Second-factor step of the sign-in flow: a six-digit code or a recovery code.
- * Shown by the layer's `/two-factor-authentication` page; an app that wants
- * its own frame overrides that page and renders this component inside it.
+ * The second factor at sign-in: a six-digit code or a recovery code. For an
+ * own frame, override the `/two-factor-authentication` page and render this.
  */
 const {
   card = true,
@@ -29,8 +28,6 @@ const {
   resetMfa,
 } = useMfa();
 
-// A fresh challenge on every sign-in: the code and error of one abandoned
-// earlier (Back to the login page) go before the first render and on leaving
 onBeforeMount(resetMfa);
 onUnmounted(resetMfa);
 
@@ -52,8 +49,6 @@ async function toggleUseRecoveryCode() {
 
   mfaError.value = null;
 
-  // The other input only exists after the swap has rendered, so its ref is
-  // still empty (or stale) until the next tick.
   await nextTick();
 
   if (useRecoveryCode.value) recoveryCodeInputRef.value?.focusElement();

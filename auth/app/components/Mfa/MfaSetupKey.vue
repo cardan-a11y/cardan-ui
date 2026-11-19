@@ -10,7 +10,6 @@ const { headingLevel = undefined } = defineProps<{
 
 const { setupKey } = useMfa();
 
-/** In groups of four, the way authenticator apps show it: easier to type over. */
 const groupedKey = computed(
   () => setupKey.value.match(/.{1,4}/g)?.join(' ') ?? '',
 );

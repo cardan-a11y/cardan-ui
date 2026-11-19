@@ -47,9 +47,7 @@ const sections = [
 const search = ref('');
 const onlyOpen = ref(false);
 
-// The examples are text here: Prettier formats a template literal in the
-// template as HTML, and drops its indentation. Each is a fenced block for
-// MarkdownPreview, which colours it with the `xml` grammar.
+// Not in the template, where Prettier would format them as HTML
 const htmlFence = (code: string) => ['```html', code, '```'].join('\n');
 
 const shellExample =
@@ -91,7 +89,6 @@ const layoutExample = htmlFence(`<SidebarLayout sticky beside="xl">
   </template>
 </SidebarLayout>`);
 
-// An order summary: text only, longer than the viewport is high
 const orderLines = Array.from({ length: 24 }, (_, i) => ({
   title: `Training ${i + 1}`,
   price: `€${(i + 1) * 25}`,
@@ -284,8 +281,6 @@ const orderExample = htmlFence(`<SidebarLayout sticky side-label="Your order">
 </template>
 
 <style>
-/* The layout's own spacing below, inside its columns: nothing of the page
-   or of main may come under a sticky panel */
 main:has(.layout-page) {
   padding-block-end: 0;
 }
@@ -301,9 +296,7 @@ main:has(.layout-page) {
     }
   }
 
-  /* The sidebar in a frame, instead of the height of the viewport */
   .sidebar-demo {
-    /* Its own sizes, not those of the playground's sidebar around it */
     --app-sidebar-display: grid;
     --app-sidebar-width: 16.25rem;
     --app-sidebar-padding-inline: 0.75rem;
@@ -323,10 +316,7 @@ main:has(.layout-page) {
       height: 22rem;
     }
 
-    /* What follows is the app's: the sidebar brings no look for its content */
-
-    /* The full logo, folded to its symbol: clipped to its first square, so
-       it does not shrink or jump. The symbol sits above the menu icons. */
+    /* Folded to its symbol by a clip, so it does not shrink or jump */
     .cardan-logo {
       flex-shrink: 0;
       transform: translateX(calc((2rem - var(--logo-height)) / 2));
@@ -342,8 +332,7 @@ main:has(.layout-page) {
       margin-block-start: 2.5rem;
     }
 
-    /* Each menu icon in a square as wide as the fold button, so the icons
-       line up with it and sit in the middle of the rail */
+    /* Icons as wide as the fold button, to line up in the rail */
     .button-variant--sidebar {
       gap: 0.25rem;
 
@@ -372,7 +361,6 @@ main:has(.layout-page) {
 
     margin-block-start: 1.5rem;
 
-    /* The column's own spacing is below the last card */
     > .sidebar-layout-main > .card:last-child {
       margin-block-end: 0;
     }

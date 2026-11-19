@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { StyleValue } from 'vue';
 
-// An attribute goes to the control; `class` and `style` stay on the wrapper
 defineOptions({ inheritAttrs: false });
 
 const { t } = useI18n();
@@ -29,10 +28,7 @@ const {
   instruction?: string;
   /** The error text when the browser finds the field invalid; "<label> is missing" or "Value invalid" by default */
   errorMessage?: string;
-  /**
-   * An error the browser cannot find, such as one from the server: the field
-   * shows this text and is described by it until its value changes
-   */
+  /** An error the browser cannot find, such as the server's: shown until the value changes */
   customError?: string;
   /** Shows the error now; a Form shows it after a failed submit */
   showInvalid?: boolean;
@@ -58,16 +54,10 @@ const computedErrorMessage = computed(() => {
 const textareaRef = useTemplateRef<HTMLTextAreaElement>('textarea');
 const isValid = ref(true);
 
-/**
- * The browser's constraints only: a required text of only spaces passes here
- * and the API, which trims it to empty, refuses it (a textarea has no
- * `pattern`, as Input uses for this)
- */
 function updateValidity() {
   isValid.value = textareaRef.value?.validity.valid ?? true;
 }
 
-// The parent moves focus to the field with a custom error (`focusElement()`)
 const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   () => customError,
   { invalid: () => !isValid.value, showInvalid: () => showInvalid },
@@ -76,7 +66,6 @@ const { customErrorActive, clearCustomError, errorShown } = useCustomError(
 onMounted(updateValidity);
 watch([model, () => required], updateValidity, { flush: 'post' });
 
-// The error describes the field only while it shows
 const computedAriaDescribedby = computed(
   () =>
     [
@@ -97,12 +86,9 @@ function takeValue(target: HTMLTextAreaElement) {
   clearCustomError();
 
   model.value = target.value;
-  // Not left to the model's watcher: under `v-model.trim` a space changes
-  // the length `minlength` checks, not the model
   updateValidity();
 }
 
-// A value an extension filled in without an input event
 const { remember, sync } = useAutofillSync(textareaRef, (control) =>
   takeValue(control as HTMLTextAreaElement),
 );
@@ -126,7 +112,6 @@ onMounted(() => {
   resizeTextarea();
 });
 
-// Also a value the parent loads after mount, as in an edit form
 watch(model, resizeTextarea, { flush: 'post' });
 
 onUnmounted(() => window.removeEventListener('resize', resizeTextarea));

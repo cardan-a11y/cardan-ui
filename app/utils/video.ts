@@ -6,11 +6,7 @@ export type VideoSource = {
   hash?: string;
 };
 
-/**
- * The video in a YouTube or Vimeo URL, or `undefined` for any other URL.
- * VideoPlayer and the markdown renderer share it, so a link in a text becomes
- * a player only when the player can play it.
- */
+/** The video in a YouTube or Vimeo URL, or `undefined` for any other URL. */
 export function parseVideoUrl(
   url: string | undefined,
 ): VideoSource | undefined {

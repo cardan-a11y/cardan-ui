@@ -1,8 +1,4 @@
-/**
- * A failed request as `$fetch` (ofetch) throws it: an error with the
- * response's status, its parsed body on `response._data` and its headers.
- * `extractApiError` reads the body and the `Content-Language` from it.
- */
+/** A failed request as `$fetch` (ofetch) throws it: status, body on `response._data`, headers. */
 export function fetchError(
   status: number,
   body: unknown,

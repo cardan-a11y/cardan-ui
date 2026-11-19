@@ -1,12 +1,9 @@
 <script setup lang="ts">
 /**
- * The frame of a form field: the label with its required chip, the control
- * in the default slot, then the error text and the instruction. Input,
- * Select, Textarea, MultiSelect, DatePicker and RangeInput render through
- * it, so the layout and styles they share live here once. A field points its
- * control at the texts with `aria-describedby`: `error-<id>` and
- * `instruction-<id>`, the error only while it shows, and the label is
- * `label-<id>` for a control that must name itself with `aria-labelledby`.
+ * The frame of a form field: the label with its required chip, the control in
+ * the default slot, the error text and the instruction. The field points its
+ * control at `instruction-<id>` and, while it shows, `error-<id>`; the label
+ * is `label-<id>` for a control that names itself with `aria-labelledby`.
  */
 const {
   id,
@@ -109,8 +106,6 @@ const {
   }
 }
 
-/* The text field of Input and SpinButton (`.input`): here, so a page that
-   shows a SpinButton without an Input still loads it */
 :where(input) {
   background-color: transparent;
   filter: none;

@@ -27,9 +27,7 @@ defineProps<{ fontSize?: FontSize }>();
       <span class="visuallyhidden">{{ $t('theme.sr.dark') }}</span>
     </button>
 
-    <!-- The color mode is only known in the browser: on the server an empty
-         box of the toggle's size keeps the header from moving, as in
-         ThemeSwitch. It takes the attributes the toggle gets. -->
+    <!-- The color mode is browser-only: a box of its size keeps the header still -->
     <template #fallback>
       <span v-bind="$attrs" class="theme-toggle-placeholder" />
     </template>

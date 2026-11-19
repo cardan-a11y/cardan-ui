@@ -1,11 +1,7 @@
 /**
- * The settings of Cardan Auth UI: the endpoints it calls and the password
- * policy it shows, with the Cardan Academy API as the default. Sign-in,
- * sign-out, the identity and the CSRF cookie come from the `sanctum` config.
- *
- * Nuxt merges the app config of every layer, so an app overrides single keys
- * in its own `app.config.ts`. An API that still serves Fortify's own password
- * routes, and has no policy endpoint, sets for example:
+ * Cardan Auth UI's settings, the Cardan Academy API's by default. An app
+ * overrides single keys in its own `app.config.ts`, as one with Fortify's own
+ * password routes and no policy endpoint does:
  *
  * ```ts
  * export default defineAppConfig({

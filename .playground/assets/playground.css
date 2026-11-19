@@ -1,15 +1,8 @@
-/*
- * The base styles and design tokens live in the layer's app/assets/main.css,
- * which consuming projects copy into their own main.css. Below are
- * playground-only styles.
- */
 @import '../../app/assets/main.css';
 
 :where(.light-mode) {
   --popover-border-color: var(--card-border-color);
 }
-
-/* Playground */
 
 .c-grey-bg {
   color: var(--color-grey-bg);
@@ -132,7 +125,6 @@
   align-items: center;
 }
 
-/* Strikethrough */
 s {
   color: var(--color-grey-text);
 
@@ -141,7 +133,6 @@ s {
   }
 }
 
-/* Centre the Auth UI pages in the viewport below the header, like an app does */
 .auth-page-content {
   min-height: calc(100svh - 10rem);
 }

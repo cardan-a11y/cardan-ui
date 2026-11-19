@@ -32,7 +32,6 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
   ],
 
-  // Fonts are only downloaded when a project's CSS uses them, e.g. via --font-family in main.css
   fonts: {
     defaults: {
       weights: ['400 700'],
@@ -46,13 +45,8 @@ export default defineNuxtConfig({
   },
 
   hooks: {
-    // A project's typecheck reads this layer's files too, whose vue-router
-    // comes from the layer's own node_modules. TypeScript takes that copy
-    // for the project's only when its version and its peers (vue, vite, …)
-    // match, so otherwise the project's typed routes don't reach the
-    // layer's files.
-    // Map vue-router to the folder of the project's copy, which Nuxt resolves
-    // as #vue-router (at this point its runtime file, without types)
+    // Without it a project's typecheck reads the layer's own vue-router unless
+    // versions and peers match, and its typed routes miss the layer's files
     'prepare:types'({ tsConfig }) {
       const paths = tsConfig.compilerOptions?.paths;
       const project = paths?.['#vue-router']?.[0]?.match(
@@ -66,7 +60,6 @@ export default defineNuxtConfig({
     classSuffix: '-mode',
   },
 
-  // See bundledIcons; a project's own list is merged with it
   icon: {
     clientBundle: {
       icons: bundledIcons,
@@ -75,8 +68,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      // The Google Tag Manager container of CookiesDialog, NUXT_PUBLIC_GTM_ID
-      // in a project's environment
+      // CookiesDialog's Google Tag Manager container: NUXT_PUBLIC_GTM_ID
       gtmId: '',
     },
   },

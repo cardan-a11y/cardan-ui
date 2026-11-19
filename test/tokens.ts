@@ -2,32 +2,18 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { extname, join, relative, sep } from 'node:path';
 
 /**
- * The token contract between the layer and a project's `main.css` (rule (a)
- * of the CSS guidelines): every `var(--x)` the layer reads without a
- * fallback is declared in that `main.css`, or set by the layer itself (a
- * component's own property, `--button-icon-size`). A read without a fallback
- * shows a missing token instead of papering over it, so the token has to be
- * there. A dynamic read, `var(--font-size-${size})`, needs at least one
- * declared token with that prefix.
- *
- * Pure Node, no browser and no CSS parser: the files are read as text, so a
- * project can run it on its own `main.css` from the sibling checkout.
+ * The token contract with a project's `main.css`: every `var(--x)` the layer
+ * reads without a fallback is declared there or set by the layer itself.
+ * Plain Node, so a project runs it on its own `main.css`.
  */
 export type TokenCheckOptions = {
   /** The `main.css` that declares the tokens: the template, or a project's */
   mainCss: string;
   /** Folders whose `.vue`, `.ts`, `.js` and `.css` files read the tokens */
   sources: string[];
-  /**
-   * Tokens the `main.css` lacks on purpose: a name, or a prefix ending in
-   * `*` (`--size-*`). An allowed token still fails where a file in
-   * `reachable` reads it.
-   */
+  /** Tokens the `main.css` lacks on purpose, a name or a `--prefix-*`; still fails where `reachable` reads it */
   allow?: string[];
-  /**
-   * The source files the project can reach (`reachableFiles()`); without it
-   * every source file counts as unreachable for the allow list.
-   */
+  /** The files the project can reach (`reachableFiles()`); without it none count for the allow list */
   reachable?: Set<string>;
 };
 
@@ -40,11 +26,7 @@ export type TokenCheckResult = {
 
 const SOURCE_EXTENSIONS = new Set(['.vue', '.ts', '.js', '.mjs', '.css']);
 
-/**
- * Every source file under the folders, without tests, declarations and an
- * `assets/main.css`: the layer's own is the template, which the layer does not
- * load, so its tokens and reads are no part of what a project gets.
- */
+/** The source files under the folders, without tests, declarations and the template `assets/main.css` */
 export function sourceFiles(folders: string[]): string[] {
   const files: string[] = [];
   const walk = (folder: string) => {
@@ -151,11 +133,7 @@ export function checkTokens({
   };
 }
 
-/**
- * The name Nuxt registers a component under: its folders and file name in
- * PascalCase, with a folder name the file name already starts with left out
- * (`Markdown/MarkdownPreview.vue` is `MarkdownPreview`).
- */
+/** The name Nuxt registers a component under: `Markdown/MarkdownPreview.vue` is `MarkdownPreview` */
 function componentName(file: string, componentsDir: string) {
   const parts = relative(componentsDir, file)
     .replace(/\.vue$/, '')
@@ -171,12 +149,7 @@ function usedIn(name: string, text: string) {
   return new RegExp(`<(${name}|${kebab})[\\s/>]|Lazy${name}\\b`).test(text);
 }
 
-/**
- * The layer files a project can reach: every layer file that is not a
- * component (composables, utils, plugins, pages, middleware), the layer
- * components the project's own files use by name, and, from those, the
- * layer components they use in turn.
- */
+/** The layer files a project can reach: all but components, and the components it uses, transitively */
 export function reachableFiles(project: string, layers: string[]): Set<string> {
   const files = sourceFiles(layers);
   const components = new Map<string, string>();

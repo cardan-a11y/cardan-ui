@@ -1,15 +1,8 @@
 <script setup lang="ts">
 /**
- * Answers with the error page for the status in its address
- * (`?status=403`), as a page of an app does with `showError()` when the item
- * it loads is missing: on the server for a direct load, in the browser after
- * a link. `?text` adds a text of the page's own, as `data: { text }`,
- * `?refuse` lets the page's middleware refuse it.
+ * `?status=403` answers with that error page, as a page whose item is missing;
+ * `?text` adds the page's own text, `?refuse` (`=fatal`) has middleware refuse it.
  */
-// `?refuse`: middleware that refuses the page, as a permission check does.
-// A non-fatal error stops the navigation, so the address stays on the page
-// with the link; `?refuse=fatal` is fatal, and Nuxt adds the refused address
-// to the history
 definePageMeta({
   middleware: (to) => {
     if (to.query.refuse === 'fatal') {
@@ -21,8 +14,6 @@ definePageMeta({
 
 const route = useRoute();
 
-// As a page that loads its item and answers with an error without one: the
-// error comes after an await, also when the page renders again in the browser
 const { data: item } = await useAsyncData(
   `error-page-demo:${route.query.status}`,
   () =>

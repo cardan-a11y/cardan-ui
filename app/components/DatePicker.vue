@@ -12,14 +12,11 @@ import type { StyleValue } from 'vue';
 import '@vuepic/vue-datepicker/dist/main.css';
 
 /**
- * A date field on @vuepic/vue-datepicker. The input is our own, in the
- * library's `dp-input` slot, so that its label, description, error state and
- * keys follow FormField like the other fields; the library keeps the calendar,
- * the icon and the clear button. An attribute goes to the date picker,
+ * A date field on @vuepic/vue-datepicker, with our own input in its `dp-input`
+ * slot so it follows FormField. An attribute goes to the date picker,
  * `aria-describedby` and `placeholder` to the input, `class` and `style` to the
- * wrapper. What the library put on its own input does not reach this one:
- * `ariaLabels.input`, the classes of `ui.input` and its `invalid` event.
- * Tripwire: test/tripwires.test.ts.
+ * wrapper; `ariaLabels.input`, the classes of `ui.input` and the `invalid`
+ * event do not reach the input. Tripwire: test/tripwires.test.ts.
  */
 defineOptions({ inheritAttrs: false });
 
@@ -27,7 +24,6 @@ const model = defineModel<ModelValue>();
 
 const { t, locale } = useI18n();
 
-// The date-fns locale of each i18n locale; a new language adds its pair here
 const dateFnsLocales: Record<string, DateFnsLocale> = { nl, en: enGB };
 
 const computedLocale = computed(() => dateFnsLocales[locale.value] ?? enGB);
@@ -55,7 +51,6 @@ const {
   textInput = false,
   label,
 } = defineProps<{
-  /** Names the input through its `<label>` */
   label: string;
   formats?: Partial<FormatsConfig>;
   disabled?: boolean;
@@ -63,10 +58,7 @@ const {
   /** Shows the error now; a Form shows it after a failed submit */
   showInvalid?: boolean;
   instruction?: string;
-  /**
-   * An error the browser cannot find, such as one from the server: the field
-   * shows this text and is described by it until its value changes
-   */
+  /** An error the browser cannot find, such as the server's: shown until the value changes */
   customError?: string;
   name?: string;
   autocomplete?: string;
@@ -91,9 +83,7 @@ const {
 const inputId = `dp-input-${id}`;
 const menuId = `dp-menu-${id}`;
 
-// The library still reads these for its icon and clear button; our own input
-// in the `dp-input` slot takes the rest
-const computedInputAttrs = computed(() => ({
+const libraryIconAndClearAttrs = computed(() => ({
   clearable,
   alwaysClearable,
   hideInputIcon,
@@ -109,18 +99,13 @@ const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   { invalid: () => required && !model.value, showInvalid: () => showInvalid },
 );
 
-// The input takes these itself; the rest goes to the date picker
 const { attrs, controlAttrs: datePickerAttrs } = useControlAttrs([
   'aria-describedby',
   'ariaDescribedby',
   'placeholder',
 ]);
 
-/**
- * A project's own `aria-describedby` comes first, then the instruction, then
- * the error while it shows. A function, not a computed: `attrs` is not
- * reactive, but the template that calls it renders again when they change.
- */
+// Not a computed: `attrs` is not reactive, the template that calls it is
 function describedBy() {
   return (
     [
@@ -145,8 +130,7 @@ function isReadonly() {
 const isExpanded = ref(false);
 const isFocused = ref(false);
 
-/** The classes the library gives its own input, which its CSS and ours use */
-function inputClasses(isMenuOpen: boolean) {
+function libraryInputClasses(isMenuOpen: boolean) {
   return {
     'dp--input': true,
     'dp--pointer': !disabled && !isReadonly() && !textInput,
@@ -159,12 +143,8 @@ function inputClasses(isMenuOpen: boolean) {
   };
 }
 
-/**
- * The library's key handler opens the calendar on Enter, submits a typed date
- * on Tab and Enter, and cancels every other key while text input is off. It
- * does not get Escape while the calendar is closed, so the browser can still
- * close a Dialog around the field. Tripwire: test/tripwires.test.ts.
- */
+// The library's key handler cancels Escape too: skipped while the calendar is
+// closed, so a Dialog around it closes. Tripwire: test/tripwires.test.ts.
 function handleKeydown(
   event: KeyboardEvent,
   isMenuOpen: boolean,
@@ -182,7 +162,6 @@ function handleClose() {
   isExpanded.value = false;
 }
 
-// Escape in the open calendar closes it, not a Dialog around the field
 function preventEscape(event: KeyboardEvent) {
   if (event.key === 'Escape' && isExpanded.value) {
     event.preventDefault();
@@ -198,16 +177,12 @@ onMounted(() => {
 
 onUnmounted(() => document.removeEventListener('keydown', preventEscape));
 
-/** The first day of the week as the library takes it: the `week-start` attribute, else the locale's, else date-fns's Sunday */
 const weekStart = computed(() => {
   const given = attrs['week-start'] ?? attrs.weekStart;
   if (given !== undefined) return Number(given);
   return computedLocale.value.options?.weekStartsOn ?? 0;
 });
 
-// Each day with its weekday, and the full weekday on the abbreviated headers,
-// so assistive technology can tell which day a date is (Cardan Auditor
-// finding CAN-11.F48)
 const computedAriaLabels = computed(() => {
   return {
     day: (day: CalendarDay) =>
@@ -268,7 +243,7 @@ const computedAriaLabels = computed(() => {
       :timezone="utc ? 'utc' : undefined"
       :time-config="{ enableTimePicker: enableTimePicker }"
       :formats="formats"
-      :input-attrs="computedInputAttrs"
+      :input-attrs="libraryIconAndClearAttrs"
       :menu-id="menuId"
       :disabled="disabled"
       :month-change-on-scroll="monthChangeOnScroll"
@@ -302,7 +277,7 @@ const computedAriaLabels = computed(() => {
       >
         <input
           :id="inputId"
-          :class="inputClasses(isMenuOpen)"
+          :class="libraryInputClasses(isMenuOpen)"
           :name="name"
           :value="value"
           :placeholder="placeholder()"

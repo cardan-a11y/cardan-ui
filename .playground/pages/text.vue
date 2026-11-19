@@ -57,7 +57,6 @@ const sizeOptions: { value: FontSize; label: string }[] = [
   },
 ];
 
-/** Without a timeout a toast stays until it is closed */
 function makeToast(timeout?: number) {
   const { createToast } = useToast();
 

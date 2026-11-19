@@ -1,26 +1,14 @@
-/**
- * Every playground page, server-rendered and hydrated, in light and dark
- * mode: no console errors or hydration warnings, no sideways scroll at
- * 320px, and axe with color-contrast, which needs the real layout and
- * styles. A violation that is in KNOWN_VIOLATIONS does not fail the test;
- * any other does, and so does a known one that is gone (remove it then).
- */
 import { readdirSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { type AxeViolation, gotoHydrated, runAxe } from './helpers';
 
 const pagesDir = new URL('../../.playground/pages/', import.meta.url);
 
-/** The routes of .playground/pages: `index.vue` is its folder */
 const routes = readdirSync(pagesDir, { recursive: true, encoding: 'utf8' })
   .filter((file) => file.endsWith('.vue'))
   .map((file) => `/${file.replace(/\.vue$/, '').replace(/(^|\/)index$/, '')}`)
   .sort();
 
-/**
- * Violations on the playground today. Each is a finding to fix, not a rule
- * switched off: take it out when it is fixed, or the test fails.
- */
 const KNOWN_VIOLATIONS: {
   route: string;
   mode?: 'light' | 'dark';
@@ -28,8 +16,7 @@ const KNOWN_VIOLATIONS: {
   /** Matched against axe's target, which may carry generated class names */
   target: RegExp;
 }[] = [
-  // MarkdownEditor: md-editor-v3's syntax colours in the editor's code, on
-  // the light card: 1.65:1 (#e5c07b) to 3.29:1 (#2d8cf0), 4.5:1 needed
+  // md-editor-v3's syntax colours on the light card: 1.65:1 to 3.29:1
   {
     route: '/markdown',
     mode: 'light',
@@ -96,7 +83,6 @@ for (const mode of modes) {
           )
           .toEqual([]);
 
-        // No sideways scroll on a phone
         await page.setViewportSize({ width: 320, height: 640 });
         await expect
           .poll(() =>

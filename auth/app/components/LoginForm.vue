@@ -1,10 +1,7 @@
 <script setup lang="ts">
 /**
- * Email + password sign-in, wired to nuxt-auth-sanctum and aware of a pending
- * second factor.
- *
- * Only the form lives here: the surrounding page (heading, forgot-password
- * link) is the layer's login page, or an app's own.
+ * Email and password sign-in through nuxt-auth-sanctum, on to the challenge
+ * when a second factor is due. The page around it is the login page's.
  */
 const {
   showPasswordToggle = true,
@@ -21,11 +18,7 @@ const {
   showPasswordToggle?: boolean;
   /** Rule between the fields and the submit button. */
   divider?: boolean;
-  /**
-   * Offer a "Remember me" checkbox, unticked: `remember: true` goes with the
-   * credentials only when it is ticked, so a session otherwise ends after the
-   * API's idle timeout.
-   */
+  /** Offer a "Remember me" checkbox, unticked: sends `remember: true` when ticked. */
   remember?: boolean;
   errorPosition?: LoginErrorPosition;
   size?: InputSize;
@@ -41,11 +34,7 @@ const {
   loadingDelay?: number;
 }>();
 
-/**
- * Bindable so a page can share the typed address with another form, as the
- * layer's login page does with `useLoginEmail()`. Falls back to its own local
- * state when nothing is bound.
- */
+/** The address, bindable to share it with another form (`useLoginEmail()`). */
 const email = defineModel<string>('email', { default: '' });
 
 const { loginWithoutRedirect, refreshIdentity, loginRedirectTarget } =
@@ -102,8 +91,6 @@ async function handleLogin() {
     emit('error', error.value);
   } finally {
     if (navigating && loadingDelay > 0) {
-      // Keeps the spinner up while the page transition plays, so the button
-      // does not flick back to its resting state first
       setTimeout(() => {
         submitting.value = false;
       }, loadingDelay);

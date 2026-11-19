@@ -1,9 +1,4 @@
-/**
- * A loading Button that is a link: it stays focusable, says it is disabled
- * and busy, and swallows its clicks, so neither Enter nor a click (such as
- * one a screen reader sends) follows it. happy-dom cannot show this: a
- * NuxtLink there does not navigate on a click at all.
- */
+// A browser test: a NuxtLink in happy-dom does not navigate on a click at all.
 import { expect, test } from '@playwright/test';
 import { gotoHydrated } from './helpers';
 
@@ -17,9 +12,7 @@ test('a loading link is not followed on Enter or a click', async ({ page }) => {
   await expect(link).toBeDisabled();
   await expect(link).toHaveAttribute('aria-busy', 'true');
 
-  // Every navigation the page starts, in the app (the router's push or
-  // replace, which a NuxtLink calls at once on a click) or a full load (the
-  // Navigation API's navigate event, fired at once on a followed link)
+  // Records the router's push and replace and the Navigation API's navigate event
   await page.evaluate(() => {
     const w = window as unknown as {
       navigations: string[];

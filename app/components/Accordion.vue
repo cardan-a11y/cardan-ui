@@ -1,11 +1,5 @@
 <script setup lang="ts">
-/**
- * A section that opens and closes, after the APG accordion pattern: a button
- * with `aria-expanded` and `aria-controls`, in a heading (`h-tag`), and the
- * panel it controls, inert while closed. The height animates in CSS; the
- * panel clips its content while closed or moving, and lets it out once open
- * and at rest.
- */
+/** The APG accordion: a button in a heading (`h-tag`) that opens its panel */
 const {
   id = useId(),
   minHeight = 0,
@@ -28,16 +22,11 @@ const {
   tabindex?: string;
   arrow?: boolean;
   open?: boolean;
-  /**
-   * The heading around the trigger (`h2`, `h3`, …), at the level the
-   * section's title has in the page. Without it the trigger is in a plain
-   * wrapper and is no heading.
-   */
+  /** The heading around the trigger, at the section title's level; without it, no heading */
   hTag?: string;
   /**
-   * Makes the panel a `region` landmark named by its trigger: for a panel
-   * with headings or nested accordions of its own, not for a page with many
-   * accordions, where the landmarks would pile up.
+   * Makes the panel a `region` named by its trigger: for a panel with headings
+   * of its own, not for many accordions on a page, where landmarks pile up.
    */
   region?: boolean;
 }>();
@@ -59,15 +48,9 @@ function toggleAccordion() {
 }
 
 const emit = defineEmits<{
-  /** With `v-model:open`, the parent's state follows the user's clicks */
   'update:open': [open: boolean];
 }>();
 
-/**
- * Hidden while the panel is closed or still moving, so it never paints over
- * what follows; visible once it is open and at rest, so a focus outline or a
- * popover in it is not cut off.
- */
 function updateOverflow() {
   const moving = !!panelWrapperRef.value?.getAnimations?.().length;
 
@@ -77,17 +60,12 @@ function updateOverflow() {
   );
 }
 
-// Hidden at once, then checked again once the transition, if there is one,
-// has started: without one (reduced motion makes the durations 0s) no
-// transitionend ever comes.
 watch(isExpanded, async () => {
   panelRef.value?.style.setProperty('--accordion-overflow', 'hidden');
   await nextTick();
   requestAnimationFrame(updateOverflow);
 });
 
-// Also on a cancelled transition (the wrapper hidden halfway, as in a dialog
-// that closes), after which the panel is at rest without a transitionend.
 function handleTransitionDone(event: TransitionEvent) {
   if (event.propertyName === 'grid-template-rows') {
     updateOverflow();
@@ -157,8 +135,7 @@ defineExpose({ toggleAccordion });
 </template>
 
 <style>
-/* The heading is only there for the outline: the trigger sets the look, so
-   the heading's font, margin, balancing and hyphenation do not reach it. */
+/* The heading is for the outline only: the trigger sets the look */
 .accordion-header {
   margin: 0;
   font: inherit;
@@ -173,8 +150,6 @@ defineExpose({ toggleAccordion });
   transition: grid-template-rows var(--duration-md) var(--cubic-bezier);
 }
 
-/* min-width: 0, so an open panel, whose overflow is visible, keeps the width
-   of the accordion instead of growing to its longest word (reflow at 320px). */
 .accordion-panel {
   overflow: var(--accordion-overflow, hidden);
   min-width: 0;

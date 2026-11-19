@@ -115,6 +115,36 @@ describe('MobileMenu', () => {
     await vi.waitFor(() => expectFocused(trigger));
   });
 
+  it('has released the page by the time the dialog closes and the browser returns focus', async () => {
+    const { dialog, button, open } = await mountMenu();
+    await open();
+    let inertAtClose: number | undefined;
+    const close = dialog.close.bind(dialog);
+    vi.spyOn(dialog, 'close').mockImplementation(() => {
+      inertAtClose = document.querySelectorAll('[inert]').length;
+      close();
+    });
+
+    button('Close menu').click();
+
+    await vi.waitFor(() => expect(dialog.open).toBe(false));
+    expect(inertAtClose).toBe(0);
+  });
+
+  it('closes once its exit animation has ended, also when that is cancelled', async () => {
+    const { dialog, button, open } = await mountMenu();
+    await open();
+    vi.spyOn(dialog, 'getAnimations').mockImplementation(() => [
+      {
+        finished: Promise.reject(new DOMException('', 'AbortError')),
+      } as unknown as Animation,
+    ]);
+
+    button('Close menu').click();
+
+    await vi.waitFor(() => expect(dialog.open).toBe(false));
+  });
+
   it('leaves focus that has moved on, such as to a new page after a link', async () => {
     const { dialog, button, open } = await mountMenu();
     const main = addToPage('<main tabindex="-1"><h1>Buttons</h1></main>');
@@ -142,6 +172,19 @@ describe('MobileMenu', () => {
     await nextTick();
 
     expect(document.querySelectorAll('[inert]')).toHaveLength(0);
+  });
+
+  it('keeps the page locked for a cancel that bubbles from inside, as a dismissed file picker sends', async () => {
+    const { dialog, button, open } = await mountMenu();
+    await open();
+
+    button('Close menu').dispatchEvent(
+      new Event('cancel', { bubbles: true, cancelable: true }),
+    );
+    await nextTick();
+
+    expect(document.querySelectorAll('[inert]').length).toBeGreaterThan(0);
+    expect(dialog.open).toBe(true);
   });
 
   it('closes when the window grows to desktop width, unless close-on-desktop is off', async () => {

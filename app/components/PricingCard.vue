@@ -27,7 +27,6 @@ const emit = defineEmits<{
 
 const { locale } = useI18n();
 
-/** Whole euros in the app's language, the same on the server as in the browser */
 const formattedPrice = computed(() =>
   price?.toLocaleString(locale.value, {
     style: 'currency',

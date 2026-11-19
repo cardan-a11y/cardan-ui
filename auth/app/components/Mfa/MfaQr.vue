@@ -1,10 +1,7 @@
 <script setup lang="ts">
 /**
- * Connects an authenticator app. On a desktop the QR code leads, with the
- * setup key behind a toggle. On a phone, where the app usually lives on the
- * device showing the code, scanning is of little use: a link that opens the
- * app leads, with two fallbacks behind toggles: the setup key, for an app
- * that does not open from the link, and the QR code, for another device.
+ * Connects an authenticator app: the QR code on a desktop, a link that opens
+ * the app on a phone, with the setup key (and on a phone the QR code) as toggles.
  */
 
 const { headingLevel = 2 } = defineProps<{
@@ -55,13 +52,7 @@ onMounted(() => getQrCode());
       </summary>
 
       <div class="mfa-qr-code-wrapper">
-        <!-- role="img" so the inlined SVG is announced by its own name instead
-             of having its paths walked; a bare aria-label on a generic div is
-             not exposed by assistive technology. The wrapper renders before the
-             code arrives so its minimum size holds the space; it only becomes
-             an image once there is one. The markup is the API's, reduced to
-             the elements of a QR code by `sanitizeQrSvg()` in `getQrCode()`;
-             inline, not an <img>, so the CSS can recolour it in dark mode. -->
+        <!-- Inline, not an <img>, so CSS recolours it in dark mode; sanitized in `getQrCode()` -->
         <!-- eslint-disable vue/no-v-html -->
         <div
           :role="qrCode ? 'img' : undefined"
@@ -111,8 +102,7 @@ onMounted(() => getQrCode());
       display: none;
     }
 
-    /* An SVG chevron (mode="svg"): the default mask-based icon is redrawn as
-       a flat image while it turns, which leaves a faint box around it. */
+    /* mode="svg": a mask icon leaves a faint box around it while it turns */
     .iconify {
       flex-shrink: 0;
       font-size: 1.25em;
@@ -134,7 +124,6 @@ onMounted(() => getQrCode());
     }
   }
 
-  /* Phone: the app link leads, its fallbacks follow as toggles, all centred. */
   &.is-handheld {
     gap: 0.5rem;
     text-align: center;
@@ -209,8 +198,7 @@ onMounted(() => getQrCode());
   }
 
   .qr-code-wrapper {
-    /* Scanners need dark modules on a light background, in dark mode too; the
-       border is the light quiet zone around the code */
+    /* Scanners need dark on light, in dark mode too; the border is the quiet zone */
     --qr-light: var(--color-card-bg);
     --qr-dark: var(--color-text);
 

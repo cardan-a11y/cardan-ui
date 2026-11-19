@@ -70,10 +70,7 @@ function handleDialogClick(event: MouseEvent) {
 function closeDialog() {
   const dialog = dialogElementRef.value;
 
-  // As in Dialog: the DOM is the state, and the exit animation is awaited
-  // through the Web Animations API, which also settles when the animation is
-  // cancelled, where a single `animationend` listener never fires and leaves
-  // the menu open and the page behind it inert.
+  // Not `animationend`, as in Dialog: it never fires for a cancelled animation
   if (!dialog?.open || dialog.hasAttribute('closing')) return;
 
   dialog.setAttribute('closing', '');
@@ -81,9 +78,6 @@ function closeDialog() {
   Promise.allSettled(dialog.getAnimations().map((a) => a.finished)).then(
     async () => {
       dialog.removeAttribute('closing');
-      // The loop first, and its render, so the page is not inert when the
-      // browser gives focus back to the element that opened the menu: also
-      // one in the `trigger` slot, which focusDialogTrigger does not know
       isVisible.value = false;
       await nextTick();
       dialog.close();
@@ -98,13 +92,6 @@ function openDialog() {
   isVisible.value = true;
 }
 
-/**
- * On the native close event, after the exit animation, when the browser could
- * not give focus back and it is on the body. The tick lets the closed state
- * reach FocusLoop, which lifts the `inert` on the page first. Focus that has
- * moved on stays: after a link in the menu, `useRouteFocus()` may have put it
- * at the top of the new page already.
- */
 async function focusDialogTrigger() {
   await nextTick();
   if (document.activeElement && document.activeElement !== document.body) {
@@ -114,10 +101,6 @@ async function focusDialogTrigger() {
   dialogTriggerRef.value?.focusElement();
 }
 
-/**
- * Escape closes the dialog right after this event: the loop closes first.
- * Only the dialog's own cancel: a file input fires one that bubbles here.
- */
 function handleCancel(event: Event) {
   if (event.target !== event.currentTarget) return;
 
@@ -169,7 +152,6 @@ const emit = defineEmits<{
       @click="openDialog"
     />
 
-    <!-- Nuxt renders a teleport to #teleports on the server too -->
     <Teleport to="#teleports">
       <dialog
         :id="id"

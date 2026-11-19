@@ -1,7 +1,6 @@
 <script setup lang="ts">
 const colorMode = useColorMode();
 
-// Per instance: a menu and a settings page may both show the select
 const id = useId();
 </script>
 
@@ -72,8 +71,6 @@ const id = useId();
 </template>
 
 <style>
-/* Its own base styles for the form elements, so it looks the same with or
-   without a form field on the page */
 .theme-select-wrapper {
   label,
   legend {

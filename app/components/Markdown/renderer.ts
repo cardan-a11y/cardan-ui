@@ -13,21 +13,9 @@ import {
 
 import { escapeHTML } from '../../utils/markdown';
 
-/**
- * The attributes a text may set with `{…}` when it is not trusted: a language
- * for a phrase (`{lang=en}`), its direction and a class. Never an event
- * handler, a style, a link or an id, which could clash with the page's own.
- * A class runs no script, but it can apply any class of the page, such as one
- * that hides text visually.
- */
+/** What `{…}` may set in an untrusted text */
 export const SAFE_ATTRIBUTES = ['lang', 'dir', 'class'];
 
-/**
- * A fenced block, escaped, with its language on the element: markdown-it's
- * `highlight` is synchronous, so MarkdownPreview colours the block after
- * mount, and only then loads highlight.js. A fence without a language has
- * no `data-lang` and stays plain.
- */
 function highlight(str: string, lang: string) {
   const language = lang ? ` data-lang="${escapeHTML(lang)}"` : '';
 
@@ -49,7 +37,6 @@ function createRenderer(trusted: boolean) {
   return md;
 }
 
-/** Made once, shared by every MarkdownPreview. */
 const renderers = {
   safe: createRenderer(false),
   trusted: createRenderer(true),
@@ -101,12 +88,9 @@ export function renderMarkdown(
     : md.render(content, env);
 }
 
-/**
- * The text as HTML in segments: the HTML between the videos, and each video
- * (a bare YouTube or Vimeo link in a paragraph of its own) on its own, for
- * MarkdownPreview to render with the VideoPlayer component. A text without
- * videos is one HTML segment.
- */
+/** The text as HTML between its videos, and each video on its own */
+const INLINE_AND_PARAGRAPH_CLOSE = 2;
+
 export function renderMarkdownSegments(
   content: string,
   options: Omit<MarkdownRenderOptions, 'inline'> = {},
@@ -130,10 +114,9 @@ export function renderMarkdownSegments(
     if (skip) {
       skip -= 1;
     } else if (typeof token.meta?.video === 'string') {
-      // A video paragraph; its `inline` and `paragraph_close` tokens follow
       flush();
       segments.push({ type: 'video', url: token.meta.video });
-      skip = 2;
+      skip = INLINE_AND_PARAGRAPH_CLOSE;
     } else {
       run.push(token);
     }

@@ -19,11 +19,8 @@ async function targetFor(redirect: string | string[]) {
 }
 
 /**
- * `loginRedirectTarget()` decides where a sign-in lands: a security contract.
- * A `?redirect=` only counts when the browser would read it as a path of
- * this app; anything else (another site, however disguised) falls back to
- * `redirect.onLogin`. Under the Academy's redirect config, whose `onLogin`
- * is `/dashboard`.
+ * A security contract: a `?redirect=` counts only as a path of this app.
+ * Under the Academy's config, whose `onLogin` is `/dashboard`.
  */
 describe('useAuth: loginRedirectTarget', () => {
   useScenario(academy);

@@ -16,10 +16,8 @@ const {
   ariaLabel?: string;
   id?: string;
   /**
-   * Keeps Escape from closing the dialog. Best effort: a browser lets a
-   * second Escape without a click or keypress in between close it anyway
-   * (Chrome's close watcher), so a step that must be completed also handles
-   * `close`.
+   * Keeps Escape from closing it, best effort: Chrome closes it on a second
+   * Escape without a click or key between, so a required step handles `close`.
    */
   disableEscape?: boolean;
   clickOutside?: boolean;
@@ -52,43 +50,24 @@ function openDialog() {
   isVisible.value = true;
 }
 
-/** The close in progress, which a second call waits for too */
 let closing: Promise<void> | undefined;
 
-/**
- * Closes after the exit animation. Resolves once the dialog has closed, so a
- * caller can wait before it changes what the dialog shows, such as the
- * language or the page under it.
- */
+/** Closes after the exit animation; resolves once the dialog has closed */
 function closeDialog(): Promise<void> {
   const dialog = dialogTemplateRef.value;
 
   if (closing && dialog?.hasAttribute('closing')) return closing;
 
-  // Derive state from the DOM instead of a shadow flag: the native `close`
-  // event is dispatched asynchronously, so a ref-based flag can go stale
-  // and permanently block closing (dialog stuck open in the top layer).
   if (!dialog?.open) return Promise.resolve();
 
   dialog.setAttribute('closing', '');
 
-  // Wait for the element's own exit animations via the Web Animations API
-  // instead of a single `animationend` listener. `animationend`:
-  // - never fires when the animation is cancelled (e.g. an ancestor is
-  //   hidden or the node is moved during a re-render),
-  // - can be consumed early by `animationend` events bubbling from
-  //   animated children,
-  // - leaves the dialog open but invisible (opacity: 0, fill: forwards)
-  //   and blocking the whole page when missed.
-  // `finished` settles on finish *and* on cancel, resolves immediately
-  // when animations run with 0s durations (prefers-reduced-motion), and
-  // the closure keeps working if the component is torn down mid-close.
+  // Not `animationend`: it never fires for a cancelled animation, and a
+  // child's bubbles up early
   closing = Promise.allSettled(
     dialog.getAnimations().map((a) => a.finished),
   ).then(() => {
     dialog.removeAttribute('closing');
-    // Before the close, so the exposed `isVisible`, which pages watch, is
-    // false by the time the dialog has closed
     isVisible.value = false;
     dialog.close();
   });
@@ -97,16 +76,12 @@ function closeDialog(): Promise<void> {
 }
 
 function handleClose() {
-  // Guard against the stale async `close` event of a previous session
-  // arriving after the dialog has already been reopened.
   if (!dialogTemplateRef.value?.open) {
     isVisible.value = false;
   }
 }
 
 function preventEscape(event: Event) {
-  // Only the dialog's own cancel, which Escape fires: a file input in it
-  // fires a cancel that bubbles here when its picker is dismissed
   if (event.target !== event.currentTarget) return;
 
   if (disableEscape) {
@@ -114,8 +89,6 @@ function preventEscape(event: Event) {
     return;
   }
 
-  // Escape closes the dialog right after this event: the exposed
-  // `isVisible` turns false first, as with `closeDialog()`
   isVisible.value = false;
 }
 
@@ -137,7 +110,6 @@ defineExpose({
     @click="handleDialogClick"
     @close="handleClose"
   >
-    <!-- The native modal dialog makes the page inert; the loop only wraps Tab -->
     <FocusLoop :is-visible="isVisible" :modal="false">
       <div class="dialog-header-wrapper">
         <div class="dialog-header">
@@ -261,10 +233,7 @@ html:has(.dialog[open]) {
   }
 }
 
-/* The default --dialog-max-width, without specificity, so the token on a
-   dialog's own class always wins, whatever order the stylesheets load in.
-   A centered dialog without it is as wide as its content, like the browser's
-   dialog; the browser's max-width keeps a margin around it on a narrow screen. */
+/* Zero specificity: `--dialog-max-width` on a dialog's class always wins */
 :where(.dialog-position--center) {
   --dialog-max-width: fit-content;
 }
@@ -382,9 +351,6 @@ html:has(.dialog[open]) {
   border: none;
   border-block-start: 1px solid var(--color-dialog-border);
   width: 100%;
-  /* Keeps the content clear of the screen's edge and a phone's home
-     indicator, which `viewport-fit=cover` lets the page reach. Its own
-     property: `--dialog-padding-block` may hold two values. */
   padding-block-end: calc(
     var(--dialog-padding-block-end, 1.5rem) + env(safe-area-inset-bottom, 0px)
   );

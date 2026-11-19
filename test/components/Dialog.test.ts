@@ -92,6 +92,41 @@ describe('Dialog', () => {
     await expect(exposed.closeDialog()).resolves.toBeUndefined();
   });
 
+  it('closes only once its exit animation has ended, also when that is cancelled', async () => {
+    const { exposed, dialog } = await mountDialog();
+    let end!: () => void;
+    const finished = new Promise<void>((resolve) => (end = resolve));
+    const animations = vi
+      .spyOn(dialog, 'getAnimations')
+      .mockReturnValue([{ finished } as unknown as Animation]);
+
+    const closed = exposed.closeDialog();
+    await settle();
+    expect(dialog.open).toBe(true);
+    end();
+    await closed;
+    expect(dialog.open).toBe(false);
+
+    exposed.openDialog();
+    animations.mockImplementation(() => [
+      {
+        finished: Promise.reject(new DOMException('', 'AbortError')),
+      } as unknown as Animation,
+    ]);
+    await exposed.closeDialog();
+    expect(dialog.open).toBe(false);
+  });
+
+  it('stays visible when the close event of an earlier close arrives after it reopened', async () => {
+    const { exposed, dialog } = await mountDialog();
+    await exposed.closeDialog();
+
+    exposed.openDialog();
+    dialog.dispatchEvent(new Event('close'));
+
+    expect(exposed.isVisible).toBe(true);
+  });
+
   it('closes with Cancel next to the buttons of the buttons slot', async () => {
     const { dialog, button } = await mountDialog(
       {},

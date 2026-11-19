@@ -1,10 +1,8 @@
 <script setup lang="ts">
 /**
- * A value as a ring with the number in it: a `meter` (or `progressbar`) that
- * `label` names for assistive technology, out of sight; "Progress" unless the
- * caller says what it measures. A meter's children are presentational, so the
- * slot is for sighted users (an icon, say) and `aria-valuetext` says what the
- * ring shows.
+ * A value as a ring with the number in it: a `meter` (or `progressbar`) named
+ * by `label`. The slot is for sighted users: a meter's children are
+ * presentational, so `aria-valuetext` says what the ring shows.
  */
 const {
   value,

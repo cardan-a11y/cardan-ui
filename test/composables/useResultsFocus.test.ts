@@ -63,4 +63,43 @@ describe('useResultsFocus', () => {
     // revealResults leaves focus alone
     expect(document.activeElement).not.toBe(top);
   });
+
+  it('takes a top under what sticks at the top (the scroll padding) for out of view', async () => {
+    const wrapper = await mountSuspended(List, { attachTo: document.body });
+    const top = wrapper.get('div').element;
+    document.documentElement.style.setProperty(
+      'scroll-padding-block-start',
+      '80px',
+    );
+
+    try {
+      const scroll = placeTop(top, 40);
+      await (wrapper.vm as unknown as Exposed).revealResults();
+      expect(scroll).toHaveBeenCalled();
+    } finally {
+      document.documentElement.style.removeProperty(
+        'scroll-padding-block-start',
+      );
+    }
+  });
+
+  it('scrolls smoothly, and at once for a reader who prefers reduced motion', async () => {
+    const wrapper = await mountSuspended(List, { attachTo: document.body });
+    const top = wrapper.get('div').element;
+
+    for (const [reduced, behavior] of [
+      [false, 'smooth'],
+      [true, 'auto'],
+    ] as const) {
+      vi.spyOn(window, 'matchMedia').mockReturnValue({
+        matches: reduced,
+      } as MediaQueryList);
+      const scroll = placeTop(top, -400);
+      await (wrapper.vm as unknown as Exposed).revealResults();
+      expect(scroll).toHaveBeenCalledWith(
+        expect.objectContaining({ behavior }),
+      );
+      vi.restoreAllMocks();
+    }
+  });
 });

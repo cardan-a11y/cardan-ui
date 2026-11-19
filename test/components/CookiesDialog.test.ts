@@ -97,6 +97,17 @@ describe('CookiesDialog', () => {
     expect(dialog.open).toBe(false);
   });
 
+  it('leaves the next dialog closed after one that unmounted while open, as on the way to another layout', async () => {
+    const first = await mountDialog();
+    expect(first.dialog.open).toBe(true);
+    first.wrapper.unmount();
+
+    setConsentCookie({ necessary: true, analytics: true, marketing: true });
+    const { dialog } = await mountDialog();
+
+    expect(dialog.open).toBe(false);
+  });
+
   it('opens again for a cookie that is not a choice it offers', async () => {
     setConsentCookie({ necessary: true, analytics: true, marketing: false });
 

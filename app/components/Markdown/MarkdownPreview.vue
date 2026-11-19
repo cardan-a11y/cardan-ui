@@ -1,22 +1,13 @@
 <script setup lang="ts">
 /**
- * Markdown as HTML. Safe by default: the text may come from anyone (an import,
- * a colleague, an AI), so raw HTML is shown as text and `{…}` sets only
- * `lang`, `dir` and `class`. `trusted` allows both, for text the team wrote.
- *
- * A bare YouTube or Vimeo link in a paragraph of its own renders as a
- * VideoPlayer, also without `trusted`: the link only ever becomes a video id.
- * A link with its own text stays a link, and so does every link with
- * `videos-as-links`, for a place a player does not fit, such as a table cell.
- *
- * `inline` is for a title or label: inline markup only, in a `<span>`, so it
- * fits inside a button, link or label and adds no block margins.
+ * Markdown as HTML, safe by default: raw HTML shows as text and `{…}` sets
+ * only `lang`, `dir` and `class`; `trusted` allows both, for text the team
+ * wrote. A bare YouTube or Vimeo link in a paragraph of its own renders as a
+ * VideoPlayer, unless `videos-as-links`. `inline` is for a title or label.
  */
 import { computed, onMounted, useTemplateRef, watch } from 'vue';
 import { renderMarkdown, renderMarkdownSegments } from './renderer';
 import type { MarkdownSegment } from './renderer';
-// The theme of a code block, with the component: a block is a dark block
-// from the first paint, also without a language, before highlight.js loads
 import 'highlight.js/styles/stackoverflow-dark.css';
 
 const {
@@ -48,8 +39,6 @@ const computedStyle = computed(() => ({
 }));
 
 const { t } = useI18n();
-// The same origin on the server and in the browser, so a link to the site
-// itself renders alike on both
 const { origin } = useRequestURL();
 
 const options = computed(() => ({
@@ -60,11 +49,6 @@ const options = computed(() => ({
   origin,
 }));
 
-/**
- * The HTML between the videos and each video on its own; one HTML segment
- * without videos. An inline text, or one with `videos-as-links`, is one
- * string, with a video as a link.
- */
 const segments = computed<MarkdownSegment[]>(() =>
   inline || videosAsLinks
     ? [
@@ -86,23 +70,17 @@ const html = computed(() => {
 
 const root = useTemplateRef<HTMLElement>('root');
 
-/**
- * Colour the code blocks once the HTML is in the DOM. highlight.js and its
- * grammars load here, not with the renderer, so a text without a code block
- * never loads them, and a block shows plain first and coloured a moment
- * later. A language highlight.js does not know stays plain, as before.
- */
+const codeBlocks = () =>
+  Array.from(
+    root.value?.querySelectorAll<HTMLElement>('code.hljs[data-lang]') ?? [],
+  );
+
 async function highlightCode() {
-  if (!root.value?.querySelector('code.hljs[data-lang]')) return;
+  if (!codeBlocks().length) return;
 
   const { hljs } = await import('./highlight');
 
-  // Queried again: the text may have changed while highlight.js loaded
-  const blocks = root.value?.querySelectorAll<HTMLElement>(
-    'code.hljs[data-lang]',
-  );
-
-  for (const block of blocks ?? []) {
+  for (const block of codeBlocks()) {
     const language = block.dataset.lang;
 
     if (language && hljs.getLanguage(language)) {
@@ -119,8 +97,7 @@ watch(segments, highlightCode, { flush: 'post' });
 </script>
 
 <template>
-  <!-- The renderer escapes raw HTML unless `trusted`, and `{…}` sets only
-       lang, dir and class: the HTML is markdown-it's own -->
+  <!-- Safe: the renderer escapes raw HTML unless `trusted` -->
   <!-- eslint-disable vue/no-v-html -->
   <span
     v-if="inline"
@@ -137,8 +114,6 @@ watch(segments, highlightCode, { flush: 'post' });
     v-html="html"
   />
   <div v-else ref="root" class="cardan-markdown-preview" :style="computedStyle">
-    <!-- A player is keyed by its URL too, so a new video in the same place
-         gets a fresh player instead of the title and state of the old one -->
     <template
       v-for="(segment, index) in segments"
       :key="segment.type === 'video' ? `${index}:${segment.url}` : index"
@@ -197,9 +172,7 @@ watch(segments, highlightCode, { flush: 'post' });
     }
   }
 
-  /* A text with videos is in chunks around the players, with the same space
-     between blocks inside a chunk. `:where`, so the specificity stays that
-     of the rules on the preview itself. */
+  /* `:where`: the chunks between videos add no specificity */
   &,
   > :where(.markdown-chunk) {
     > * + * {
@@ -209,7 +182,6 @@ watch(segments, highlightCode, { flush: 'post' });
       margin-block-start: 2em;
     }
 
-    /* The element around the text sets the space outside it. */
     > :first-child {
       margin-block-start: 0;
     }
@@ -219,8 +191,6 @@ watch(segments, highlightCode, { flush: 'post' });
     }
   }
 
-  /* A wide table scrolls in its own region instead of the page (reflow at
-     320px). The region takes focus, so the keyboard can scroll it. */
   .markdown-table {
     max-width: 100%;
     overflow-x: auto;
@@ -245,7 +215,6 @@ watch(segments, highlightCode, { flush: 'post' });
   a {
     overflow-wrap: anywhere;
 
-    /* Decorative: the link says "(open in new window)" in hidden text */
     &[target='_blank']::after {
       content: '' / '';
       display: inline-block;

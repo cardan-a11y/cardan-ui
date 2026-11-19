@@ -3,14 +3,12 @@ import Multiselect from '@vueform/multiselect';
 import type MultiselectProps from '@vueform/multiselect';
 import type { ComponentPublicInstance, StyleValue } from 'vue';
 
-// An attribute goes to the control; `class` and `style` stay on the wrapper
 defineOptions({ inheritAttrs: false });
 
 const { t } = useI18n();
 
 const model = defineModel<MultiselectProps['modelValue']>();
 
-// https://github.com/vueform/multiselect#basic-props
 const {
   id = useId(),
   mode = 'multiple',
@@ -48,10 +46,7 @@ const {
   /** After the count, instead of "items selected" */
   itemsSelectedLabel?: string;
   instruction?: string;
-  /**
-   * An error the browser cannot find, such as one from the server: the field
-   * shows this text and is described by it until its value changes
-   */
+  /** An error the browser cannot find, such as the server's: shown until the value changes */
   customError?: string;
   size?: InputSize;
 }>();
@@ -72,7 +67,6 @@ const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   },
 );
 
-// The error describes the field only while it shows
 const computedAriaDescribedby = computed(
   () =>
     [instruction && `instruction-${id}`, errorShown.value && `error-${id}`]
@@ -80,12 +74,8 @@ const computedAriaDescribedby = computed(
       .join(' ') || undefined,
 );
 
-/**
- * The library puts an attribute given to the component on its wrapper, and
- * only `aria` reaches the combobox. It names a searchable combobox by the
- * selected options, so the label is added to that name: "Cheese, Ham
- * Toppings" once something is selected, and the label alone before.
- */
+// Only `aria` reaches the library's combobox, which it names by the
+// selection alone: the label is added
 const aria = computed(() => ({
   'aria-placeholder': null,
   'aria-multiselectable': null,
@@ -94,16 +84,11 @@ const aria = computed(() => ({
   'aria-invalid': errorShown.value || undefined,
 }));
 
-/**
- * A required field has a hidden input that carries the constraint, which a
- * form focuses when it reports the empty field: focus goes on to the control
- */
-function handleFocusIn(event: FocusEvent) {
+function forwardFakeInputFocus(event: FocusEvent) {
   const target = event.target as HTMLElement;
   if (target.classList.contains('multiselect-fake-input')) focusElement();
 }
 
-/** That input is no field of its own: hidden from assistive technology, as it has no name */
 function hideFakeInput() {
   const container = (multiSelectRef.value as ComponentPublicInstance | null)
     ?.$el as HTMLElement | undefined;
@@ -159,14 +144,6 @@ function dropdownElements() {
   return container && dropdown ? { container, dropdown } : undefined;
 }
 
-/**
- * The dropdown is fixed to the field and, where the browser has the Popover
- * API, in the top layer as a manual popover: no `overflow` or transformed
- * ancestor cuts it off, such as a Popover or a Dialog that scrolls. It stays
- * where it is in the DOM, so Tab order, focus and the combobox's references
- * are the library's. A manual popover neither closes on Escape nor closes an
- * open Popover around it.
- */
 const hasPopoverApi =
   typeof HTMLElement !== 'undefined' && 'showPopover' in HTMLElement.prototype;
 
@@ -187,10 +164,8 @@ onMounted(() => {
   }
 });
 
-const margin = 8;
+const VIEWPORT_MARGIN_PX = 8;
 
-// Puts the dropdown against the field on the side it opens to, and caps its
-// height to the room on that side: a fixed list past the viewport is out of reach.
 function positionDropdown() {
   const elements = dropdownElements();
   if (!elements) return;
@@ -201,7 +176,6 @@ function positionDropdown() {
   const viewportHeight = document.documentElement.clientHeight;
   const upwards = (fixedOpenDirection.value ?? openDirection.value) === 'top';
 
-  // The dropdown covers the field's border on that side, as the library's does
   dropdownPosition.value = {
     '--multi-select-dropdown-left': `${left}px`,
     '--multi-select-dropdown-width': `${width}px`,
@@ -213,14 +187,14 @@ function positionDropdown() {
   };
   availableHeight.value = Math.max(
     0,
-    upwards ? top - margin : viewportHeight - bottom - margin,
+    upwards
+      ? top - VIEWPORT_MARGIN_PX
+      : viewportHeight - bottom - VIEWPORT_MARGIN_PX,
   );
 }
 
-// Opens the dropdown upwards when it doesn't fit below the field but there is
-// more room above. The library has no placement of its own; anchor
-// positioning can take this over once every target browser has it (README).
-// Tripwire: test/tripwires.test.ts.
+// The library has no placement of its own; anchor positioning can take over
+// once every target browser has it (README). Tripwire: test/tripwires.test.ts.
 async function placeDropdown() {
   setDropdownLayer(true);
   positionDropdown();
@@ -229,14 +203,14 @@ async function placeDropdown() {
   const elements = dropdownElements();
   if (!elements) return;
 
-  // Measured without the cap of the last placement
   availableHeight.value = undefined;
   await nextTick();
 
   const { container, dropdown } = elements;
   const { top, bottom } = container.getBoundingClientRect();
-  const spaceAbove = top - margin;
-  const spaceBelow = document.documentElement.clientHeight - bottom - margin;
+  const spaceAbove = top - VIEWPORT_MARGIN_PX;
+  const spaceBelow =
+    document.documentElement.clientHeight - bottom - VIEWPORT_MARGIN_PX;
   const neededHeight = Math.min(
     dropdown.scrollHeight || Infinity,
     parseFloat(getComputedStyle(dropdown).maxHeight),
@@ -247,8 +221,6 @@ async function placeDropdown() {
   positionDropdown();
 }
 
-// While open the dropdown follows the field when the page or a container
-// around it scrolls, or the window resizes; its own list scrolling aside.
 let frame: number | undefined;
 
 function followField(event: Event) {
@@ -268,12 +240,8 @@ function stopFollowing() {
   frame = undefined;
 }
 
-/**
- * The library asks an options function once, as it loads (`resolve-on-load`).
- * When that answer was empty, such as before the data it depends on came in,
- * the list stayed empty: it asks again when it opens without options.
- * Tripwire: test/tripwires.test.ts.
- */
+// The library asks an options function only on load, so a first empty answer
+// stayed. Tripwire: test/tripwires.test.ts.
 function handleOpen(instance: MultiselectProps) {
   isExpanded.value = true;
 
@@ -312,14 +280,8 @@ onMounted(() => {
   if (autofocus) setTimeout(() => focusElement(), 200);
 });
 
-/**
- * The library blurs the field on Escape, so focus fell to the page. Escape
- * closes the listbox here, cancelled so a Dialog around it stays open, and
- * the field's `blur()` does nothing from the capture phase until the event
- * leaves the wrapper: focus stays on the combobox (APG combobox). With the
- * listbox closed the event goes on as it came, so a Dialog around it closes.
- * Tripwire: test/tripwires.test.ts.
- */
+// The library blurs the field on Escape: a no-op `blur` until the event leaves
+// the wrapper keeps focus on it. Tripwire: test/tripwires.test.ts.
 function keepFocusOnEscape(event: KeyboardEvent) {
   if (event.key !== 'Escape') return;
 
@@ -370,7 +332,6 @@ function restoreBlur(event: KeyboardEvent) {
     @keydown.capture="keepFocusOnEscape"
     @keydown="restoreBlur"
   >
-    <!-- Its events: https://github.com/vueform/multiselect#events -->
     <Multiselect
       v-bind="controlAttrs()"
       :id="id"
@@ -390,12 +351,11 @@ function restoreBlur(event: KeyboardEvent) {
       :aria="aria"
       :multiple-label="formatMultipleLabels"
       :open-direction="fixedOpenDirection ?? openDirection"
-      @focusin="handleFocusIn"
+      @focusin="forwardFakeInputFocus"
       @change="clearCustomError"
       @open="handleOpen"
       @close="handleClose"
     >
-      <!-- https://github.com/vueform/multiselect#slots -->
       <template #spinner>
         <slot name="spinner" />
       </template>
@@ -512,7 +472,6 @@ function restoreBlur(event: KeyboardEvent) {
   --ms-group-label-color-selected-pointed: var(--color-white);
 
   --ms-option-font-size: var(--font-size-sm);
-  /* The pointed (hovered or keyboard-highlighted) option needs a 3:1 contrast change */
   --ms-option-bg-pointed: var(--color-accent-bg);
   --ms-option-color-pointed: var(--color-accent-text);
   --ms-option-bg-selected: var(--color-green-bg);
@@ -617,7 +576,6 @@ function restoreBlur(event: KeyboardEvent) {
   box-shadow: none;
 }
 
-/* Fixed to the field, in the top layer where the browser has the Popover API */
 .cardan-multiselect .multiselect-dropdown {
   position: fixed;
   inset: var(--multi-select-dropdown-top, auto) auto
@@ -700,7 +658,6 @@ function restoreBlur(event: KeyboardEvent) {
   --ms-border-color: var(--color-red-graphic);
 }
 
-/* Sizes */
 .multi-select-size--sm .multiselect-wrapper {
   --multi-select-height: calc(2rem - 2px);
 }

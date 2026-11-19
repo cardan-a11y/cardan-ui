@@ -60,6 +60,19 @@ describe.each(scenarios)('MfaChallenge ($name)', (scenario) => {
     expect(await checkA11y()).toHaveNoViolations();
   });
 
+  it('starts without the code and error of a challenge abandoned earlier', async () => {
+    const { mfaCredentials, mfaError } = useMfa();
+    mfaCredentials.value = { code: '123456', recovery_code: '' };
+    mfaError.value = { message: 'The provided code was invalid.' };
+
+    const { wrapper } = await mountChallenge();
+
+    expect(
+      (wrapper.get('input[name="code"]').element as HTMLInputElement).value,
+    ).toBe('');
+    expect(wrapper.text()).not.toContain('The provided code was invalid.');
+  });
+
   it('keeps Sign in disabled until six digits are entered', async () => {
     // An owner's decision: Enter in the field submits nothing before that
     const { wrapper, submit } = await mountChallenge();
@@ -81,7 +94,6 @@ describe.each(scenarios)('MfaChallenge ($name)', (scenario) => {
     const recovery = wrapper.get('input[name="recovery_code"]');
     expectFocused(recovery);
     expect(accessibleName(recovery)).toMatch(/^Recovery code/);
-    // Typed or pasted from where it was stored: nothing autofills it
     expect(recovery.attributes('autocomplete')).toBe('off');
     expect(wrapper.text()).toContain('Enter one of your recovery codes');
     expect(await checkA11y()).toHaveNoViolations();
@@ -108,7 +120,6 @@ describe.each(scenarios)('MfaChallenge ($name)', (scenario) => {
     ]);
     expect(requests(identity)).toHaveLength(1);
     expect(navigate).toHaveBeenCalledExactlyOnceWith('/courses/1');
-    // The code is spent: nothing of it is kept
     expect(useMfa().mfaCredentials.value).toEqual({
       code: '',
       recovery_code: '',
@@ -141,7 +152,6 @@ describe.each(scenarios)('MfaChallenge ($name)', (scenario) => {
     await submit().trigger('click');
     await flushPromises();
 
-    // A retry would send a spent code
     expect(navigate).toHaveBeenCalledExactlyOnceWith('/courses/1');
     expect(wrapper.get('[role="alert"]').text()).toBe('');
   });

@@ -1,7 +1,31 @@
 import { describe, it, expect } from 'vitest';
+import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { useMfa } from '#imports';
+import {
+  RECOVERY_CODES,
+  client,
+  fortify,
+  navigate,
+  requests,
+  twoFactorApi,
+  useScenario,
+} from './fortify';
+import { academy } from './scenarios';
+
+mockNuxtImport('useSanctumClient', () => () => client);
+mockNuxtImport(
+  'navigateTo',
+  () =>
+    (...args: unknown[]) =>
+      navigate(...args),
+);
+
+const codes = 'GET /api/user/two-factor-recovery-codes';
+const confirm = 'POST /api/user/confirmed-two-factor-authentication';
 
 describe('useMfa', () => {
+  useScenario(academy);
+
   it('resets every trace of a flow', () => {
     const {
       mfaStep,
@@ -12,7 +36,6 @@ describe('useMfa', () => {
       resetMfa,
     } = useMfa();
 
-    // An enrolment abandoned on the recovery codes step
     mfaStep.value = 4;
     mfaError.value = { message: 'Something went wrong.' };
     qrCode.value = '<svg></svg>';
@@ -26,5 +49,32 @@ describe('useMfa', () => {
     expect(qrCode.value).toBe('');
     expect(recoveryCodes.value).toEqual([]);
     expect(mfaCredentials.value).toEqual({ code: '', recovery_code: '' });
+  });
+
+  it('reads the recovery codes before it confirms the code', async () => {
+    fortify(twoFactorApi(academy, academy.user()));
+    const { mfaStep, recoveryCodes, enterCode } = useMfa();
+    mfaStep.value = 3;
+
+    await expect(enterCode()).resolves.toBe(true);
+
+    const order = client.mock.calls.map(
+      ([url, options]) => `${options?.method ?? 'GET'} ${url}`,
+    );
+    expect(order.indexOf(codes)).toBeLessThan(order.indexOf(confirm));
+    expect(recoveryCodes.value).toEqual(RECOVERY_CODES);
+    expect(mfaStep.value).toBe(4);
+  });
+
+  it('does not confirm, and says why, when the API serves no recovery codes', async () => {
+    fortify(twoFactorApi(academy, academy.user(), { [codes]: () => [] }));
+    const { mfaStep, mfaError, enterCode } = useMfa();
+    mfaStep.value = 3;
+
+    await expect(enterCode()).resolves.toBe(false);
+
+    expect(requests(confirm)).toEqual([]);
+    expect(mfaStep.value).toBe(3);
+    expect(mfaError.value?.message).toBeTruthy();
   });
 });

@@ -1,6 +1,3 @@
-// Any password confirms, except 000000, which shows the validation error. The
-// dialog does not submit an empty one, but an empty password still gets the
-// validation error Laravel sends
 export default defineEventHandler(async (event) => {
   const { password } = await readBody<{ password?: string }>(event);
 

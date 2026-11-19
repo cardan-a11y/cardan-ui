@@ -1,9 +1,7 @@
 <script setup lang="ts">
 /**
- * A value as a bar under its label: a `meter` (or `progressbar`) that `label`
- * names, visible unless `hideLabel`. The text next to the label says what the
- * bar shows and `aria-valuetext` repeats it, since a meter's children are
- * presentational.
+ * A value as a bar under its label: a `meter` (or `progressbar`) named by
+ * `label`, with the text beside the label repeated as `aria-valuetext`.
  */
 const {
   value,

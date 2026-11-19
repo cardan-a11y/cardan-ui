@@ -1,11 +1,7 @@
 declare global {
   /**
-   * The authenticated user's payload, as returned under `data` by the Sanctum
-   * user endpoint.
-   *
-   * Deliberately empty: every app's payload differs, so each one augments this
-   * interface with its own type from its own `declare global` block, and
-   * `useAuth().user` is typed accordingly:
+   * The identity endpoint's `data`. Empty: each app augments it with its own
+   * payload, which types `useAuth().user`:
    *
    * ```ts
    * declare global {
@@ -66,11 +62,7 @@ declare global {
       minLength: number;
       /** `null` for no maximum. */
       maxLength: number | null;
-      /**
-       * Whether the API also refuses breached and common passwords and ones
-       * with personal information when the form is saved; the forms list
-       * those checks when it does.
-       */
+      /** Whether the API also refuses breached, common and personal passwords; the forms list it. */
       serverChecks: boolean;
     };
   };
@@ -84,9 +76,8 @@ declare global {
   };
 
   /**
-   * Step the MFA flow is showing. Consumers do not set this directly —
-   * use `useMfaDialog()` to open the dialog in the right flow, or render
-   * `MfaSetup`, which walks steps 1–4 inline.
+   * The MFA flow's step; open a flow with `useMfaDialog()` or `MfaSetup`
+   * rather than setting it.
    *
    * 1 enable intro          4 enabled + recovery codes
    * 2 scan QR code          5 disable confirmation

@@ -1,10 +1,5 @@
-/**
- * The signed-out pages of the layer in the language their link asks for
- * (`?locale=en`), such as the password reset email's link to
- * `/reset-password`: signed out, the app has no account to read a language
- * from. A signed-in user's own language wins, which the app applies. A
- * language the app does not offer is ignored.
- */
+// The signed-out pages in the language their link asks for (`?locale=en`), as
+// the reset email's: there is no account to read one from
 const SIGNED_OUT_PAGES = [
   '/login',
   '/forgot-password',

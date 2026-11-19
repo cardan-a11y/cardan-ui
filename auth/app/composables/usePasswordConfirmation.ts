@@ -1,44 +1,22 @@
-/**
- * Settles the confirmation the dialog is open for. Module scope rather than
- * `useState`: a function is not state, and only one confirmation is open at
- * a time.
- */
+// Module scope, not `useState`: a function is not state
 let settlePending: ((confirmed: boolean) => void) | null = null;
 
-/**
- * Work to finish before the dialog closes, under its Confirm button's loading
- * state (see `requestPasswordConfirmation`).
- */
 let pendingAfterConfirm: (() => Promise<unknown>) | null = null;
 
-/**
- * Whether the password was accepted for the confirmation the dialog is
- * closing for, see `confirmPassword`.
- */
 let confirmedPending = false;
 
-/**
- * The mounted dialogs, the last one on top. `MfaSettings` and `MfaSetup`
- * bring their own, and an app mounts one in its layout for its own flows, so
- * two can be mounted at once: the one mounted last answers, and unmounting it
- * hands back to the other. Only the client mounts.
- */
 const mountedDialogs: DialogComponent[] = [];
 
 /**
- * Fortify's password confirmation (`confirmPassword` on a feature): routes
- * behind `password.confirm` answer 423 until the user has re-entered their
- * password, which then holds for the app's `auth.password_timeout`.
- *
- * With `PasswordConfirmationDialog` mounted, either check up front with
- * `ensurePasswordConfirmed()` before opening a flow, or wrap a request in
+ * Fortify's password confirmation: routes behind `password.confirm` answer 423
+ * until the password is re-entered. With `PasswordConfirmationDialog` mounted,
+ * check up front with `ensurePasswordConfirmed()`, or wrap a request in
  * `withPasswordConfirmation()` to ask only when Fortify does.
  */
 export function usePasswordConfirmation() {
   const { client } = useAuth();
   const { endpoints } = useCardanAuthConfig();
 
-  /** The dialog that answers: the one mounted last */
   const passwordConfirmationDialogRef = useState<DialogComponent | null>(
     'passwordConfirmationDialogRef',
     () => null,
@@ -54,12 +32,7 @@ export function usePasswordConfirmation() {
     () => false,
   );
 
-  /**
-   * Counts the confirmations asked for. The dialog keys its form on it, so
-   * every request gets a fresh password field: a browser autofills a field it
-   * has not seen before, not one it filled earlier and a script then cleared,
-   * and the form's autofocus runs on mount.
-   */
+  /** Counts the confirmations asked for; the dialog keys its form on it. */
   const passwordConfirmationRequest = useState(
     'passwordConfirmationRequest',
     () => 0,
@@ -85,26 +58,16 @@ export function usePasswordConfirmation() {
   }
 
   /**
-   * Opens the dialog and resolves once the user confirmed (true) or closed it
-   * (false), with the dialog closed either way. Rejects when no dialog is
-   * mounted: a caller that would otherwise wait forever.
-   *
-   * `afterConfirm` runs once the password is accepted, before the dialog
-   * closes, with its Confirm button still loading: for the request the
-   * confirmation was for, so the user sees one action in progress rather than
-   * a closed dialog and nothing happening yet.
+   * Opens the dialog; resolves true once confirmed, false once closed, and
+   * rejects when no dialog is mounted. `afterConfirm` runs before the dialog
+   * closes, under its busy Confirm button.
    */
   function requestPasswordConfirmation(
     afterConfirm?: () => Promise<unknown>,
   ): Promise<boolean> {
-    // Only one confirmation is open at a time: an earlier one that is still
-    // waiting is answered as cancelled.
     settle(false);
 
     if (!passwordConfirmationDialogRef.value) {
-      // A mistake in the app, loud in the console: nothing can ask for the
-      // password, so the flow that needs it stops with an error instead of
-      // hanging on a loading button
       const error = new Error(
         'No PasswordConfirmationDialog is mounted: mount it once, in the layout or with the flow that needs the password',
       );
@@ -139,10 +102,7 @@ export function usePasswordConfirmation() {
     return await requestPasswordConfirmation();
   }
 
-  /**
-   * Posts the password. On success it runs the request's `afterConfirm`, then
-   * closes the dialog, and the waiting caller continues once it has closed.
-   */
+  /** Posts the password; on success runs `afterConfirm`, then closes the dialog. */
   async function confirmPassword(password: string) {
     passwordConfirmationError.value = null;
     loadingPasswordConfirmation.value = true;
@@ -159,15 +119,10 @@ export function usePasswordConfirmation() {
     }
 
     try {
-      // Its own errors are the caller's to show, once the dialog is closed.
       await pendingAfterConfirm?.();
     } catch {
-      // Nothing to show here: the password itself was accepted.
+      // Its errors are the caller's to show; the password was accepted
     } finally {
-      // Settled from the dialog's close event, once it is gone: the page
-      // behind a modal is inert, so what the caller does next, such as moving
-      // focus to the step the password was for, would not land while the
-      // dialog is still closing
       confirmedPending = true;
       passwordConfirmationDialogRef.value?.closeDialog();
       loadingPasswordConfirmation.value = false;
@@ -181,9 +136,8 @@ export function usePasswordConfirmation() {
   }
 
   /**
-   * Runs `request`, and when Fortify answers 423 asks for the password and runs
-   * it once more. A cancelled confirmation rethrows the 423, which
-   * `isPasswordConfirmationRequired()` recognises.
+   * Runs `request`; on a 423 asks for the password and runs it once more. A
+   * cancelled confirmation rethrows the 423 (`isPasswordConfirmationRequired()`).
    */
   async function withPasswordConfirmation<T>(
     request: () => Promise<T>,

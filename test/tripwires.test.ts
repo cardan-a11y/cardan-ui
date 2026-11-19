@@ -3,16 +3,9 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Tripwires: workarounds that hold for one version of a dependency, or for a
- * dependency's internals. Each entry fails once the installed version leaves
- * the one the workaround was checked against (major.minor, so a patch release
- * passes), and names the file and what to re-check: then remove the
- * workaround, or confirm it and update `checked` here.
- *
- * To add one: an entry with the package, the version the workaround holds for
- * (`checked`, major.minor) or, for a transitive dependency, the range a parent
- * declares (`parent` and `checked` as that range), the file and what to check.
- * Its comment in that file says "Tripwire: test/tripwires.test.ts."
+ * Workarounds that hold for one major.minor of a dependency, or its internals:
+ * an entry fails once the installed version leaves `checked`; then remove the
+ * workaround, or confirm it and update `checked`. Its comment points here.
  */
 interface Tripwire {
   /** What the workaround does, the name of its test */

@@ -1,7 +1,4 @@
-/**
- * "2,4 MB" or "480 KB", in the app's locale unless another is given. Outside
- * a Nuxt context (a plain script, a test) there is no app locale: Dutch then.
- */
+/** "2,4 MB" or "480 KB", in the app's locale (Dutch outside a Nuxt app) or `locale`. */
 export function formatFileSize(
   bytes: number,
   locale = tryUseNuxtApp()?.$i18n.locale.value ?? 'nl',
@@ -22,11 +19,7 @@ export function getFileExtension(filename?: string) {
   return filename && dot > 0 ? filename.slice(dot + 1) : undefined;
 }
 
-/**
- * FileInput's icon per file type, by extension or MIME type, first match
- * wins. Material Symbols only: every project installs it, so @nuxt/icon does
- * not fetch them from Iconify's API at runtime.
- */
+/** FileInput's icon per file type, by extension or MIME type; the first match wins. */
 export const fileTypeIcons: [
   matches: (extension: string, type: string) => boolean,
   icon: string,

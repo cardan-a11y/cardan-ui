@@ -20,10 +20,6 @@ async function visit(path: string) {
   return useNuxtApp().$i18n.locale.value;
 }
 
-/**
- * The password reset email links to `/reset-password?locale=…` in the
- * account's language; signed out, that link is all the app has to go by.
- */
 describe('locale-from-query middleware', () => {
   useScenario(academy);
 

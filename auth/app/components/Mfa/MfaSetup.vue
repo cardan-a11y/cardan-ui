@@ -1,11 +1,8 @@
 <script setup lang="ts">
 /**
- * The enable flow — intro → QR code → confirm code → recovery codes — inline,
- * for a page rather than a dialog: a setup prompt after sign-in, an onboarding
- * step. `MfaDialog` keeps covering the same flow for account settings.
- *
- * Step headings are `h2` by default, so render it below the page's own `h1`,
- * or make them the page's `h1` with `headingLevel`.
+ * The enable flow (intro, QR code, code, recovery codes) inline on a page;
+ * `MfaDialog` has it for account settings. Its headings are `h2` unless
+ * `headingLevel` makes them the page's `h1`.
  */
 const {
   skippable = true,
@@ -17,15 +14,9 @@ const {
   skippable?: boolean;
   /** Focus the intro heading on mount. Leave off when the page moves focus itself. */
   autofocus?: boolean;
-  /**
-   * Level of the step heading. 1 makes it the page's title, for a page that
-   * drops its own once the flow is underway; the headings inside follow.
-   */
+  /** Level of the step heading; 1 makes it the page's title. The headings inside follow. */
   headingLevel?: 1 | 2;
-  /**
-   * Show the intro step's heading and description. Leave off when the page
-   * already introduces MFA in its own words, so it is not said twice.
-   */
+  /** Show the intro step's heading and description; off when the page introduces MFA itself. */
   showIntro?: boolean;
 }>();
 
@@ -34,10 +25,7 @@ const emit = defineEmits<{
   skip: [];
   /** MFA is on and the user has seen the recovery codes. */
   done: [];
-  /**
-   * MFA has actually been turned on. The layer refreshes the Sanctum identity
-   * itself; handle this to re-sync any copy of the user your app keeps.
-   */
+  /** MFA is on: re-sync any copy of the user the app keeps (the identity is refreshed). */
   refresh: [];
 }>();
 
@@ -94,8 +82,6 @@ function finish() {
 
 useMfaStepFocus(headingRef);
 
-// A fresh flow on arrival, and nothing of this one left behind on leaving:
-// done, skipped or signed out
 onMounted(() => {
   resetMfa();
   if (autofocus) headingRef.value?.focus();
@@ -115,8 +101,6 @@ onUnmounted(resetMfa);
       {{ heading }}
     </component>
 
-    <!-- Without the intro text it only holds an error, so it only renders
-         with one: an empty block would still take up room in the layout. -->
     <div
       v-if="mfaStep === 1 && (showIntro || mfaError)"
       class="mfa-setup-intro"

@@ -1,14 +1,11 @@
 /**
- * Sorts the items in place by the value at a dotted path
- * (`'criterion.number_int'`) and returns them; an item that lacks a key on
- * the path sorts as undefined instead of throwing.
+ * Sorts the items in place by the value at a dotted path (`'criterion.number_int'`)
+ * and returns them; an item without a key on the path sorts as undefined.
  */
 export function sort<T>(arr: T[] | undefined, prop: string, order = 'asc') {
   const keys = prop.split('.');
 
   arr?.sort(function (itemA, itemB) {
-    // The cast is for TypeScript only: mixed types and undefined compare as
-    // JavaScript's `<` and `>` do
     const a = valueAt(itemA, keys) as number | string;
     const b = valueAt(itemB, keys) as number | string;
     if (a < b) {

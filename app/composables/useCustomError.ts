@@ -1,14 +1,9 @@
 /**
- * The `custom-error` of a field component (FormField): an error the browser
- * cannot find, such as one from the server. It shows like the field's own
- * error, and describes the field, but does not keep the form from submitting
- * again: the server judges the next attempt, and the parent moves focus to
- * the field. A new value clears it (`clearCustomError()`), until the parent
- * sets one again.
- *
- * `invalid` says whether the field's own error applies, which shows after a
- * failed submit of its Form or with `showInvalid`; `errorShown` is true while
- * either error shows, when the error text describes the field.
+ * The `custom-error` of a field component: an error the browser cannot find,
+ * such as one from the server. It shows and describes the field like its own
+ * error, without holding the form back, until `clearCustomError()` on a new
+ * value. `invalid`: whether the field's own error applies; `errorShown`: while
+ * either error shows.
  */
 export function useCustomError(
   customError: () => string | undefined,

@@ -7,7 +7,6 @@ export function useErrorMessage() {
   const errorData = ref<ApiErrorData>();
 
   function handleError(error: unknown) {
-    // The original error, for whoever looks into it in the console
     console.info(error);
 
     errorData.value = extractApiError(error);

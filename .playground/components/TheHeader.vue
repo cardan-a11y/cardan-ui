@@ -20,7 +20,6 @@ watch(
       </MobileMenu>
 
       <NuxtLink to="/" class="home-link">
-        <!-- Narrower than the default, next to three buttons at 320px -->
         <CardanLogo product="UI" narrow-width="7.5rem" />
       </NuxtLink>
     </template>
@@ -36,7 +35,6 @@ watch(
 .the-header {
   --app-header-gap: 0.75rem;
 
-  /* From here the sidebar holds the navigation (app.vue) */
   .mobile-menu-wrapper {
     @media (min-width: 1024px) {
       display: none;

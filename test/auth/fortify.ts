@@ -12,24 +12,14 @@ import { fetchError } from '../fetch';
 import type { AuthScenario } from './scenarios';
 
 /**
- * The fake of the API behind the auth layer, shared by its suites.
- *
- * Everything the layer asks of the API goes through nuxt-auth-sanctum's
- * client, so the client is the one thing faked: the identity, sign-in and
- * sign-out stay nuxt-auth-sanctum's own, reading and writing through it.
- * `mockNuxtImport` is a macro that only works in the test file itself, so
- * every suite mocks the client and `navigateTo` with these two lines, which
- * read the fakes below only when called:
+ * The fake API behind the auth layer: nuxt-auth-sanctum's client. Importing it
+ * resets the layer's state before each test. `mockNuxtImport` only works in the
+ * test file itself, so every suite adds:
  *
  * ```ts
  * mockNuxtImport('useSanctumClient', () => () => client);
  * mockNuxtImport('navigateTo', () => (...args: unknown[]) => navigate(...args));
  * ```
- *
- * Importing this file also resets, before each test, the client, the
- * navigations, the layer's shared state (the MFA flow, the dialogs, the
- * password policy, the signed-in user) and the route; and fails a test after
- * which a request went to a route `fortify()` did not answer.
  */
 
 /** The Sanctum client: answers with the routes of the last `fortify()` */
@@ -156,21 +146,17 @@ const AUTH_STATE = [
   'mfaSetupReminder',
   'passwordPolicy',
   'passwordPolicyRequested',
-  // Cardan UI's toasts, which the layer's flows create
   'cardan-ui:toasts',
 ];
 
-// The browser's own rule for `hidden` (HTML's rendering section), which
-// happy-dom does not apply: without it axe takes a hidden field, such as the
-// account name for password managers, for one on the page
+// happy-dom lacks the browser's rule for `hidden`: axe would see hidden fields
 const hiddenRule = document.createElement('style');
 hiddenRule.textContent =
   '[hidden]:not([hidden="until-found"]) { display: none; }';
 document.head.append(hiddenRule);
 
-// Before rather than after each test: test/setup.ts unmounts the components
-// after each test, after the hooks of a suite, and an unmounting component
-// still writes to this state (resetMfa, the dialog registry)
+// Before each test: test/setup.ts unmounts after the suite's hooks, and an
+// unmounting component still writes to this state
 beforeEach(async () => {
   client.mockReset();
   navigate.mockReset();
@@ -178,8 +164,7 @@ beforeEach(async () => {
   unmatched = [];
   fortify({});
 
-  // Removed rather than reset to their defaults: a default can depend on
-  // the scenario a suite applies next, such as the configured password policy
+  // Removed, not reset: a default can depend on the next test's scenario
   clearNuxtState(
     [...AUTH_STATE, useRuntimeConfig().public.sanctum.userStateKey as string],
     { reset: false },
@@ -227,8 +212,6 @@ export function useScenario(scenario: AuthScenario) {
     );
     cardanAuth.updatePasswordMethod = scenario.cardanAuth.updatePasswordMethod;
 
-    // Every key a scenario or a test sets is one nuxt-auth-sanctum's
-    // defaults have, so assigning the saved values back restores them all
     restore = () => {
       Object.assign(sanctum.endpoints, saved.endpoints);
       Object.assign(sanctum.redirect, saved.redirect);

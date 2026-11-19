@@ -1,6 +1,4 @@
 <script setup lang="ts" generic="T extends GroupOption">
-// A default, so Vue does not cast an absent model to false: that would check
-// an option whose value is false, and count as a choice
 const model = defineModel<string | number | boolean | undefined>({
   default: undefined,
 });
@@ -39,10 +37,7 @@ const {
   showInvalid?: boolean;
   /** Under the group when it is required and no option is chosen; "<label> is missing" by default */
   errorMessage?: string;
-  /**
-   * An error the browser cannot find, such as one from the server: the group
-   * shows this text and is described by it until another option is chosen
-   */
+  /** An error the browser cannot find, such as the server's: shown until the choice changes */
   customError?: string;
   variant?: 'default' | '3d' | 'outline';
 }>();
@@ -185,8 +180,6 @@ const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   }
 }
 
-/* A required group without a chosen option, once the form reports its state,
-   or a custom error */
 :where(.radios-wrapper.show-invalid:has(:invalid)),
 :where(.radios-wrapper.custom-error),
 :where(.show-invalid) .radios-wrapper:has(:invalid) {

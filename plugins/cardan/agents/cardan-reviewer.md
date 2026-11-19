@@ -43,13 +43,16 @@ intent.
      around in a project. Not a finding when its comment calls it a stopgap,
      names the layer release that removes it and has a tripwire entry (see
      below).
-   - 🟡 Nit: a comment that only says what the code says, or what a better
-     name would; commented-out code; a comment in or on the changed code
-     that no longer matches it; a workaround comment that does not name what
-     is wrong or missing and when it can go; a workaround tied to a
-     dependency's version or internals, or to a Cardan UI release, without
-     an entry in the repository's tripwire test (`tripwires.test.ts` in its
-     test folder).
+   - 🟡 Nit: a comment that is not one of the three kinds the Cardan
+     guidelines allow (a workaround, a deliberate deviation from a standard,
+     a public docblock), so one a name, a function, a constant or a test
+     could replace; a comment over two lines that is not a public docblock;
+     a docblock that explains how something works inside; commented-out
+     code; a comment in or on the changed code that no longer matches it; a
+     workaround comment that does not name what is wrong or missing and when
+     it can go; a workaround tied to a dependency's version or internals, or
+     to a Cardan UI release, without an entry in the repository's tripwire
+     test (`tripwires.test.ts` in its test folder).
 4. The parts of REVIEW.md about pull requests don't apply here: post
    nothing to GitHub. When the brief says this is a re-review after fixes,
    report Important findings only.

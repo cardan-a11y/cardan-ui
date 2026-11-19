@@ -23,17 +23,13 @@ declare global {
 
   type ToastColor = 'blue' | 'green' | 'red' | 'orange' | 'accent';
 
-  /**
-   * An error from a Cardan API in Laravel's shape, `{ message, errors: { field:
-   * [...] } }`, whatever shape it came in: `extractApiError()` folds a JSON:API
-   * envelope into it, and ErrorMessage shows it.
-   */
+  /** An API error in Laravel's shape, from `extractApiError()`, for ErrorMessage */
   type ApiErrorData = {
     message?: string;
     errors?: Record<string, string[]>;
     /** The API's `Content-Language`, `en` without one */
     language?: string;
-    /** No answer came: the browser was offline when the request failed */
+    /** The browser was offline when the request failed */
     offline?: boolean;
   };
 

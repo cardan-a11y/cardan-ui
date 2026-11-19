@@ -19,7 +19,6 @@ const {
   ariaLabel?: string;
 }>();
 
-// Two Tabs on a page may share tab values: the ids are per instance
 const id = useId();
 const tablistRef = useTemplateRef<HTMLElement>('tablist');
 const tabpanelRef = useTemplateRef('tabpanel');
@@ -32,13 +31,11 @@ function enabledTabElements() {
   );
 }
 
-/** Focus and select: the tabs activate automatically */
 function activate(tab?: HTMLButtonElement) {
   tab?.focus();
   tab?.click();
 }
 
-/** The tab before or after the one with focus, around the ends */
 function handleStep(event: KeyboardEvent, step: 1 | -1) {
   const tabs = enabledTabElements();
   const index = tabs.indexOf(event.currentTarget as HTMLButtonElement);
@@ -57,10 +54,6 @@ function setActiveTab(tab: TabOption) {
   activeTab.value = tab.value;
 }
 
-/**
- * The tab that is in the tab order: the selected one, or the first enabled
- * one while nothing is selected, so the tab list can be reached
- */
 const focusableTab = computed(() => {
   const selected = tabs.find(
     (tab) => tab.value === activeTab.value && !tab.disabled,
@@ -124,9 +117,6 @@ defineExpose({
       class="tabpanel-wrapper"
       tabindex="-1"
     >
-      <!-- The open panel is always in the tab order, as in the APG example:
-           a check for focusable content would go stale when content loads
-           inside a child component -->
       <template v-for="tab in tabs" :key="tab.value">
         <div
           v-show="tab.value === activeTab"
@@ -183,7 +173,6 @@ defineExpose({
     transition-duration: var(--duration-sm);
     transition-timing-function: ease-in-out;
 
-    /* The focus ring is on the tab list, below */
     outline-color: transparent;
 
     .iconify {
@@ -220,7 +209,6 @@ defineExpose({
   }
 }
 
-/* Tabs variants */
 .tabs-variant--default {
   > .tablist {
     display: flex;
@@ -266,7 +254,6 @@ defineExpose({
   }
 }
 
-/* Tabs sizes */
 .tabs-size--xs {
   .tablist {
     gap: 1.5rem;

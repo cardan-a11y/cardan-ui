@@ -24,10 +24,7 @@ const {
   showInvalid?: boolean;
   /** Under the box when it is required and not ticked; "Tick this box to continue" by default */
   errorMessage?: string;
-  /**
-   * An error the browser cannot find, such as one from the server: the box
-   * shows this text and is described by it until it is ticked or unticked
-   */
+  /** An error the browser cannot find, such as the server's: shown until the box changes */
   customError?: string;
   tabindex?: string;
   id?: string;
@@ -126,8 +123,6 @@ const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   }
 
   label {
-    /* Wraps its text beside the box instead of dropping under it: the row
-       wraps for the error text */
     flex: 1 1 0;
     min-width: 0;
     max-width: max-content;
@@ -225,8 +220,6 @@ const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   flex-basis: 100%;
 }
 
-/* A required box that is not ticked, once the form reports its state, or a
-   custom error */
 :where(.checkbox-wrapper.show-invalid:has(:invalid)),
 :where(.checkbox-wrapper.custom-error),
 :where(.show-invalid) .checkbox-wrapper:has(:invalid) {

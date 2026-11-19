@@ -85,12 +85,9 @@ const computedIconLabel = computed(() => {
 
   .callout-content {
     display: flex;
-    /* Text that wraps keeps the icon beside its first line */
     align-items: flex-start;
     gap: 0.75em;
 
-    /* One line of the callout's text high, so the icon is centred on it; an
-       icon larger than the line makes it taller */
     .callout-icon-box {
       display: flex;
       align-items: center;
@@ -128,7 +125,6 @@ const computedIconLabel = computed(() => {
   background-color: var(--color-green-bg);
 }
 
-/* `blue` is the info callout, on the neutral surface */
 .callout-color--blue {
   --color-ghost-hover-bg: var(--color-bg);
   color: var(--color-grey-text);

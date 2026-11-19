@@ -1,9 +1,7 @@
 <script setup lang="ts">
 /**
- * The trail to the current page: a navigation landmark with an ordered
- * list of links, as the APG breadcrumb pattern. The last item is the
- * current page and is text, not a link. The project decides what the trail
- * is, a home link included; the component only renders it.
+ * The APG breadcrumb: a navigation with an ordered list of links, the last
+ * item the current page, as text. The project decides the trail, home included.
  */
 const { items, label = undefined } = defineProps<{
   /** The trail in order; the last item is the current page. */
@@ -51,19 +49,13 @@ const { items, label = undefined } = defineProps<{
 
   li {
     display: flex;
-    /* The slash stays on the first line of a title that wraps */
     align-items: baseline;
     gap: 0.5rem;
-    /* Rows of links stay 24px apart, also where the trail wraps */
+    /* Target spacing (WCAG 2.5.8), also where the trail wraps */
     min-height: 1.5rem;
     overflow-wrap: anywhere;
 
     + li::before {
-      /*
-       * The slash is decoration. The empty string after the second slash is
-       * its alternative text, which keeps it out of the accessibility tree,
-       * so a screen reader does not read "slash" between the links.
-       */
       content: '/' / '';
       color: var(--color-grey-graphic);
     }
@@ -71,8 +63,7 @@ const { items, label = undefined } = defineProps<{
 
   a {
     color: var(--color-grey-text);
-    /* Set here: a project may take the underline off its links, and the
-       color alone does not tell a link from the current page */
+    /* Not left to the project: color alone does not tell a link (WCAG 1.4.1) */
     text-decoration: underline;
 
     &:hover {

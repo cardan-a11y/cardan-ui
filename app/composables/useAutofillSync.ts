@@ -3,16 +3,10 @@ import type { Ref } from 'vue';
 type Control = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 
 /**
- * Keeps a field's model in line with a value that was filled in without an
- * input event. iCloud Passwords and other extensions set `value` only, so the
- * model kept its old value while the field, and the browser's validation,
- * showed the new one: a sign-in sent empty credentials. The field takes such
- * a value on `change` and when its Form is submitted, before Form checks it.
- *
- * `take` is the field's own input handling, so a value taken here goes through
- * the same steps as a typed one (`v-model.trim`, validity, custom error). The
- * field calls `remember()` whenever the model and the control agree: after its
- * input handling, and after a render that put the model into the control.
+ * Keeps a field's model in line with a value an extension (iCloud Passwords)
+ * filled in without an input event: on `change` and before its Form checks a
+ * submit. `take` is the field's own input handling; call `remember()` whenever
+ * the model and the control agree (after input, and after a render).
  */
 export function useAutofillSync(
   control: Readonly<Ref<Control | null>>,
@@ -24,10 +18,6 @@ export function useAutofillSync(
     lastSyncedValue = control.value?.value;
   }
 
-  /**
-   * Takes the control's value when it changed behind the model's back, and
-   * says whether it did
-   */
   function sync() {
     const element = control.value;
     if (!element || element.value === lastSyncedValue) return false;

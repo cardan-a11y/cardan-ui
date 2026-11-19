@@ -180,6 +180,33 @@ describe('DatePicker', () => {
     );
   });
 
+  it('names each day by its weekday and full date, and the weekday headers in full, from the first day of the week', async () => {
+    const wrapper = await mountPicker({ modelValue: new Date(2026, 0, 15) });
+    const input = wrapper.get('input');
+
+    await input.trigger('click');
+    const menu = await vi.waitFor(() => {
+      const found = document.getElementById(input.attributes('aria-controls')!);
+      expect(found?.querySelector('[aria-label*="2026"]')).toBeTruthy();
+      return found!;
+    });
+
+    const names = Array.from(menu.querySelectorAll('[aria-label]')).map(
+      (element) => element.getAttribute('aria-label'),
+    );
+    expect(names).toContain('Thursday 15 January 2026');
+    const weekdays = names.filter((name) => /^[A-Z][a-z]+day$/.test(name!));
+    expect(weekdays.slice(0, 7)).toEqual([
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ]);
+  });
+
   it('leaves Escape to a parent while the calendar is closed, and cancels typing without text input', async () => {
     const wrapper = await mountPicker();
     const input = wrapper.get('input').element;
@@ -196,7 +223,11 @@ describe('DatePicker', () => {
       }),
     );
     input.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'a', bubbles: true, cancelable: true }),
+      new KeyboardEvent('keydown', {
+        key: 'a',
+        bubbles: true,
+        cancelable: true,
+      }),
     );
     document.body.removeEventListener('keydown', listener);
 

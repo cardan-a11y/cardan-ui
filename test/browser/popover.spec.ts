@@ -1,10 +1,3 @@
-/**
- * Popover (a disclosure of links or buttons) and Tooltip (a toggletip with a
- * live region) on the native Popover API, which happy-dom does not have: the
- * browser's own `expanded` state of a `popovertarget` button, light dismiss
- * on Escape with focus back to the trigger, and the toggletip's text in the
- * accessibility tree.
- */
 import { expect, test } from '@playwright/test';
 import { axNode, focusStop, gotoHydrated } from './helpers';
 
@@ -86,8 +79,7 @@ test('Tooltip: a toggletip, opened by its button, its text in a live region, Esc
 
   const region = trigger.locator('xpath=ancestor::*[@aria-live][1]');
 
-  // The live region is there before the text, which it announces when the
-  // text arrives; focus alone does not open a toggletip
+  // Toggletip: the live region exists before its text; focus alone does not open it
   await trigger.focus();
   expect((await axNode(region)).properties).toMatchObject({ live: 'polite' });
   await expect(text).not.toBeAttached();
@@ -125,10 +117,7 @@ test('Popover: opening above its trigger, near the sticky header, does not scrol
   const trigger = page.getByRole('button', { name: 'More options' });
   const list = page.getByRole('navigation', { name: 'More options' });
 
-  // 480px high, the lowest where the header sticks, and a menu taller than
-  // the room below the trigger: it opens above, its top near the header.
-  // Chromium scrolled it to the middle of the screen as it took focus, page
-  // and trigger along.
+  // 480px: the lowest where the header sticks; the menu is taller than the room below
   await page.setViewportSize({ width: 1280, height: 480 });
   await page.addStyleTag({
     content: `main { padding-block: 100vh; }
@@ -158,9 +147,7 @@ test('Popover: a menu that fits on neither side of its trigger scrolls its first
   const trigger = page.getByRole('button', { name: 'More options' });
   const edit = page.getByRole('button', { name: 'Edit' });
 
-  // Taller than the room above and below a trigger near the bottom: it opens
-  // below, off screen, as on a phone or zoomed in. Its focused first item
-  // has to come into view.
+  // Taller than the room on either side of a trigger near the bottom
   await page.setViewportSize({ width: 1280, height: 480 });
   await page.addStyleTag({
     content: `main { padding-block: 100vh; }
@@ -172,6 +159,5 @@ test('Popover: a menu that fits on neither side of its trigger scrolls its first
 
   await trigger.click();
   await expect(edit).toBeFocused();
-  // The page may scroll smoothly
   await expect(edit).toBeInViewport({ ratio: 1 });
 });

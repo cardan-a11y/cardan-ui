@@ -3,14 +3,8 @@ import { nextTick } from 'vue';
 import type { Target } from './a11y';
 
 /**
- * Presses a key where focus is: a bubbling, cancelable `keydown` on
- * `document.activeElement` (the body when nothing has focus), then waits a
- * tick for Vue to render. Returns the event, so a test can check
- * `defaultPrevented`.
- *
- * Proves what the component's own key handlers do. No default action
- * follows in happy-dom: Tab does not move focus, Enter and Space do not
- * click, Enter does not submit, arrow keys do not move a caret or a range.
+ * A `keydown` on `document.activeElement`, then a tick; returns the event. No
+ * default action follows in happy-dom: Tab does not move focus, Enter does not click.
  */
 export async function press(
   key: string,
@@ -30,13 +24,8 @@ export async function press(
 const added = new Set<Element>();
 
 /**
- * Adds an element to the page, next to the component under test: a button
- * that had focus before a dialog opened, a field outside a form. `html` is
- * one element (with any content); that element is returned. It is removed
- * again when the test finishes, passed or failed. Not by a setup file's
- * `afterEach`: vitest gives a setup file a module instance of this file of
- * its own, so what a test added was never in the setup's list, and stayed
- * on the page for the next test's axe run.
+ * Adds one element (`html`) next to the component under test and returns it;
+ * removed after the test.
  */
 export function addToPage(html: string): HTMLElement {
   const template = document.createElement('template');
@@ -56,22 +45,15 @@ export function addToPage(html: string): HTMLElement {
   return element;
 }
 
-/**
- * Removes what `addToPage()` added and is still on the page, in the module
- * instance it is called from. `addToPage()` removes its own after each test,
- * so a setup file need not call this; the projects' setups still do.
- */
+/** Removes what `addToPage()` added; it already does so after each test. */
 export function removeAddedToPage() {
   for (const element of added) element.remove();
   added.clear();
 }
 
 /**
- * Sends the `toggle` event the browser fires after a popover is shown or
- * hidden, then waits a tick. happy-dom has no Popover API (no
- * `showPopover`, no ToggleEvent, no top layer): this proves what the
- * component does on the event, not that the browser opens it, moves it to
- * the top layer or light-dismisses it.
+ * Fires a popover's `toggle` event, then waits a tick. happy-dom has no Popover
+ * API: this proves what the component does on the event, not what the browser does.
  */
 export async function toggle(
   target: Target,
@@ -88,15 +70,9 @@ export async function toggle(
 }
 
 /**
- * The Popover API on `element`, as far as the components use it: the open
- * state that `:popover-open` reads, and `showPopover()` and `hidePopover()`
- * (spies), which fire the toggle event through `toggle()`. `show()` is the
- * browser opening it, such as a click on the trigger; it waits for the tick
- * in which a component moves focus into it.
- *
- * It proves what the component does with that state and on its events, not
- * that the browser opens the popover, puts it in the top layer, anchors it,
- * light-dismisses it, or hides it from the accessibility tree while closed.
+ * Fakes the Popover API on `element`: the `:popover-open` state, spied
+ * `showPopover()` and `hidePopover()`, and `show()` as the browser opening it.
+ * Proves what the component does, not the top layer, anchoring or light dismiss.
  */
 export function fakePopover(element: HTMLElement) {
   let open = false;
@@ -131,11 +107,7 @@ export function fakePopover(element: HTMLElement) {
   };
 }
 
-/**
- * Focus leaving `from` for `to`, as the browser reports it: a bubbling
- * `focusout` with `to` as its `relatedTarget` (`null`: to nowhere). It does
- * not move focus, and sends no `focusin` or `focus` on `to`.
- */
+/** A bubbling `focusout` from `from` with `to` as `relatedTarget`; moves no focus. */
 export function leave(from: Element, to: Element | null) {
   from.dispatchEvent(
     new FocusEvent('focusout', { relatedTarget: to, bubbles: true }),
@@ -143,9 +115,8 @@ export function leave(from: Element, to: Element | null) {
 }
 
 /**
- * Waits until `useRouteFocus()` has moved focus after a navigation: a
- * render, then the timeout it waits for the new page. Call it after
- * `await useRouter().push(…)`. Does not work with fake timers.
+ * Waits until `useRouteFocus()` has moved focus, after `await useRouter().push(…)`.
+ * Not with fake timers.
  */
 export async function afterRouteFocus(): Promise<void> {
   await nextTick();

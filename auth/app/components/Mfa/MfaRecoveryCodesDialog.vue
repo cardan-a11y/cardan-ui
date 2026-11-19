@@ -1,9 +1,5 @@
 <script setup lang="ts">
-/**
- * Replaces the recovery codes. The API never shows the current codes, so the
- * dialog opens on the question whether to replace them, and shows the new ones
- * this once. Closing it forgets them.
- */
+/** Replaces the recovery codes and shows the new ones once. */
 const { mfaRecoveryCodesDialogRef, closeMfaRecoveryCodesDialog } =
   useMfaDialog();
 const {
@@ -14,18 +10,12 @@ const {
   resetMfa,
 } = useMfa();
 
-// Leaving the page while the codes show (browser Back) unmounts the dialog
-// without a close event: the codes go with it all the same
 onBeforeUnmount(resetMfa);
 
 const codeListRef = useTemplateRef<{ focusHeading: () => void }>('codeList');
 
 const awaitingNewCodes = computed(() => !recoveryCodes.value.length);
 
-/**
- * The generate button gives way to the new codes, so focus moves to their
- * heading rather than being lost with the button.
- */
 async function handleGenerate() {
   await generateRecoveryCodes();
 

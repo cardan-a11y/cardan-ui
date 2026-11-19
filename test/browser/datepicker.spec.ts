@@ -1,9 +1,3 @@
-/**
- * DatePicker's own input in the library's `dp-input` slot, where only a
- * browser shows it: the calendar opens and closes from the keyboard with the
- * focus kept on the field, Escape on the closed field reaches a Dialog around
- * it, a picked date lands in the field, and the clear button empties it.
- */
 import { expect, test } from '@playwright/test';
 import { gotoHydrated } from './helpers';
 

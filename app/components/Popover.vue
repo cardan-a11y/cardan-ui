@@ -1,4 +1,9 @@
 <script setup lang="ts">
+/**
+ * A button that opens a list of links or buttons: an APG disclosure, no menu
+ * roles. It leaves the pattern in one place: focus moves to its first item
+ * when it opens.
+ */
 const {
   fontSize = undefined,
   iconSize = undefined,
@@ -57,29 +62,19 @@ const popoverContentRef = useTemplateRef<HTMLDivElement | null>(
 );
 const triggerRef = useTemplateRef<HTMLButtonElement>('popoverTrigger');
 
-/**
- * After the popover is shown or hidden. The content is a list of links or
- * buttons, a disclosure in APG terms, not a menu with its roles and arrow
- * keys. It is always rendered: closed, the native popover is `display: none`,
- * so it is out of the accessibility tree and the tab order. When it opens,
- * focus moves to its first element; on Escape, or a choice, the browser
- * gives focus back to the trigger. It scrolls only for an element that is
- * not fully on screen, as far as needed: a menu that fits on neither side of
- * its trigger runs off the bottom. A plain focus() made Chromium scroll a
- * menu that opens above its trigger, on screen, to the middle of it, page
- * and trigger along, sometimes out of view.
- */
+const SLIDE_IN_PX = 8;
+
 function onToggle(event: Event) {
   if ((event as ToggleEvent).newState === 'open') {
     nextTick(() => {
       const first = firstFocusable(popoverContentRef.value);
       if (!first) return;
 
+      // A plain focus() makes Chromium scroll a menu above its trigger to the
+      // middle of the viewport, page and trigger along
       first.focus({ preventScroll: true });
-      // Read as it starts to slide in: up to 0.5rem from where it ends up
-      const slide = 8;
       const { top, bottom } = first.getBoundingClientRect();
-      if (top < slide || bottom > window.innerHeight - slide) {
+      if (top < SLIDE_IN_PX || bottom > window.innerHeight - SLIDE_IN_PX) {
         first.scrollIntoView({ block: 'nearest' });
       }
     });
@@ -88,17 +83,11 @@ function onToggle(event: Event) {
   }
 }
 
-/**
- * Focus that leaves the content or the trigger for the page closes the
- * popover: Tab past the last element, or Shift+Tab from the trigger. A press
- * in either does not.
- */
 const { onPress, onFocusOut, unpark } = useFocusLeave({
   elements: () => [popoverContentRef.value, triggerRef.value],
   close: hidePopover,
 });
 
-// A popover does not outlive its page, also when focus did not move
 const route = useRoute();
 watch(
   () => route.path,
@@ -112,10 +101,6 @@ function handleMenuClick(item: MenuItem) {
   hidePopover();
 }
 
-/**
- * A loading trigger stays focusable instead of disabled, as Button does:
- * a canceled click does not open the popover
- */
 function ignoreWhileLoading(event: Event) {
   if (loading) event.preventDefault();
 }
@@ -398,7 +383,6 @@ const emit = defineEmits<{
 
 .popover-trigger-variant--primary {
   --focus-color: var(--color-accent-text);
-  /* Always white on purple, also in dark mode */
   color: var(--color-on-accent);
   background-color: var(--color-accent);
 

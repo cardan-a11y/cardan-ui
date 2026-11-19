@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// The locales of the i18n config: a language is added there
 const { locale, locales, setLocale } = useI18n();
 </script>
 
@@ -11,9 +10,6 @@ const { locale, locales, setLocale } = useI18n();
         :key="option.code"
         :class="`list-item--${option.code}`"
       >
-        <!-- The home page of the language: a page's address in another
-             language is not its own with another prefix (cardan.com has
-             /diensten and /en/services) -->
         <NuxtLinkLocale
           :to="{ path: '/' }"
           :locale="option.code"
@@ -23,9 +19,9 @@ const { locale, locales, setLocale } = useI18n();
           @click="setLocale(option.code)"
         >
           <span>{{ option.code.toUpperCase() }}</span>
-          <!-- The space keeps "EN (English)" apart in a name read from the
-               DOM; at the start of the hidden box it is not rendered -->
-          <span class="visuallyhidden"> ({{ option.name ?? option.code }})</span>
+          <span class="visuallyhidden">
+            ({{ option.name ?? option.code }})</span
+          >
         </NuxtLinkLocale>
       </li>
     </ul>

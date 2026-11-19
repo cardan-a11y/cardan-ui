@@ -1,9 +1,8 @@
 <script setup lang="ts">
 /**
- * Asks the signed-in user for their password before a sensitive change, for
- * Fortify's `password.confirm`; `usePasswordConfirmation()` opens it and
- * waits for the answer. `MfaSettings` and `MfaSetup` mount it with their
- * flows; mount it once in the layout for flows of your own.
+ * Asks for the password before a sensitive change (Fortify's `password.confirm`);
+ * `usePasswordConfirmation()` opens it. `MfaSettings` and `MfaSetup` mount their
+ * own; mount one in the layout for flows of your own.
  */
 
 const { username = undefined } = defineProps<{
@@ -16,10 +15,7 @@ const { username = undefined } = defineProps<{
 
 const { user } = useAuth();
 
-/**
- * Read through a local type, like `useAuth().userName`: `AuthUser` is each
- * app's own payload, and the layer cannot declare `email` on it.
- */
+// `AuthUser` is each app's own payload: the layer cannot declare `email` on it
 const loginName = computed(
   () => username ?? (user.value?.data as { email?: string } | undefined)?.email,
 );
@@ -40,8 +36,6 @@ const showPassword = ref(false);
 const dialogRef = useTemplateRef<DialogComponent>('dialog');
 const passwordInputRef = useTemplateRef<InputComponent>('passwordInput');
 
-// Registered rather than bound to the shared ref: a second dialog, from a
-// layout as well as a flow, would otherwise take the ref with it on unmount
 onMounted(() => {
   if (dialogRef.value) registerPasswordConfirmationDialog(dialogRef.value);
 });
@@ -72,8 +66,7 @@ function handleClose() {
   >
     <p>{{ $t('password-confirmation.description') }}</p>
 
-    <!-- Keyed per request: a fresh form for every confirmation, so the browser
-         autofills it again and its autofocus puts focus in the password field. -->
+    <!-- Keyed per request: a fresh field that the browser autofills again -->
     <Form
       :id="formId"
       :key="passwordConfirmationRequest"
@@ -81,10 +74,7 @@ function handleClose() {
       :autofocus-fn="() => passwordInputRef?.focusElement()"
       @submit="handleSubmit"
     >
-      <!-- A password manager offers a saved password by the username it was
-           saved with. A form with a password field only gives it nothing to
-           match on, so name the account here, out of sight and out of the
-           accessibility tree. -->
+      <!-- The account a password manager matches its saved password on -->
       <input
         v-if="loginName"
         type="email"

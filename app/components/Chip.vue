@@ -78,7 +78,6 @@ const formattedLabel = computed(() =>
   }
 }
 
-/* Uppercase text needs extra letter spacing to stay legible */
 .chip-text-transform--uppercase {
   text-transform: uppercase;
   letter-spacing: 0.025em;
@@ -264,8 +263,6 @@ const formattedLabel = computed(() =>
   color: var(--color-pink-text);
   border-color: var(--color-pink-graphic);
 }
-
-/* Solid Chip: the text color as background, at least 4.5:1 in both modes */
 
 .chip-variant--solid {
   color: var(--color-white);

@@ -14,12 +14,10 @@ function newCodes() {
 
 let codes = newCodes();
 
-/** The mock's current recovery codes, shared by its GET and POST routes. */
 export function demoRecoveryCodes() {
   return codes;
 }
 
-/** Replaces the codes, so regenerating in the demo shows a new set. */
 export function regenerateDemoRecoveryCodes() {
   codes = newCodes();
 }

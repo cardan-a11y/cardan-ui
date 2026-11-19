@@ -1,11 +1,3 @@
-/**
- * UserMenu in the playground's header: a non-modal disclosure on the native
- * Popover API, which happy-dom does not have. The trigger stays in the
- * accessibility tree and toggles the panel, nothing is inert, the browser's
- * light dismiss closes it, and the panel in the top layer is neither clipped
- * nor covered by the sticky header. Also runs in WebKit (`axNode` is
- * Chromium only, so there the attribute and the role query stand in).
- */
 import { expect, test, type Page } from '@playwright/test';
 import {
   axNode,
@@ -25,7 +17,6 @@ function parts(page: Page) {
   return {
     trigger,
     panel: page.locator('.user-menu-popover'),
-    // The menu's first item: the checked theme, ThemeSelect's tab stop
     theme: page
       .getByRole('group', { name: 'Theme' })
       .getByRole('radio', { checked: true }),
@@ -36,7 +27,6 @@ function parts(page: Page) {
   };
 }
 
-/** The trigger's expanded state, as the accessibility tree has it */
 async function expanded(page: Page) {
   const { trigger } = parts(page);
   if (isChromium(page)) {
@@ -65,7 +55,6 @@ test('opens from its trigger with focus on the first item, the trigger stays usa
   expect(await expanded(page)).toBe(true);
   expect(await inertElements(page)).toEqual([]);
 
-  // Still in the accessibility tree, and one Shift+Tab away
   await expect(trigger).toBeVisible();
   await page.keyboard.press(tabKey(page, { reverse: true }));
   await expect(trigger).toBeFocused();
@@ -134,11 +123,10 @@ for (const width of [320, 1280]) {
     await page.setViewportSize({ width, height: 640 });
     const { trigger, panel } = parts(page);
 
-    // Scrolled, so the sticky header (from 360px) sits over the page
+    // The sticky header over the scrolled page
     await page.mouse.wheel(0, 400);
     await trigger.click();
     await expect(panel).toBeVisible();
-    // After its opening transition
     await panel.evaluate((el) =>
       Promise.all(el.getAnimations().map((a) => a.finished)),
     );
@@ -148,10 +136,8 @@ for (const width of [320, 1280]) {
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(width);
     expect(box.y + box.height).toBeLessThanOrEqual(640);
-    // Right under the header's line
     expect(Math.abs(box.y - (header.y + header.height))).toBeLessThanOrEqual(1);
 
-    // What the pointer hits at its corners and its center is the panel
     const covered = await panel.evaluate((el) => {
       const r = el.getBoundingClientRect();
       const points = [
@@ -168,7 +154,6 @@ for (const width of [320, 1280]) {
     });
     expect(covered).toEqual([]);
 
-    // No horizontal scroll with the menu in the header
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -187,14 +172,13 @@ test('Sign out closes the menu, opens the dialog, and closing that gives focus b
   await signOut.click();
   await expect(panel).toBeHidden();
   await expect(dialog).toBeVisible();
-  // Outside the modal dialog, the trigger is out of the tree for now
+  // Behind the modal dialog the trigger is out of the tree: read the attribute
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();
 
-  // Signing out closes it the same way
   await trigger.focus();
   await page.keyboard.press('Enter');
   await expect(theme).toBeFocused();

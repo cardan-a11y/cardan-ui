@@ -23,13 +23,11 @@ const required = ref(false);
 const checked = ref(false);
 const avatar = ref<File>();
 
-/** As a 422 from the API after a submit: the field shows it until its value changes */
 const serverError = ref<string>();
 
 const multiselectMode = ref<'single' | 'multiple' | 'tags'>('multiple');
 const inputSize = ref<InputSize>('md');
 
-// Checkboxes and radios have no minimal variant
 const choiceVariant = computed(() =>
   inputVariant.value === 'minimal' ? 'default' : inputVariant.value,
 );
@@ -150,7 +148,6 @@ async function handleSubmit(formData: FormData) {
   console.log(formData);
   raw.value = Object.fromEntries(formData);
 
-  // The API's answer: a name that is taken, as long as the field says "Ada".
   // Cleared first, so the same answer shows again after the user typed
   serverError.value = undefined;
   await nextTick();
@@ -543,7 +540,6 @@ async function handleSubmit(formData: FormData) {
       <DemoDocumentUpload :disabled="disabled" />
     </Card>
 
-    <!-- What the two APIs answer, as extractApiError() reads it -->
     <Card class="demo-error-messages">
       <h2>ErrorMessage</h2>
 
@@ -585,7 +581,6 @@ async function handleSubmit(formData: FormData) {
     flex-basis: auto;
   }
 
-  /* ErrorMessage takes no margin: the page places it */
   .demo-error-messages [role='alert'] + h3 {
     margin-block-start: 1.5rem;
   }

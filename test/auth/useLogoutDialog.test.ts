@@ -35,7 +35,6 @@ describe('useLogoutDialog', () => {
     const closeDialog = dialog();
     let signedOut = false;
     logout.mockImplementation(async () => {
-      // Still open while the API works
       expect(closeDialog).not.toHaveBeenCalled();
       signedOut = true;
     });
@@ -53,7 +52,6 @@ describe('useLogoutDialog', () => {
       await new Promise((resolve) => setTimeout(resolve));
       steps.push('closed');
     });
-    // nuxt-auth-sanctum's order: the API, the hook, then the redirect
     logout.mockImplementation(async () => {
       await useNuxtApp().callHook('sanctum:logout');
       steps.push('redirect');

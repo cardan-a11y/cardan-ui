@@ -76,7 +76,6 @@ describe.each(scenarios)('PasswordForgotForm ($name)', (scenario) => {
     await flushPromises();
 
     expect(requests(forgot)).toEqual([{ email: 'ada@example.com' }]);
-    // Announced by its live region
     const status = wrapper.get('form > [aria-live="polite"]');
     expect(status.text()).toContain(
       'We have emailed your password reset link.',
@@ -84,7 +83,6 @@ describe.each(scenarios)('PasswordForgotForm ($name)', (scenario) => {
     expect(submit.attributes('disabled')).toBeDefined();
     expect(await checkA11y()).toHaveNoViolations();
 
-    // Another address can ask for a link of its own
     await email.setValue('grace@example.com');
     expect(status.text()).toBe('');
     expect(submit.attributes('disabled')).toBeUndefined();
@@ -153,7 +151,6 @@ describe.each(scenarios)('PasswordResetForm ($name)', (scenario) => {
       `Must be at least ${minLength(scenario)} characters long`,
     );
 
-    // The checks the API runs on save are listed only where it runs them
     const serverChecks = 'Must not appear in a known data breach';
     if (scenario.cardanAuth.passwordPolicy.serverChecks) {
       expect(description(password)).toContain(serverChecks);
@@ -161,7 +158,6 @@ describe.each(scenarios)('PasswordResetForm ($name)', (scenario) => {
       expect(description(password)).not.toContain(serverChecks);
     }
 
-    // The length is checked while typing, and the list says so
     expect(description(password)).toContain(
       'Password does not meet length requirement',
     );
@@ -191,7 +187,6 @@ describe.each(scenarios)('PasswordResetForm ($name)', (scenario) => {
   });
 
   it('sets the password, signs in and goes on', async () => {
-    // Without MFA, where the API says so
     const user = scenario.user(scenario.mfaFlags ? { mfa_enabled: false } : {});
     const { save } = await mountReset(undefined, {
       [reset]: () => ({}),
@@ -215,8 +210,6 @@ describe.each(scenarios)('PasswordResetForm ($name)', (scenario) => {
     expect(navigate).toHaveBeenCalledExactlyOnceWith(
       scenario.sanctum.redirect.onLogin,
     );
-    // Signed in like on the login page: past the setup page, where the API
-    // takes part in the reminder
     expect(useMfaSetupReminder().isReminderPending.value).toBe(
       scenario.mfaFlags,
     );
@@ -251,7 +244,6 @@ describe.each(scenarios)('PasswordResetForm ($name)', (scenario) => {
     });
     expect(useLoginEmail().value).toBe('ada@example.com');
     expect(toasts()).toEqual(['Your new password has been saved.']);
-    // Not an error of the reset
     expect(wrapper.get('[role="alert"]').text()).toBe('');
   });
 
@@ -290,7 +282,6 @@ describe('PasswordResetForm (Academy, policy endpoint not public)', () => {
     expect(description(wrapper.get('input[name="password"]'))).toContain(
       'Must be at least 14 characters long',
     );
-    // A guest mid-reset is not sent to the login page
     expect(navigate).not.toHaveBeenCalled();
   });
 });

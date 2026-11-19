@@ -1,23 +1,13 @@
 /**
- * Helpers for checks in a real browser (Chromium, through Playwright): what
- * happy-dom cannot show. A project that extends the layer can import them
- * from its sibling checkout for its own pages:
- *
- *   import { focusWalk, runAxe, checkContrast } from '../cardan-ui/test/browser/helpers';
+ * Playwright checks happy-dom cannot do, for the projects too:
+ * `import { focusWalk, runAxe, checkContrast } from '../cardan-ui/test/browser/helpers'`
  */
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import type { Locator, Page } from '@playwright/test';
 import type { AxeResults } from 'axe-core';
 
-// ---------------------------------------------------------------------------
-// Pages
-// ---------------------------------------------------------------------------
-
-/**
- * Goes to a page of a Nuxt app and waits until it is hydrated and quiet, so
- * a click or key reaches the app and not the server's HTML alone.
- */
+/** Goes to a page of a Nuxt app and waits until it is hydrated and the network idle. */
 export async function gotoHydrated(page: Page, url: string) {
   await page.goto(url, { waitUntil: 'networkidle' });
   await page.waitForFunction(
@@ -26,10 +16,6 @@ export async function gotoHydrated(page: Page, url: string) {
         ?.__vue_app__,
   );
 }
-
-// ---------------------------------------------------------------------------
-// Focus
-// ---------------------------------------------------------------------------
 
 /** Where focus is after one key press of a walk */
 export interface FocusStop {
@@ -54,7 +40,6 @@ export async function focusStop(
 
   return page.evaluate((container) => {
     let el = document.activeElement;
-    // Into open shadow roots, as the browser does
     while (el?.shadowRoot?.activeElement) el = el.shadowRoot.activeElement;
 
     const text = (value?: string | null) =>
@@ -73,7 +58,6 @@ export async function focusStop(
     const role = el?.getAttribute('role');
     const onBody = !el || el === document.body;
 
-    // A key per element, so two elements with the same name stay apart
     const w = window as unknown as { focusWalkKeys?: WeakMap<Element, string> };
     w.focusWalkKeys ??= new WeakMap();
     if (el && !onBody && !w.focusWalkKeys.has(el)) {
@@ -93,21 +77,15 @@ export async function focusStop(
 }
 
 /**
- * The key that moves focus to the next element. WebKit's Tab skips links
- * and buttons unless Safari's "Press Tab to highlight each item" setting is
- * on; Option+Tab is what a keyboard user presses there.
+ * The key that moves focus on: Option+Tab in WebKit, whose Tab skips links and
+ * buttons unless Safari's "Press Tab to highlight each item" is on.
  */
 export function tabKey(page: Page, { reverse = false } = {}): string {
   const webkit = page.context().browser()?.browserType().name() === 'webkit';
   return `${reverse ? 'Shift+' : ''}${webkit ? 'Alt+' : ''}Tab`;
 }
 
-/**
- * Presses Tab (or Shift+Tab; with Option in WebKit, see `tabKey`) `steps`
- * times and returns where focus went after each press, as the browser moves
- * it: real tab order, `inert`, hidden content and top-layer dialogs
- * included.
- */
+/** Presses `tabKey` `steps` times and returns where focus went after each press. */
 export async function focusWalk(
   page: Page,
   steps: number,
@@ -123,11 +101,7 @@ export async function focusWalk(
   return stops;
 }
 
-/**
- * Tabs (`tabKey`) from where focus is until it comes back to the same
- * element (or `max` presses), round the end of the page, and returns every
- * stop: all that Tab reaches on the page, starting where it started.
- */
+/** Every stop of `tabKey` from where focus is until it returns there (or `max` presses). */
 export async function tabOrder(page: Page, max = 400): Promise<FocusStop[]> {
   const stops: FocusStop[] = [];
 
@@ -150,10 +124,6 @@ export function inertElements(page: Page): Promise<string[]> {
   );
 }
 
-// ---------------------------------------------------------------------------
-// The accessibility tree
-// ---------------------------------------------------------------------------
-
 /** A node of Chromium's own accessibility tree */
 export interface AxNode {
   role: string;
@@ -164,9 +134,8 @@ export interface AxNode {
 }
 
 /**
- * The accessibility node Chromium computes for an element, through the
- * DevTools protocol: also state the DOM does not carry, such as the
- * `expanded` of a button with `popovertarget`. Chromium only.
+ * Chromium's accessibility node of an element, with state the DOM does not
+ * carry (`expanded` of a `popovertarget` button). Chromium only.
  */
 export async function axNode(locator: Locator): Promise<AxNode> {
   const page = locator.page();
@@ -204,10 +173,6 @@ export async function axNode(locator: Locator): Promise<AxNode> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// axe
-// ---------------------------------------------------------------------------
-
 /** One element that breaks one axe rule */
 export interface AxeViolation {
   rule: string;
@@ -224,11 +189,7 @@ const axeSource = () =>
     'utf8',
   );
 
-/**
- * Runs axe-core on the page as it is, every rule on, color-contrast
- * included (it needs the real layout and styles a browser has). Returns one
- * entry per element and rule.
- */
+/** Runs axe-core with every rule, color-contrast included: one entry per element and rule. */
 export async function runAxe(
   page: Page,
   { exclude = [] as string[] } = {},
@@ -255,10 +216,6 @@ export async function runAxe(
   }, exclude);
 }
 
-// ---------------------------------------------------------------------------
-// Contrast of the design tokens
-// ---------------------------------------------------------------------------
-
 /** Two tokens and the ratio they must reach */
 export interface ContrastPair {
   fg: string;
@@ -274,32 +231,19 @@ export interface ContrastResult extends ContrastPair {
   missing?: string;
 }
 
-/**
- * The pairs every Cardan palette must meet, from the tokens the file
- * declares (WCAG 2.2 AA: 4.5:1 text, 3:1 graphics):
- *
- * - each `--color-X-text` on `--color-X-bg`, `--color-bg`, `--color-card-bg`
- *   and `--color-white`; `--color-white` on each `-text` (the solid Chip)
- * - `--color-text` and `--color-grey-text` on bg, card-bg, dialog-bg and
- *   input-bg
- * - `--color-on-accent` on `--color-accent` and `--color-accent-hover`
- * - each `-graphic` on bg, card-bg and white; the accent, green, orange and
- *   red graphics on `--color-track`
- * - `--focus-color` on bg and card-bg
- */
+/** The token pairs every Cardan palette must meet (WCAG 2.2 AA), from the tokens `mainCss` declares. */
 export function contrastPairs(mainCss: string): ContrastPair[] {
   const declared = (pattern: RegExp) => [
     ...new Set([...mainCss.matchAll(pattern)].map((match) => match[1]!)),
   ];
-  // grey has rows of its own
-  const colors = declared(/--color-([a-z]+)-text\s*:/g).filter(
+  const tintedColors = declared(/--color-([a-z]+)-text\s*:/g).filter(
     (x) => x !== 'grey',
   );
   const graphics = declared(/--color-([a-z]+)-graphic\s*:/g);
   const surfaces = ['--color-bg', '--color-card-bg', '--color-white'];
   const pairs: ContrastPair[] = [];
 
-  for (const x of colors) {
+  for (const x of tintedColors) {
     const text = `--color-${x}-text`;
     if (mainCss.includes(`--color-${x}-bg:`)) {
       pairs.push({ fg: text, bg: `--color-${x}-bg`, min: 4.5 });
@@ -338,14 +282,17 @@ export function contrastPairs(mainCss: string): ContrastPair[] {
   return pairs;
 }
 
-/** sRGB channel to linear light, WCAG 2.2 */
-function linear(channel: number) {
+function srgbToLinear(channel: number) {
   const c = channel / 255;
   return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 }
 
 function luminance([r, g, b]: number[]) {
-  return 0.2126 * linear(r!) + 0.7152 * linear(g!) + 0.0722 * linear(b!);
+  return (
+    0.2126 * srgbToLinear(r!) +
+    0.7152 * srgbToLinear(g!) +
+    0.0722 * srgbToLinear(b!)
+  );
 }
 
 export function contrastRatio(a: number[], b: number[]) {
@@ -354,12 +301,8 @@ export function contrastRatio(a: number[], b: number[]) {
 }
 
 /**
- * Checks the contrast of a palette in the browser: loads `mainCss` (the text
- * of a main.css) into a blank page and, for each mode class on `<html>`,
- * lets the browser resolve every token of `pairs` to the colour it paints,
- * so `color-mix()`, `oklch()` and relative colours count as they render.
- * A colour with transparency is painted over its background, the background
- * over white. Returns every pair with its ratio; filter on `ratio < min`.
+ * The contrast of each pair of the `mainCss` text per mode class, as the browser
+ * paints it (`color-mix()`, transparency over its background). Filter on `ratio < min`.
  */
 export async function checkContrast(
   page: Page,
@@ -386,7 +329,6 @@ export async function checkContrast(
         canvas.width = canvas.height = 1;
         const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
 
-        /** The colour a token paints, or null when it is not declared */
         function resolve(token: string) {
           if (!getComputedStyle(probe).getPropertyValue(token).trim()) {
             return null;
@@ -426,7 +368,6 @@ export async function checkContrast(
         ...('missing' in colors
           ? { ratio: 0, missing: colors.missing }
           : {
-              // Down, so a ratio just under the minimum never shows as it
               ratio:
                 Math.floor(contrastRatio(colors.fg!, colors.bg!) * 100) / 100,
             }),

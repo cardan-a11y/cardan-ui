@@ -16,13 +16,11 @@ onMounted(() => {
 const formRef = useTemplateRef('form');
 const validity = ref(true);
 
-// The fields describe themselves by their error only while it shows
 provide(
   formShowInvalidKey,
   computed(() => !!showInvalid || !validity.value),
 );
 
-// The fields' values that an extension filled in without an input event
 const syncs = new Set<() => boolean>();
 provide(formSyncKey, (sync) => {
   syncs.add(sync);
@@ -36,9 +34,6 @@ function submit() {
 
 async function handleSubmit(event: Event) {
   const target = event.target as HTMLFormElement;
-  // The models first, so the parent reads what the fields show. A model
-  // bound through a component's own v-model (`defineModel`) reads the new
-  // value only after its parent's render
   const synced = [...syncs].map((sync) => sync()).some(Boolean);
   if (synced) await nextTick();
 
@@ -49,14 +44,9 @@ async function handleSubmit(event: Event) {
     emit('submit', data, event);
   } else {
     emit('invalid', event);
-    // After the render in which the fields take their error, so a screen
-    // reader reads it with the field
     await nextTick();
     if (invalidFocusFn) invalidFocusFn();
     else {
-      // The first control that fails its constraints. Not `:invalid`, which
-      // also matches the fieldset of a required RadioGroup or CheckboxGroup,
-      // before the box in it, and a fieldset cannot take focus
       const firstInvalidElement = [...target.elements].find(
         (element) =>
           (element as HTMLInputElement).willValidate &&
@@ -139,9 +129,6 @@ const emit = defineEmits<{
   }
 }
 
-/* A button directly in a form takes the full row, also where its parent sets
-   a width for the fields in it. A width set on the button itself, inline or
-   from a rule, wins: `--form-col-width: auto` gives it its own width. */
 :where(.form, .form-content) > :where(.button) {
   --form-col-width: initial;
 }

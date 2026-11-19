@@ -1,5 +1,4 @@
-// vue-axe in development only: the built playground, which the browser tests
-// run against, has no axe of its own
+// Not in the built playground, which the browser tests check with axe themselves
 export default defineNuxtPlugin(async (nuxtApp) => {
   if (!import.meta.dev) return;
 

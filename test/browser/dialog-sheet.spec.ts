@@ -1,8 +1,3 @@
-/**
- * The bottom sheet (`position="block-end"`) keeps its content clear of the
- * screen's bottom edge on a phone, where the sheet ends at the viewport's
- * bottom.
- */
 import { expect, test } from '@playwright/test';
 import { gotoHydrated } from './helpers';
 
@@ -18,7 +13,6 @@ test('Dialog: the bottom sheet ends its content above the screen edge at 320px',
 
   const gap = await dialog.evaluate(async (element) => {
     await Promise.allSettled(element.getAnimations().map((a) => a.finished));
-    // The end of the content, as far as the sheet scrolls
     element.scrollTop = element.scrollHeight;
     const bottoms = [...element.querySelectorAll('*')]
       .map((child) => child.getBoundingClientRect())
@@ -27,6 +21,6 @@ test('Dialog: the bottom sheet ends its content above the screen edge at 320px',
     return window.innerHeight - Math.max(...bottoms);
   });
 
-  // The sheet's block padding, 1.5rem
-  expect(gap).toBeGreaterThanOrEqual(24);
+  const sheetBlockPadding = 1.5 * 16;
+  expect(gap).toBeGreaterThanOrEqual(sheetBlockPadding);
 });

@@ -282,7 +282,7 @@ describe('SpinButton: keyboard support', () => {
     expect(input.element.validity.valid).toBe(true);
   });
 
-  it('takes a typed number, and ignores a character that is not a digit', async () => {
+  it('takes a typed number, and ignores a character that is not a digit, with the caret where it was', async () => {
     const { wrapper, input } = await mountSpinButton();
 
     // As typing does: an input event alone (setValue also sends a change)
@@ -297,6 +297,13 @@ describe('SpinButton: keyboard support', () => {
     await type('6a.-');
     expect(input.element.value).toBe('6');
     expect(model(wrapper)).toBe(6);
+
+    // The caret stays where it was, after the digits before it
+    input.element.value = '1a6';
+    input.element.setSelectionRange(2, 2);
+    await input.trigger('input');
+    expect(input.element.value).toBe('16');
+    expect(input.element.selectionStart).toBe(1);
 
     // Final on blur or Enter: leading zeros go, and the parent hears of it
     await type('007');

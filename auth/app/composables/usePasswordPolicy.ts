@@ -1,16 +1,7 @@
 /**
- * The password length the API enforces, so it is never hard-coded here: read
- * from the policy endpoint (`{ data: { min_length, max_length } }`) when the
- * config names one, with `passwordPolicy` of the config as the answer until it
- * does. An API without such an endpoint sets `endpoints.passwordPolicy` to
- * `false`, and the config's policy is the one shown.
- *
- * Only the length can be checked while someone types: the breach,
- * common-password and personal-information checks run on the server and come
- * back as validation errors on submit; `serverChecks` says whether the API
- * runs them, so the forms can list them.
- *
- * Fetched once per session and shared through `useState`.
+ * The password length the API enforces, from `endpoints.passwordPolicy`
+ * (`{ data: { min_length, max_length } }`), read once per session; the config's
+ * `passwordPolicy` until it answers, or without one. `serverChecks` from config.
  */
 export function usePasswordPolicy() {
   const { client } = useAuth();
@@ -28,11 +19,8 @@ export function usePasswordPolicy() {
   if (endpoints.passwordPolicy && !requested.value) {
     requested.value = true;
 
-    // The reset form asks as a guest. An answer that is no policy, such as a
-    // 401 from a route that is not public, keeps the config's: it is not an
-    // error for the fetch client, so nuxt-auth-sanctum does not treat it as
-    // an expired session and, with `redirectIfUnauthenticated`, send the
-    // guest to the login page mid-reset.
+    // `ignoreResponseError`: a guest's 401 on the reset form would make
+    // nuxt-auth-sanctum (`redirectIfUnauthenticated`) send them to the login page
     client<{ data?: PasswordPolicyData }>(endpoints.passwordPolicy, {
       ignoreResponseError: true,
     })
@@ -46,8 +34,6 @@ export function usePasswordPolicy() {
         };
       })
       .catch(() => {
-        // No connection: the config's policy stands, and the next form that
-        // asks tries again
         requested.value = false;
       });
   }

@@ -1,12 +1,6 @@
 import type { Ref } from 'vue';
 
-/**
- * Each step of the MFA flow replaces the content focus was in, so focus moves
- * to the new step: its heading in `MfaSetup`, the step's content in
- * `MfaDialog`, whose title belongs to the dialog. The confirm step is the
- * exception: its form focuses the code input. The target takes focus with
- * `tabindex="-1"`.
- */
+/** Focuses `target` (with `tabindex="-1"`) on each MFA step but the code step, whose form focuses its field. */
 export function useMfaStepFocus(target: Readonly<Ref<HTMLElement | null>>) {
   const { mfaStep } = useMfa();
 

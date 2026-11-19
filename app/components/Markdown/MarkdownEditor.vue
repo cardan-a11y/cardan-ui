@@ -10,18 +10,15 @@ import {
   targetBlankExtension,
 } from './extensions';
 import { hljs } from './highlight';
-// The attributes the preview lets `{…}` set: the renderer's list, so the
-// editor shows what MarkdownPreview will show
 import { SAFE_ATTRIBUTES } from './renderer';
 import 'md-editor-v3/lib/style.css';
 // md-editor-v3 adds no <link> for a theme when it is given an instance
 import 'highlight.js/styles/stackoverflow-dark.css';
 
-/** md-editor-v3's config is global: set once, not again by every editor. */
+// md-editor-v3's config is global: set once, not by every editor
 let configured = false;
 
-/** The translator of the editor set up last, so the label follows the app at hand */
-let translate = (key: string) => key;
+let translateOfLatestEditor = (key: string) => key;
 </script>
 
 <script setup lang="ts">
@@ -47,10 +44,7 @@ const {
   disabled?: boolean;
   errorMessage?: string;
   instruction?: string;
-  /**
-   * An error the browser cannot find, such as one from the server: the field
-   * shows this text and is described by it until its value changes
-   */
+  /** An error the browser cannot find, such as the server's: shown until the value changes */
   customError?: string;
 }>();
 
@@ -76,32 +70,28 @@ const toolbars: ToolbarNames[] = [
 
 const { t, locale } = useI18n();
 
-translate = t;
+translateOfLatestEditor = t;
 
 if (!configured) {
   configured = true;
 
   config({
     markdownItConfig(mdit) {
-      // md-editor-v3 types its instance with markdown-it 14, the plugins expect the
-      // types of markdown-it 15; both run on the same API. The cast can go once
-      // md-editor-v3 depends on markdown-it 15. Tripwire: test/tripwires.test.ts.
+      // md-editor-v3 types it as markdown-it 14, the plugins as 15: same API.
+      // Can go once md-editor-v3 is on 15. Tripwire: test/tripwires.test.ts.
       const md = mdit as unknown as MarkdownIt;
 
       md.use(swatchExtension);
       md.use(targetBlankExtension, {
-        label: () => translate('aria.open-new-window'),
+        label: () => translateOfLatestEditor('aria.open-new-window'),
       });
       md.use(italicExtension);
       md.use(attrs, { allowed: SAFE_ATTRIBUTES });
       md.use(mark);
     },
-    // Without md-editor-v3's link shortener, which shows a URL of over 30
-    // characters as "..." in the text being edited, to screen readers too
     codeMirrorExtensions: (extensions) =>
       extensions.filter(({ type }) => type !== 'linkShortener'),
     editorExtensions: {
-      // Bundled instead of loaded from a CDN, so no third-party requests or CSP exceptions
       highlight: {
         instance: hljs,
       },
@@ -112,7 +102,7 @@ if (!configured) {
 onMounted(async () => {
   if (!autofocus) return;
 
-  // The editor is in a ClientOnly, which renders it in the tick after mount
+  // In a ClientOnly, the editor renders the tick after mount
   await nextTick();
   focusEditor();
 });
@@ -126,18 +116,13 @@ function focusEditor() {
   markdownEditorRef.value?.focus();
 }
 
-// The parent moves focus to the field with a custom error (`focusEditor()`)
 const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   () => customError,
   { invalid: () => !!required && !content.value?.trim() },
 );
 
-/**
- * The textbox is CodeMirror's content element, which md-editor-v3 gives no
- * attributes: a `<label>` cannot point to it, so it is named by the label's
- * id and described by the instruction, and by the error only while it
- * shows. CodeMirror keeps an attribute it does not set itself.
- */
+// md-editor-v3 passes no attributes to CodeMirror's textbox, and a <label>
+// cannot point to it: set on the element itself
 const editorAttributes = computed<Record<string, string | undefined>>(() => ({
   'aria-labelledby': label ? `label-${id}` : undefined,
   'aria-describedby':
@@ -152,8 +137,6 @@ function describeEditor(retry = true) {
   const editor = markdownEditorRef.value;
   const textbox = editor?.getEditorView()?.contentDOM;
 
-  // md-editor-v3 can set its ref before it has created the CodeMirror view,
-  // as when a custom error shows from the start: once more after a tick
   if (!textbox) {
     if (editor && retry) nextTick(() => describeEditor(false));
     return;
@@ -165,7 +148,6 @@ function describeEditor(retry = true) {
   }
 }
 
-// The editor is in a ClientOnly: there once its ref is
 watch([markdownEditorRef, editorAttributes], () => describeEditor(), {
   flush: 'post',
 });
@@ -225,10 +207,6 @@ const emit = defineEmits<{
         {{ instruction }}
       </p>
 
-      <!-- Only carries the required state to the form: never a tab stop, and
-           the focus a form gives the first invalid field goes on to the editor.
-           Trimmed here, so a text of only spaces, which the APIs refuse, is
-           missing -->
       <textarea
         v-if="required"
         :value="content?.trim()"
