@@ -153,6 +153,32 @@ describe('mfa-setup-required plugin (Academy)', () => {
     );
   });
 
+  it('lets the refused request reject before the navigation finishes', async () => {
+    fortify({ [identity]: () => ({ data: required }) });
+
+    // The client rejects the request once this hook has run. A leave guard
+    // that waits for the request holds the navigation until then.
+    let rejectRequest!: () => void;
+    const rejected = new Promise<void>((resolve) => (rejectRequest = resolve));
+    navigate.mockImplementation(() => rejected);
+
+    const outcome = await Promise.race([
+      Promise.resolve(
+        useNuxtApp().callHook('sanctum:error:response', {
+          response: { status: 403, _data: jsonApi('mfa_setup_required') },
+        } as never),
+      ).then(() => {
+        rejectRequest();
+        return 'rejected';
+      }),
+      new Promise((resolve) => setTimeout(() => resolve('deadlock'), 100)),
+    ]);
+
+    expect(outcome).toBe('rejected');
+    await flushPromises();
+    expect(navigate).toHaveBeenCalledExactlyOnceWith(toSetup('/'));
+  });
+
   it('reads the code of a plain body, for the back office', async () => {
     fortify({ [identity]: () => ({ data: required }) });
     await refused(403, { code: 'backoffice_mfa_required' });

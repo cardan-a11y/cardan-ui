@@ -382,6 +382,12 @@ html:has(.dialog[open]) {
   border: none;
   border-block-start: 1px solid var(--color-dialog-border);
   width: 100%;
+  /* Keeps the content clear of the screen's edge and a phone's home
+     indicator, which `viewport-fit=cover` lets the page reach. Its own
+     property: `--dialog-padding-block` may hold two values. */
+  padding-block-end: calc(
+    var(--dialog-padding-block-end, 1.5rem) + env(safe-area-inset-bottom, 0px)
+  );
 
   &[open] {
     animation: slideInBottom var(--duration-sm) forwards;

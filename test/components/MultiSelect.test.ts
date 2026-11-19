@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { defineComponent, h, nextTick } from 'vue';
+import { flushPromises } from '@vue/test-utils';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { MultiSelect } from '#components';
 import {
@@ -169,5 +170,55 @@ describe('MultiSelect', () => {
     );
     expect(new Set(listboxes).size).toBe(2);
     expect(await checkA11y()).toHaveNoViolations();
+  });
+  it('asks an options function again when it opens without options, so a first empty answer does not stay', async () => {
+    const answers = [[], options];
+    const calls: string[] = [];
+    const wrapper = await mountSelect({
+      options: async (search: string) => {
+        calls.push(search);
+        return answers.shift() ?? options;
+      },
+    });
+    await flushPromises();
+
+    // The library asked once, as it loaded, and got nothing
+    expect(calls).toHaveLength(1);
+    expect(wrapper.findAll('[role="option"]')).toHaveLength(0);
+
+    const combobox = wrapper.get('[role="combobox"]');
+    await combobox.trigger('keydown', { key: 'ArrowDown' });
+    await flushPromises();
+
+    expect(calls).toHaveLength(2);
+    expect(
+      wrapper
+        .findAll('[role="option"]')
+        .map((option) => accessibleName(option)),
+    ).toEqual(['Cheese', 'Ham']);
+
+    // Once it has options, opening again does not ask again
+    await combobox.trigger('keydown', { key: 'Escape' });
+    await combobox.trigger('keydown', { key: 'ArrowDown' });
+    await flushPromises();
+    expect(calls).toHaveLength(2);
+  });
+
+  it('does not ask an options function on open with resolve-on-load off, which leaves it to the search', async () => {
+    const calls: string[] = [];
+    const wrapper = await mountSelect({
+      resolveOnLoad: false,
+      options: async (search: string) => {
+        calls.push(search);
+        return options;
+      },
+    });
+    await flushPromises();
+
+    await wrapper.get('[role="combobox"]').trigger('keydown', {
+      key: 'ArrowDown',
+    });
+    await flushPromises();
+    expect(calls).toHaveLength(0);
   });
 });

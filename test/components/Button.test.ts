@@ -2,7 +2,7 @@ import { afterEach, describe, it, expect, vi } from 'vitest';
 import { computed } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Button, NuxtLink } from '#components';
-import { accessibleName, checkA11y, roleOf } from '../a11y';
+import { accessibleName, checkA11y, expectFocused, roleOf } from '../a11y';
 
 describe('Button', () => {
   afterEach(() => {
@@ -177,5 +177,65 @@ describe('Button', () => {
     expect(enabled.attributes('href')).toBe('/buttons');
     expect(enabled.attributes('aria-disabled')).toBeUndefined();
     expect(enabled.attributes('role')).toBeUndefined();
+  });
+
+  it('shows only the spinner while loading, not its slotted icon', async () => {
+    for (const link of [{}, { to: '/buttons' }]) {
+      const wrapper = await mountSuspended(Button, {
+        props: { label: 'Save', loading: true, ...link },
+        slots: { icon: '<svg role="img" aria-label="Floppy disk"></svg>' },
+        attachTo: document.body,
+      });
+
+      expect(wrapper.find('[aria-label="Floppy disk"]').exists()).toBe(false);
+
+      await wrapper.setProps({ loading: false });
+      expect(wrapper.find('[aria-label="Floppy disk"]').exists()).toBe(true);
+      wrapper.unmount();
+    }
+  });
+
+  it('takes the focus from focusElement(), as a button and as a link', async () => {
+    for (const props of [
+      { label: 'Save' },
+      { label: 'Buttons', to: '/buttons' },
+    ]) {
+      const wrapper = await mountSuspended(Button, {
+        props,
+        attachTo: document.body,
+      });
+
+      (wrapper.vm as unknown as { focusElement: () => void }).focusElement();
+      expectFocused(wrapper.get(props.to ? 'a' : 'button'));
+      wrapper.unmount();
+    }
+  });
+
+  it('separates its label from the slot in its name', async () => {
+    for (const props of [
+      { label: 'Download PDF' },
+      { label: 'Download PDF', to: '/buttons' },
+    ]) {
+      const wrapper = await mountSuspended(Button, {
+        props,
+        slots: { default: '<span class="visuallyhidden">Certificate</span>' },
+        attachTo: document.body,
+      });
+
+      expect(accessibleName(wrapper.get(props.to ? 'a' : 'button'))).toBe(
+        'Download PDF Certificate',
+      );
+      wrapper.unmount();
+    }
+
+    // A slot that starts with its own separator keeps a single one
+    const wrapper = await mountSuspended(Button, {
+      props: { label: 'Download PDF' },
+      slots: { default: '<span class="visuallyhidden"> Certificate</span>' },
+      attachTo: document.body,
+    });
+    expect(accessibleName(wrapper.get('button'))).toBe(
+      'Download PDF Certificate',
+    );
   });
 });

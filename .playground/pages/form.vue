@@ -4,6 +4,7 @@ useHead({ title: 'Form inputs' });
 const inputVariant = ref<InputVariant>('default');
 const singleSelection = ref('');
 const multiSelection = ref<string | string[]>();
+const filterSelection = ref<string[]>([]);
 const rangeValue = ref(0);
 const quantity = ref<number | undefined>(1);
 const min = ref(0);
@@ -444,6 +445,30 @@ async function handleSubmit(formData: FormData) {
               :disabled="disabled"
               class="demo-multiselect"
             />
+
+            <p>
+              The list of options is fixed to the field and, in browsers with
+              the Popover API, shown in the top layer. A container that scrolls
+              or hides its overflow, such as a Popover or a Dialog, therefore
+              does not cut it off, and the list follows the field when the page
+              or the container scrolls. The MultiSelect in the popover below
+              shows this, as in a filter panel.
+            </p>
+
+            <Popover label="Filters" :max-width="320">
+              <div class="popover-settings-content">
+                <MultiSelect
+                  v-model="filterSelection"
+                  name="filter-multiselect"
+                  value-key="id"
+                  label-key="name"
+                  label="MultiSelect in a popover"
+                  placeholder="Filter by option"
+                  :options="multiSelectOptions"
+                  :size="inputSize"
+                />
+              </div>
+            </Popover>
           </section>
 
           <section>

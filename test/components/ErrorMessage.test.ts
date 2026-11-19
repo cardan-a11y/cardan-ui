@@ -89,6 +89,20 @@ describe('ErrorMessage', () => {
     );
   });
 
+  it('says the browser was offline after a page text too', async () => {
+    const wrapper = await mountSuspended(ErrorMessage, {
+      props: { text: 'The download failed.', data: { offline: true } },
+    });
+    expect(wrapper.findAll('.error-message p').map((p) => p.text())).toEqual([
+      'The download failed.',
+      'You are offline. Check your connection and try again.',
+    ]);
+
+    // A server error without a message leaves the page text alone
+    await wrapper.setProps({ data: {} });
+    expect(wrapper.get('.error-message').text()).toBe('The download failed.');
+  });
+
   it('keeps an empty alert region until there is an error', async () => {
     const wrapper = await mountSuspended(ErrorMessage);
 

@@ -4,9 +4,9 @@
  * language, such as a summary; `data` the error an API answered with
  * (`extractApiError()`, `useErrorMessage()`), whose messages follow the text
  * and are marked with the language the API wrote them in. An error without a
- * message and without a `text` says, in the page's language, that the browser
- * is offline (`data.offline`) or that something went wrong, such as an HTML
- * error page or a server that did not answer.
+ * message says, in the page's language, that the browser is offline
+ * (`data.offline`), after the `text` too, or, without a `text`, that something
+ * went wrong, such as an HTML error page or a server that did not answer.
  *
  * The alert region is always in the page, so the box is announced when it
  * appears; the box itself shows only with `data` or a `text`. It takes no
@@ -35,9 +35,9 @@ const messages = computed(() => apiErrorMessages(data));
         {{ messages[0] }}
       </p>
 
-      <p v-else-if="!text">
-        {{ data?.offline ? $t('error.offline') : $t('error.general') }}
-      </p>
+      <p v-else-if="data?.offline">{{ $t('error.offline') }}</p>
+
+      <p v-else-if="!text">{{ $t('error.general') }}</p>
     </div>
   </div>
 </template>

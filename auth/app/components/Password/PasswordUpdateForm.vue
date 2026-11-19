@@ -114,11 +114,5 @@ async function updatePassword() {
   button[type='submit'] {
     max-width: max-content;
   }
-
-  .password-requirements {
-    @container (min-width: 280px) {
-      background-color: var(--color-card-bg);
-    }
-  }
 }
 </style>

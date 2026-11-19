@@ -3,8 +3,8 @@
  * Button and Popover included. A listed icon whose collection a project does
  * not install fails its production build (@nuxt/icon throws outside dev), so
  * every project installs `@iconify-json/material-symbols` and
- * `@iconify-json/svg-spinners`. The file type icons of FileInput are left
- * out: they show after a file is chosen.
+ * `@iconify-json/svg-spinners`. FileInput's file type icons (`fileTypeIcons`)
+ * are left out: they show after a file is chosen, from the same collection.
  */
 const componentIcons = [
   'material-symbols:add-photo-alternate-outline-rounded',

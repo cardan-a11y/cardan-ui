@@ -148,29 +148,94 @@ const fixedOpenDirection = computed(
 
 const openDirection = ref<'top' | 'bottom'>('bottom');
 const availableHeight = ref<number>();
+const dropdownPosition = ref<Record<string, string>>({});
 
-// Opens the dropdown upwards when it doesn't fit below the field but there is
-// more room above, and caps its height to the room on that side. Inside a
-// popover the page can't scroll, so a dropdown past the viewport is unreachable.
-// The library has no placement of its own; `position-try-fallbacks` can take
-// this over once every target browser has anchor positioning (README).
-async function placeDropdown() {
-  if (fixedOpenDirection.value) return;
-
+function dropdownElements() {
   const container = (multiSelectRef.value as ComponentPublicInstance | null)
     ?.$el as HTMLElement | undefined;
   const dropdown = container?.querySelector<HTMLElement>(
     '.multiselect-dropdown',
   );
-  if (!container || !dropdown) return;
+  return container && dropdown ? { container, dropdown } : undefined;
+}
 
+/**
+ * The dropdown is fixed to the field and, where the browser has the Popover
+ * API, in the top layer as a manual popover: no `overflow` or transformed
+ * ancestor cuts it off, such as a Popover or a Dialog that scrolls. It stays
+ * where it is in the DOM, so Tab order, focus and the combobox's references
+ * are the library's. A manual popover neither closes on Escape nor closes an
+ * open Popover around it.
+ */
+const hasPopoverApi =
+  typeof HTMLElement !== 'undefined' && 'showPopover' in HTMLElement.prototype;
+
+function setDropdownLayer(show: boolean) {
+  const dropdown = dropdownElements()?.dropdown;
+  if (!hasPopoverApi || !dropdown?.hasAttribute('popover')) return;
+  try {
+    if (show) dropdown.showPopover();
+    else dropdown.hidePopover();
+  } catch {
+    // Already in that state, or no longer in the document
+  }
+}
+
+onMounted(() => {
+  if (hasPopoverApi) {
+    dropdownElements()?.dropdown.setAttribute('popover', 'manual');
+  }
+});
+
+const margin = 8;
+
+// Puts the dropdown against the field on the side it opens to, and caps its
+// height to the room on that side: a fixed list past the viewport is out of reach.
+function positionDropdown() {
+  const elements = dropdownElements();
+  if (!elements) return;
+
+  const { container } = elements;
+  const { top, bottom, left, width } = container.getBoundingClientRect();
+  const border = parseFloat(getComputedStyle(container).borderTopWidth) || 0;
+  const viewportHeight = document.documentElement.clientHeight;
+  const upwards = (fixedOpenDirection.value ?? openDirection.value) === 'top';
+
+  // The dropdown covers the field's border on that side, as the library's does
+  dropdownPosition.value = {
+    '--multi-select-dropdown-left': `${left}px`,
+    '--multi-select-dropdown-width': `${width}px`,
+    ...(upwards
+      ? {
+          '--multi-select-dropdown-bottom': `${viewportHeight - top - border}px`,
+        }
+      : { '--multi-select-dropdown-top': `${bottom - border}px` }),
+  };
+  availableHeight.value = Math.max(
+    0,
+    upwards ? top - margin : viewportHeight - bottom - margin,
+  );
+}
+
+// Opens the dropdown upwards when it doesn't fit below the field but there is
+// more room above. The library has no placement of its own; anchor
+// positioning can take this over once every target browser has it (README).
+async function placeDropdown() {
+  setDropdownLayer(true);
+  positionDropdown();
+  if (fixedOpenDirection.value) return;
+
+  const elements = dropdownElements();
+  if (!elements) return;
+
+  // Measured without the cap of the last placement
   availableHeight.value = undefined;
   await nextTick();
 
-  const margin = 8;
+  const { container, dropdown } = elements;
   const { top, bottom } = container.getBoundingClientRect();
   const spaceAbove = top - margin;
-  const spaceBelow = window.innerHeight - bottom - margin;
+  const spaceBelow = document.documentElement.clientHeight - bottom - margin;
   const neededHeight = Math.min(
     dropdown.scrollHeight || Infinity,
     parseFloat(getComputedStyle(dropdown).maxHeight),
@@ -178,11 +243,68 @@ async function placeDropdown() {
 
   openDirection.value =
     spaceBelow < neededHeight && spaceAbove > spaceBelow ? 'top' : 'bottom';
-  availableHeight.value = Math.max(
-    0,
-    openDirection.value === 'top' ? spaceAbove : spaceBelow,
-  );
+  positionDropdown();
 }
+
+// While open the dropdown follows the field when the page or a container
+// around it scrolls, or the window resizes; its own list scrolling aside.
+let frame: number | undefined;
+
+function followField(event: Event) {
+  const dropdown = dropdownElements()?.dropdown;
+  if (event.target instanceof Node && dropdown?.contains(event.target)) return;
+  if (frame !== undefined) return;
+  frame = requestAnimationFrame(() => {
+    frame = undefined;
+    positionDropdown();
+  });
+}
+
+function stopFollowing() {
+  window.removeEventListener('scroll', followField, true);
+  window.removeEventListener('resize', followField);
+  if (frame !== undefined) cancelAnimationFrame(frame);
+  frame = undefined;
+}
+
+/**
+ * The library asks an options function once, as it loads (`resolve-on-load`).
+ * When that answer was empty, such as before the data it depends on came in,
+ * the list stayed empty: it asks again when it opens without options.
+ */
+function handleOpen(instance: MultiselectProps) {
+  isExpanded.value = true;
+
+  // Its types leave these out
+  const select$ = instance as unknown as {
+    noOptions: boolean;
+    resolveOptions: () => Promise<void>;
+  };
+
+  const resolveOnLoad = attrs.resolveOnLoad ?? attrs['resolve-on-load'];
+  if (
+    typeof attrs.options === 'function' &&
+    resolveOnLoad !== false &&
+    select$.noOptions
+  ) {
+    select$.resolveOptions();
+  }
+
+  placeDropdown();
+  window.addEventListener('scroll', followField, {
+    capture: true,
+    passive: true,
+  });
+  window.addEventListener('resize', followField, { passive: true });
+}
+
+function handleClose() {
+  isExpanded.value = false;
+  stopFollowing();
+  setDropdownLayer(false);
+}
+
+onBeforeUnmount(stopFollowing);
 
 onMounted(() => {
   if (autofocus) setTimeout(() => focusElement(), 200);
@@ -226,6 +348,7 @@ function restoreBlur(event: KeyboardEvent) {
       availableHeight === undefined
         ? undefined
         : { '--ms-available-height': `${availableHeight}px` },
+      dropdownPosition,
     ]"
     :label="label"
     :hide-label="hideLabel"
@@ -266,11 +389,8 @@ function restoreBlur(event: KeyboardEvent) {
       :open-direction="fixedOpenDirection ?? openDirection"
       @focusin="handleFocusIn"
       @change="clearCustomError"
-      @open="
-        isExpanded = true;
-        placeDropdown();
-      "
-      @close="isExpanded = false"
+      @open="handleOpen"
+      @close="handleClose"
     >
       <!-- https://github.com/vueform/multiselect#slots -->
       <template #spinner>
@@ -494,7 +614,16 @@ function restoreBlur(event: KeyboardEvent) {
   box-shadow: none;
 }
 
+/* Fixed to the field, in the top layer where the browser has the Popover API */
 .cardan-multiselect .multiselect-dropdown {
+  position: fixed;
+  inset: var(--multi-select-dropdown-top, auto) auto
+    var(--multi-select-dropdown-bottom, auto) var(--multi-select-dropdown-left);
+  width: var(--multi-select-dropdown-width);
+  margin: 0;
+  padding: 0;
+  transform: none;
+  color: inherit;
   max-height: min(
     var(--ms-max-height, 10rem),
     var(--ms-available-height, 100dvh)

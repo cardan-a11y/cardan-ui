@@ -90,7 +90,14 @@ const requirements = computed<Requirement[]>(() => [
 
 .password-requirements {
   @container (min-width: 280px) {
-    background-color: var(--color-bg);
+    /* A tint of the text colour over whatever surface holds the list (a
+       page, a card, a dialog), so the box shows on each of them; the text
+       loses about a tenth of its contrast. A container that knows its own
+       surface sets another, as AuthPage does. */
+    background-color: var(
+      --password-requirements-bg,
+      color-mix(in srgb, var(--color-text) 5%, transparent)
+    );
     border-radius: var(--radius-md);
     padding: 0.75rem;
   }

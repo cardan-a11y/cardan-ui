@@ -15,13 +15,12 @@ export default defineNuxtPlugin((nuxtApp) => {
   // that answers one of these codes would re-enter this hook.
   let redirecting = false;
 
-  nuxtApp.hook('sanctum:error:response', async ({ response }) => {
+  nuxtApp.hook('sanctum:error:response', ({ response }) => {
     if (redirecting || response?.status !== 403) return;
 
     // A JSON:API envelope (`errors[0].code`) or a plain body (`code`).
     const data = response._data as
-      | { code?: string; errors?: { code?: string }[] }
-      | undefined;
+      { code?: string; errors?: { code?: string }[] } | undefined;
 
     const code = data?.code ?? data?.errors?.[0]?.code;
     if (!code || !MFA_SETUP_CODES.includes(code)) return;
@@ -31,8 +30,11 @@ export default defineNuxtPlugin((nuxtApp) => {
 
     redirecting = true;
 
-    try {
-      await nuxtApp.runWithContext(async () => {
+    // Not awaited: the client rejects the request only once this hook has
+    // returned, and a leave guard that waits for that request (to save a
+    // draft, say) would hold the navigation forever.
+    void nuxtApp
+      .runWithContext(async () => {
         try {
           await useAuth().refreshIdentity();
         } catch {
@@ -43,9 +45,12 @@ export default defineNuxtPlugin((nuxtApp) => {
           path: '/mfa-setup',
           query: { redirect: route.fullPath },
         });
+      })
+      .catch(() => {
+        // A guard that cancels the navigation keeps the user where they are.
+      })
+      .finally(() => {
+        redirecting = false;
       });
-    } finally {
-      redirecting = false;
-    }
   });
 });

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ComponentPublicInstance } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import { NuxtLink } from '#components';
 
@@ -105,12 +106,15 @@ function handleClick(event: Event) {
 
   emit('click');
 }
-const buttonRef = useTemplateRef<HTMLButtonElement | HTMLAnchorElement>(
+// The button element, or the NuxtLink around the anchor of the link form
+const buttonRef = useTemplateRef<HTMLButtonElement | ComponentPublicInstance>(
   'button',
 );
 
 function focusElement() {
-  buttonRef.value?.focus();
+  const target = buttonRef.value;
+  const element = target instanceof HTMLElement ? target : target?.$el;
+  (element as HTMLElement | undefined)?.focus();
 }
 
 defineExpose({ focusElement });
@@ -147,8 +151,7 @@ const emit = defineEmits<{
     :style="computedStyle"
     @click.capture="handleClick"
   >
-    <slot v-if="!showExternalIcon" name="icon" />
-
+    <!-- The spinner replaces the icon, from the prop or the slot -->
     <template v-if="loading">
       <Icon name="svg-spinners:90-ring-with-bg" />
       <span class="visuallyhidden">
@@ -156,7 +159,10 @@ const emit = defineEmits<{
       </span>
     </template>
 
-    <Icon v-else-if="icon" :name="icon" />
+    <template v-else>
+      <slot v-if="!showExternalIcon" name="icon" />
+      <Icon v-if="icon" :name="icon" />
+    </template>
 
     <span v-if="label" :class="['button-text', hideLabel && 'visuallyhidden']">
       {{ label }}
@@ -166,6 +172,9 @@ const emit = defineEmits<{
       <Icon name="material-symbols:open-in-new-rounded" class="external-link" />
     </template>
 
+    <!-- A word break between the label and the slot in the name; shows only
+         where the link variant is inline, around its external icon -->
+    <template v-if="label && $slots.default">{{ ' ' }}</template>
     <slot name="default" />
 
     <!-- In the name, after the label, as a link in a markdown text has it -->
@@ -195,8 +204,7 @@ const emit = defineEmits<{
     :title="disabled ? undefined : title"
     @click="handleClick"
   >
-    <slot name="icon" />
-
+    <!-- The spinner replaces the icon, from the prop or the slot -->
     <template v-if="loading">
       <Icon name="svg-spinners:90-ring-with-bg" />
       <span class="visuallyhidden">
@@ -204,12 +212,17 @@ const emit = defineEmits<{
       </span>
     </template>
 
-    <Icon v-else-if="icon" :name="icon" />
+    <template v-else>
+      <slot name="icon" />
+      <Icon v-if="icon" :name="icon" />
+    </template>
 
     <span v-if="label" :class="['button-text', hideLabel && 'visuallyhidden']">
       {{ label }}
     </span>
 
+    <!-- A word break between the label and the slot in the name -->
+    <template v-if="label && $slots.default">{{ ' ' }}</template>
     <slot name="default" />
   </button>
 </template>

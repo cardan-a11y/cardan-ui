@@ -23,13 +23,18 @@ export function useAuth() {
     () => (user.value?.data as { name?: string } | undefined)?.name,
   );
 
-  const userInitials = computed(() =>
-    userName.value
-      ?.split(' ')
-      .filter(Boolean)
-      .map((part) => part[0])
-      .join(''),
-  );
+  /**
+   * The first letters of the first and the last name, so a Dutch
+   * tussenvoegsel stays out: "Jan van Dam" is "JD". One letter for one name.
+   */
+  const userInitials = computed(() => {
+    const parts = userName.value?.trim().split(/\s+/).filter(Boolean);
+    if (!parts?.length) return undefined;
+
+    const first = parts[0]!;
+    const last = parts.length > 1 ? parts[parts.length - 1]! : '';
+    return (first[0] ?? '') + (last[0] ?? '');
+  });
 
   /**
    * Posts the credentials and hands back the raw response, without letting
