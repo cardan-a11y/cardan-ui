@@ -1,5 +1,4 @@
 export default defineNuxtConfig({
-  // Cardan UI and the Cardan Auth UI layer, which is demoed on the Auth UI pages
   extends: ['..', '../auth'],
 
   $production: {
@@ -7,9 +6,8 @@ export default defineNuxtConfig({
       domains: ['i.ytimg.com', 'i.vimeocdn.com'],
     },
 
-    // Cached on Netlify like the pages of cardan-cms-nuxt, so a component that
-    // renders differently per visitor or over time shows up here first. The
-    // mock endpoints answer per session, so they are never cached.
+    // Cached like cardan-cms-nuxt's pages, so a component that renders per
+    // visitor shows up here first; the mock endpoints answer per session
     routeRules: {
       '/**': { isr: 3600 },
       '/api/**': { isr: false },
@@ -23,7 +21,6 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      // In the config, not a layout or app.vue, so the error page has it too
       titleTemplate: '%s | Cardan UI',
       title: 'Cardan UI',
       link: [{ rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' }],
@@ -32,15 +29,12 @@ export default defineNuxtConfig({
 
   modules: ['@nuxt/image', '@nuxt/scripts', 'nuxt-auth-sanctum'],
 
-  // The Auth UI pages talk to the mock Fortify endpoints in server/routes.
-  // Set NUXT_PUBLIC_SANCTUM_BASE_URL to the playground's own URL when it is
-  // deployed elsewhere.
+  // Deployed elsewhere: NUXT_PUBLIC_SANCTUM_BASE_URL is the playground's own URL
   sanctum: {
     baseUrl: 'http://localhost:3003',
     client: {
       initialRequest: false,
     },
-    // Back to the Auth UI demo after signing in or skipping the MFA setup
     redirect: {
       onLogin: '/auth',
       onAuthOnly: '/',
@@ -49,7 +43,6 @@ export default defineNuxtConfig({
     },
   },
 
-  // Auth UI is made for single-page apps, so its pages render on the client only
   routeRules: {
     '/auth': { ssr: false },
     '/auth/**': { ssr: false },
@@ -106,17 +99,14 @@ export default defineNuxtConfig({
     port: 3003,
   },
 
-  // As in cardan-academy-nuxt and cardan-auditor-nuxt, so the layer's typecheck
-  // and build see what theirs see, such as typed routes
+  // As in cardan-academy-nuxt and cardan-auditor-nuxt
   future: {
     compatibilityVersion: 5,
   },
 
   experimental: {
-    // compatibilityVersion 5 turns off the auto-imports of the server bundle,
-    // which the server runtime of @nuxtjs/i18n and @nuxt/image still relies
-    // on: without them the build fails ("useRuntimeConfig" is not exported by
-    // "#imports")
+    // compatibilityVersion 5 drops the server auto-imports that @nuxtjs/i18n
+    // and @nuxt/image still need. Tripwire: test/tripwires.test.ts.
     nitroAutoImports: true,
   },
 

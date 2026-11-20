@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 const { t } = useI18n();
 const {
   color = 'accent',
@@ -86,12 +85,9 @@ const computedIconLabel = computed(() => {
 
   .callout-content {
     display: flex;
-    /* Text that wraps keeps the icon beside its first line */
     align-items: flex-start;
     gap: 0.75em;
 
-    /* One line of the callout's text high, so the icon is centred on it; an
-       icon larger than the line makes it taller */
     .callout-icon-box {
       display: flex;
       align-items: center;
@@ -129,14 +125,12 @@ const computedIconLabel = computed(() => {
   background-color: var(--color-green-bg);
 }
 
-/* Info callouts use the neutral surface */
 .callout-color--blue {
   --color-ghost-hover-bg: var(--color-bg);
   color: var(--color-grey-text);
   background-color: var(--color-grey-bg);
 }
 
-/* Outline variant: white surface with a tinted border, text and icon in the color */
 .callout-variant--outline {
   background-color: var(--color-white);
 

@@ -3,14 +3,12 @@ import Multiselect from '@vueform/multiselect';
 import type MultiselectProps from '@vueform/multiselect';
 import type { ComponentPublicInstance, StyleValue } from 'vue';
 
-// An attribute goes to the control; `class` and `style` stay on the wrapper
 defineOptions({ inheritAttrs: false });
 
 const { t } = useI18n();
 
 const model = defineModel<MultiselectProps['modelValue']>();
 
-// https://github.com/vueform/multiselect#basic-props
 const {
   id = useId(),
   mode = 'multiple',
@@ -48,10 +46,7 @@ const {
   /** After the count, instead of "items selected" */
   itemsSelectedLabel?: string;
   instruction?: string;
-  /**
-   * An error the browser cannot find, such as one from the server: the field
-   * shows this text and is described by it until its value changes
-   */
+  /** An error the browser cannot find, such as the server's: shown until the value changes */
   customError?: string;
   size?: InputSize;
 }>();
@@ -64,29 +59,14 @@ const hasValue = computed(() =>
     : model.value !== undefined && model.value !== null && model.value !== '',
 );
 
-const formShowInvalid = inject(formShowInvalidKey, ref(false));
-const customErrorActive = ref(false);
-
-/**
- * The custom error shows like the missing value, and describes the field,
- * but does not keep the form from submitting again: the server judges the
- * next attempt, and the parent moves focus to the field (`focusElement()`)
- */
-function applyCustomError() {
-  customErrorActive.value = !!customError;
-}
-
-onMounted(applyCustomError);
-watch(() => customError, applyCustomError, { flush: 'post' });
-
-/** The error text shows after a failed submit, or for a custom error */
-const errorShown = computed(
-  () =>
-    customErrorActive.value ||
-    (required && !hasValue.value && (showInvalid || formShowInvalid.value)),
+const { customErrorActive, clearCustomError, errorShown } = useCustomError(
+  () => customError,
+  {
+    invalid: () => required && !hasValue.value,
+    showInvalid: () => showInvalid,
+  },
 );
 
-// The error describes the field only while it shows
 const computedAriaDescribedby = computed(
   () =>
     [instruction && `instruction-${id}`, errorShown.value && `error-${id}`]
@@ -94,12 +74,8 @@ const computedAriaDescribedby = computed(
       .join(' ') || undefined,
 );
 
-/**
- * The library puts an attribute given to the component on its wrapper, and
- * only `aria` reaches the combobox. It names a searchable combobox by the
- * selected options, so the label is added to that name: "Cheese, Ham
- * Toppings" once something is selected, and the label alone before.
- */
+// Only `aria` reaches the library's combobox, which it names by the
+// selection alone: the label is added
 const aria = computed(() => ({
   'aria-placeholder': null,
   'aria-multiselectable': null,
@@ -108,16 +84,11 @@ const aria = computed(() => ({
   'aria-invalid': errorShown.value || undefined,
 }));
 
-/**
- * A required field has a hidden input that carries the constraint, which a
- * form focuses when it reports the empty field: focus goes on to the control
- */
-function handleFocusIn(event: FocusEvent) {
+function forwardFakeInputFocus(event: FocusEvent) {
   const target = event.target as HTMLElement;
   if (target.classList.contains('multiselect-fake-input')) focusElement();
 }
 
-/** That input is no field of its own: hidden from assistive technology, as it has no name */
 function hideFakeInput() {
   const container = (multiSelectRef.value as ComponentPublicInstance | null)
     ?.$el as HTMLElement | undefined;
@@ -152,16 +123,8 @@ defineExpose({
 
 const isExpanded = ref(false);
 
-const attrs = useAttrs();
+const { attrs, controlAttrs } = useControlAttrs();
 
-/** The attributes for the control, without the wrapper's `class` and `style` */
-function controlAttrs() {
-  return Object.fromEntries(
-    Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'),
-  );
-}
-
-// An open-direction passed by the parent wins over the automatic placement
 const fixedOpenDirection = computed(
   () =>
     (attrs.openDirection ?? attrs['open-direction']) as
@@ -170,27 +133,84 @@ const fixedOpenDirection = computed(
 
 const openDirection = ref<'top' | 'bottom'>('bottom');
 const availableHeight = ref<number>();
+const dropdownPosition = ref<Record<string, string>>({});
 
-// Opens the dropdown upwards when it doesn't fit below the field but there is
-// more room above, and caps its height to the room on that side. Inside a
-// popover the page can't scroll, so a dropdown past the viewport is unreachable.
-async function placeDropdown() {
-  if (fixedOpenDirection.value) return;
-
+function dropdownElements() {
   const container = (multiSelectRef.value as ComponentPublicInstance | null)
     ?.$el as HTMLElement | undefined;
   const dropdown = container?.querySelector<HTMLElement>(
     '.multiselect-dropdown',
   );
-  if (!container || !dropdown) return;
+  return container && dropdown ? { container, dropdown } : undefined;
+}
+
+const hasPopoverApi =
+  typeof HTMLElement !== 'undefined' && 'showPopover' in HTMLElement.prototype;
+
+function setDropdownLayer(show: boolean) {
+  const dropdown = dropdownElements()?.dropdown;
+  if (!hasPopoverApi || !dropdown?.hasAttribute('popover')) return;
+  try {
+    if (show) dropdown.showPopover();
+    else dropdown.hidePopover();
+  } catch {
+    // Already in that state, or no longer in the document
+  }
+}
+
+onMounted(() => {
+  if (hasPopoverApi) {
+    dropdownElements()?.dropdown.setAttribute('popover', 'manual');
+  }
+});
+
+const VIEWPORT_MARGIN_PX = 8;
+
+function positionDropdown() {
+  const elements = dropdownElements();
+  if (!elements) return;
+
+  const { container } = elements;
+  const { top, bottom, left, width } = container.getBoundingClientRect();
+  const border = parseFloat(getComputedStyle(container).borderTopWidth) || 0;
+  const viewportHeight = document.documentElement.clientHeight;
+  const upwards = (fixedOpenDirection.value ?? openDirection.value) === 'top';
+
+  dropdownPosition.value = {
+    '--multi-select-dropdown-left': `${left}px`,
+    '--multi-select-dropdown-width': `${width}px`,
+    ...(upwards
+      ? {
+          '--multi-select-dropdown-bottom': `${viewportHeight - top - border}px`,
+        }
+      : { '--multi-select-dropdown-top': `${bottom - border}px` }),
+  };
+  availableHeight.value = Math.max(
+    0,
+    upwards
+      ? top - VIEWPORT_MARGIN_PX
+      : viewportHeight - bottom - VIEWPORT_MARGIN_PX,
+  );
+}
+
+// The library has no placement of its own; anchor positioning can take over
+// once every target browser has it (README). Tripwire: test/tripwires.test.ts.
+async function placeDropdown() {
+  setDropdownLayer(true);
+  positionDropdown();
+  if (fixedOpenDirection.value) return;
+
+  const elements = dropdownElements();
+  if (!elements) return;
 
   availableHeight.value = undefined;
   await nextTick();
 
-  const margin = 8;
+  const { container, dropdown } = elements;
   const { top, bottom } = container.getBoundingClientRect();
-  const spaceAbove = top - margin;
-  const spaceBelow = window.innerHeight - bottom - margin;
+  const spaceAbove = top - VIEWPORT_MARGIN_PX;
+  const spaceBelow =
+    document.documentElement.clientHeight - bottom - VIEWPORT_MARGIN_PX;
   const neededHeight = Math.min(
     dropdown.scrollHeight || Infinity,
     parseFloat(getComputedStyle(dropdown).maxHeight),
@@ -198,23 +218,70 @@ async function placeDropdown() {
 
   openDirection.value =
     spaceBelow < neededHeight && spaceAbove > spaceBelow ? 'top' : 'bottom';
-  availableHeight.value = Math.max(
-    0,
-    openDirection.value === 'top' ? spaceAbove : spaceBelow,
-  );
+  positionDropdown();
 }
+
+let frame: number | undefined;
+
+function followField(event: Event) {
+  const dropdown = dropdownElements()?.dropdown;
+  if (event.target instanceof Node && dropdown?.contains(event.target)) return;
+  if (frame !== undefined) return;
+  frame = requestAnimationFrame(() => {
+    frame = undefined;
+    positionDropdown();
+  });
+}
+
+function stopFollowing() {
+  window.removeEventListener('scroll', followField, true);
+  window.removeEventListener('resize', followField);
+  if (frame !== undefined) cancelAnimationFrame(frame);
+  frame = undefined;
+}
+
+// The library asks an options function only on load, so a first empty answer
+// stayed. Tripwire: test/tripwires.test.ts.
+function handleOpen(instance: MultiselectProps) {
+  isExpanded.value = true;
+
+  // Its types leave these out
+  const select$ = instance as unknown as {
+    noOptions: boolean;
+    resolveOptions: () => Promise<void>;
+  };
+
+  const resolveOnLoad = attrs.resolveOnLoad ?? attrs['resolve-on-load'];
+  if (
+    typeof attrs.options === 'function' &&
+    resolveOnLoad !== false &&
+    select$.noOptions
+  ) {
+    select$.resolveOptions();
+  }
+
+  placeDropdown();
+  window.addEventListener('scroll', followField, {
+    capture: true,
+    passive: true,
+  });
+  window.addEventListener('resize', followField, { passive: true });
+}
+
+function handleClose() {
+  isExpanded.value = false;
+  stopFollowing();
+  setDropdownLayer(false);
+}
+
+onBeforeUnmount(stopFollowing);
 
 onMounted(() => {
   if (autofocus) setTimeout(() => focusElement(), 200);
 });
 
-/**
- * The library blurs the field on Escape, so focus fell to the page. Escape
- * closes the listbox here, cancelled so a Dialog around it stays open, and
- * the field's `blur()` does nothing from the capture phase until the event
- * leaves the wrapper: focus stays on the combobox (APG combobox). With the
- * listbox closed the event goes on as it came, so a Dialog around it closes.
- */
+// The library blurs the field on Escape: a no-op `blur` until the event leaves
+// the wrapper keeps focus on it. Tripwire: test/tripwires.test.ts.
 function keepFocusOnEscape(event: KeyboardEvent) {
   if (event.key !== 'Escape') return;
 
@@ -230,8 +297,6 @@ function restoreBlur(event: KeyboardEvent) {
     Reflect.deleteProperty(event.target as HTMLElement, 'blur');
   }
 }
-
-// https://github.com/vueform/multiselect#events
 </script>
 
 <template>
@@ -248,6 +313,7 @@ function restoreBlur(event: KeyboardEvent) {
       availableHeight === undefined
         ? undefined
         : { '--ms-available-height': `${availableHeight}px` },
+      dropdownPosition,
     ]"
     :label="label"
     :hide-label="hideLabel"
@@ -285,15 +351,11 @@ function restoreBlur(event: KeyboardEvent) {
       :aria="aria"
       :multiple-label="formatMultipleLabels"
       :open-direction="fixedOpenDirection ?? openDirection"
-      @focusin="handleFocusIn"
-      @change="customErrorActive = false"
-      @open="
-        isExpanded = true;
-        placeDropdown();
-      "
-      @close="isExpanded = false"
+      @focusin="forwardFakeInputFocus"
+      @change="clearCustomError"
+      @open="handleOpen"
+      @close="handleClose"
     >
-      <!-- https://github.com/vueform/multiselect#slots -->
       <template #spinner>
         <slot name="spinner" />
       </template>
@@ -372,7 +434,6 @@ function restoreBlur(event: KeyboardEvent) {
   --ms-border-color: var(--color-grey-graphic);
   --ms-border-width: 1px;
   --ms-border-color-active: var(--color-grey-graphic);
-  /* --ms-border-width-active: 1px; */
   --ms-radius: var(--radius-md);
   --ms-py: 0.35em;
   --ms-px: 0.5em;
@@ -387,32 +448,18 @@ function restoreBlur(event: KeyboardEvent) {
   --ms-clear-color-hover: var(--color-text);
 
   --ms-tag-font-size: var(--font-size-xs);
-  /* --ms-tag-line-height: 1.25rem; */
   --ms-tag-font-weight: var(--font-weight-medium);
   --ms-tag-bg: var(--color-accent-bg);
   --ms-tag-bg-disabled: var(--color-grey-bg);
   --ms-tag-color: var(--color-accent-text);
   --ms-tag-color-disabled: var(--color-grey-graphic);
   --ms-tag-radius: var(--radius-sm);
-  /* --ms-tag-py: 0.125rem; */
-  /* --ms-tag-px: 0.5rem; */
-  /* --ms-tag-my: 0.25rem; */
-  /* --ms-tag-mx: 0.25rem; */
-
-  /* --ms-tag-remove-radius: 4px; */
-  /* --ms-tag-remove-py: 0.25rem; */
-  /* --ms-tag-remove-px: 0.25rem; */
-  /* --ms-tag-remove-my: 0rem; */
-  /* --ms-tag-remove-mx: 0.125rem; */
 
   --ms-dropdown-bg: var(--color-card-bg);
   --ms-dropdown-border-color: var(--color-grey-graphic);
   --ms-dropdown-border-width: 1px;
   --ms-dropdown-radius: var(--radius-md);
 
-  /* --ms-group-label-py: 0.3rem; */
-  /* --ms-group-label-px: 0.75rem; */
-  /* --ms-group-label-line-height: 1.375; */
   --ms-group-label-bg: var(--color-white);
   --ms-group-label-color: var(--color-grey-text);
   --ms-group-label-bg-pointed: var(--color-grey-bg);
@@ -423,12 +470,8 @@ function restoreBlur(event: KeyboardEvent) {
   --ms-group-label-color-selected: var(--color-white);
   --ms-group-label-bg-selected-pointed: var(--color-accent-text);
   --ms-group-label-color-selected-pointed: var(--color-white);
-  /* --ms-group-label-bg-selected-disabled: #75cfb1; */
-  /* --ms-group-label-color-selected-disabled: #d1fae5; */
 
   --ms-option-font-size: var(--font-size-sm);
-  /* --ms-option-line-height: 1.375; */
-  /* The pointed (hovered or keyboard-highlighted) option needs a 3:1 contrast change */
   --ms-option-bg-pointed: var(--color-accent-bg);
   --ms-option-color-pointed: var(--color-accent-text);
   --ms-option-bg-selected: var(--color-green-bg);
@@ -439,10 +482,6 @@ function restoreBlur(event: KeyboardEvent) {
   --ms-option-color-selected-pointed: var(--color-red-text);
   --ms-option-bg-selected-disabled: var(--color-grey-bg);
   --ms-option-color-selected-disabled: var(--color-grey-graphic);
-  /* --ms-option-py: 0.5rem; */
-  /* --ms-option-px: 0.75rem; */
-
-  /* --ms-empty-color: #4B5563; */
 }
 
 .multiselect-wrapper {
@@ -462,11 +501,7 @@ function restoreBlur(event: KeyboardEvent) {
 
   overflow: auto;
   scroll-snap-type: x mandatory;
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
-  &::-webkit-scrollbar {
-    display: none; /* Chrome and Safari */
-  }
+  scrollbar-width: none;
 }
 
 .cardan-multiselect {
@@ -542,6 +577,14 @@ function restoreBlur(event: KeyboardEvent) {
 }
 
 .cardan-multiselect .multiselect-dropdown {
+  position: fixed;
+  inset: var(--multi-select-dropdown-top, auto) auto
+    var(--multi-select-dropdown-bottom, auto) var(--multi-select-dropdown-left);
+  width: var(--multi-select-dropdown-width);
+  margin: 0;
+  padding: 0;
+  transform: none;
+  color: inherit;
   max-height: min(
     var(--ms-max-height, 10rem),
     var(--ms-available-height, 100dvh)
@@ -615,7 +658,6 @@ function restoreBlur(event: KeyboardEvent) {
   --ms-border-color: var(--color-red-graphic);
 }
 
-/* Sizes */
 .multi-select-size--sm .multiselect-wrapper {
   --multi-select-height: calc(2rem - 2px);
 }

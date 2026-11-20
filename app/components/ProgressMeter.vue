@@ -1,9 +1,7 @@
 <script setup lang="ts">
 /**
- * A value as a bar under its label: a `meter` (or `progressbar`) that `label`
- * names, visible unless `hideLabel`. The text next to the label says what the
- * bar shows and `aria-valuetext` repeats it, since a meter's children are
- * presentational.
+ * A value as a bar under its label: a `meter` (or `progressbar`) named by
+ * `label`, with the text beside the label repeated as `aria-valuetext`.
  */
 const {
   value,
@@ -32,13 +30,11 @@ const {
 
 const { t } = useI18n();
 
-/** 0 to 100: how far `value` is on its way from `min` to `max` */
 const percentage = computed(() => {
   const fraction = (value - min) / (max - min);
   return Math.round(Math.min(1, Math.max(0, fraction || 0)) * 100);
 });
 
-/** What the bar shows, in words: "7 of 10", or "70%" with `showPercentage` */
 const valueText = computed(() =>
   showPercentage
     ? `${percentage.value}%`

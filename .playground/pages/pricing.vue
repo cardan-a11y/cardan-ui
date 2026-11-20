@@ -74,27 +74,6 @@ useHead({ title: 'Pricing' });
         />
       </li>
 
-      <!-- <li>
-        <PricingCard
-          title="Enterprise"
-          description="Maatwerk voor complexe digitale ecosystemen."
-          price-text="Op maat"
-          per-text="Jaarlijks gefactureerd"
-          button-label="Neem contact op met sales"
-          :feature-list="[
-            {
-              value: true,
-              label: 'Alles van Pro',
-            },
-            {
-              value: true,
-              label: 'Consectetur adipiscing elit',
-            },
-            { value: true, label: 'Sed do eiusmod' },
-            { value: true, label: 'Labore et dolore' },
-          ]"
-        />
-      </li> -->
     </ul>
 
     <DevOnly>

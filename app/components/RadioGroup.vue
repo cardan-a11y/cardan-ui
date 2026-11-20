@@ -1,5 +1,7 @@
 <script setup lang="ts" generic="T extends GroupOption">
-const model = defineModel<string | number | boolean>();
+const model = defineModel<string | number | boolean | undefined>({
+  default: undefined,
+});
 
 const {
   valueKey = 'value' as keyof T & string,
@@ -35,23 +37,18 @@ const {
   showInvalid?: boolean;
   /** Under the group when it is required and no option is chosen; "<label> is missing" by default */
   errorMessage?: string;
-  /**
-   * An error the browser cannot find, such as one from the server: the group
-   * shows this text and is described by it until another option is chosen
-   */
+  /** An error the browser cannot find, such as the server's: shown until the choice changes */
   customError?: string;
   variant?: 'default' | '3d' | 'outline';
 }>();
 
 const { t } = useI18n();
 
-/** The value of an option, as the radio's `value` */
 function optionValue(option: T) {
   return option[valueKey] as string | number | boolean;
 }
 
-/** A text field of an option, for a prop that takes a string */
-function text(option: T, key?: keyof T & string) {
+function optionText(option: T, key?: keyof T & string) {
   const value = key === undefined ? undefined : option[key];
 
   return value === undefined ? undefined : String(value);
@@ -61,33 +58,16 @@ const message = computed(
   () => errorMessage ?? t('form.missing-value', { item: label }),
 );
 
-// A v-model passes undefined until a choice is made. Without any v-model, Vue
-// casts the absent value to false, since the type allows a boolean, and that
-// would count as a choice; a group that posts natively still shows its error.
 const hasChoice = computed(
   () => model.value !== undefined && model.value !== '',
 );
 
-const formShowInvalid = inject(formShowInvalidKey, ref(false));
-const customErrorActive = ref(false);
-
-/**
- * The custom error shows like the group's own, and describes the group, but
- * does not keep the form from submitting again: the server judges the next
- * attempt
- */
-function applyCustomError() {
-  customErrorActive.value = !!customError;
-}
-
-onMounted(applyCustomError);
-watch(() => customError, applyCustomError, { flush: 'post' });
-
-/** The error text shows after a failed submit, or for a custom error */
-const errorShown = computed(
-  () =>
-    customErrorActive.value ||
-    (required && !hasChoice.value && (showInvalid || formShowInvalid.value)),
+const { customErrorActive, clearCustomError, errorShown } = useCustomError(
+  () => customError,
+  {
+    invalid: () => required && !hasChoice.value,
+    showInvalid: () => showInvalid,
+  },
 );
 </script>
 
@@ -99,11 +79,10 @@ const errorShown = computed(
       customErrorActive && 'custom-error',
     ]"
   >
-    <!-- The error describes the group only while it shows -->
     <fieldset
       v-if="options?.length"
       :aria-describedby="errorShown ? `error-${id}` : undefined"
-      @change="customErrorActive = false"
+      @change="clearCustomError"
     >
       <legend
         v-if="label || tooltip"
@@ -130,9 +109,9 @@ const errorShown = computed(
           <Radio
             v-model="model"
             :value="optionValue(option)"
-            :label="text(option, labelKey)"
+            :label="optionText(option, labelKey)"
             :disabled="disabled || !!option.disabled"
-            :title="text(option, titleKey)"
+            :title="optionText(option, titleKey)"
             :lang="option.lang"
             :name="name ?? id"
             :tabindex="tabindex"
@@ -201,8 +180,6 @@ const errorShown = computed(
   }
 }
 
-/* A required group without a chosen option, once the form reports its state,
-   or a custom error */
 :where(.radios-wrapper.show-invalid:has(:invalid)),
 :where(.radios-wrapper.custom-error),
 :where(.show-invalid) .radios-wrapper:has(:invalid) {

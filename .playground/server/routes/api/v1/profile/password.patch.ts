@@ -1,5 +1,3 @@
-// The current password "wrong" shows the validation error, in the API's
-// JSON:API envelope
 export default defineEventHandler(async (event) => {
   const { current_password } = await readBody<{ current_password?: string }>(
     event,

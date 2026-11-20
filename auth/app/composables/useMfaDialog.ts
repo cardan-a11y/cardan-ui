@@ -1,25 +1,14 @@
-/**
- * Holds the refs to the two MFA dialogs and opens them in the right flow, so
- * consumers never have to know about the dialog's internal step numbers.
- */
+/** Opens the two MFA dialogs in the right flow. */
 export function useMfaDialog() {
   const { mfaStep, mfaError, recoveryCodes, resetMfa } = useMfa();
   const { isPasswordConfirmed, requestPasswordConfirmation } =
     usePasswordConfirmation();
 
-  /**
-   * Loading state for whatever opens the recovery codes dialog, while it checks
-   * whether the password was confirmed recently.
-   */
   const loadingMfaRecoveryCodesDialog = useState(
     'loadingMfaRecoveryCodesDialog',
     () => false,
   );
 
-  /**
-   * Loading state for whatever opens the disable dialog, while it checks
-   * whether the password was confirmed recently.
-   */
   const loadingMfaDisableDialog = useState(
     'loadingMfaDisableDialog',
     () => false,
@@ -35,20 +24,13 @@ export function useMfaDialog() {
     () => null,
   );
 
-  /**
-   * Opens the dialog on the "turn MFA on" flow: intro → QR → confirm code.
-   * The intro opens straight away; `MfaDialog` asks for the password when the
-   * user chooses to enable MFA there.
-   */
+  /** Opens the dialog on the intro of turning MFA on. */
   function openMfaEnableDialog() {
     resetMfa();
     mfaDialogRef.value?.openDialog();
   }
 
-  /**
-   * Opens the dialog on the "turn MFA off" confirmation step, after the
-   * password. A second click while the check runs starts nothing.
-   */
+  /** Opens the dialog on turning MFA off, after the password. */
   async function openMfaDisableDialog() {
     if (loadingMfaDisableDialog.value) return;
 
@@ -66,11 +48,7 @@ export function useMfaDialog() {
     mfaDialogRef.value?.closeDialog();
   }
 
-  /**
-   * Opens the dialog on replacing the recovery codes, after the password: the
-   * codes are shown only when they are created, so there are none to fetch.
-   * A confirmation the user cancels opens nothing.
-   */
+  /** Opens the dialog on replacing the recovery codes, after the password. */
   async function openMfaRecoveryCodesDialog() {
     loadingMfaRecoveryCodesDialog.value = true;
     const confirmed = await isPasswordConfirmed();
@@ -78,7 +56,6 @@ export function useMfaDialog() {
 
     if (!confirmed && !(await requestPasswordConfirmation())) return;
 
-    // Codes still in memory from setting MFA up are not shown again.
     recoveryCodes.value = [];
     mfaError.value = null;
     mfaRecoveryCodesDialogRef.value?.openDialog();

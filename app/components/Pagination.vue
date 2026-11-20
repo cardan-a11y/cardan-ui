@@ -35,11 +35,6 @@ async function goToPage(pageNumber: number) {
   moveFocusOn();
 }
 
-/**
- * On the first or last page the button that got there is disabled, and a
- * disabled button drops focus: it goes to the button for the other way,
- * or to the page count on a single page
- */
 function moveFocusOn() {
   const buttons = Array.from(
     navRef.value?.querySelectorAll<HTMLButtonElement>('button') ?? [],
@@ -48,8 +43,8 @@ function moveFocusOn() {
   const index = active ? buttons.indexOf(active) : -1;
   if (index === -1 || !active?.disabled) return;
 
-  // first, previous | next, last
-  const other = buttons[index < 2 ? 2 : 1];
+  const [first, previous, next] = buttons;
+  const other = active === first || active === previous ? next : previous;
   if (other && !other.disabled) other.focus();
   else pageTextRef.value?.focus();
 }

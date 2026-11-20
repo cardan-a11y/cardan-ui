@@ -1,13 +1,7 @@
 <script setup lang="ts">
 /**
- * The reveal-password toggle beside a password field: a real toggle button
- * carrying `aria-pressed`, not an icon that silently swaps meaning. Bind the
- * field's type to its model: `:type="showPassword ? 'text' : 'password'"`.
- * One button can reveal every password field of a form, as the reset and
- * update forms do with the button beside their last field.
- *
- * Render it next to the Input inside a `.password-input-wrapper`, so the
- * button lines up with the field.
+ * A toggle button (`aria-pressed`) that reveals password fields: bind their
+ * type to its model. Place it beside the Input in a `.password-input-wrapper`.
  */
 const revealed = defineModel<boolean>({ default: false });
 

@@ -1,16 +1,8 @@
 <script setup lang="ts">
 /**
- * Turns MFA on or off and regenerates the recovery codes, through the layer's
- * two dialogs, for an account settings page. Whether MFA is on comes from the
- * user payload's `mfa_enabled`.
- *
- * The codes are shown only when they are created, so the button regenerates
- * them instead of showing them: after the password, its dialog asks to replace
- * them and shows the new ones once.
- *
- * A user who is required to have MFA switches apps the Fortify way: switch it
- * off (after confirming the password) and set it up again straight away on the
- * setup page, where the API holds them until the new app is confirmed.
+ * MFA on or off and new recovery codes, for an account settings page, by the
+ * payload's `mfa_enabled`. A user required to have MFA who switches it off goes
+ * straight on to the setup page.
  */
 const route = useRoute();
 const { refreshIdentity } = useAuth();
@@ -26,19 +18,12 @@ const {
   loadingMfaDisableDialog,
 } = useMfaDialog();
 
-/**
- * Switching MFA off sends this account straight back to set it up. An exempted
- * account is never required, whatever the role says, so it switches it off.
- */
 const resetsMfa = computed(() => mfaRequired.value && !mfaExempt.value);
 
 async function handleRefresh() {
-  // MFA did change, so the app re-syncs its copy even when this read fails
   await refreshIdentity().catch(() => {});
   emit('refresh');
 
-  // Without its "MFA is off" step the dialog keeps loading on the disable
-  // confirmation, whatever the read above did, until this closes it
   if (resetsMfa.value && loadingDisableMfa.value) {
     closeMfaDialog();
     await navigateTo({
@@ -107,8 +92,6 @@ const emit = defineEmits<{
       />
     </div>
 
-    <!-- A required user goes straight on to set MFA up again, so the
-         "MFA is off" step would only flash by. -->
     <MfaDialog :show-disable-result="!resetsMfa" @refresh="handleRefresh" />
 
     <MfaRecoveryCodesDialog />

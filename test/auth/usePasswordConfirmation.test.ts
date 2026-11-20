@@ -33,7 +33,6 @@ async function mountDialog() {
   });
   const dialog = wrapper.get('dialog');
 
-  /** Types the password and confirms it */
   async function confirmWith(password: string) {
     await dialog.get('input[name="password"]').setValue(password);
     await buttonNamed(dialog, 'Confirm').trigger('click');
@@ -67,7 +66,6 @@ describe('usePasswordConfirmation', () => {
 
     passwordConfirmationDialogRef.value = null;
 
-    // A caller that would otherwise wait forever, on a loading button
     await expect(requestPasswordConfirmation()).rejects.toThrow(
       'PasswordConfirmationDialog',
     );
@@ -90,11 +88,9 @@ describe('usePasswordConfirmation', () => {
     const password = dialog.get('input[name="password"]');
     expectFocused(password);
     expect(accessibleName(password)).toMatch(/^Password/);
-    // The account, for a password manager, out of the accessibility tree
     const username = dialog.get('input[autocomplete="username"]');
     expect(username.element.getAttribute('value')).toBe('ada@example.com');
     expect(username.attributes('hidden')).toBeDefined();
-    // Nothing to confirm before a password is typed
     expect(buttonNamed(dialog, 'Confirm').attributes('disabled')).toBeDefined();
     expect(await checkA11y()).toHaveNoViolations();
 
@@ -172,6 +168,29 @@ describe('usePasswordConfirmation', () => {
     await flushPromises();
     expect(layout.dialog.attributes('open')).toBeDefined();
   });
+
+  it('answers an earlier request that still waits as cancelled', async () => {
+    await mountDialog();
+    const { requestPasswordConfirmation } = usePasswordConfirmation();
+
+    const first = requestPasswordConfirmation();
+    void requestPasswordConfirmation();
+
+    await expect(first).resolves.toBe(false);
+  });
+
+  it('lets the caller go on only once the dialog has closed', async () => {
+    fortify({ [confirmPassword]: () => ({}) });
+    const { dialog, confirmWith } = await mountDialog();
+
+    const openWhenSettled = usePasswordConfirmation()
+      .requestPasswordConfirmation()
+      .then(() => dialog.element.hasAttribute('open'));
+    await flushPromises();
+    await confirmWith('secret');
+
+    await expect(openWhenSettled).resolves.toBe(false);
+  });
 });
 
 describe.each(scenarios)('usePasswordConfirmation ($name)', (scenario) => {
@@ -201,7 +220,6 @@ describe.each(scenarios)('usePasswordConfirmation ($name)', (scenario) => {
       buttonNamed(dialog, 'Confirm').attributes('aria-busy'),
     ).toBeUndefined();
 
-    // Cancelled after all: answered as not confirmed
     await buttonNamed(dialog, 'Cancel').trigger('click');
     await expect(result).resolves.toBe(false);
   });

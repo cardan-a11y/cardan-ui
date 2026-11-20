@@ -1,8 +1,4 @@
-/**
- * Values that a password manager fills in without an input event: iCloud
- * Passwords in Firefox sets `value` only. The field shows them and passes the
- * browser's validation, so the form must send them too, on the first Enter.
- */
+// iCloud Passwords in Firefox sets `value` without any event: the form must still send it.
 import { expect, test } from '@playwright/test';
 import { gotoHydrated } from './helpers';
 
@@ -13,7 +9,6 @@ test('LoginForm: one Enter after a fill without input events signs in with the f
   const email = page.locator('input[name="email"]');
   const password = page.locator('input[name="password"]');
 
-  // As the extension does: the native setter, and no events
   for (const [field, value] of [
     [email, 'demo@example.com'],
     [password, 'secret'],
@@ -29,7 +24,8 @@ test('LoginForm: one Enter after a fill without input events signs in with the f
   await password.focus();
   const login = page.waitForRequest(
     (request) =>
-      request.method() === 'POST' && new URL(request.url()).pathname === '/login',
+      request.method() === 'POST' &&
+      new URL(request.url()).pathname === '/login',
   );
   await page.keyboard.press('Enter');
 

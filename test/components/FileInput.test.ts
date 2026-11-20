@@ -1,10 +1,23 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { defineComponent, h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { FileInput } from '#components';
 import { accessibleName, checkA11y, description, expectFocused } from '../a11y';
 import { addToPage } from '../dom';
 import { mountInForm } from '../form';
+
+/** compressorjs, finished when a test calls `finish` */
+const compressions = vi.hoisted(
+  () => [] as { file: File; finish: (result: File) => void }[],
+);
+vi.mock('compressorjs', () => ({
+  default: vi.fn(function (
+    file: File,
+    options: { success: (result: File) => void },
+  ) {
+    compressions.push({ file, finish: options.success });
+  }),
+}));
 
 /**
  * Chooses a file the way the picker does: the input's files, then change. The
@@ -232,5 +245,135 @@ describe('FileInput and a paste of text', () => {
 
     expect(input.files?.[0]).toBe(picture);
     expect(wrapper.emitted('paste')).toBeUndefined();
+  });
+});
+
+describe('FileInput and a pasted file', () => {
+  function pasteFile(file: File, target: EventTarget = document.body) {
+    const paste = new Event('paste', { bubbles: true });
+    Object.defineProperty(paste, 'clipboardData', { value: { files: [file] } });
+    target.dispatchEvent(paste);
+  }
+
+  /** The input's files settable, as in a browser */
+  function settableFiles(input: HTMLInputElement) {
+    let files: ArrayLike<File> = [];
+    Object.defineProperty(input, 'files', {
+      get: () => files,
+      set: (value: ArrayLike<File>) => (files = value),
+      configurable: true,
+    });
+  }
+
+  async function mountPicture(props: Record<string, unknown> = {}) {
+    const wrapper = await mountSuspended(FileInput, {
+      props: { label: 'Picture', ...props },
+      attachTo: document.body,
+    });
+    const input = wrapper.get('input').element;
+    settableFiles(input);
+    return { wrapper, input };
+  }
+
+  const pdf = () => new File(['x'], 'cv.pdf', { type: 'application/pdf' });
+
+  it('takes a file pasted anywhere on the page, as its value and in the input', async () => {
+    let value: File | undefined;
+    const { wrapper, input } = await mountPicture({
+      'onUpdate:modelValue': (file?: File) => (value = file),
+    });
+    const file = pdf();
+
+    pasteFile(file);
+    await vi.waitFor(() => expect(wrapper.emitted('paste')).toEqual([[file]]));
+
+    expect(value).toBe(file);
+    expect(input.files?.[0]).toBe(file);
+  });
+
+  it('has checked a pasted file by the time it emits paste', async () => {
+    let validAtPaste: boolean | undefined;
+    const { wrapper } = await mountPicture({
+      maxFileSize: 1,
+      onPaste: () => {
+        validAtPaste = (wrapper.vm as unknown as { validity: boolean })
+          .validity;
+      },
+    });
+
+    pasteFile(new File([new Uint8Array(2000)], 'big.pdf'));
+    await vi.waitFor(() => expect(wrapper.emitted('paste')).toHaveLength(1));
+
+    expect(validAtPaste).toBe(false);
+  });
+
+  it('gives a paste to one field: the one with focus, else the first one mounted', async () => {
+    const first = await mountPicture();
+    const second = await mountPicture();
+
+    pasteFile(pdf());
+    await vi.waitFor(() =>
+      expect(first.wrapper.emitted('paste')).toHaveLength(1),
+    );
+    expect(second.wrapper.emitted('paste')).toBeUndefined();
+
+    second.input.focus();
+    pasteFile(pdf());
+    await vi.waitFor(() =>
+      expect(second.wrapper.emitted('paste')).toHaveLength(1),
+    );
+    expect(first.wrapper.emitted('paste')).toHaveLength(1);
+  });
+
+  it('leaves a paste to a field out of sight, such as one in a closed dialog', async () => {
+    const hidden = addToPage('<div style="display: none"></div>');
+    const outOfSight = await mountSuspended(FileInput, {
+      props: { label: 'Hidden picture' },
+      attachTo: hidden,
+    });
+    const visible = await mountPicture();
+
+    pasteFile(pdf());
+    await vi.waitFor(() =>
+      expect(visible.wrapper.emitted('paste')).toHaveLength(1),
+    );
+    expect(outOfSight.emitted('paste')).toBeUndefined();
+  });
+});
+
+describe('FileInput and image compression', () => {
+  it('has the chosen image as its value at once, then the compressed one, dropping a result for a file chosen before', async () => {
+    const objectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:preview');
+    const values: (File | undefined)[] = [];
+    const wrapper = await mountSuspended(FileInput, {
+      props: {
+        label: 'Picture',
+        'onUpdate:modelValue': (file?: File) => values.push(file),
+      },
+      attachTo: document.body,
+    });
+    const input = wrapper.get('input').element;
+    compressions.length = 0;
+
+    const first = new File(['x'], 'first.png', { type: 'image/png' });
+    await choose(input, first);
+    await nextTick();
+    const second = new File(['y'], 'second.png', { type: 'image/png' });
+    await choose(input, second);
+    await nextTick();
+    expect(values).toEqual([first, second]);
+
+    compressions[0]!.finish(
+      new File(['a'], 'first.jpg', { type: 'image/jpeg' }),
+    );
+    expect(values).toHaveLength(2);
+
+    compressions[1]!.finish(
+      new File(['b'], 'second.jpg', { type: 'image/jpeg' }),
+    );
+    expect(values.at(-1)?.name).toBe('second.jpg');
+    objectUrl.mockRestore();
   });
 });

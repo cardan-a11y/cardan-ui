@@ -30,11 +30,7 @@ mockNuxtImport(
 const enable = 'POST /api/user/two-factor-authentication';
 const confirm = 'POST /api/user/confirmed-two-factor-authentication';
 
-/**
- * The dialog as an account settings page mounts it, with the password
- * confirmation it asks through. The steps are reached by clicking, as a
- * user does.
- */
+/** The dialog as a settings page mounts it, with its password confirmation */
 async function mountDialog() {
   const wrapper = await mountSuspended(
     defineComponent({
@@ -78,7 +74,6 @@ describe('MfaDialog: enabling', () => {
     expect(accessibleName(dialog)).toBe('Multi-factor authentication');
     expect(await checkA11y()).toHaveNoViolations();
 
-    // The QR code, as an image with a name, and the key to type over
     await button('Enable MFA').trigger('click');
     await flushPromises();
 
@@ -93,7 +88,6 @@ describe('MfaDialog: enabling', () => {
     expectFocused(stepWith(qr.element));
     expect(await checkA11y()).toHaveNoViolations();
 
-    // The code field takes focus, and Confirm waits for six digits
     await button('Continue').trigger('click');
     await flushPromises();
 
@@ -160,13 +154,11 @@ describe('MfaDialog: enabling', () => {
     await enableButton.trigger('click');
     await flushPromises();
 
-    // On top of the MFA dialog, with focus in its password field
     expect(passwordDialog.attributes('open')).toBeDefined();
     expect(accessibleName(passwordDialog)).toBe('Confirm your password');
     const password = passwordDialog.get('input[name="password"]');
     expectFocused(password);
     expect(password.attributes('autocomplete')).toBe('current-password');
-    // Busy until the QR code shows, so a second click starts nothing
     expect(enableButton.attributes('aria-busy')).toBe('true');
 
     await password.setValue('secret');
@@ -177,7 +169,6 @@ describe('MfaDialog: enabling', () => {
       { password: 'secret' },
     ]);
     expect(passwordDialog.attributes('open')).toBeUndefined();
-    // Asked once more, now that the password is confirmed
     expect(requests(enable)).toHaveLength(2);
     expect(accessibleName(dialog)).toBe('Set up authentication app');
   });
@@ -225,11 +216,30 @@ describe('MfaDialog: enabling', () => {
       [],
     ]);
 
-    // Opened again, it starts at the intro
     useMfaDialog().openMfaEnableDialog();
     await flushPromises();
     expect(accessibleName(dialog)).toBe('Multi-factor authentication');
     expect(button('Enable MFA').exists()).toBe(true);
+  });
+
+  it('forgets the flow when the page goes while it is open', async () => {
+    fortify(twoFactorApi(academy, academy.user({ mfa_enabled: false })));
+    const { wrapper, button } = await mountDialog();
+
+    useMfaDialog().openMfaEnableDialog();
+    await flushPromises();
+    await button('Enable MFA').trigger('click');
+    await flushPromises();
+    expect(useMfa().qrCodeUrl.value).not.toBe('');
+
+    wrapper.unmount();
+
+    const { qrCode, qrCodeUrl, recoveryCodes } = useMfa();
+    expect([qrCode.value, qrCodeUrl.value, recoveryCodes.value]).toEqual([
+      '',
+      '',
+      [],
+    ]);
   });
 });
 

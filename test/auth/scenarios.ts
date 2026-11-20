@@ -2,14 +2,8 @@ import academyFortifyLogin from '../fixtures/api-errors/academy-fortify-login.js
 import type { ErrorFixture } from './fortify';
 
 /**
- * The two apps that sign in through the auth layer, as configuration the
- * suites run under (`useScenario()` in ./fortify.ts). Read from the apps'
- * own settings; update them here when an app changes its own.
- *
- * Where the configuration changes what the layer does, a suite runs once per
- * scenario: the password routes and the update method, the policy endpoint
- * present or absent, the MFA flags of the user payload, the shape of the
- * errors.
+ * The apps that sign in through the auth layer, as configuration for
+ * `useScenario()`; update them here when an app changes its settings.
  */
 export type AuthScenario = {
   name: string;
@@ -59,13 +53,8 @@ const layerDefaults: CardanAuthConfig = {
 };
 
 /**
- * Cardan Academy (cardan-academy-nuxt). `sanctum` from its nuxt.config.ts;
- * it has no app.config.ts, so `cardanAuth` is the layer's defaults. The user
- * payload carries `mfa_enabled`, `mfa_required` and `mfa_exempt`
- * (app/types/api.ts). Errors: on the Fortify routes (`/api/login`, the
- * two-factor routes) Laravel's own shape, on `/api/v1` a JSON:API envelope,
- * both with the reader's `Content-Language` (see
- * test/fixtures/api-errors/academy-*.json).
+ * cardan-academy-nuxt: the layer's defaults, MFA flags in the payload, Laravel's
+ * errors on Fortify routes and JSON:API on `/api/v1`, with `Content-Language`.
  */
 export const academy: AuthScenario = {
   name: 'Academy',
@@ -124,13 +113,8 @@ export const academy: AuthScenario = {
 };
 
 /**
- * Cardan Auditor (cardan-auditor-nuxt). `sanctum` from its nuxt.config.ts
- * (no `onLogin`: nuxt-auth-sanctum's default, `/`); `cardanAuth` from its
- * app/app.config.ts: Fortify's own password routes, `PUT` for the update, no
- * policy endpoint, Laravel's default policy. The user payload has no MFA
- * flags, so the setup reminder stays off. Errors in Laravel's shape, in
- * English, without a `Content-Language` (as
- * test/fixtures/api-errors/auditor-audit-validation.json).
+ * cardan-auditor-nuxt: Fortify's own password routes (`PUT`), no policy
+ * endpoint, no MFA flags; Laravel's errors in English without `Content-Language`.
  */
 export const auditor: AuthScenario = {
   name: 'Auditor',

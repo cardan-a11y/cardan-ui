@@ -1,12 +1,6 @@
 <script setup lang="ts">
-/**
- * Has a user without MFA set it up, in the sign-in pages' frame: as a reminder
- * right after signing in, or as a requirement they cannot skip (see
- * `useMfaSetupReminder()`). Sends the user on to where they were headed.
- */
 definePageMeta({
-  // Checked on arrival only: turning MFA on here must not cut the flow short
-  // before the recovery codes are shown.
+  // On arrival only: turning MFA on here must not skip the recovery codes
   middleware: (to) => {
     const { isAuthenticated, loginRedirectTarget } = useAuth();
     const { needsMfaSetup } = useMfaSetupReminder();
@@ -25,13 +19,8 @@ const { refreshIdentity, logout, loginRedirectTarget } = useAuth();
 const { mfaRequired, dismissMfaSetup } = useMfaSetupReminder();
 const { mfaStep } = useMfa();
 
-/**
- * Once MFA is being set up the flow needs the room, on a phone especially:
- * the page's title and description go, and the step heading becomes the h1.
- */
 const isPastIntro = computed(() => mfaStep.value > 1);
 
-/** On to where the sign-in was headed. */
 async function continueToApp() {
   dismissMfaSetup();
   await navigateTo(loginRedirectTarget() || '/');
@@ -40,7 +29,6 @@ async function continueToApp() {
 const signingOut = ref(false);
 const signOutError = ref<ApiErrorData | null>(null);
 
-/** nuxt-auth-sanctum leaves the page once signed out; a refusal shows here. */
 async function signOut() {
   signOutError.value = null;
   signingOut.value = true;

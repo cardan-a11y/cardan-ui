@@ -6,16 +6,14 @@ const popoverActions = [
     id: 'edit',
     label: $t('general.edit'),
     icon: 'material-symbols:edit-outline-rounded',
-    // disabled: true,
-    tooltip: 'Tooltip content to explain why the option is disabled.',
+    tooltip: 'Tooltip content that explains the option.',
   },
   {
     id: 'duplicate',
     label: $t('general.duplicate'),
     icon: 'material-symbols:content-copy-outline-rounded',
     divider: true,
-    // disabled: true,
-    tooltip: 'Tooltip content to explain why the option is disabled.',
+    tooltip: 'Tooltip content that explains the option.',
   },
   {
     id: 'delete',

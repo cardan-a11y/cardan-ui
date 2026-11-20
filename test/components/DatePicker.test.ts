@@ -150,4 +150,112 @@ describe('DatePicker', () => {
     ]);
     expect(await checkA11y()).toHaveNoViolations();
   });
+
+  it('names its input by the label alone, as a combobox whose aria-expanded follows the calendar', async () => {
+    const wrapper = await mountPicker();
+
+    const input = wrapper.get('input');
+    expect(accessibleName(input)).toBe('Start');
+    expect(input.attributes('aria-label')).toBeUndefined();
+    expect(input.attributes('role')).toBe('combobox');
+    expect(input.attributes('aria-haspopup')).toBe('dialog');
+    expect(input.attributes('aria-expanded')).toBe('false');
+    expect(input.attributes('aria-controls')).toBeUndefined();
+
+    await input.trigger('click');
+    await vi.waitFor(() =>
+      expect(input.attributes('aria-expanded')).toBe('true'),
+    );
+    // The calendar renders a moment after it opens
+    await vi.waitFor(() => {
+      const menu = document.getElementById(input.attributes('aria-controls')!);
+      expect(menu?.getAttribute('role')).toBe('dialog');
+    });
+
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }),
+    );
+    await vi.waitFor(() =>
+      expect(input.attributes('aria-expanded')).toBe('false'),
+    );
+  });
+
+  it('names each day by its weekday and full date, and the weekday headers in full, from the first day of the week', async () => {
+    const wrapper = await mountPicker({ modelValue: new Date(2026, 0, 15) });
+    const input = wrapper.get('input');
+
+    await input.trigger('click');
+    const menu = await vi.waitFor(() => {
+      const found = document.getElementById(input.attributes('aria-controls')!);
+      expect(found?.querySelector('[aria-label*="2026"]')).toBeTruthy();
+      return found!;
+    });
+
+    const names = Array.from(menu.querySelectorAll('[aria-label]')).map(
+      (element) => element.getAttribute('aria-label'),
+    );
+    expect(names).toContain('Thursday 15 January 2026');
+    const weekdays = names.filter((name) => /^[A-Z][a-z]+day$/.test(name!));
+    expect(weekdays.slice(0, 7)).toEqual([
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ]);
+  });
+
+  it('leaves Escape to a parent while the calendar is closed, and cancels typing, also with a text-input attribute', async () => {
+    const wrapper = await mountPicker({}, { 'text-input': true });
+    const input = wrapper.get('input').element;
+
+    expect(input.getAttribute('inputmode')).toBe('none');
+
+    const seen: KeyboardEvent[] = [];
+    const listener = (event: Event) => seen.push(event as KeyboardEvent);
+    document.body.addEventListener('keydown', listener);
+
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Escape',
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'a',
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    document.body.removeEventListener('keydown', listener);
+
+    expect(seen.map((event) => [event.key, event.defaultPrevented])).toEqual([
+      ['Escape', false],
+      ['a', true],
+    ]);
+  });
+
+  it('is described by its instruction and, after a failed submit, by the error', async () => {
+    const wrapper = await mountInForm(() => [
+      h(DatePicker, {
+        label: 'Start',
+        modelValue: null,
+        required: true,
+        instruction: 'The first day',
+      }),
+    ]);
+    await nextTick();
+    const input = wrapper.get('input');
+    expect(description(input)).toBe('The first day');
+
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+
+    expect(description(input)).toBe('The first day Start is missing');
+    expect(input.attributes('aria-invalid')).toBe('true');
+  });
 });

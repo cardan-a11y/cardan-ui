@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import type { Locale } from '#i18n';
 
-// The locales of the i18n config, with their names: a language is added there
 const { locale, locales, setLocale } = useI18n();
 
-// Per instance, as the component can be in a footer and a dialog at once
 const id = useId();
 
 const userLang = computed({

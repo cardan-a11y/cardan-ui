@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/**
+ * A toggletip, not a hover tooltip: a button that shows its text in a live
+ * region, with focus left on the button.
+ */
 const {
   label = undefined,
   fontSize = undefined,
@@ -44,10 +48,6 @@ const tooltipContentRef = useTemplateRef<HTMLDivElement | null>(
   'tooltipContent',
 );
 
-// Mirror the native popover's open state into a reactive ref. `@toggle` fires
-// *after* the popover is shown, so gating the content with `v-if="isOpen"` adds
-// the text into the (already visible) aria-live region on open — which is what
-// makes a screen reader announce the toggletip. Focus stays on the trigger.
 const isOpen = ref(false);
 
 function onToggle(event: Event) {
@@ -57,57 +57,11 @@ function onToggle(event: Event) {
 
 const triggerRef = useTemplateRef<HTMLButtonElement>('trigger');
 
-/**
- * Whether a mousedown in the tooltip is moving focus: its default action
- * moves focus, from the tooltip's text to the nearest focusable element
- * around it, such as a `<main tabindex="-1">`. Until the next task.
- */
-let pressedInside = false;
-
-function onContentMousedown() {
-  pressedInside = true;
-  setTimeout(() => {
-    pressedInside = false;
-  });
-}
-
-/** The element around the tooltip that a press in it gave focus to */
-let parked: Element | null = null;
-
-function unpark() {
-  parked?.removeEventListener('focusout', onFocusOut);
-  parked = null;
-}
-
-/**
- * Native `popover=auto` dismisses on Escape and an outside press but not on
- * focus leaving the trigger, so close it when focus moves on to an element
- * outside the trigger and the tooltip, as Popover does. Not when it moves
- * nowhere, or because of a press in the tooltip, to select its text or
- * follow a link in it: it then closes on Escape, an outside press, or when
- * focus leaves the element the press gave it to for the page (the next Tab).
- */
-function onFocusOut(event: Event) {
-  const next = (event as FocusEvent).relatedTarget;
-  const content = tooltipContentRef.value;
-  if (!content?.matches(':popover-open') || !(next instanceof Element)) return;
-
-  if (content.contains(next) || triggerRef.value?.contains(next)) {
-    unpark();
-    return;
-  }
-
-  if (pressedInside) {
-    unpark();
-    parked = next;
-    next.addEventListener('focusout', onFocusOut);
-    return;
-  }
-
-  content.hidePopover();
-}
-
-onBeforeUnmount(unpark);
+const { onPress, onFocusOut, unpark } = useFocusLeave({
+  elements: () => [tooltipContentRef.value, triggerRef.value],
+  close: () => tooltipContentRef.value?.hidePopover(),
+  isOpen: () => !!tooltipContentRef.value?.matches(':popover-open'),
+});
 </script>
 
 <template>
@@ -148,7 +102,7 @@ onBeforeUnmount(unpark);
       :data-span="span"
       :style="contentStyle"
       @toggle="onToggle"
-      @mousedown="onContentMousedown"
+      @mousedown="onPress"
       @focusout="onFocusOut"
     >
       <div v-if="isOpen" class="tooltip-content">
@@ -290,7 +244,7 @@ onBeforeUnmount(unpark);
   transition: color var(--duration-sm);
 
   &::after {
-    /* increase click target */
+    /* Enlarge the click target to at least 24×24px (WCAG 2.5.8) */
     content: '';
     position: absolute;
     inset: -50%;

@@ -1,11 +1,6 @@
 import type { MarkdownIt } from 'markdown-it';
 import { parseVideoUrl } from '../../utils/video';
 
-/**
- * A colour value on its own: `#abc`, `#aabbcc`, `rgb(…)` or `hsl(…)` with only
- * numbers inside. Anything more never reaches the `style` attribute, so a
- * text cannot add its own CSS (such as a background image that loads a URL).
- */
 const COLOR_COMPONENT = String.raw`[\d.+-]+(%|deg|turn|rad|grad)?`;
 const COLOR_VALUE = new RegExp(
   String.raw`^(#[0-9a-f]{3}|#[0-9a-f]{6}|(rgb|hsl)a?\(\s*${COLOR_COMPONENT}(\s*[\s,/]\s*${COLOR_COMPONENT})*\s*\))$`,
@@ -32,20 +27,10 @@ export function swatchExtension(md: MarkdownIt) {
 }
 
 export type TargetBlankOptions = {
-  /**
-   * Hidden text of a link, "open in new window" in the reader's
-   * language. A function is called at every render, so it follows a locale
-   * switch.
-   */
+  /** Hidden text of the link; a function follows a locale switch */
   label?: string | (() => string);
 };
 
-/**
- * Whether a link leaves the site: an absolute http(s) URL on another origin
- * than `origin` (from the env), or else the browser's. A route, an anchor or
- * a mailto link stays in the window. Without either origin, on a server that
- * was given none, every absolute link counts as external.
- */
 function isExternal(href: string, origin?: unknown) {
   if (!/^https?:\/\//i.test(href)) return false;
   const site =
@@ -64,12 +49,8 @@ function isExternal(href: string, origin?: unknown) {
 }
 
 /**
- * A link to another site opens in a new window and says so in hidden text at
- * its end, and not in a title too, which a screen reader would read again, as
- * Button does. The text comes
- * from `env.newWindowLabel` (MarkdownPreview, per render) or the `label`
- * option (MarkdownEditor, whose preview renders without an env). A link that
- * already has `target="_blank"` (a trusted text) gets the hidden text too.
+ * A link to another site opens in a new window, with hidden text that says so
+ * from `env.newWindowLabel`, else the `label` option.
  */
 export function targetBlankExtension(
   md: MarkdownIt,
@@ -111,7 +92,6 @@ export function targetBlankExtension(
   };
 
   md.renderer.rules.link_close = function (tokens, idx, options, env, self) {
-    // Links do not nest, so the nearest link_open before the close is its own
     const open = tokens
       .slice(0, idx)
       .reverse()
@@ -127,10 +107,7 @@ export function targetBlankExtension(
   };
 }
 
-/**
- * Moves every heading down by `env.headingOffset` levels (at most `<h6>`), so
- * a text's own `##` fits under the heading of the section that shows it.
- */
+/** Moves every heading down by `env.headingOffset` levels, to `<h6>` at most */
 export function headingOffsetExtension(md: MarkdownIt) {
   const shift: NonNullable<typeof md.renderer.rules.heading_open> = (
     tokens,
@@ -170,14 +147,7 @@ export function italicExtension(md: MarkdownIt) {
   };
 }
 
-/**
- * A table in a region that scrolls on its own, so a wide table does not
- * widen the page (reflow at 320px). The region is focusable, so the keyboard
- * can scroll it too, and named by `env.tableLabel`. The table itself keeps
- * its display, and with it its table semantics. A header cell gets
- * `scope="col"`: markdown has column headers only, and WCAG H63 asks for
- * the scope.
- */
+/** A table in a focusable scroll region named by `env.tableLabel` */
 export function tableScrollExtension(md: MarkdownIt) {
   md.renderer.rules.th_open = function (tokens, idx, options, env, self) {
     tokens[idx]!.attrSet('scope', 'col');
@@ -200,12 +170,8 @@ export function tableScrollExtension(md: MarkdownIt) {
 }
 
 /**
- * A paragraph that is only a bare YouTube or Vimeo link (pasted, or in `<…>`)
- * gets the link's URL as `meta.video`, so MarkdownPreview can show the video
- * with the VideoPlayer component instead. A link with its own text stays a
- * link, and so does a link in a list or quote: a video is a block of its own,
- * at the top level of the text. The paragraph itself still renders as a link
- * where there is no player, such as in the HTML string.
+ * Puts the URL of a top-level paragraph of only a bare YouTube or Vimeo link
+ * in `meta.video`, for MarkdownPreview's VideoPlayer
  */
 export function videoExtension(md: MarkdownIt) {
   md.core.ruler.push('video', (state) => {

@@ -1,9 +1,5 @@
 <script lang="ts">
-/**
- * The English of the texts, for an error page after @nuxtjs/i18n itself
- * failed to start. The same as `error-page` in i18n/locales/en.json, which a
- * test holds it to.
- */
+/** The texts for when @nuxtjs/i18n failed to start: en.json's `error-page` */
 export const errorPageFallback = {
   back: 'Back to the previous page',
   home: 'Go to the homepage',
@@ -37,29 +33,11 @@ export function errorPageKind(status: number) {
 
 <script setup lang="ts">
 /**
- * What an error page says: a heading and a text for its status, in the
- * page's language and as the document title, the status code, and one way
- * on. The layer's `error.vue` shows it in the app's layout; a page that
- * answers an error itself, such as a 404 it renders, shows it too.
- *
- * The way on is a real link. The server renders it to the homepage (the
- * locale's, from @nuxtjs/i18n); in the browser it becomes "back" when there
- * is a page to go back to: an earlier page of this app in the history (Vue
- * Router's `history.state.back`), or a page of this site that led here with
- * a full page load (a same-origin `document.referrer`: Nuxt loads an address
- * no route matches from the server). A search engine or another site is no
- * page to go back to. Back to the app's page goes back in the history, and
- * the router clears the error; a referrer is loaded as a link. When page
- * middleware refused the page the user was going to, Nuxt stops the
- * navigation, the address stays on the page with the link, and back clears
- * the error to show that page again. Home is a full page load: on an error page without a page
- * before, nothing is lost, and nothing of the page that failed (an await in
- * its setup that throws again later) can overtake it.
- *
- * `text` is a text in the page's language that says more than the status,
- * such as which item was not found; it replaces the status's own text. A
- * server's or Nuxt's `statusText` and message are English and mostly repeat
- * the status: they show in development only, with the stack (`error`).
+ * What an error page says: a heading and text for `status` (also the document
+ * title), the status code and one link on: back to the page before when there
+ * is one (Vue Router's `history.state.back`, a same-origin referrer), else
+ * home. `text` replaces the status's text, in the page's language; `error`'s
+ * statusText, message and stack show in development only.
  */
 const {
   status = 500,
@@ -74,7 +52,7 @@ const {
 const nuxtApp = useNuxtApp();
 const router = useRouter();
 
-// Read from the app, not `useI18n()`, which throws when i18n did not start
+// Not `useI18n()`, which throws when i18n did not start
 const i18n = nuxtApp.$i18n as typeof nuxtApp.$i18n | undefined;
 
 function t(key: string, values: Record<string, unknown> = {}): string {
@@ -97,15 +75,12 @@ const heading = computed(() => t(`${kind.value}.heading`));
 
 useHead({ title: heading });
 
-/** The homepage, in the current locale where the app has prefixed routes */
-const home = computed(
+const localeHome = computed(
   () => (i18n && nuxtApp.$localePath?.({ path: '/' })) || '/',
 );
 
-/** Where the way on leads: home, until the browser finds a page before */
 const previous = ref<{ href: string; via: 'history' | 'error' | 'link' }>();
 
-/** A page of this site that loaded this one, other than this one */
 function sameSiteReferrer() {
   try {
     const url = new URL(document.referrer);
@@ -120,25 +95,22 @@ function sameSiteReferrer() {
   }
 }
 
-// After mount: the server knows neither, and the first render matches its
-// HTML. A task later: after a fatal error in middleware, Nuxt adds the
-// refused address to the history after the error page has mounted.
+// A task after mount: the first render matches the server's HTML, and Nuxt
+// pushes an address middleware refused to the history after this mounts
 let findTimer: ReturnType<typeof setTimeout> | undefined;
 onMounted(() => (findTimer = setTimeout(findPrevious)));
 onBeforeUnmount(() => clearTimeout(findTimer));
 
 function findPrevious() {
-  // Middleware refused the page the user was going to: the address never
-  // left the page with the link (the error-origin plugin)
-  const stopped = (useError().value as Record<symbol, unknown> | undefined)?.[
-    Symbol.for('cardan-ui:stopped-navigation')
-  ];
+  const refusedFrom = (
+    useError().value as Record<symbol, unknown> | undefined
+  )?.[Symbol.for('cardan-ui:stopped-navigation')];
   const { pathname, search, hash } = window.location;
   if (
-    typeof stopped === 'string' &&
-    router.resolve(stopped).href === pathname + search + hash
+    typeof refusedFrom === 'string' &&
+    router.resolve(refusedFrom).href === pathname + search + hash
   ) {
-    previous.value = { href: router.resolve(stopped).href, via: 'error' };
+    previous.value = { href: router.resolve(refusedFrom).href, via: 'error' };
     return;
   }
 
@@ -149,21 +121,14 @@ function findPrevious() {
     return;
   }
 
-  // Loaded again, not back in the history: the entry before need not be the
-  // referrer (a `location.replace()`, a new tab)
   const referrer = sameSiteReferrer();
   if (referrer) previous.value = { href: referrer, via: 'link' };
 }
 
 const href = computed(
-  () => previous.value?.href ?? router.resolve(home.value).href,
+  () => previous.value?.href ?? router.resolve(localeHome.value).href,
 );
 
-/**
- * Back in the history, to the app's own page before, or to the page the app
- * is still on. Home, a referrer and a click that opens a new tab or window
- * are the browser's own.
- */
 function follow(event: MouseEvent) {
   const via = previous.value?.via;
   if (
@@ -181,16 +146,13 @@ function follow(event: MouseEvent) {
   event.preventDefault();
 
   if (via === 'error') {
-    // The page under the error, which rendered before it
     nuxtApp.runWithContext(() => clearError());
     return;
   }
 
-  // Nuxt clears the error once the router has gone back
   router.back();
 }
 
-/** Development only: what was thrown, in English, with its stack */
 const details = computed(() => {
   if (!import.meta.dev || !error) return '';
 
@@ -250,7 +212,7 @@ const details = computed(() => {
     margin-block-start: 1rem;
   }
 
-  /* Wrapped rather than scrolled: no keyboard stop, nothing off screen */
+  /* Wrapped, not scrolled: a scrolling <pre> would need a tab stop */
   .error-page-content-details {
     max-width: 100%;
     margin-block-start: 1.5rem;

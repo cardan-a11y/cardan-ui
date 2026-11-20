@@ -24,13 +24,10 @@ const {
 } = defineProps<{
   label: string;
   /**
-   * `image` keeps the chosen file as the value, and previews and compresses
-   * an image. `document` is for a file that is uploaded as it is, such as a
-   * PDF: the field lists the types in `accept` and checks a file against
-   * them, hands each valid file to `select` and is empty again, so the parent
-   * shows what was uploaded. No preview, no compression and no pasting, and
-   * an error shows right away; `required` only shows the chip, as the field
-   * is empty.
+   * `image` keeps the file as the value, previews and compresses it and takes
+   * a paste. `document` checks a file against `accept`, hands it to `select`
+   * and is empty again: no preview, compression or paste, and `required` only
+   * shows the chip.
    */
   mode?: 'image' | 'document';
   /** `circle`: a pill led by a round preview, for an avatar */
@@ -54,8 +51,7 @@ const {
   maxHeight?: number;
 }>();
 
-/** Until a file is chosen, a picture in image mode */
-const icon = computed(() =>
+const zoneIcon = computed(() =>
   !model.value && mode === 'image'
     ? 'material-symbols:add-photo-alternate-outline-rounded'
     : fileTypeIcon(model.value),
@@ -66,8 +62,7 @@ const imagePreview = ref(placeholderUrl);
 const dragover = ref(false);
 const validity = ref(true);
 
-/** The extensions in `accept` in document mode, without the dot */
-const extensions = computed(() =>
+const acceptedExtensions = computed(() =>
   mode === 'document' && accept
     ? accept
         .split(',')
@@ -76,10 +71,9 @@ const extensions = computed(() =>
     : [],
 );
 
-/** "PDF, DOCX or ODT" */
 const typesLabel = computed(() =>
   new Intl.ListFormat(locale.value, { type: 'disjunction' }).format(
-    extensions.value.map((extension) => extension.toUpperCase()),
+    acceptedExtensions.value.map((extension) => extension.toUpperCase()),
   ),
 );
 
@@ -87,8 +81,7 @@ const maxSizeLabel = computed(() => formatFileSize(maxFileSize * 1000));
 
 const formShowInvalid = inject(formShowInvalidKey, ref(false));
 
-/** A required image field without a file, once its form shows the errors */
-const missing = computed(
+const missingImage = computed(
   () =>
     required &&
     mode !== 'document' &&
@@ -96,8 +89,7 @@ const missing = computed(
     (showInvalid || formShowInvalid.value),
 );
 
-// A rejected file shows its error at once, in both modes
-const showError = computed(() => !validity.value || missing.value);
+const showError = computed(() => !validity.value || missingImage.value);
 
 const shownErrorMessage = computed(
   () => errorMessage.value || t('form.missing-value', { item: label }),
@@ -105,14 +97,12 @@ const shownErrorMessage = computed(
 
 const wrapperRef = useTemplateRef<HTMLElement>('wrapper');
 
-/** A paste anywhere on the page, unless it belongs to another field */
 function takesPaste(event: ClipboardEvent) {
   const wrapper = wrapperRef.value;
   const target = event.target as Element | null;
   const active = document.activeElement;
   if (disabled || !wrapper || !target) return false;
 
-  // Into a text field, an editor or another FileInput
   if (
     !wrapper.contains(target) &&
     (target.closest('input, textarea, select, [contenteditable]') ||
@@ -121,14 +111,11 @@ function takesPaste(event: ClipboardEvent) {
     return false;
   }
 
-  // With focus in another FileInput, that one takes it
   const focusedWrapper = active?.closest('.file-input-wrapper');
   if (focusedWrapper && focusedWrapper !== wrapper) return false;
 
-  // Not a field that is out of sight, such as one in a closed Dialog
   if (wrapper.checkVisibility?.() === false) return false;
 
-  // One field per paste: the first visible one mounted, unless one has focus
   const taken = event as ClipboardEvent & { fileInputTaken?: boolean };
   if (taken.fileInputTaken) return false;
   taken.fileInputTaken = true;
@@ -139,16 +126,13 @@ function takesPaste(event: ClipboardEvent) {
 async function handlePaste(event: ClipboardEvent) {
   if (mode === 'document' || !takesPaste(event)) return;
 
-  // A paste of text leaves the field, and the input a form posts, as they are
   const file = event.clipboardData?.files?.[0];
   if (!file) return;
 
-  // The input holds the pasted file like a chosen one
   if (fileInputRef.value && event.clipboardData) {
     fileInputRef.value.files = event.clipboardData.files;
   }
 
-  // A parent reads `validity` on paste, so the check goes first
   await handleFile(file);
   emit('paste', file);
 }
@@ -181,8 +165,7 @@ const emit = defineEmits<{
 
 const errorMessage = ref('');
 
-/** The file being compressed; a result for an earlier file is dropped */
-let compressing: File | undefined;
+let fileBeingCompressed: File | undefined;
 
 function handleDragOver() {
   dragover.value = true;
@@ -192,14 +175,9 @@ function handleDragLeave() {
   dragover.value = false;
 }
 
-/**
- * The chosen file is the value right away; a compressed image replaces it
- * once compressorjs is done, so the value never goes empty in between and a
- * parent that watches it sees a file at every step.
- */
 function compressFile(file: File) {
   model.value = file;
-  compressing = file;
+  fileBeingCompressed = file;
 
   if (!file.type.includes('image') || file.type.includes('gif')) return;
 
@@ -210,8 +188,7 @@ function compressFile(file: File) {
     convertSize: convertSize,
 
     success(result: File) {
-      // Another file was chosen, or this one removed, in the meantime
-      if (compressing !== file) return;
+      if (fileBeingCompressed !== file) return;
       model.value = new File([result], result.name, { type: result.type });
     },
   });
@@ -236,7 +213,10 @@ function validateFile(file: File) {
   }
 
   const extension = getFileExtension(file.name)?.toLowerCase() ?? '';
-  if (extensions.value.length && !extensions.value.includes(extension)) {
+  if (
+    acceptedExtensions.value.length &&
+    !acceptedExtensions.value.includes(extension)
+  ) {
     validity.value = false;
     errorMessage.value = t('files.wrong-type', { types: typesLabel.value });
     return;
@@ -253,16 +233,11 @@ function validateFile(file: File) {
   return;
 }
 
-/** Empties the input, so choosing the same file again is a change too */
+// A file input fires no change for the same file again until it is emptied
 function clearInput() {
   if (fileInputRef.value) fileInputRef.value.value = '';
 }
 
-/**
- * After a rejected file, the input holds the value again, so a form that
- * posts the input (FormData) sends the file the field shows; without a value
- * the input is empty, and the same file can be chosen again either way
- */
 function restoreInput() {
   const input = fileInputRef.value;
   if (!input) return;
@@ -279,7 +254,7 @@ function restoreInput() {
 async function handleFile(file?: File) {
   if (!file) return;
 
-  // Empty first: the same message as before would not be announced again
+  // Empty first: a screen reader does not announce the same message again
   errorMessage.value = '';
   await nextTick();
   validateFile(file);
@@ -290,8 +265,6 @@ async function handleFile(file?: File) {
     return;
   }
 
-  // A rejected file is not the value: the field keeps what it had, in the
-  // input too, and shows the error
   if (!validity.value) {
     restoreInput();
     return;
@@ -308,11 +281,10 @@ function handleFileInput(event: Event) {
   handleFile(file);
 }
 
-/** Back to no file: the current picture, if there is one, and no error */
 function reset() {
   validity.value = true;
   errorMessage.value = '';
-  compressing = undefined;
+  fileBeingCompressed = undefined;
   clearInput();
 
   if (imagePreview.value?.startsWith('blob:')) {
@@ -321,11 +293,6 @@ function reset() {
   imagePreview.value = placeholderUrl;
 }
 
-/*
- * While no file is chosen, the preview follows `placeholderUrl`, which the
- * parent may only have after mount, and a value the parent clears resets the
- * field, as when a dialog with it closes.
- */
 watch([() => placeholderUrl, model], ([, file]) => {
   if (!file) reset();
 });
@@ -363,8 +330,8 @@ function removeFile() {
         :required="required && mode !== 'document'"
         :autofocus="autofocus"
         :accept="
-          extensions.length
-            ? extensions.map((extension) => `.${extension}`).join(',')
+          acceptedExtensions.length
+            ? acceptedExtensions.map((extension) => `.${extension}`).join(',')
             : accept
         "
         :disabled="disabled"
@@ -379,7 +346,7 @@ function removeFile() {
         @change="handleFileInput"
       />
 
-      <!-- The look of the control, which is the input over it -->
+      <!-- Only the look: the input over it is the control -->
       <button
         tabindex="-1"
         type="button"
@@ -392,7 +359,7 @@ function removeFile() {
         ]"
       >
         <span class="file-input-icon-wrapper">
-          <Icon :name="icon" />
+          <Icon :name="zoneIcon" />
         </span>
 
         <span class="button-text">
@@ -400,7 +367,9 @@ function removeFile() {
             {{ $t('files.button-text') }}
           </span>
           <span :id="`instruction-${id}`">
-            <template v-if="extensions.length">{{ typesLabel }} </template>
+            <template v-if="acceptedExtensions.length"
+              >{{ typesLabel }}
+            </template>
             (max. {{ maxSizeLabel }})
           </span>
         </span>
@@ -581,7 +550,6 @@ function removeFile() {
   }
 }
 
-/* The preview replaces the zone, at its own size */
 .file-input-shape--default {
   .file-input-button {
     .preview-image {
@@ -612,8 +580,6 @@ function removeFile() {
   }
 }
 
-/* An avatar: a pill led by the picture, or by the upload icon until there is
-   one, so it sits in a form like any other field */
 .file-input-shape--circle .file-input-button {
   display: flex;
   align-items: center;

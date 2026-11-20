@@ -1,4 +1,7 @@
-/** The i18n module's `defaultDirection`, which it defines at build time */
+/**
+ * The i18n module's `defaultDirection`, which it defines at build time.
+ * Tripwire: test/tripwires.test.ts.
+ */
 declare const __DEFAULT_DIRECTION__: string | undefined;
 
 type Direction = 'ltr' | 'rtl' | 'auto';
@@ -19,15 +22,7 @@ export function htmlLangAttrs(locale: {
   };
 }
 
-/**
- * Keeps `<html lang>` and `dir` in step with the i18n locale, on the server
- * and after every change of locale: its `language`, or its code without one,
- * and its `dir`, or the module's `defaultDirection`. A project that also sets
- * them from `useLocaleHead()` sets the same values for a locale with a
- * `language`, so the two never disagree. The shell of an `ssr: false`
- * route, which no plugin renders, takes the default locale's language from
- * the layer's html-lang module.
- */
+/** Keeps `<html lang>` and `dir` in step with the i18n locale. */
 export default defineNuxtPlugin({
   name: 'cardan-ui:html-lang',
   dependsOn: ['i18n:plugin'],

@@ -9,11 +9,7 @@ function parse(svg: string) {
 const wrap = (content: string, attributes = '') =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21"${attributes}>${content}</svg>`;
 
-/**
- * `sanitizeQrSvg()` decides what of the API's SVG is inlined with `v-html`:
- * a security contract. Only the elements and attributes of a QR code pass,
- * whatever the API was made to return.
- */
+/** `sanitizeQrSvg()` is a security contract: only a QR code's elements and attributes pass */
 describe('sanitizeQrSvg', () => {
   it('keeps a QR code as Fortify draws it', () => {
     // BaconQrCode's SVG back end: a background rect and the modules as a path
@@ -64,7 +60,6 @@ describe('sanitizeQrSvg', () => {
 
     expect(parse(clean).querySelector(element)).toBeNull();
     expect(clean).not.toMatch(/alert|evil/);
-    // The code itself stays
     expect(parse(clean).querySelector('rect')).not.toBeNull();
   });
 
@@ -87,7 +82,6 @@ describe('sanitizeQrSvg', () => {
       wrap('<path d="&quot;&gt;&lt;img src=x onerror=alert(1)&gt;"/>'),
     );
 
-    // As MfaQr inlines it, with v-html in an HTML element
     const host = document.createElement('div');
     host.innerHTML = clean;
     expect(host.querySelector('img')).toBeNull();

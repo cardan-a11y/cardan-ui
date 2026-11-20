@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// import { ScriptYouTubePlayer } from '@nuxt/scripts';
 useHead({ title: 'Video Player' });
 
 const youtube = ref('https://youtube.com/watch?v=PGvgdZuQu6w');

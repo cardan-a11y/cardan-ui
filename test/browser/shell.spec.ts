@@ -1,9 +1,3 @@
-/**
- * The app shell (AppShell, SkipLink, useRouteFocus) in the playground: the
- * skip link as the first Tab stop, shown when focused, and where focus is
- * after a navigation from the mobile menu or a native modal Dialog, with the
- * dialog's own close and focus return in between.
- */
 import { expect, test } from '@playwright/test';
 import { focusStop, gotoHydrated, inertElements } from './helpers';
 
@@ -41,8 +35,6 @@ test('MobileMenu: after a link in it, focus is at the top of the new page, not o
   await expect(page).toHaveURL(/\/colors$/);
   await expect(menu).toBeHidden();
 
-  // On the shell: not the Menu button, not the body, and the next Tab is the
-  // skip link at the top of the page
   await expect.poll(async () => (await focusStop(page)).onBody).toBe(false);
   await expect(menuButton).not.toBeFocused();
   expect(await inertElements(page)).toEqual([]);
@@ -62,14 +54,11 @@ test('Dialog: after a link in it that closes it, focus is at the top of the new 
   await trigger.click();
   await expect(dialog).toBeVisible();
 
-  // The dialog stays on the page as the result's page comes in, and closes
   await dialog.getByRole('link', { name: 'Search result' }).focus();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/dialog\/results$/);
   await expect(dialog).toBeHidden();
 
-  // On the shell, the wrapper around the page, after the dialog has given
-  // focus back to its opener
   await expect
     .poll(() =>
       page.evaluate(() => {

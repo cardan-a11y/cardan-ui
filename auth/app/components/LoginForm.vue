@@ -1,10 +1,7 @@
 <script setup lang="ts">
 /**
- * Email + password sign-in, wired to nuxt-auth-sanctum and aware of a pending
- * second factor.
- *
- * Only the form lives here: the surrounding page (heading, tabs,
- * forgot-password link) stays with the app.
+ * Email and password sign-in through nuxt-auth-sanctum, on to the challenge
+ * when a second factor is due. The page around it is the login page's.
  */
 const {
   showPasswordToggle = true,
@@ -21,11 +18,7 @@ const {
   showPasswordToggle?: boolean;
   /** Rule between the fields and the submit button. */
   divider?: boolean;
-  /**
-   * Offer a "Remember me" checkbox, unticked: `remember: true` goes with the
-   * credentials only when it is ticked, so a session otherwise ends after the
-   * API's idle timeout.
-   */
+  /** Offer a "Remember me" checkbox, unticked: sends `remember: true` when ticked. */
   remember?: boolean;
   errorPosition?: LoginErrorPosition;
   size?: InputSize;
@@ -36,16 +29,12 @@ const {
   twoFactorPath?: string;
   /**
    * Hold the submit button in its loading state this many milliseconds after
-   * the request settles — useful when a page transition follows the redirect.
+   * a sign-in that navigates on, while the page transition plays.
    */
   loadingDelay?: number;
 }>();
 
-/**
- * Bindable so an app can share the typed address with a sibling form — the
- * Auditor login page keeps its forgot-password tab on the same state. Falls
- * back to its own local state when nothing is bound.
- */
+/** The address, bindable to share it with another form (`useLoginEmail()`). */
 const email = defineModel<string>('email', { default: '' });
 
 const { loginWithoutRedirect, refreshIdentity, loginRedirectTarget } =
@@ -68,6 +57,7 @@ async function handleLogin() {
   shaking.value = false;
   error.value = null;
   submitting.value = true;
+  let navigating = false;
 
   try {
     const response = await loginWithoutRedirect({
@@ -79,6 +69,7 @@ async function handleLogin() {
     if (response?.two_factor) {
       emit('twoFactor');
 
+      navigating = true;
       return await navigateTo({
         path: twoFactorPath,
         query: { redirect: route.query.redirect },
@@ -90,15 +81,16 @@ async function handleLogin() {
 
     const target = loginRedirectTarget();
 
-    if (target !== false) return await navigateTo(target);
+    if (target !== false) {
+      navigating = true;
+      return await navigateTo(target);
+    }
   } catch (e) {
     error.value = extractApiError(e);
     shaking.value = true;
     emit('error', error.value);
   } finally {
-    if (loadingDelay > 0) {
-      // Keeps the spinner up while the redirect's page transition plays, so
-      // the button does not flick back to its resting state first.
+    if (navigating && loadingDelay > 0) {
       setTimeout(() => {
         submitting.value = false;
       }, loadingDelay);
@@ -158,7 +150,6 @@ defineExpose({ submitting, error });
       :label="$t('auth.remember-me')"
     />
 
-    <!-- Extra fields after the password. -->
     <slot name="fields" />
 
     <template v-if="errorPosition === 'above-submit'">

@@ -60,10 +60,8 @@ export function getRandomInt(max = 1) {
 }
 
 /**
- * The `--duration-<size>` token in milliseconds, for a timeout that keeps
- * pace with a CSS transition. It reads the token the page has, so it is 0
- * when the user prefers reduced motion (the tokens are 0s then), on the
- * server and when the project's main.css lacks the token.
+ * The `--duration-<size>` token in milliseconds, for a timeout that keeps pace
+ * with a CSS transition: 0 under reduced motion, on the server, or without it.
  */
 export function transitionDuration(
   size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl',
@@ -79,24 +77,15 @@ export function transitionDuration(
   return Math.round(Number(number) * (unit === 's' ? 1000 : 1));
 }
 
-/**
- * Provided by Form: whether its fields show their errors, after a failed
- * submit or with `show-invalid`. A field describes itself by its error text
- * only while that text shows.
- */
+/** Provided by Form: whether its fields show their errors. */
 export const formShowInvalidKey: InjectionKey<Readonly<Ref<boolean>>> =
   Symbol('formShowInvalid');
 
-/**
- * Provided by Form: a field registers how it takes a value that the browser
- * or an extension filled in without an input event, and Form calls it before
- * it checks a submit; the field's sync says whether it took a value. Returns
- * the function that unregisters it.
- */
+/** Provided by Form: registers a field's `useAutofillSync()` sync; returns its unregister. */
 export const formSyncKey: InjectionKey<(sync: () => boolean) => () => void> =
   Symbol('formSync');
 
-/** The elements that take keyboard focus: a loop, a popover and a tab panel look for them */
+/** The elements that take keyboard focus, for FocusLoop */
 export const focusableSelector = [
   ...['input', 'select', 'button', 'textarea'].map(
     (field) => `${field}:not([disabled])`,
@@ -108,11 +97,7 @@ export const focusableSelector = [
   '[contenteditable]:not([contenteditable="false"])',
 ].join(',');
 
-/**
- * The element Tab would reach first in `container`: the first focusable one,
- * or for a radio the checked one of its group, the group's tab stop (the
- * first one while the checked one is disabled).
- */
+/** The element Tab would reach first in `container`, for a radio group its checked radio. */
 export function firstFocusable(container?: HTMLElement | null) {
   const first = container?.querySelector<HTMLElement>(focusableSelector);
   if (!(first instanceof HTMLInputElement) || first.type !== 'radio') {

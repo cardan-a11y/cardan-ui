@@ -1,4 +1,9 @@
 <script setup lang="ts">
+/**
+ * A button that opens a list of links or buttons: an APG disclosure, no menu
+ * roles. It leaves the pattern in one place: focus moves to its first item
+ * when it opens.
+ */
 const {
   fontSize = undefined,
   iconSize = undefined,
@@ -37,7 +42,6 @@ const {
   id?: string;
 }>();
 
-// The smallest triggers have the small radius
 const computedStyle = computed(() => ({
   '--popover-font-size': fontSize && `var(--font-size-${fontSize})`,
   '--popover-icon-size': iconSize && `var(--font-size-${iconSize})`,
@@ -58,29 +62,19 @@ const popoverContentRef = useTemplateRef<HTMLDivElement | null>(
 );
 const triggerRef = useTemplateRef<HTMLButtonElement>('popoverTrigger');
 
-/**
- * After the popover is shown or hidden. The content is a list of links or
- * buttons, a disclosure in APG terms, not a menu with its roles and arrow
- * keys. It is always rendered: closed, the native popover is `display: none`,
- * so it is out of the accessibility tree and the tab order. When it opens,
- * focus moves to its first element; on Escape, or a choice, the browser
- * gives focus back to the trigger. It scrolls only for an element that is
- * not fully on screen, as far as needed: a menu that fits on neither side of
- * its trigger runs off the bottom. A plain focus() made Chromium scroll a
- * menu that opens above its trigger, on screen, to the middle of it, page
- * and trigger along, sometimes out of view.
- */
+const SLIDE_IN_PX = 8;
+
 function onToggle(event: Event) {
   if ((event as ToggleEvent).newState === 'open') {
     nextTick(() => {
       const first = firstFocusable(popoverContentRef.value);
       if (!first) return;
 
+      // A plain focus() makes Chromium scroll a menu above its trigger to the
+      // middle of the viewport, page and trigger along
       first.focus({ preventScroll: true });
-      // Read as it starts to slide in: up to 0.5rem from where it ends up
-      const slide = 8;
       const { top, bottom } = first.getBoundingClientRect();
-      if (top < slide || bottom > window.innerHeight - slide) {
+      if (top < SLIDE_IN_PX || bottom > window.innerHeight - SLIDE_IN_PX) {
         first.scrollIntoView({ block: 'nearest' });
       }
     });
@@ -89,62 +83,11 @@ function onToggle(event: Event) {
   }
 }
 
-/**
- * Whether a mousedown in the content or on the trigger is moving focus: its
- * default action moves focus, outside the items (or from the trigger in
- * Safari, where a click does not focus a button) to the nearest focusable
- * element around the popover, such as a `<main tabindex="-1">`. Until the
- * next task.
- */
-let pressedInside = false;
+const { onPress, onFocusOut, unpark } = useFocusLeave({
+  elements: () => [popoverContentRef.value, triggerRef.value],
+  close: hidePopover,
+});
 
-function onPress() {
-  pressedInside = true;
-  setTimeout(() => {
-    pressedInside = false;
-  });
-}
-
-/** The element around the popover that a press in it gave focus to */
-let parked: Element | null = null;
-
-function unpark() {
-  parked?.removeEventListener('focusout', handleFocusOut);
-  parked = null;
-}
-
-/**
- * Focus that leaves the content or the trigger for the page closes the
- * popover: Tab past the last element, or Shift+Tab from the trigger. A move
- * between the two keeps it open, and so does the move a press in the content
- * or on the trigger makes: the popover then closes when focus leaves that
- * element for the page, as it does after a navigation, when AppShell focuses
- * the shell, and a press on the trigger closes it with the click instead of
- * on mousedown, for the click to open it again.
- */
-function handleFocusOut(event: Event) {
-  const next = (event as FocusEvent).relatedTarget;
-  if (!(next instanceof Element)) return;
-
-  if (
-    popoverContentRef.value?.contains(next) ||
-    triggerRef.value?.contains(next)
-  ) {
-    unpark();
-    return;
-  }
-
-  if (pressedInside) {
-    unpark();
-    parked = next;
-    next.addEventListener('focusout', handleFocusOut);
-    return;
-  }
-
-  hidePopover();
-}
-
-// A popover does not outlive its page, also when focus did not move
 const route = useRoute();
 watch(
   () => route.path,
@@ -153,17 +96,11 @@ watch(
   },
 );
 
-onBeforeUnmount(unpark);
-
 function handleMenuClick(item: MenuItem) {
   emit('click', item);
   hidePopover();
 }
 
-/**
- * A loading trigger stays focusable instead of disabled, as Button does:
- * a canceled click does not open the popover
- */
 function ignoreWhileLoading(event: Event) {
   if (loading) event.preventDefault();
 }
@@ -201,7 +138,7 @@ const emit = defineEmits<{
       :style="computedStyle"
       :aria-describedby="ariaDescribedby"
       @mousedown="onPress"
-      @focusout="handleFocusOut"
+      @focusout="onFocusOut"
       @click="ignoreWhileLoading"
     >
       <Icon v-if="loading" name="svg-spinners:90-ring-with-bg" />
@@ -237,7 +174,7 @@ const emit = defineEmits<{
       :style="contentStyle"
       @toggle="onToggle"
       @mousedown="onPress"
-      @focusout="handleFocusOut"
+      @focusout="onFocusOut"
     >
       <div class="popover-content">
         <slot name="default" />
@@ -446,7 +383,6 @@ const emit = defineEmits<{
 
 .popover-trigger-variant--primary {
   --focus-color: var(--color-accent-text);
-  /* Always white on purple, also in dark mode */
   color: var(--color-on-accent);
   background-color: var(--color-accent);
 

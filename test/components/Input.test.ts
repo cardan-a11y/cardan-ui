@@ -290,4 +290,35 @@ describe('Input', () => {
 
     expect(model.value).toBe('Ada');
   });
+
+  it('checks its constraints on every keystroke, also one that leaves a trimmed model as it was', async () => {
+    const text = ref('Al');
+    const wrapper = await mountSuspended(
+      defineComponent({
+        setup: () => () =>
+          h(Input, {
+            label: 'Name',
+            minlength: 3,
+            showInvalid: true,
+            modelValue: text.value,
+            // As `v-model.trim` does
+            'onUpdate:modelValue': (value?: string | number) => {
+              text.value = String(value ?? '').trim();
+            },
+          }),
+      }),
+      { attachTo: document.body },
+    );
+    const field = wrapper.get('input');
+    field.element.value = 'A';
+    await field.trigger('input');
+    field.element.value = 'Al';
+    await field.trigger('input');
+    expect(field.attributes('aria-invalid')).toBe('true');
+
+    field.element.value = 'Al ';
+    await field.trigger('input');
+
+    expect(field.attributes('aria-invalid')).toBeUndefined();
+  });
 });

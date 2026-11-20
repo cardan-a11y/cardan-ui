@@ -1,9 +1,3 @@
-/**
- * Values the browser lets through but the Laravel APIs refuse: a required
- * field of only spaces and an e-mail address without a dot in its domain.
- * Input makes them invalid with its `pattern`; here the real browser holds
- * the submit back and Form focuses the field.
- */
 import { expect, test } from '@playwright/test';
 import { gotoHydrated } from './helpers';
 
@@ -24,7 +18,6 @@ test('a required field of only spaces holds the submit back, with focus on it', 
   await expect(input).toHaveAttribute('aria-invalid', 'true');
   await expect(input).toHaveAccessibleDescription(/Input is missing/);
 
-  // A letter makes it valid: the next invalid field takes focus
   await input.pressSequentially('A');
   await expect(input).not.toHaveAttribute('aria-invalid');
   await submit.click();
@@ -46,9 +39,28 @@ test('an e-mail address without a dot in its domain holds the submit back, with 
   await expect(email).toHaveAttribute('aria-invalid', 'true');
   await expect(email).toHaveAccessibleDescription(/Email address is invalid/);
 
-  // A domain in letters beyond ASCII is a real address: the form submits it
+  // A non-ASCII domain is a real address
   await email.fill('ada@bücher.de');
   await submit.click();
   await expect(email).not.toHaveAttribute('aria-invalid');
   await expect(page.locator('pre code')).toContainText('"email"');
+});
+
+test('SpinButton shows its range error while a number is typed, and hides it in range', async ({
+  page,
+}) => {
+  await gotoHydrated(page, '/form');
+  const field = page.getByRole('spinbutton', { name: 'Spin button' });
+  const error = page.getByText('Enter 20 or less');
+
+  await field.fill('');
+  await field.pressSequentially('25');
+  await expect(field).toBeFocused();
+  await expect(error).toBeVisible();
+  await expect(field).toHaveAttribute('aria-invalid', 'true');
+  await expect(field).toHaveAccessibleDescription(/Enter 20 or less/);
+
+  await field.press('Backspace');
+  await expect(error).toBeHidden();
+  await expect(field).not.toHaveAttribute('aria-invalid');
 });

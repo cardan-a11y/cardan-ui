@@ -1,11 +1,3 @@
-/**
- * The icons the components show on first paint, the spinner of a loading
- * Button and Popover included. A listed icon whose collection a project does
- * not install fails its production build (@nuxt/icon throws outside dev), so
- * every project installs `@iconify-json/material-symbols` and
- * `@iconify-json/svg-spinners`. The file type icons of FileInput are left
- * out: they show after a file is chosen.
- */
 const componentIcons = [
   'material-symbols:add-photo-alternate-outline-rounded',
   'material-symbols:add-rounded',
@@ -59,10 +51,7 @@ const componentIcons = [
   'svg-spinners:90-ring-with-bg',
 ];
 
-/**
- * The icons that two or more of the Cardan projects use (cardan-academy-nuxt,
- * cardan-auditor-nuxt, cardan-cms-nuxt and cardan-support-nuxt, November 2026).
- */
+/** The icons that two or more of the Cardan projects use (November 2026). */
 const projectIcons = [
   'material-symbols:arrow-downward',
   'material-symbols:arrow-left-alt-rounded',
@@ -83,8 +72,5 @@ const projectIcons = [
   'material-symbols:mail-outline-rounded',
 ];
 
-/**
- * In the client bundle of every project (`icon.clientBundle.icons` in the
- * layer's `nuxt.config.ts`), so a page does not shift when they load.
- */
+/** In the client bundle of every project, so a page does not shift when they load. */
 export const bundledIcons = [...componentIcons, ...projectIcons];

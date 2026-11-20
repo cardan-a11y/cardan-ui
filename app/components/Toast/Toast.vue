@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { useFocusWithin, useMounted, useWindowFocus } from '@vueuse/core';
 const windowFocused = useWindowFocus();
-/** The server cannot know the window's focus, so it counts only after hydration. */
-const mounted = useMounted();
+const hydrated = useMounted();
 
 const {
   color = 'accent',
@@ -23,12 +22,11 @@ const timerElementRef = useTemplateRef('timerElement');
 const toastHover = ref(false);
 const { focused: toastFocused } = useFocusWithin(toastElementRef);
 
-/** The timer waits while the pointer or keyboard focus is on the toast, or the window is in the background. */
 const timerPaused = computed(
   () =>
     toastHover.value ||
     toastFocused.value ||
-    (mounted.value && !windowFocused.value),
+    (hydrated.value && !windowFocused.value),
 );
 
 const computedIcon = computed(() => {
@@ -162,7 +160,6 @@ const emit = defineEmits<{
   color: var(--color-text);
 }
 
-/* Toast variants */
 .toast-color--blue {
   .toast__icon {
     color: var(--color-blue-text);
@@ -212,7 +209,6 @@ const emit = defineEmits<{
   background-color: transparent;
 }
 
-/* Transitions: slide and fade; a leaving toast collapses */
 .toast-move {
   transition: all var(--duration-md) var(--cubic-bezier);
 }

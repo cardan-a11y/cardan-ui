@@ -1,13 +1,3 @@
-/**
- * The contrast of the design tokens (WCAG 2.2 AA) in light and dark mode,
- * resolved by the browser so `color-mix()`, `oklch()` and relative colours
- * count as they paint: the template main.css, and each project's own copy
- * when its checkout is next to this one (skipped otherwise, as in CI).
- *
- * A pair in a file's known failures does not fail the test; any other pair
- * under its minimum does, and so does a known failure that now passes (take
- * it out then).
- */
 import { existsSync, readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { checkContrast, contrastKey } from './helpers';
@@ -27,8 +17,7 @@ const files: { name: string; path: string; known: string[] }[] = [
   {
     name: 'cms',
     path: '../../../cardan-cms-nuxt/app/assets/main.css',
-    // Its own palette: the light orange graphic is 2.95:1 on the page and
-    // 2.33:1 on the track (a meter or progress bar), 3:1 needed
+    // Its own light orange graphic: 2.95:1 on the page, 2.33:1 on the track
     known: [
       'light-mode --color-orange-graphic on --color-bg',
       'light-mode --color-orange-graphic on --color-track',

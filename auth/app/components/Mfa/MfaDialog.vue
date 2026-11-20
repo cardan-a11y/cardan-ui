@@ -1,10 +1,8 @@
 <script setup lang="ts">
 const { showDisableResult = true } = defineProps<{
   /**
-   * Show the "MFA is off" step after disabling. Turn it off when your
-   * `refresh` handler takes the user elsewhere straight away, such as back to
-   * a setup page because MFA is required: the dialog then keeps loading on the
-   * confirmation until that handler closes it.
+   * Show the "MFA is off" step after disabling. Off when the `refresh` handler
+   * leaves right away: the dialog keeps loading until the handler closes it.
    */
   showDisableResult?: boolean;
 }>();
@@ -31,19 +29,11 @@ const dialogLabel = computed(() => {
   return 'mfa.heading';
 });
 
-// A step replaces the content focus was in (the Enable button, the code form)
-// with the next step's, so focus moves to that content
 const stepRef = useTemplateRef<HTMLDivElement>('step');
 useMfaStepFocus(stepRef);
 
 const loadingEnable = ref(false);
 
-/**
- * Asks for the password once the user chooses to enable MFA on the intro, so
- * that dialog opens on top of this one. Cancelling it keeps the intro open.
- * The button loads from the click until the QR code step, so a second click
- * starts nothing.
- */
 async function handleEnableMfa() {
   loadingEnable.value = true;
 
@@ -54,8 +44,6 @@ async function handleEnableMfa() {
   }
 }
 
-// Leaving the page while the dialog is open (browser Back) unmounts it without
-// a close event: the setup secret and the codes go with it all the same
 onBeforeUnmount(resetMfa);
 
 async function handleEnterCode() {
@@ -68,12 +56,8 @@ async function handleDisableMfa() {
   if (success) emit('refresh');
 }
 
-/**
- * `refresh` fires once MFA has actually been turned on or off, so the host app
- * can re-read its own copy of the user (the composable already refreshes the
- * Sanctum identity itself).
- */
 const emit = defineEmits<{
+  /** MFA was turned on or off: re-sync any copy of the user your app keeps. */
   refresh: [];
 }>();
 </script>

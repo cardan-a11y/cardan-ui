@@ -9,7 +9,7 @@ const {
   round = false,
   decorative = false,
 } = defineProps<{
-  /** full: symbol and wordmark (default). symbol: symbol only. tile: color symbol on a white tile, for favicons, app icons and profile images; with variant 'white', a white symbol on a purple tile */
+  /** full: symbol and wordmark (default); symbol; tile: on a white tile for icons and avatars, purple with variant 'white' */
   form?: CardanLogoForm;
   /** auto: color logo in light mode, color-negative logo in dark mode */
   variant?: CardanLogoVariant;
@@ -17,7 +17,7 @@ const {
   product?: string;
   /** Height of the logo (default 20px). The brand minimum is 18px, and 20px with a product */
   height?: string;
-  /** Smallest width of a lockup with a product name (default 144px), so it fits next to the buttons of an app header at 320px. In a flex row the lockup takes the room it gets, from this width up to its height */
+  /** Smallest width of a lockup with a product (default 144px); in a flex row it grows from here to its height */
   narrowWidth?: string;
   /** Accessible name, defaults to "Cardan" plus the product */
   label?: string;
@@ -33,43 +33,33 @@ const computedLabel = computed(() => {
   return 'Logo Cardan';
 });
 
-// SVG user units: the logo is 40 units high (x) and 241.6 units wide
+// SVG user units, in the proportions of the brand book
 const LOGO_HEIGHT = 40.001;
 const LOGO_WIDTH = 241.602;
-// Brand lockup: a divider 1x high and 1.5px thick at a 20px logo, 0.6x space on either side
 const DIVIDER_WIDTH = 3;
 const PRODUCT_GAP = 24;
 const DIVIDER_X = LOGO_WIDTH + PRODUCT_GAP;
 const PRODUCT_X = DIVIDER_X + DIVIDER_WIDTH + PRODUCT_GAP;
-// The product name is 0.8x, on the middle line of the logo. Its baseline is where a
-// line box of 1x puts it in Hanken Grotesk (ascent 1, descent 0.3), as in the brand book
 const PRODUCT_FONT_SIZE = 32;
 const PRODUCT_BASELINE = 31.2;
 
 const showProduct = computed(() => !!product && form === 'full');
-// Always with a capital: 'academy' is shown as Academy
 const productText = computed(() =>
   product ? `${product.charAt(0).toUpperCase()}${product.slice(1)}` : '',
 );
 
-// The product name is part of the SVG so the whole lockup scales as one image.
-// It has a fixed width, its width in Hanken Grotesk, and textLength fits it to
-// that width in any font: the lockup is the same on the server, while the font
-// loads and after, and the fallback font never clips it.
-const PRODUCT_WIDTHS: Record<string, number> = {
+const PRODUCT_WIDTHS_IN_HANKEN_GROTESK: Record<string, number> = {
   Academy: 133,
   Auditor: 106.1,
   Support: 115.7,
   UI: 28.9,
   'All Access': 146.2,
 };
-// Another name: about 0.5em a letter in Hanken Grotesk (0.45 to 0.57 measured);
-// add it to the table above for its exact width
 const AVERAGE_LETTER_WIDTH = 0.5 * PRODUCT_FONT_SIZE;
 
 const productWidth = computed(
   () =>
-    PRODUCT_WIDTHS[productText.value] ??
+    PRODUCT_WIDTHS_IN_HANKEN_GROTESK[productText.value] ??
     productText.value.length * AVERAGE_LETTER_WIDTH,
 );
 
@@ -108,7 +98,6 @@ const computedStyle = computed(() => ({
     >
       <circle v-if="round" class="logo-tile" cx="20" cy="20" r="20" />
       <rect v-else class="logo-tile" width="40" height="40" rx="5" />
-      <!-- Symbol at 56% of the tile, 60% in a round tile -->
       <g
         :transform="
           round ? 'translate(8 8) scale(0.6)' : 'translate(8.8 8.8) scale(0.56)'
@@ -191,10 +180,7 @@ const computedStyle = computed(() => ({
 </template>
 
 <style>
-/*
- * The logo colors are fixed brand artwork, never themed: they are defined
- * here instead of in main.css so the logo works in every project.
- */
+/* Brand artwork, never themed: here, not in main.css, for every project */
 .cardan-logo {
   --logo-green: #008743;
   --logo-purple: #8e40b5;
@@ -209,18 +195,11 @@ const computedStyle = computed(() => ({
   svg {
     display: block;
     width: calc(var(--logo-height) * var(--logo-ratio));
-    /* Never shrinks, also not through a max-width: 100% from a CSS reset */
     max-width: none;
     height: auto;
-    /* Descenders in the product name (g, j, p, q, y) hang below the logo, like text */
     overflow: visible;
   }
 
-  /* An app header at 320px has no room for the lockup at its height next to
-     its buttons. The lockup takes the room it gets, from the narrow width (or
-     its own width when smaller) up to its height, instead of a fixed size that
-     pushes the header buttons out. Like an image with max-width: 100%, it
-     shrinks in a flex row while its preferred size stays its full width. */
   &.cardan-logo--product {
     min-inline-size: min(
       var(--logo-narrow-width),
@@ -232,9 +211,6 @@ const computedStyle = computed(() => ({
     }
   }
 
-  /* The product name is brand artwork like the colors: always Hanken Grotesk,
-     whatever font the project uses. @nuxt/fonts, registered by the layer,
-     serves it from the project itself. */
   .logo-product {
     font-family: 'Hanken Grotesk', Arial, sans-serif;
     font-weight: 400;
@@ -258,7 +234,6 @@ const computedStyle = computed(() => ({
   }
 }
 
-/* Color-negative logo for dark backgrounds. The tile stays light: it is a favicon or app icon */
 .cardan-logo-variant--negative,
 .dark-mode .cardan-logo-variant--auto:not(.cardan-logo-form--tile) {
   --logo-green: #00a351;
@@ -283,7 +258,6 @@ const computedStyle = computed(() => ({
   --logo-product: #141413;
 }
 
-/* Purple symbol */
 .cardan-logo-variant--purple {
   --logo-green: #8e40b5;
   --logo-purple: #8e40b5;

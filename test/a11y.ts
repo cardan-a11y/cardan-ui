@@ -3,13 +3,8 @@ import axeCore from 'axe-core';
 import { axe } from 'vitest-axe';
 
 /**
- * axe over the whole document, so a component with several root nodes is
- * checked together with its label, without the landmark rule: a component
- * is not a page.
- *
- * In happy-dom axe sees no component styles and no layout: it never checks
- * contrast, visibility, inert content or focus order. It does pin ARIA
- * validity, names, labels and id references.
+ * axe over the whole document, without the landmark rule. In happy-dom it pins
+ * ARIA validity, names, labels and id references, not contrast, visibility or focus.
  */
 export function checkA11y() {
   return axe(document.body, { rules: { region: { enabled: false } } });
@@ -22,7 +17,6 @@ function elementOf(target: Target): Element {
   return target instanceof Element ? target : target.element;
 }
 
-/** The parts of axe-core's internals the helpers use, which it does not type */
 interface AxeInternals {
   utils: { getNodeFromTree: (node: Element) => unknown };
   commons: {
@@ -31,7 +25,6 @@ interface AxeInternals {
   };
 }
 
-/** Runs one of axe's computations on a tree of the current document. */
 function withAxe<T>(target: Target, compute: (node: unknown) => T): T {
   const element = elementOf(target);
   if (!element.isConnected) {
@@ -48,11 +41,8 @@ function withAxe<T>(target: Target, compute: (node: unknown) => T): T {
 }
 
 /**
- * The accessible name, as axe computes it (accname: aria-labelledby,
- * aria-label, a label element, content for the roles named by it, title).
- * Proves what a screen reader would announce as the name, except where the
- * name depends on CSS (content hidden with `display: none` in a component's
- * stylesheet still counts here). The element must be in the document.
+ * The accessible name, as axe computes it; CSS-hidden content still counts.
+ * The element must be in the document.
  */
 export function accessibleName(target: Target): string {
   return withAxe(target, (node) =>
@@ -62,10 +52,7 @@ export function accessibleName(target: Target): string {
   );
 }
 
-/**
- * The role, explicit or implicit (`button`, `link`, `navigation` …), as axe
- * computes it; null without one. The element must be in the document.
- */
+/** The role, explicit or implicit, as axe computes it; null without one. In the document only. */
 export function roleOf(target: Target): string | null {
   return withAxe(target, (node) =>
     (axeCore as unknown as AxeInternals).commons.aria.getRole(node),
@@ -73,10 +60,8 @@ export function roleOf(target: Target): string | null {
 }
 
 /**
- * The accessible description: the texts of the elements that
- * `aria-describedby` names, in its order, joined by a space; '' without it.
- * Throws when an id names no element, so a dangling reference fails the
- * test. Reads `textContent`, so text that CSS hides still counts.
+ * The texts `aria-describedby` names, in order, joined by a space; '' without it.
+ * Throws on an id that names no element. CSS-hidden text still counts.
  */
 export function description(target: Target): string {
   const element = elementOf(target);
@@ -110,14 +95,8 @@ const focusableSelector = [
 ].join(', ');
 
 /**
- * Focus is on the element, and the element can take focus: focusable by
- * nature or by a tabindex (also -1, a programmatic target), not disabled,
- * and not inside an `[inert]`, `[hidden]` or closed `<dialog>` element.
- *
- * happy-dom focuses anything, so `document.activeElement` alone only proves
- * that the component called `focus()`; this also proves it called it on
- * something a browser would focus. It cannot see CSS (`display: none` from
- * a stylesheet, `visibility`) or whether focus is visible.
+ * Focus is on the element, and a browser would focus it: focusable, not
+ * disabled, not in `[inert]`, `[hidden]` or a closed `<dialog>`. Blind to CSS.
  */
 export function expectFocused(target: Target) {
   const element = elementOf(target);

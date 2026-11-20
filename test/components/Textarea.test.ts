@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { defineComponent, h, nextTick } from 'vue';
+import { defineComponent, h, nextTick, ref } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Textarea } from '#components';
 import { accessibleName, checkA11y, description } from '../a11y';
@@ -163,4 +163,35 @@ describe('Textarea', () => {
       expect(document.querySelector('textarea')!.checkValidity()).toBe(true);
     },
   );
+
+  it('checks its constraints on every keystroke, also one that leaves a trimmed model as it was', async () => {
+    const text = ref('Hi');
+    const wrapper = await mountSuspended(
+      defineComponent({
+        setup: () => () =>
+          h(Textarea, {
+            label: 'Message',
+            minlength: 3,
+            showInvalid: true,
+            modelValue: text.value,
+            // As `v-model.trim` does
+            'onUpdate:modelValue': (value?: string | number) => {
+              text.value = String(value ?? '').trim();
+            },
+          }),
+      }),
+      { attachTo: document.body },
+    );
+    const field = wrapper.get('textarea');
+    field.element.value = 'H';
+    await field.trigger('input');
+    field.element.value = 'Hi';
+    await field.trigger('input');
+    expect(field.attributes('aria-invalid')).toBe('true');
+
+    field.element.value = 'Hi ';
+    await field.trigger('input');
+
+    expect(field.attributes('aria-invalid')).toBeUndefined();
+  });
 });

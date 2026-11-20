@@ -17,13 +17,6 @@ const {
 
 const { t } = useI18n();
 
-/**
- * The hidden text that names the button: the label, or, when the button
- * shows an image or an icon, the initials or "profile picture". Initials
- * without an image are visible and name the button themselves, after the
- * label when there is one ("User menu AL"), so the name holds what a speech
- * user sees (WCAG 2.5.3).
- */
 const hiddenLabel = computed(() => {
   if (ariaLabel) return ariaLabel;
   if (initials && !avatar && !icon) return undefined;
@@ -44,8 +37,9 @@ defineExpose({
 
 <template>
   <button ref="avatarButton" type="button" class="avatar-button">
-    <!-- The space keeps the label and the initials apart in the name -->
-    <span v-if="hiddenLabel" class="visuallyhidden">{{ `${hiddenLabel} ` }}</span>
+    <span v-if="hiddenLabel" class="visuallyhidden">{{
+      `${hiddenLabel} `
+    }}</span>
 
     <Icon v-if="icon" :name="icon" />
 

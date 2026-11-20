@@ -7,10 +7,8 @@ const { t } = useI18n();
 
 useHead({ title: computed(() => t('general.login')) });
 
-// Shared with the forgot-password page, so it starts from what was typed here.
 const email = useLoginEmail();
 
-// A sign-in without MFA detours past the setup page on its way in.
 const { remindMfaSetup } = useMfaSetupReminder();
 </script>
 

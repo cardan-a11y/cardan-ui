@@ -21,6 +21,18 @@ const { logoutDialogRef } = useLogoutDialog();
     </Card>
 
     <Card>
+      <h2>Password update form</h2>
+
+      <p>
+        Changes the password while signed in, for an account settings page. Its
+        requirements box stands out on a card or in a dialog as well as on the
+        page.
+      </p>
+
+      <PasswordUpdateForm />
+    </Card>
+
+    <Card>
       <h2>Logout dialog</h2>
 
       <p>

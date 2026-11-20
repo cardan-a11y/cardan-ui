@@ -1,9 +1,7 @@
 <script setup lang="ts">
 /**
- * A placeholder for content that is still loading: a bar or a circle with a
- * shimmer or a pulse. It is decorative, hidden from assistive technology; the
- * element whose content it stands in for carries `aria-busy="true"` while
- * that loads, as Table does for its rows.
+ * A decorative placeholder for loading content, hidden from assistive
+ * technology: the element it stands in for carries `aria-busy="true"`.
  */
 const {
   size = 'md',

@@ -1,16 +1,9 @@
 <script setup lang="ts">
 /**
- * The error box of a form or a page. `text` is a text in the page's own
- * language, such as a summary; `data` the error an API answered with
- * (`extractApiError()`, `useErrorMessage()`), whose messages follow the text
- * and are marked with the language the API wrote them in. An error without a
- * message and without a `text` says, in the page's language, that the browser
- * is offline (`data.offline`) or that something went wrong, such as an HTML
- * error page or a server that did not answer.
- *
- * The alert region is always in the page, so the box is announced when it
- * appears; the box itself shows only with `data` or a `text`. It takes no
- * outer margin: the form or page places it.
+ * The error box of a form or a page: `text` in the page's language, then the
+ * messages of `data` (`useErrorMessage()`) in theirs. Without a message it
+ * says the browser was offline or that something went wrong. It takes no
+ * outer margin.
  */
 const { data = undefined, text = undefined } = defineProps<{
   data?: ApiErrorData | null;
@@ -35,9 +28,9 @@ const messages = computed(() => apiErrorMessages(data));
         {{ messages[0] }}
       </p>
 
-      <p v-else-if="!text">
-        {{ data?.offline ? $t('error.offline') : $t('error.general') }}
-      </p>
+      <p v-else-if="data?.offline">{{ $t('error.offline') }}</p>
+
+      <p v-else-if="!text">{{ $t('error.general') }}</p>
     </div>
   </div>
 </template>
@@ -55,7 +48,6 @@ const messages = computed(() => apiErrorMessages(data));
   color: var(--color-red-text);
   overflow-wrap: anywhere;
 
-  /* On the text itself, so a page's own rules for paragraphs do not apply */
   p,
   ul {
     margin-block: 0;

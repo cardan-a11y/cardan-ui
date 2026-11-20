@@ -46,6 +46,18 @@ Also a round of audit fixes. Paste the token, rename what a project sets, and ch
 - **Cardan Auth UI**: new message key `mfa.recovery-codes-regenerate-unavailable` for an app that overrides the `mfa` messages. `useMfaDialog().loadingMfaDisableDialog` is new, for a project's own Disable MFA button; cardan-auditor-nuxt's UserProfileForm uses it, so that change merges only after this release is on `main`.
 - **The layer holds every message key that two projects use.** New: `user.profile` ("User profile" / "Gebruikersprofiel") and `toasts.profile-updated` ("Your profile was updated." / "Je profielgegevens zijn bijgewerkt."), which cardan-academy-nuxt and cardan-auditor-nuxt each had with their own text; the Auditor's page titles and toast take the layer's wording, and the Academy's Dutch profile link, title and heading read "Gebruikersprofiel" instead of "Profiel". The Dutch `general.home` is "Homepagina". The error page's texts are new keys under `error-page`. A project no longer repeats a layer key: the Academy drops these two and `aria.sidebar`, the Auditor these two, and cardan-cms-nuxt its copies of `cookies.*`, `pagination.*`, `error.page-not-found`, `general.contact`, `general.email`, `general.home` and `general.loading` (and its unused `general.phone`), on branches that merge only after this release is on `main`. 58 keys that no project, layer component or API used are removed, among them `error.403`, `error.404`, `error.unauthorized`, `theme.toggle`, `datepicker.input` and 39 in `general`; the four projects use none of them on any branch, so none needs a change. A project that wants one back adds it to its own locale files.
 
+### 2.5.3
+
+- **A DatePicker's name includes its required chip**, like Input's ("Start date required"): a test that finds a required DatePicker by its bare label adds the chip's text. cardan-auditor-nuxt's AuditForm test does so on `chore/comment-cleanup`.
+- **DatePicker's `text-input` prop is gone**: a date is picked in the calendar and the keyboard does not type one, since typed text in another format than the field's was dropped without a message. No project set it; a `text-input` attribute is ignored. Text that arrives without a key (a paste from the context menu, a drop, autofill) still goes to the library's parser, as before.
+- **SpinButton shows its range error while the user types**, not only after a submit: a test that typed an out-of-range number and expected no error yet expects it now.
+- **MultiSelect's list is in the top layer**: a project's `overflow: visible` or `z-index` to keep it from being cut off can go (cardan-auditor-nuxt's filter popover), as can a project's `@open` that loaded empty async options again.
+- **Button**: a project's guard that hid a slotted icon while loading, an empty string or space to separate the label from slot text, and its own focus call on a link Button can go (cardan-cms-nuxt, cardan-academy-nuxt).
+- **Cardan Auth UI**: `userInitials` is the first and last initial ("JB" for "Jan van den Berg"); the signed-out pages take `?locale=`, so a project's own `locale-from-query` middleware can go; a project's leave guard no longer needs to let `/mfa-setup` and `/login` through; a project's background override for the password requirements box can go (`--password-requirements-bg` sets another).
+- **ErrorMessage shows the offline notice after a `text` too**, and Dialog's bottom sheet has its own end padding: a project that added either removes it, or it shows twice.
+- cardan-academy-nuxt, cardan-auditor-nuxt and cardan-cms-nuxt drop these workarounds on `chore/comment-cleanup`, which merges only after this release is on `main`.
+- **New message keys `general.first-name` and `general.last-name`** ("First name" / "Voornaam", "Last name" / "Achternaam"), for the two name fields the Cardan Academy API takes instead of one name since ACI-158 (`first_name` and `last_name`). cardan-academy-nuxt uses them on `feature/aci-158-first-last-name`, which merges only after this release is on `main`.
+
 ### 2.5.2
 
 2.5.2 needs nothing from projects. See changelog for details.
@@ -176,37 +188,3 @@ Also a round of audit fixes. Paste the token, rename what a project sets, and ch
 - **The field components render through the new FormField component**: the label with its chip, the control, the error text and the instruction, in that order. The classes are the same (`.form-field-wrapper`, `label`, `.instruction`, `.error-wrapper`), so CSS keeps working. Two things change: the error text sits directly under the field in every field, above the instruction, where Select and Textarea showed it below; and an Input without a `label` renders no empty `<label>`.
 - **FileInput keeps the chosen file as its value** while an image is compressed, and the compressed file replaces it; the value no longer goes empty in between. A watcher on the value sees the chosen file first and then the compressed one.
 - **A link in a markdown text ends in hidden text "(open in new window)"** in the current language, and gets that title only when it has none of its own. The icon after the link is decorative now; CSS that changed its alternative text can go.
-
-### 2.3.6
-
-2.3.6 needs nothing from projects. See changelog for details.
-
-### 2.3.5
-
-2.3.5 makes **MarkdownPreview** lighter: highlight.js loads only when a text has a code block, with six grammars instead of 38. In Cardan Academy that takes about 150 KB raw (50 KB gzipped) out of the chunk every course page executes, and keeps highlight.js out of pages without code.
-
-- **A code block is coloured after the text is in the page**: it is a dark block with plain text first and its tokens get their colours a moment later, also in a server-rendered page. The HTML of a block is unchanged except for a `data-lang` attribute on the `<code>` element (`<pre><code class="hljs" data-lang="css">`), and the theme still ships with the component, so styles on `.hljs` keep working. A test that reads a block's spans right after mount waits for them (`vi.waitFor`).
-- **Six grammars**: `xml` (also `html` and `svg`), `css`, `javascript`, `typescript`, `json` and `bash`, with the aliases highlight.js gives them (`js`, `ts`, `sh`, …). A fence in another language stays plain, where `highlight.js/lib/common` coloured 38 languages. Check your stored markdown for fences in another language (PHP, Python, SQL, YAML, …); when Cardan content needs one, add it to `app/components/Markdown/highlight.ts` in cardan-ui, so every project gets it. The playground's markdown page lists the set.
-- **`vite.optimizeDeps.include`** in a project's `nuxt.config.ts`: replace `highlight.js/lib/common` with the six `highlight.js/lib/languages/*` entries, as the playground does (`.playground/nuxt.config.ts`); cardan-academy-nuxt has them.
-- **The header cells of a markdown table** carry `scope="col"`, which WCAG H63 asks for. Nothing to do, unless your CSS selects `th[scope]`.
-
-### 2.3.4
-
-2.3.4 brings **Accordion** closer to the APG accordion pattern. It looks the same in a project that does nothing, but its panel is no longer a landmark.
-
-- **New `h-tag` prop** wraps the trigger button in a heading (`h-tag="h3"`), at the level the section's title has in the page, as the pattern asks. Set it on every Accordion whose trigger is a title. A heading inside the `trigger` slot moves out: `<Accordion h-tag="h3"><template #trigger>Transcript</template>` instead of an `<h3>` in the slot, since a button may not contain a heading.
-- **The panel is a plain `div`** and a `region` landmark only with the new **`region` prop**, with `aria-labelledby` to its trigger. Until now every panel was a `<section aria-labelledby>`, a landmark, and the pattern warns against a page full of them. Add `region` to a panel with headings or nested accordions of its own.
-- **The trigger is in a wrapper** (`.accordion-header`, the heading or a `div`), so it is no longer a sibling of the panel. A selector such as `.accordion-trigger[aria-expanded='true'] ~ .accordion-panel-wrapper` in a project matches nothing now; the wrapper carries `.accordion-wrapper--open` instead.
-- **The panel's overflow follows its state** also without a transition (reduced motion): a closing panel no longer paints over what follows, an opening one no longer clips focus outlines. Remove a workaround that set `overflow` on `.accordion-panel` from `aria-expanded`.
-- **MobileMenu** pads the start of its content with `--app-padding-inline`, the project's own inline padding, as its navigation already did, instead of a fixed 1.25rem. In cardan-auditor-nuxt that is 0.75rem below 480px, in cardan-academy-nuxt below 768px. The token is now in the `main.css` template (0.75rem, 1.5rem from 480px). A project without it has no padding there and adds it to its `main.css`. cardan-support-nuxt names its padding `--padding-inline`, so it pastes:
-
-  ```css
-  :where(:root) {
-    --app-padding-inline: var(--padding-inline);
-  }
-  ```
-
-- **The outline Button** has a `--color-grey-light` border (was `--color-grey-bg`), which stands out from the background. Check a place where your own CSS changed that border.
-- **`formatFileSize(bytes, locale?)`** counts in decimal units and formats in the app's locale unless you give another ("2,4 MB" in Dutch). A call with one argument keeps working.
-- **`toolbars` and `footers`**, MarkdownEditor's toolbar settings, are no longer auto-imported from `app/utils/markdown.ts`; they moved into the component. No project used them.
-- **Every project's `netlify.toml`** skips builds of documentation, AI and CI changes (cardan-ui#32 and the matching PRs in each project): check that yours has the `ignore` command.

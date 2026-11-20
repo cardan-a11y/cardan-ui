@@ -9,7 +9,6 @@ function locale(path: string): Messages {
   return JSON.parse(readFileSync(resolve(__dirname, '..', path), 'utf8'));
 }
 
-/** Every message by its dotted key */
 function flatten(messages: Messages, prefix = ''): Record<string, string> {
   return Object.fromEntries(
     Object.entries(messages).flatMap(([key, value]) =>

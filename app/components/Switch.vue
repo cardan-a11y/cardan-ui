@@ -25,7 +25,6 @@ function handleClick() {
   model.value = !model.value;
 }
 
-// No attribute without a description, rather than an empty one
 const computedAriaDescribedby = computed(
   () =>
     [ariaDescribedby, instruction && `instruction-${id}`]

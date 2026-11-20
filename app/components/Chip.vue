@@ -78,7 +78,6 @@ const formattedLabel = computed(() =>
   }
 }
 
-/* Uppercase text needs extra letter spacing to stay legible */
 .chip-text-transform--uppercase {
   text-transform: uppercase;
   letter-spacing: 0.025em;
@@ -92,9 +91,7 @@ const formattedLabel = computed(() =>
   text-transform: capitalize;
 }
 
-/* Chip sizes */
 .chip-size--xs {
-  /* border-radius: var(--chip-radius, var(--radius-sm)); */
   font-size: var(--chip-font-size, var(--font-size-xxs));
   padding-block: 0.03125rem;
   gap: 0.125rem;
@@ -126,7 +123,6 @@ const formattedLabel = computed(() =>
   padding-block: 0.25rem;
 }
 
-/* Flat Chip */
 .chip-variant--flat {
   color: var(--color-text);
   background-color: var(--color-grey-bg);
@@ -172,7 +168,6 @@ const formattedLabel = computed(() =>
   background-color: var(--color-pink-bg);
 }
 
-/* Soft Chip */
 .chip-variant--soft {
   color: var(--color-text);
   border-color: var(--color-grey-bg);
@@ -218,8 +213,6 @@ const formattedLabel = computed(() =>
   color: var(--color-pink-text);
   border-color: var(--color-pink-bg);
 }
-
-/* Outline Chip */
 
 .chip-variant--outline {
   color: var(--color-text);
@@ -270,8 +263,6 @@ const formattedLabel = computed(() =>
   color: var(--color-pink-text);
   border-color: var(--color-pink-graphic);
 }
-
-/* Solid Chip: the text color as background, at least 4.5:1 in both modes */
 
 .chip-variant--solid {
   color: var(--color-white);

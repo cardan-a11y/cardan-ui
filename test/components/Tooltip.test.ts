@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Tooltip } from '#components';
 import { accessibleName, checkA11y, expectFocused, roleOf } from '../a11y';
-import { addToPage, toggle } from '../dom';
+import { addToPage, fakePopover, leave, toggle } from '../dom';
 
 /**
  * A toggletip (see its docblock): a button that shows a text, which is
@@ -11,35 +11,6 @@ import { addToPage, toggle } from '../dom';
  * API: the announcement itself, Escape and the light dismiss are for the
  * browser suite; this pins what the component does on the browser's events.
  */
-
-/**
- * The Popover API, as far as the component uses it: the open state that
- * `:popover-open` reads, and `hidePopover()`, which fires the toggle event
- */
-function fakePopover(element: HTMLElement) {
-  let open = false;
-  const matches = element.matches.bind(element);
-  element.matches = ((selector: string) =>
-    selector === ':popover-open'
-      ? open
-      : matches(selector)) as typeof element.matches;
-
-  const hidePopover = vi.fn(() => {
-    if (!open) return;
-    open = false;
-    void toggle(element, 'closed');
-  });
-  element.hidePopover = hidePopover;
-
-  return {
-    hidePopover,
-    isOpen: () => open,
-    async show() {
-      open = true;
-      await toggle(element, 'open');
-    },
-  };
-}
 
 async function mountTooltip(
   props: Record<string, unknown> = {},
@@ -57,13 +28,6 @@ async function mountTooltip(
   )!;
 
   return { wrapper, trigger, content, popover: fakePopover(content) };
-}
-
-/** Focus leaving one element for another, as the browser reports it */
-function leave(from: Element, to: Element | null) {
-  from.dispatchEvent(
-    new FocusEvent('focusout', { relatedTarget: to, bubbles: true }),
-  );
 }
 
 describe('Tooltip', () => {

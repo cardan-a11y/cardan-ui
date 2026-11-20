@@ -27,7 +27,6 @@ const {
   id?: string;
 }>();
 
-// A list in a list is part of the menu's landmark, not one of its own
 const nested = inject(menuListNestedKey, false);
 provide(menuListNestedKey, true);
 
@@ -92,7 +91,6 @@ const emit = defineEmits<{
         <template v-else-if="item.items?.length">
           <hr />
 
-          <!-- A group named by its item, which has no button of its own -->
           <MenuList
             :list="item.items"
             :aria-label="item.label || item.title"

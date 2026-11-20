@@ -1,4 +1,3 @@
-// Any code is accepted, except 000000, which shows the validation error
 export default defineEventHandler(async (event) => {
   const { code } = await readBody<{ code?: string }>(event);
 

@@ -1,10 +1,7 @@
 <script setup lang="ts">
 /**
- * Moves focus to its target itself, without a change of address: the hash
- * would be a navigation of the router, which runs the middleware, and on the
- * error page clears the error (Nuxt clears it after every navigation) and
- * renders the page that failed once more, which can fail again after the
- * user has moved on. A target that cannot take focus is left to the browser.
+ * Moves focus to its target itself, not by a change of address: a hash
+ * navigation runs the middleware and, on the error page, clears the error.
  */
 const { links = [{ href: '#main' }] } = defineProps<{
   links?: SkipLinkItem[];

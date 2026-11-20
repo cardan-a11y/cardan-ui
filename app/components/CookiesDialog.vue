@@ -33,18 +33,13 @@ const {
 
 const dialogRef = useTemplateRef<DialogComponent>('dialog');
 
-// The dialog follows the shared flag, which a CookiesButton anywhere can set
 watch(cookiesDialogOpen, (open) => {
   if (open) dialogRef.value?.openDialog();
   else dialogRef.value?.closeDialog();
 });
 
-/**
- * The parts of @nuxt/scripts this dialog uses. In a project without the
- * module, Nuxt's stubs type its composables as `void`, and they throw when
- * called: the dialog needs the module, which the layer says at startup. Typed
- * here, the dialog type-checks in every project that extends the layer.
- */
+// Without @nuxt/scripts in a project, Nuxt's stubs type its composables `void`.
+// These types can go once the layer registers @nuxt/scripts itself.
 type ConsentCommand = [
   command: 'consent',
   type: 'default' | 'update',
@@ -58,11 +53,6 @@ interface GoogleTagManager {
   remove: () => void;
 }
 
-/**
- * GTM with the container in `runtimeConfig.public.gtmId`, held back until
- * the visitor accepts. Without an id nothing is registered and nothing is
- * asked of Google: the choice is still stored and the dialog still closes.
- */
 function useTagManager(id: string) {
   const consentTrigger = useScriptTriggerConsent() as unknown as ConsentTrigger;
 
@@ -117,7 +107,6 @@ function useTagManager(id: string) {
 const { gtmId } = useRuntimeConfig().public;
 const tagManager = gtmId ? useTagManager(gtmId) : undefined;
 
-// A choice is either everything accepted or everything but necessary denied
 function isChoice(consent: typeof cookieConsent.value | null) {
   return (
     consent?.necessary === true &&
@@ -146,14 +135,11 @@ onMounted(() => {
     cookiesDialogOpen.value = true;
   }
 
-  // The watcher sees changes only: a flag that is already set opens it here
   if (cookiesDialogOpen.value) {
     dialogRef.value?.openDialog();
   }
 });
 
-// A dialog unmounted while open, as on the way to a page in another layout,
-// fires no close event: reset the flag, or the next dialog never opens
 onUnmounted(() => {
   cookiesDialogOpen.value = false;
 });

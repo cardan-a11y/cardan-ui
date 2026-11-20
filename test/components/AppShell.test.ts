@@ -19,7 +19,6 @@ const page = () => [
 /** The shell's own element, which takes focus */
 const shellOf = (wrapper: VueWrapper) => wrapper.element as HTMLElement;
 
-/** The link with this name */
 function link(wrapper: VueWrapper, name: string) {
   const found = wrapper.findAll('a').find((a) => accessibleName(a) === name);
   if (!found) throw new Error(`No link named ${name}`);

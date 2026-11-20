@@ -1,9 +1,5 @@
 <script setup lang="ts">
-/**
- * Replaces the recovery codes. The API never shows the current codes, so the
- * dialog opens on the question whether to replace them, and shows the new ones
- * this once. Closing it forgets them.
- */
+/** Replaces the recovery codes and shows the new ones once. */
 const { mfaRecoveryCodesDialogRef, closeMfaRecoveryCodesDialog } =
   useMfaDialog();
 const {
@@ -14,19 +10,12 @@ const {
   resetMfa,
 } = useMfa();
 
-// Leaving the page while the codes show (browser Back) unmounts the dialog
-// without a close event: the codes go with it all the same
 onBeforeUnmount(resetMfa);
 
 const codeListRef = useTemplateRef<{ focusHeading: () => void }>('codeList');
 
-/** Asking to replace the codes, before the new ones are there. */
-const isConfirming = computed(() => !recoveryCodes.value.length);
+const awaitingNewCodes = computed(() => !recoveryCodes.value.length);
 
-/**
- * The generate button gives way to the new codes, so focus moves to their
- * heading rather than being lost with the button.
- */
 async function handleGenerate() {
   await generateRecoveryCodes();
 
@@ -46,7 +35,10 @@ async function handleGenerate() {
     :click-outside="false"
     @close="resetMfa()"
   >
-    <p v-if="isConfirming" class="mfa-recovery-codes-regenerate-description">
+    <p
+      v-if="awaitingNewCodes"
+      class="mfa-recovery-codes-regenerate-description"
+    >
       {{ $t('mfa.recovery-codes-regenerate-description') }}
     </p>
 
@@ -62,7 +54,7 @@ async function handleGenerate() {
 
     <template #buttons>
       <Button
-        v-if="isConfirming"
+        v-if="awaitingNewCodes"
         variant="black"
         :label="$t('mfa.recovery-codes-generate')"
         icon="material-symbols:refresh-rounded"

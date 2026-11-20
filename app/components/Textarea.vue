@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { StyleValue } from 'vue';
 
-// An attribute goes to the control; `class` and `style` stay on the wrapper
 defineOptions({ inheritAttrs: false });
 
 const { t } = useI18n();
@@ -29,10 +28,7 @@ const {
   instruction?: string;
   /** The error text when the browser finds the field invalid; "<label> is missing" or "Value invalid" by default */
   errorMessage?: string;
-  /**
-   * An error the browser cannot find, such as one from the server: the field
-   * shows this text and is described by it until its value changes
-   */
+  /** An error the browser cannot find, such as the server's: shown until the value changes */
   customError?: string;
   /** Shows the error now; a Form shows it after a failed submit */
   showInvalid?: boolean;
@@ -45,14 +41,7 @@ const {
   variant?: InputVariant;
 }>();
 
-const attrs = useAttrs();
-
-/** The attributes for the control, without the wrapper's `class` and `style` */
-function controlAttrs() {
-  return Object.fromEntries(
-    Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'),
-  );
-}
+const { controlAttrs } = useControlAttrs();
 
 const computedErrorMessage = computed(() => {
   if (errorMessage) return errorMessage;
@@ -63,43 +52,20 @@ const computedErrorMessage = computed(() => {
 });
 
 const textareaRef = useTemplateRef<HTMLTextAreaElement>('textarea');
-const formShowInvalid = inject(formShowInvalidKey, ref(false));
 const isValid = ref(true);
-const customErrorActive = ref(false);
 
-/**
- * The browser's constraints only: a required text of only spaces passes here
- * and the API, which trims it to empty, refuses it (a textarea has no
- * `pattern`, as Input uses for this)
- */
 function updateValidity() {
   isValid.value = textareaRef.value?.validity.valid ?? true;
 }
 
-/**
- * The custom error shows like the browser's own, and describes the field,
- * but does not keep the form from submitting again: the server judges the
- * next attempt, and the parent moves focus to the field (`focusElement()`)
- */
-function applyCustomError() {
-  customErrorActive.value = !!customError;
-}
-
-onMounted(() => {
-  applyCustomError();
-  updateValidity();
-});
-watch(() => customError, applyCustomError, { flush: 'post' });
-watch([model, () => required], updateValidity, { flush: 'post' });
-
-/** The error text shows after a failed submit, or for a custom error */
-const errorShown = computed(
-  () =>
-    customErrorActive.value ||
-    ((showInvalid || formShowInvalid.value) && !isValid.value),
+const { customErrorActive, clearCustomError, errorShown } = useCustomError(
+  () => customError,
+  { invalid: () => !isValid.value, showInvalid: () => showInvalid },
 );
 
-// The error describes the field only while it shows
+onMounted(updateValidity);
+watch([model, () => required], updateValidity, { flush: 'post' });
+
 const computedAriaDescribedby = computed(
   () =>
     [
@@ -117,16 +83,12 @@ function handleInput(event: Event) {
 }
 
 function takeValue(target: HTMLTextAreaElement) {
-  // A new value clears the custom error, until the parent sets one again
-  customErrorActive.value = false;
+  clearCustomError();
 
   model.value = target.value;
-  // Not left to the model's watcher: under `v-model.trim` a space changes
-  // the length `minlength` checks, not the model
   updateValidity();
 }
 
-// A value an extension filled in without an input event
 const { remember, sync } = useAutofillSync(textareaRef, (control) =>
   takeValue(control as HTMLTextAreaElement),
 );
@@ -150,7 +112,6 @@ onMounted(() => {
   resizeTextarea();
 });
 
-// Also a value the parent loads after mount, as in an edit form
 watch(model, resizeTextarea, { flush: 'post' });
 
 onUnmounted(() => window.removeEventListener('resize', resizeTextarea));

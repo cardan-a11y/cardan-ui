@@ -12,10 +12,6 @@ type Requirement = {
   checkedOnSave?: boolean;
 };
 
-// Length is checked while typing. An API that also checks breaches, common
-// passwords and personal information (`serverChecks`) does so when the form
-// is saved and explains a refusal, which the form shows as an error; those
-// are listed so the rules are known up front.
 const requirements = computed<Requirement[]>(() => [
   {
     key: 'length',
@@ -81,8 +77,7 @@ const requirements = computed<Requirement[]>(() => [
 </template>
 
 <style>
-/* The new password field with its requirements below it, as one row of the
-   form: the form's row gap stays between the fields, not inside this pair. */
+/* One form row: the field with its requirements */
 .password-new-field {
   display: grid;
   gap: 0.5rem;
@@ -90,7 +85,11 @@ const requirements = computed<Requirement[]>(() => [
 
 .password-requirements {
   @container (min-width: 280px) {
-    background-color: var(--color-bg);
+    /* A tint that shows on any surface; a container that knows its own sets another */
+    background-color: var(
+      --password-requirements-bg,
+      color-mix(in srgb, var(--color-text) 5%, transparent)
+    );
     border-radius: var(--radius-md);
     padding: 0.75rem;
   }

@@ -21,7 +21,6 @@ async function mountAccordion(props: Record<string, unknown> = {}) {
   });
 
   const trigger = wrapper.get('button');
-  /** The element the button says it controls */
   const panel = () =>
     document.getElementById(trigger.attributes('aria-controls') ?? '')!;
 

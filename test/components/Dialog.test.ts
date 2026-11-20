@@ -24,7 +24,6 @@ async function mountDialog(
   const exposed = wrapper.vm as unknown as DialogComponent;
   const dialog = wrapper.get('dialog').element as HTMLDialogElement;
 
-  /** The button in the dialog with this name */
   const button = (name: string) => {
     const found = Array.from(dialog.querySelectorAll('button')).find(
       (button) => accessibleName(button) === name,
@@ -65,19 +64,19 @@ describe('Dialog', () => {
     expect(await checkA11y()).toHaveNoViolations();
   });
 
-  it('closes with its close button, the loop released before the dialog closes', async () => {
+  it('closes with its close button, no longer visible before the dialog closes', async () => {
     const { exposed, dialog, button } = await mountDialog();
-    let loopOpenAtClose: boolean | undefined;
+    let visibleAtClose: boolean | undefined;
     const close = dialog.close.bind(dialog);
     vi.spyOn(dialog, 'close').mockImplementation(() => {
-      loopOpenAtClose = exposed.isVisible;
+      visibleAtClose = exposed.isVisible;
       close();
     });
 
     button('Close').click();
 
     await vi.waitFor(() => expect(dialog.open).toBe(false));
-    expect(loopOpenAtClose).toBe(false);
+    expect(visibleAtClose).toBe(false);
   });
 
   it('resolves closeDialog() once the dialog has closed, the same promise for a second call', async () => {
@@ -91,6 +90,41 @@ describe('Dialog', () => {
     expect(dialog.open).toBe(false);
     // Closed already: nothing to wait for
     await expect(exposed.closeDialog()).resolves.toBeUndefined();
+  });
+
+  it('closes only once its exit animation has ended, also when that is cancelled', async () => {
+    const { exposed, dialog } = await mountDialog();
+    let end!: () => void;
+    const finished = new Promise<void>((resolve) => (end = resolve));
+    const animations = vi
+      .spyOn(dialog, 'getAnimations')
+      .mockReturnValue([{ finished } as unknown as Animation]);
+
+    const closed = exposed.closeDialog();
+    await settle();
+    expect(dialog.open).toBe(true);
+    end();
+    await closed;
+    expect(dialog.open).toBe(false);
+
+    exposed.openDialog();
+    animations.mockImplementation(() => [
+      {
+        finished: Promise.reject(new DOMException('', 'AbortError')),
+      } as unknown as Animation,
+    ]);
+    await exposed.closeDialog();
+    expect(dialog.open).toBe(false);
+  });
+
+  it('stays visible when the close event of an earlier close arrives after it reopened', async () => {
+    const { exposed, dialog } = await mountDialog();
+    await exposed.closeDialog();
+
+    exposed.openDialog();
+    dialog.dispatchEvent(new Event('close'));
+
+    expect(exposed.isVisible).toBe(true);
   });
 
   it('closes with Cancel next to the buttons of the buttons slot', async () => {
@@ -134,7 +168,7 @@ describe('Dialog', () => {
     expect(document.querySelectorAll('[inert]')).toHaveLength(0);
   });
 
-  it('lets Escape close it and releases its loop first, unless disable-escape', async () => {
+  it('lets Escape close it, no longer visible first, unless disable-escape', async () => {
     // Escape fires a cancel on the dialog, and the browser closes it after
     const open = await mountDialog();
     const cancel = new Event('cancel', { cancelable: true });

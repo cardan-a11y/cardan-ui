@@ -7,8 +7,6 @@ const content = ref(md);
 // autofocus works on mount: the switch remounts the editor
 const editorAutofocus = ref(false);
 
-// Text that may come from anyone: raw HTML, attributes and CSS stay out
-// unless the text is trusted.
 const untrusted = [
   'A <b onclick="alert(1)">bold</b> word and <img src="x" onerror="alert(1)">.',
   '',
@@ -17,15 +15,12 @@ const untrusted = [
   'Not a swatch: `rgb(0 0 0);background:url(https://example.com/x.png)`',
 ].join('\n');
 
-// HTML the team wrote itself, for `trusted`.
 const trustedContent = [
   'Press <kbd>Ctrl</kbd> + <kbd>C</kbd>.',
   '',
   '<details><summary>More</summary>A details element.</details>',
 ].join('\n');
 
-// A bare YouTube or Vimeo link in a paragraph of its own renders as a
-// VideoPlayer; a link with its own text stays a link.
 const video = [
   'A video from a link in a paragraph of its own:',
   '',
@@ -34,8 +29,6 @@ const video = [
   'A link with its own text stays a link: [the same video](https://youtube.com/watch?v=PGvgdZuQu6w).',
 ].join('\n');
 
-// The grammars MarkdownPreview colours, as a markdown table: the component
-// renders it with its scroll region and the header cells' scope.
 const grammars = [
   '| Fence | Grammar |',
   '| --- | --- |',

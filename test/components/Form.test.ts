@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { h, nextTick, ref } from 'vue';
-import { CheckboxGroup, Input, Select, Textarea } from '#components';
+import { defineComponent, h, nextTick, ref, useModel } from 'vue';
+import { mountSuspended } from '@nuxt/test-utils/runtime';
+import { CheckboxGroup, Form, Input, Select, Textarea } from '#components';
 import { description, expectFocused } from '../a11y';
 import { mountInForm } from '../form';
 
@@ -129,6 +130,54 @@ describe('Form', () => {
     expect(input.attributes('aria-invalid')).toBeUndefined();
   });
 
+  it('submits a filled-in value also to a parent that binds the field through its own v-model', async () => {
+    // A form component whose model is its parent's: `defineModel` reads the
+    // new value only after that parent has rendered
+    const NameForm = defineComponent({
+      props: { name: { type: String, default: '' } },
+      emits: ['update:name', 'seen'],
+      setup(props, { emit }) {
+        const name = useModel(props, 'name');
+        return () =>
+          h(
+            Form,
+            { onSubmit: () => emit('seen', name.value) },
+            {
+              default: () => [
+                h(Input, {
+                  label: 'Name',
+                  name: 'name',
+                  modelValue: name.value,
+                  'onUpdate:modelValue': (value?: string | number) => {
+                    name.value = String(value ?? '');
+                  },
+                }),
+              ],
+            },
+          );
+      },
+    });
+    const name = ref('');
+    let seen: string | undefined;
+    const wrapper = await mountSuspended(
+      defineComponent({
+        setup: () => () =>
+          h(NameForm, {
+            name: name.value,
+            'onUpdate:name': (value: string) => (name.value = value),
+            onSeen: (value: string) => (seen = value),
+          }),
+      }),
+      { attachTo: document.body },
+    );
+
+    wrapper.get('input').element.value = 'Ada';
+    await wrapper.get('form').trigger('submit');
+    await vi.waitFor(() => expect(seen).toBeDefined());
+
+    expect(seen).toBe('Ada');
+  });
+
   it('keeps a custom error when nothing was filled in behind its back', async () => {
     const wrapper = await mountInForm(
       () => [
@@ -149,7 +198,7 @@ describe('Form', () => {
     expect(description(wrapper.get('input'))).toContain('Taken');
   });
 
-  it('shows the errors of its fields after a failed submit', async () => {
+  it('shows the errors of its fields after a failed submit, before focus reaches the first', async () => {
     const wrapper = await mountInForm(() => [
       h(Input, {
         label: 'Name',
@@ -164,6 +213,11 @@ describe('Form', () => {
     const input = wrapper.get('input');
     expect(input.attributes('aria-invalid')).toBeUndefined();
     expect(description(input)).toBe('');
+    // What a screen reader reads as focus arrives
+    let describedAtFocus: string | undefined;
+    input.element.addEventListener('focus', () => {
+      describedAtFocus = description(input);
+    });
 
     await wrapper.get('form').trigger('submit');
     await nextTick();
@@ -171,5 +225,6 @@ describe('Form', () => {
     expect(input.attributes('aria-invalid')).toBe('true');
     expect(description(input)).toContain('Fill in your name');
     expectFocused(input);
+    expect(describedAtFocus).toContain('Fill in your name');
   });
 });

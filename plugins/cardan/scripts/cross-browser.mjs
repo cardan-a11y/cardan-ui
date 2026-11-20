@@ -1,37 +1,11 @@
 #!/usr/bin/env node
 /**
- * The browser check of the Cardan review round: one page in Chrome, Firefox
- * and WebKit at the same time, with the same steps, compared in one table.
- * Described in the guidelines skill ("Review Before Commit, Push and PR",
- * step 4).
+ * The cross-browser check of the review round (guidelines skill, "Review Before Commit, Push and PR").
  *
- *   node cross-browser.mjs <url> [--focus <css>] [--steps <step,step,…>]
- *                                [--snapshot <css>] [--login <email>:<password>]
- *                                [--login-url <url>] [--headed]
+ *   node cross-browser.mjs <url> [--focus <css>] [--steps <key|click:<css>|hover:<css>,…>] [--snapshot <css>]
+ *                          [--login <email>:<password>] [--login-url <url>] [--browsers <list>] [--headed]
  *
- *   --focus     the element to focus before the steps (default: none, so the
- *               first Tab enters the page); the first match must be able to
- *               take focus, or the check stops and says so
- *   --steps     comma-separated: a key as Playwright names it (Tab,
- *               Shift+Tab, Enter, Space, Escape, ArrowDown, …),
- *               `click:<css>` or `hover:<css>`. Default: ten times Tab.
- *               After each, the table shows where focus is and what is open,
- *               with the side of its trigger a popover sits on.
- *   --snapshot  the accessibility tree of this element after the steps, once
- *               when the browsers agree, per browser when they don't
- *   --login     `<email>:<password>`: sign in first, on `--login-url` (default
- *               `/login` on the page's origin), for a page behind sign-in.
- *               Only a local development account.
- *   --browsers  a comma-separated subset of chrome, firefox and webkit, to
- *               check a fix in the browser that failed
- *   --headed    show the browser windows
- *
- * It marks with ≠ the rows where the browsers differ, and saves screenshots
- * per browser at 320px and 1280px wide, and after the steps.
- *
- * Playwright comes from the `@playwright/mcp` version pinned in the plugin's
- * `.mcp.json`, so the check and the Chrome MCP server use the same browsers.
- * Run without it on the PATH, the script starts itself again through npx.
+ * Playwright comes from the `@playwright/mcp` pinned in `.mcp.json`, so it uses the MCP server's browsers.
  */
 
 import { spawnSync } from 'node:child_process';
@@ -46,7 +20,6 @@ const PLUGIN_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const mcpArgs = JSON.parse(readFileSync(join(PLUGIN_ROOT, '.mcp.json'), 'utf8')).mcpServers.playwright.args;
 const MCP_PACKAGE = mcpArgs.find((arg) => arg.startsWith('@playwright/mcp@'));
 
-/** playwright-core from an npx install of the pinned MCP package on the PATH. */
 function findPlaywright() {
   for (const dir of (process.env.PATH ?? '').split(delimiter)) {
     const core = resolve(dir, '..', 'playwright-core');
@@ -87,8 +60,7 @@ const login = option('--login');
 const loginUrl = option('--login-url');
 const only = option('--browsers')?.toLowerCase().split(',');
 const steps = (option('--steps') ?? option('--keys') ?? Array(10).fill('Tab').join(','))
-  // A comma starts a new step only before a key (they start with a capital)
-  // or `click:`/`hover:`, so a selector may contain commas.
+  // Keys start with a capital, so a selector may contain commas.
   .split(/,(?=\s*(?:click:|hover:|[A-Z]))/)
   .map((step) => step.trim())
   .filter(Boolean);
@@ -109,12 +81,6 @@ const BROWSERS = {
   WebKit: () => playwright.webkit.launch({ headless: !headed }),
 };
 
-/**
- * Where focus is, as `tag[role] "name"`, and what is open on top of the
- * page: a popover with the side of its trigger it sits on and the gap, in
- * steps of 4px so rounding does not count as a difference; a dialog with its
- * size.
- */
 function pageState() {
   const text = (value) => (value ?? '').replace(/\s+/g, ' ').trim();
   const describe = (el) => {
@@ -130,7 +96,7 @@ function pageState() {
     const role = el.getAttribute('role');
     return `${el.tagName.toLowerCase()}${role ? `[${role}]` : ''}${name ? ` "${name}"` : ''}`;
   };
-  const step = (px) => Math.round(px / 4) * 4;
+  const roundedGap = (px) => Math.round(px / 4) * 4;
 
   const el = document.activeElement;
   const where = el && el !== document.body ? describe(el) : 'body';
@@ -146,10 +112,10 @@ function pageState() {
       (el !== document.body && el);
     if (!trigger) return name;
     const t = trigger.getBoundingClientRect();
-    if (box.bottom <= t.top) return `${name} above ${step(t.top - box.bottom)}px`;
-    if (box.top >= t.bottom) return `${name} below ${step(box.top - t.bottom)}px`;
-    if (box.right <= t.left) return `${name} left ${step(t.left - box.right)}px`;
-    if (box.left >= t.right) return `${name} right ${step(box.left - t.right)}px`;
+    if (box.bottom <= t.top) return `${name} above ${roundedGap(t.top - box.bottom)}px`;
+    if (box.top >= t.bottom) return `${name} below ${roundedGap(box.top - t.bottom)}px`;
+    if (box.right <= t.left) return `${name} left ${roundedGap(t.left - box.right)}px`;
+    if (box.left >= t.right) return `${name} right ${roundedGap(box.left - t.right)}px`;
     return `${name} over the trigger`;
   });
   return open.length ? `${where} · open: ${open.join(', ')}` : where;
@@ -164,11 +130,6 @@ async function run(page, name, step) {
   return page.keyboard.press(name === 'WebKit' ? step.replace(/(^|\+)Tab$/, '$1Alt+Tab') : step);
 }
 
-/**
- * Signs in on the login page: the first email and password fields, submitted
- * with Enter, done once the page has left the login URL. The session cookie
- * stays with the page for the check.
- */
 async function signIn(page) {
   const separator = login.indexOf(':');
   const email = login.slice(0, separator);
@@ -177,8 +138,7 @@ async function signIn(page) {
   const left = (current) => current.pathname !== target.pathname;
 
   await page.goto(target.href, { waitUntil: 'networkidle', timeout: 30_000 }).catch(() => page.waitForLoadState('load'));
-  // A single-page app can still be setting up its form after the page loaded,
-  // and clear what was typed: a second try covers that
+  // An SPA may still reset its form after load, clearing what was typed
   for (let attempt = 0; attempt < 2 && !left(new URL(page.url())); attempt++) {
     const emailField = page.locator('input[type="email"], input[name="email"]').first();
     const passwordField = page.locator('input[type="password"]').first();
@@ -194,16 +154,8 @@ async function signIn(page) {
   }
 }
 
-/**
- * The signed-in session, as Playwright storage state that all three browsers
- * load: one sign-in per run at most, in Chrome, since a login throttle (five a
- * minute in Laravel Fortify) turns away a sign-in per browser per run. Kept in
- * the temp folder per origin and account, and reused while it is still signed
- * in: the login page sends a signed-in user on (nuxt-auth-sanctum's global
- * middleware treats its `onAuthOnly` path as guest-only). Not the target
- * page: a public page renders for a visitor without
- * sending an ended session to the login page.
- */
+// One sign-in in Chrome shared by all browsers (Fortify throttles five a minute). A saved one is checked
+// on the login page, which sends a signed-in user on; a public target page would not.
 async function session() {
   const target = new URL(loginUrl ?? '/login', url);
   const file = join(out, `session-${createHash('sha256').update(`${target.origin} ${login}`).digest('hex').slice(0, 12)}.json`);
@@ -215,7 +167,6 @@ async function session() {
     let signedIn = false;
     if (saved) {
       await page.goto(target.href, { waitUntil: 'load', timeout: 30_000 });
-      // Once the app has checked the session
       signedIn = await page
         .waitForURL((current) => current.pathname !== target.pathname, { timeout: 5_000 })
         .then(() => true, () => false);
@@ -262,10 +213,8 @@ async function inspect(name, browser) {
     page.on('console', (message) => message.type() === 'error' && errors.push(message.text()));
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(url, { waitUntil: 'commit', timeout: 30_000 });
-    // Only the page's own errors: not those of the page it replaced, such as
-    // the login page's 401 or a load that leaving it aborted
+    // Not the errors of the page it replaced (the login page's 401, an aborted load)
     errors.length = 0;
-    // An app that keeps polling never goes idle; it has loaded by then
     await page.waitForLoadState('networkidle', { timeout: 5_000 }).catch(() => page.waitForLoadState('load'));
 
     const overflow = async (width) => {
@@ -281,8 +230,6 @@ async function inspect(name, browser) {
     if (focus) {
       const target = page.locator(focus).first();
       if (!(await target.count())) throw new Error(`--focus ${focus} matches nothing on the page`);
-      // A hidden, disabled or plain element ignores focus() without an error,
-      // and the steps would start from the top of the page unnoticed
       await target.focus({ timeout: 5_000 });
       if (!(await target.evaluate((el) => el === document.activeElement))) {
         throw new Error(`--focus ${focus} cannot take focus (hidden, disabled or not focusable): name the control itself`);
@@ -293,9 +240,7 @@ async function inspect(name, browser) {
       try {
         await run(page, name, step);
         await page.waitForTimeout(150);
-        // Tab past the end of the page: each browser starts again elsewhere
-        // (Chrome and WebKit at the top, Firefox where it started), so it is
-        // not compared. Another step from there, a click, is.
+        // Where Tab past the page's end lands differs per browser by design, so it is not compared
         const left = /(^|\+)Tab$/.test(step) && ['body', 'left the page'].includes(states.at(-1));
         states.push(left ? 'left the page' : await page.evaluate(pageState));
       } catch (error) {

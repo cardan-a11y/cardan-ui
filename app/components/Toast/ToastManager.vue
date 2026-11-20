@@ -1,34 +1,27 @@
 <script setup lang="ts">
 /**
- * Shows the toasts of `useToast()` at the bottom of the page. A toast fired
- * while a modal dialog is open (Dialog, MobileMenu) shows under its backdrop:
- * the browser makes everything outside the dialog inert, so it cannot be
- * clicked and is not announced, also in the top layer above the dialog. Show
- * a message about what happens in the dialog, such as a form's error, inside
- * the dialog instead, with ErrorMessage.
+ * Shows the toasts of `useToast()`. Not for a message from an open modal
+ * Dialog or MobileMenu: under its backdrop a toast is out of reach and
+ * unannounced, so that message shows in the dialog, with ErrorMessage.
  */
 const { toasts, hideToast } = useToast();
 
 const managerRef = useTemplateRef<HTMLElement>('manager');
 
-/** The element focus came from when it entered the toasts */
 let focusOrigin: HTMLElement | null = null;
 
 function rememberFocusOrigin(event: FocusEvent) {
   const previous = event.relatedTarget;
 
-  if (previous instanceof HTMLElement && !managerRef.value?.contains(previous)) {
+  if (
+    previous instanceof HTMLElement &&
+    !managerRef.value?.contains(previous)
+  ) {
     focusOrigin = previous;
   }
 }
 
-/**
- * Closing a toast with its button takes the focused element away. Focus
- * moves on to the close button of the next toast, or the one before, and
- * after the last back to where it came from.
- */
 function hide(id: string) {
-  // In the order of the list: leaving toasts are not counted
   const current = Array.from(
     managerRef.value?.querySelectorAll<HTMLElement>(
       '.toast:not(.toast-leave-active)',
@@ -47,10 +40,8 @@ function hide(id: string) {
   else if (focusOrigin?.isConnected) focusOrigin.focus();
 }
 
-/**
- * A leaving toast collapses so the others slide into its place. Its height is
- * fixed first, because a height of `auto` cannot be animated.
- */
+// `auto` cannot be animated without `interpolate-size`; can go once every
+// target browser has it
 function lockHeight(element: Element) {
   if (element instanceof HTMLElement) {
     element.style.blockSize = `${element.offsetHeight}px`;
@@ -59,8 +50,6 @@ function lockHeight(element: Element) {
 </script>
 
 <template>
-  <!-- Nuxt renders a teleport to #teleports on the server too. One polite
-       live region for every toast: the manager, so none is announced twice -->
   <Teleport to="#teleports">
     <div
       ref="manager"

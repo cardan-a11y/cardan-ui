@@ -1,13 +1,6 @@
 import { defineNuxtModule, hasNuxtModule, useLogger } from 'nuxt/kit';
 
-/**
- * Names, at startup, the components that need a module the project does not
- * register. The layer leaves `@nuxt/image` and `@nuxt/scripts` to the
- * projects, since most use neither; without this note, a project that forgot
- * one finds out from an unresolved component at runtime.
- *
- * Picked up from `modules/` like global-types, so it runs in every project.
- */
+/** Names, at startup, the components that need a module the project does not register. */
 export default defineNuxtModule({
   meta: { name: '@cardan/ui:optional-modules' },
   setup(_options, nuxt) {

@@ -1,20 +1,10 @@
 <script setup lang="ts">
 /**
- * The frame of an app's header: a bar that stays at the top of the viewport,
- * with the page loading indicator. `start` holds the menu button and the
- * logo, the default slot the navigation, `end` what sits at the far side
- * (the user menu, a theme switch).
- *
- * Its height is `--app-header-height` plus its 1px line, which is where
- * everything sticky below it starts (AppSidebar, SidebarLayout). What the
- * app keeps sticky right under it, a navigation bar or a toolbar, it sets as
- * `--app-header-sticky-below` on `:root` while that sticks: keyboard focus
- * then stops below both, and SidebarLayout's panel starts under both. A bar
- * that sticks by a container query cannot: a rule on `:root` cannot query
- * a container. It gives the content it covers a `scroll-margin-block-start`
- * of its height instead, set in the same container query (through an
- * inherited variable where that content holds a container of its own,
- * which its rules would query instead). The look is the app's: `--app-header-bg`, `--app-header-border-color`,
+ * The app's header bar, sticky, with the page loading indicator. `start` holds
+ * the menu button and logo, the default slot the navigation, `end` the far
+ * side. A bar the app keeps sticky under it sets its height as
+ * `--app-header-sticky-below` on `:root` while it sticks (MIGRATION.md, 2.5).
+ * The look: `--app-header-bg`, `--app-header-border-color`,
  * `--app-header-max-width` and `--app-header-gap`.
  */
 </script>
@@ -41,27 +31,19 @@
 <style>
 .app-header {
   position: relative;
-  /* Never wider than the viewport in an app's grid: its items shrink */
   min-width: 0;
   border-block-end: 1px solid
     var(--app-header-border-color, var(--color-grey-bg));
   background-color: var(--app-header-bg, var(--color-white));
 
-  /* On a small or low screen, or zoomed in, it scrolls along and leaves the
-     room to the page. What sticks below it uses the same condition. */
   @media (min-width: 360px) and (min-height: 480px) {
     position: sticky;
-    /* Above the page's own sticky parts (1) and a navigation bar under the
-       header (2), so a menu that opens from the header covers them */
+    /* Above the page's sticky parts (1) and a bar under the header (2) */
     z-index: 3;
     top: 0;
   }
 }
 
-/* While it sticks, the browser stops a focused element below it and below
-   what sticks under it, with the template's 2rem room above: keyboard focus
-   never hides under the header (WCAG 2.4.11). A project's own header of the
-   same class is left alone. */
 @media (min-width: 360px) and (min-height: 480px) {
   :root:has(.app-header > .app-header-content) {
     scroll-padding-block-start: calc(

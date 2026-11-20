@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Popover } from '#components';
 import { useRouter } from '#imports';
 import { accessibleName, checkA11y, expectFocused, roleOf } from '../a11y';
-import { addToPage, toggle } from '../dom';
+import { addToPage, fakePopover, leave } from '../dom';
 
 /**
  * A disclosure in APG terms (see its docblock): a button that shows a list
@@ -17,37 +17,6 @@ const list = [
   { id: 'edit', label: 'Edit' },
   { id: 'delete', label: 'Delete' },
 ];
-
-/**
- * The Popover API, as far as the component uses it: the open state that
- * `:popover-open` reads, and `hidePopover()`, which fires the toggle event
- */
-function fakePopover(element: HTMLElement) {
-  let open = false;
-  const matches = element.matches.bind(element);
-  element.matches = ((selector: string) =>
-    selector === ':popover-open'
-      ? open
-      : matches(selector)) as typeof element.matches;
-
-  const hidePopover = vi.fn(() => {
-    if (!open) return;
-    open = false;
-    void toggle(element, 'closed');
-  });
-  element.hidePopover = hidePopover;
-
-  return {
-    hidePopover,
-    isOpen: () => open,
-    async show() {
-      open = true;
-      await toggle(element, 'open');
-      // The component focuses the first item in the tick after the event
-      await nextTick();
-    },
-  };
-}
 
 async function mountPopover({
   slots,
@@ -64,7 +33,6 @@ async function mountPopover({
     trigger.attributes('popovertarget')!,
   )!;
 
-  /** The item in the content with this name */
   const item = (name: string) => {
     const found = Array.from(
       content.querySelectorAll<HTMLElement>('a, button'),
@@ -74,13 +42,6 @@ async function mountPopover({
   };
 
   return { wrapper, trigger, content, item, popover: fakePopover(content) };
-}
-
-/** Focus leaving one element for another, as the browser reports it */
-function leave(from: Element, to: Element | null) {
-  from.dispatchEvent(
-    new FocusEvent('focusout', { relatedTarget: to, bubbles: true }),
-  );
 }
 
 afterEach(async () => {

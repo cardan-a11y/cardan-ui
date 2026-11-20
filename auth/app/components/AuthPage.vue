@@ -1,12 +1,8 @@
 <script setup lang="ts">
 /**
- * The frame of the sign-in pages: a panel with the Cardan symbol, a centred
- * title and description, the form, and an optional footer below a rule (the
- * forgot-password or back-to-login link).
- *
- * The panel is a sand-coloured `--color-secondary` surface. Give it a
- * `min-height` from your layout to centre the form in the viewport, e.g.
- * `.auth-page-content { min-height: calc(100svh - 72px - 80px); }`.
+ * The frame of the sign-in pages: the Cardan symbol, title, description, the
+ * form and an optional footer. Give `.auth-page-content` a `min-height` from
+ * your layout to centre it in the viewport.
  */
 const { title = undefined, description = undefined } = defineProps<{
   /** The page's h1. Leave it out when the content brings its own. */
@@ -16,14 +12,8 @@ const { title = undefined, description = undefined } = defineProps<{
 
 const pageRef = useTemplateRef<HTMLDivElement>('page');
 
-/**
- * Reached through a link in the app (back to login, reset here), the page
- * starts focus at its top instead of at the email field or the body. On a
- * fresh load there is no previous entry, so the form's autofocus applies.
- * A form that has put focus in the page already keeps it: the second factor,
- * reached by signing in, starts in its code field. The content mounts first,
- * so its focus is in place when this runs.
- */
+// After an in-app navigation focus starts at the top, not in the form's field,
+// unless the content has moved focus itself (the second factor's code field)
 onMounted(() => {
   if (
     window.history.state?.back &&
@@ -70,6 +60,8 @@ onMounted(() => {
 
 .auth-page-content {
   --color-ghost-hover-bg: var(--color-bg);
+  /* The password requirements on the page colour, set off from this frame's */
+  --password-requirements-bg: var(--color-bg);
   display: grid;
   /* At least 18rem where it fits, the full width below that, at most 28rem */
   grid-template-columns: minmax(min(18rem, 100%), 28rem);
@@ -79,7 +71,6 @@ onMounted(() => {
   background-color: var(--color-secondary);
 
   .auth-page-copy {
-    /* The rule above the footer */
     > hr {
       block-size: 1px;
       border: 0;
@@ -111,7 +102,6 @@ onMounted(() => {
 }
 
 .auth-page-description {
-  /* max-width: 40ch; */
   margin-inline: auto;
   margin-block-end: 2.5rem;
   text-align: center;

@@ -1,10 +1,6 @@
 import { createSharedComposable, useMediaQuery } from '@vueuse/core';
 
-/**
- * The breakpoints and the pointer type as refs, shared by every caller. They
- * are made in a component's scope on first use and disposed when no component
- * uses them, instead of living from module load for the life of the page.
- */
+/** The breakpoints and the pointer type as refs, shared by every caller. */
 export const useScreenSize = createSharedComposable(() => {
   const iPhoneScreen = useMediaQuery(
     'only screen and (min-device-width: 320px) and (max-device-width: 667px)',

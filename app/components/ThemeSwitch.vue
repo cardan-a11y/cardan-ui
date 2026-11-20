@@ -35,9 +35,7 @@ const emit = defineEmits<{
       <span class="visuallyhidden">{{ $t('theme.sr.dark') }}</span>
     </button>
 
-    <!-- The color mode is only known in the browser: on the server an empty
-         box of the switch's size keeps the header from moving. It takes the
-         attributes the switch gets, such as a class that hides it. -->
+    <!-- The color mode is browser-only: a box of its size keeps the header still -->
     <template #fallback>
       <span v-bind="$attrs" class="theme-switch-placeholder" />
     </template>

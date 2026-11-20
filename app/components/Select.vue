@@ -1,7 +1,6 @@
 <script setup lang="ts" generic="T extends SelectOption">
 import type { StyleValue } from 'vue';
 
-// An attribute goes to the control; `class` and `style` stay on the wrapper
 defineOptions({ inheritAttrs: false });
 
 const { t } = useI18n();
@@ -50,10 +49,7 @@ const {
   instruction?: string;
   /** The error text when the browser finds the field invalid; "<label> is missing" by default */
   errorMessage?: string;
-  /**
-   * An error the browser cannot find, such as one from the server: the field
-   * shows this text and is described by it until its value changes
-   */
+  /** An error the browser cannot find, such as the server's: shown until the value changes */
   customError?: string;
   tabindex?: string;
   color?: BaseColor;
@@ -61,14 +57,7 @@ const {
   variant?: InputVariant;
 }>();
 
-const attrs = useAttrs();
-
-/** The attributes for the control, without the wrapper's `class` and `style` */
-function controlAttrs() {
-  return Object.fromEntries(
-    Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'),
-  );
-}
+const { controlAttrs } = useControlAttrs();
 
 const computedErrorMessage = computed(() => {
   if (errorMessage) return errorMessage;
@@ -79,40 +68,22 @@ const computedErrorMessage = computed(() => {
 });
 
 const selectRef = useTemplateRef<HTMLSelectElement>('select');
-const formShowInvalid = inject(formShowInvalidKey, ref(false));
 const isValid = ref(true);
-const customErrorActive = ref(false);
 
 function updateValidity() {
   isValid.value = selectRef.value?.validity.valid ?? true;
 }
 
-/**
- * The custom error shows like the browser's own, and describes the field,
- * but does not keep the form from submitting again: the server judges the
- * next attempt, and the parent moves focus to the field (`focusElement()`)
- */
-function applyCustomError() {
-  customErrorActive.value = !!customError;
-}
+const { customErrorActive, clearCustomError, errorShown } = useCustomError(
+  () => customError,
+  { invalid: () => !isValid.value, showInvalid: () => showInvalid },
+);
 
-onMounted(() => {
-  applyCustomError();
-  updateValidity();
-});
-watch(() => customError, applyCustomError, { flush: 'post' });
+onMounted(updateValidity);
 watch([model, () => required, () => options], updateValidity, {
   flush: 'post',
 });
 
-/** The error text shows after a failed submit, or for a custom error */
-const errorShown = computed(
-  () =>
-    customErrorActive.value ||
-    ((showInvalid || formShowInvalid.value) && !isValid.value),
-);
-
-// The error describes the field only while it shows
 const computedAriaDescribedby = computed(
   () =>
     [
@@ -124,15 +95,12 @@ const computedAriaDescribedby = computed(
       .join(' ') || undefined,
 );
 
-// A new choice clears the custom error, until the parent sets one again
 function handleChange() {
-  customErrorActive.value = false;
+  clearCustomError();
   updateValidity();
   remember();
 }
 
-// A choice an extension made without a change event: the event the select's
-// v-model listens to, which also reads an option's non-string value
 const { remember } = useAutofillSync(selectRef, (control) =>
   control.dispatchEvent(new Event('change')),
 );

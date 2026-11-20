@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
-import { MfaSettings } from '#components';
-import { useMfaDialog } from '#imports';
+import { MfaRecoveryCodesDialog, MfaSettings } from '#components';
+import { useMfa, useMfaDialog } from '#imports';
 import { accessibleName, checkA11y, expectFocused } from '../a11y';
 import {
   RECOVERY_CODES,
@@ -101,7 +101,6 @@ describe('MfaSettings: disabling (Academy)', () => {
     expect(dialog.text()).toContain(disabledText);
     expect(navigate).not.toHaveBeenCalled();
     expect(wrapper.emitted('refresh')).toHaveLength(1);
-    // The page follows the identity read afterwards
     expect(wrapper.text()).toContain(
       'Multi-factor authentication is not enabled.',
     );
@@ -140,13 +139,11 @@ describe('MfaSettings: disabling (Academy)', () => {
     await buttonNamed(dialog, 'Disable MFA').trigger('click');
     await flushPromises();
 
-    // MFA did change: the app re-syncs, the dialog closes, nothing stays busy
     expect(wrapper.emitted('refresh')).toHaveLength(1);
     expect(dialog.attributes('open')).toBeUndefined();
     expect(navigate).toHaveBeenCalledOnce();
     expect(button('Set up MFA again').attributes('aria-busy')).toBeUndefined();
 
-    // Opened again, its confirmation is at rest
     await button('Set up MFA again').trigger('click');
     await flushPromises();
     expect(
@@ -192,7 +189,6 @@ describe('MfaSettings: disabling (Academy)', () => {
   });
 
   it('opens once when an app’s own button asks twice while it checks', async () => {
-    // Not every button an app wires to it ignores clicks while loading
     const status = pending({ confirmed: true });
     const { dialog } = await mountSettings(
       {},
@@ -258,10 +254,30 @@ describe('MfaSettings: replacing the recovery codes (Academy)', () => {
     expectFocused(heading);
     expect(await checkA11y()).toHaveNoViolations();
 
-    // Closed, they are gone
     await buttonNamed(dialog, "I've stored my recovery codes").trigger('click');
     await flushPromises();
     expect(dialog.attributes('open')).toBeUndefined();
+    expect(dialog.findAll('li')).toHaveLength(0);
+  });
+
+  it('forgets the new codes when the page goes while they show', async () => {
+    const wrapper = await mountSuspended(MfaRecoveryCodesDialog);
+    useMfa().recoveryCodes.value = RECOVERY_CODES;
+
+    wrapper.unmount();
+
+    expect(useMfa().recoveryCodes.value).toEqual([]);
+  });
+
+  it('does not show the codes left over from setting MFA up', async () => {
+    const { wrapper, button } = await mountSettings({});
+    const dialog = wrapper.findAll('dialog')[1]!;
+    useMfa().recoveryCodes.value = RECOVERY_CODES;
+
+    await button('Regenerate recovery codes').trigger('click');
+    await flushPromises();
+
+    expect(dialog.attributes('open')).toBeDefined();
     expect(dialog.findAll('li')).toHaveLength(0);
   });
 
@@ -277,7 +293,6 @@ describe('MfaSettings: replacing the recovery codes (Academy)', () => {
     await buttonNamed(dialog, 'Generate new codes').trigger('click');
     await flushPromises();
 
-    // The old codes no longer work: silence would leave the user without any
     expect(dialog.get('[role="alert"]').text()).toBe(
       'Your new recovery codes could not be shown, and your old ones no longer work. Generate new codes again.',
     );

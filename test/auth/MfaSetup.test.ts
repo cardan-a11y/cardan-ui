@@ -41,10 +41,6 @@ async function mountSetup(props: Record<string, unknown> = {}) {
   };
 }
 
-/**
- * The enable flow on a page: each step replaces the content focus was in,
- * so focus moves to the step's heading; the code step to its field.
- */
 describe('MfaSetup', () => {
   useScenario(academy);
 
@@ -69,7 +65,6 @@ describe('MfaSetup', () => {
     await flushPromises();
     expectFocused(wrapper.get('input[name="code"]'));
 
-    // Back to the QR code, and its heading
     await button('Back').trigger('click');
     await flushPromises();
     expectFocused(heading());
@@ -120,7 +115,6 @@ describe('MfaSetup', () => {
 
     expect(requests(enable)).toHaveLength(2);
     expect(heading().text()).toBe('Set up authentication app');
-    // Once the dialog has closed, on the step it was for
     expectFocused(heading());
   });
 

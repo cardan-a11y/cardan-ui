@@ -32,6 +32,31 @@ intent.
    files for contradictions with the rest of the repository and references
    to what does not exist, and say in your answer that the plugin-reviewer's
    checks were not available.
+   In every Cardan repository, also check the comments in the changed code.
+   These checks come on top of REVIEW.md's own (its "Do not report" list
+   still applies), and their nits count towards its nit cap:
+   - 🔴 Important, in a project: a new workaround for a flaw or gap in
+     Cardan UI (or its auth layer). That is a selector on a class the layer
+     renders but does not document as a hook, a `provide` of one of its
+     injection keys, or a copy of its behaviour, with or without a comment.
+     The layer's CLAUDE.md has such flaws fixed in the layer, never worked
+     around in a project. Not a finding when its comment calls it a stopgap,
+     names the layer release that removes it and has a tripwire entry (see
+     below).
+   - 🟡 Nit: a comment that is not one of the three kinds the Cardan
+     guidelines allow (a workaround, a deliberate deviation from a standard,
+     a public docblock), so one a name, a function, a constant or a test
+     could replace; a comment over two lines that is not a public docblock;
+     a docblock that explains how something works inside; commented-out
+     code; a comment in or on the changed code that no longer matches it; a
+     workaround comment that does not name what is wrong or missing and when
+     it can go; a workaround tied to a dependency's version or internals, or
+     to a Cardan UI release, without an entry in the repository's tripwire
+     test (`tripwires.test.ts` in its test folder).
+   A project change that needs a Cardan UI release not yet on `main` (a
+   removed workaround, a new prop or key) is not a finding: merging after
+   that release is the standard order. Name the release it waits for in
+   your summary sentence.
 4. The parts of REVIEW.md about pull requests don't apply here: post
    nothing to GitHub. When the brief says this is a re-review after fixes,
    report Important findings only.

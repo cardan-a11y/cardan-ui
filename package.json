@@ -2,7 +2,7 @@
   "name": "@cardan/ui",
   "type": "module",
   "packageManager": "pnpm@12.18.0",
-  "version": "2.5.2",
+  "version": "2.5.3",
   "main": "./nuxt.config.ts",
   "repository": {
     "type": "git",
@@ -26,7 +26,6 @@
   "devDependencies": {
     "@iconify-json/material-symbols": "^1.2.97",
     "@iconify-json/svg-spinners": "^1.2.4",
-    "@iconify-json/vscode-icons": "^1.2.95",
     "@mdit/plugin-attrs": "^1.4.0",
     "@mdit/plugin-mark": "^2.1.4",
     "@nuxt/eslint": "^1.17.0",

@@ -1,5 +1,3 @@
-// Any token resets, except "wrong", which shows the error the API sends for
-// an unknown address or an invalid token alike, in its JSON:API envelope
 export default defineEventHandler(async (event) => {
   const { token } = await readBody<{ token?: string }>(event);
 

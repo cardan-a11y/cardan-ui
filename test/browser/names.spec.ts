@@ -1,9 +1,3 @@
-/**
- * Accessible names as the browser computes them from the layout, where
- * happy-dom only has the DOM: a required field's label and its "required"
- * chip read as two words, in Chromium's own name and in the label's text
- * that tools read from the DOM.
- */
 import { expect, test } from '@playwright/test';
 import { axNode, gotoHydrated } from './helpers';
 

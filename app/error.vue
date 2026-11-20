@@ -1,30 +1,21 @@
 <script setup lang="ts">
 /**
- * The error page of every app that extends the layer and has no `error.vue`
- * of its own. It replaces `app.vue`, so it renders in the route's layout
- * (`<NuxtLayout>`: the page's `layout`, a route rule's `appLayout`, or
- * `default`), which must hold the app's frame: AppShell, the header and
- * `<main>`, which is the skip link's target here (`id="main"`,
- * `tabindex="-1"`) when the pages put it on their own content. Page
- * middleware has not necessarily run, and a plugin may have failed: it reads
- * nothing but the error. It declares its `error` prop: a layout whose root
- * is `<Html>` would pass an undeclared one on to `<html>`, which breaks the
- * server render.
+ * The error page of every app that extends the layer without an `error.vue` of
+ * its own: ErrorPageContent in the route's layout, which holds the app's frame
+ * (AppShell, the header, `<main>`). It reads nothing but the error. A page's
+ * own text: `createError({ status: 404, data: { text: t('audit.not-found') } })`.
  *
- * Head tags that differ between the error page and the pages belong in
- * `app.head` or a plugin that reads `useError()`, not in a layout's
- * `useHead()`: Nuxt removes an unmounted component's head entries only once
- * a running page transition has finished, and a page that fails while
- * pending behind one leaves it unfinished, so its entries stay.
- *
- * A page says more in the page's language with `data: { text }`:
- * `createError({ status: 404, data: { text: t('audit.not-found') } })`.
+ * Head tags that differ between the error page and the pages go in `app.head`
+ * or a plugin that reads `useError()`, not a layout's `useHead()`: Nuxt 4.6.4
+ * keeps them while a page transition is pending. Tripwire: test/tripwires.test.ts.
  */
 import type { NuxtError } from '#app';
 
+// Declared: a layout with an `<Html>` root would pass it on to `<html>`, which
+// breaks the server render
 const { error } = defineProps<{ error: NuxtError }>();
 
-/** `data.text`; an error of a server route arrives with `data` as JSON text */
+// A server route's error arrives with `data` as JSON text
 const text = computed(() => {
   let data = error.data;
 
@@ -54,7 +45,6 @@ const text = computed(() => {
 </template>
 
 <style>
-/* The page's own spacing, which a project sets as on its pages */
 .error-page {
   padding-block: var(--error-page-padding-block, 2.5rem 4rem);
   padding-inline: var(--error-page-padding-inline, 0px);

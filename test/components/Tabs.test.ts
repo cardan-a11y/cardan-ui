@@ -30,7 +30,6 @@ async function mountTabs(props: Record<string, unknown> = {}) {
     attachTo: document.body,
   });
 
-  /** The tab with this name */
   const tab = (name: string) => {
     const found = wrapper
       .findAll('[role="tab"]')
@@ -39,7 +38,6 @@ async function mountTabs(props: Record<string, unknown> = {}) {
     return found.element as HTMLButtonElement;
   };
 
-  /** The names of the selected tabs */
   const selected = () =>
     wrapper
       .findAll('[role="tab"][aria-selected="true"]')

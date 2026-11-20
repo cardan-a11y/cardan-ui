@@ -117,6 +117,15 @@ describe('extractApiError', () => {
     });
     onLine.mockRestore();
   });
+
+  it('does not say offline where navigator has no onLine, as on the server', () => {
+    const onLine = vi
+      .spyOn(navigator, 'onLine', 'get')
+      .mockReturnValue(undefined as unknown as boolean);
+
+    expect(extractApiError(new TypeError('Failed to fetch'))).toEqual({});
+    onLine.mockRestore();
+  });
 });
 
 describe('apiErrorMessages', () => {

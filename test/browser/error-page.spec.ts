@@ -1,9 +1,3 @@
-/**
- * The layer's error page (app/error.vue, ErrorPageContent) in the
- * playground's production build: the status the server answers with, the
- * title and `<html lang>`, the way on (back to the page before, or home),
- * focus after an error in the browser, and axe in both color modes.
- */
 import { expect, test, type Page } from '@playwright/test';
 import { focusStop, gotoHydrated, runAxe } from './helpers';
 
@@ -11,7 +5,6 @@ const wayOn = (page: Page) => page.locator('.error-page-content a');
 const skipLink = (page: Page) =>
   page.getByRole('link', { name: 'Skip to main content' });
 
-/** The shell has focus, so the next Tab is the skip link */
 async function expectFocusAtTop(page: Page) {
   await expect
     .poll(() => page.evaluate(() => document.activeElement?.className))
@@ -35,11 +28,11 @@ test('a missing address answers 404, in the layout, with a link home on a direct
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page.getByRole('banner')).toBeVisible();
   await expect(main).toContainText('Error code 404');
-  // The error's own English text and stack are for development only
+  // statusText and the stack show in development only
   await expect(main.locator('pre')).toHaveCount(0);
   await expect(main).not.toContainText('Page not found: /');
 
-  // The first page of the visit: focus stays where the browser starts
+  // The first page of the visit: focus stays where the browser puts it
   expect((await focusStop(page)).onBody).toBe(true);
   await expect(wayOn(page)).toHaveText('Go to the homepage');
   await expect(wayOn(page)).toHaveAttribute('href', '/');
@@ -53,7 +46,8 @@ test('a missing address answers 404, in the layout, with a link home on a direct
 test('the skip link and then the link home, on a page that errors after an await, end on the homepage', async ({
   page,
 }) => {
-  // A fresh context each time: the page's data is not in the browser yet
+  // The page's data is a 200ms timer
+  await page.clock.install();
   await gotoHydrated(page, '/error-page/demo?status=404');
   const heading = page.getByRole('heading', { level: 1 });
   await expect(heading).toHaveText('Page not found');
@@ -63,17 +57,16 @@ test('the skip link and then the link home, on a page that errors after an await
   await page.keyboard.press('Enter');
   await expect(page.getByRole('main')).toBeFocused();
 
-  // At once, while the failed page would still be loading its data, had the
-  // skip link rendered it again
+  // Before the failed page's data could arrive, had the skip link reloaded it
   await page.keyboard.press('Tab');
   await expect(wayOn(page)).toBeFocused();
   await page.keyboard.press('Enter');
 
   await expect(page).toHaveURL(/\/$/);
   await expect(heading).toHaveText('Cardan UI');
-  // Not overtaken by the failed page's own error once its data arrives
-  await page.waitForTimeout(500);
+  await page.clock.runFor(1000);
   await expect(heading).toHaveText('Cardan UI');
+  await expect(page).toHaveURL(/\/$/);
 });
 
 test('after an error in the browser, focus and the announcement are those of a new page, and back returns to the page before', async ({
@@ -114,8 +107,7 @@ for (const fatal of [false, true]) {
     await expect(page).toHaveURL(/\/error-page$/);
 
     if (fatal) {
-      // As a link to it would (the playground has none); the router rejects
-      // the navigation with the error
+      // The playground has no link to it
       await page.evaluate(() =>
         (
           document.querySelector('#__nuxt') as unknown as {
@@ -194,8 +186,7 @@ test('an error on the page the user is on takes focus to the top', async ({
   await expect(page).toHaveTitle('Something went wrong | Cardan UI');
   await expectFocusAtTop(page);
 
-  // No page before this one: home, a fresh page load, where the next Tab is
-  // the skip link too
+  // No page before: home, as a full load
   await wayOn(page).focus();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/$/);
@@ -247,8 +238,6 @@ for (const colorScheme of ['light', 'dark'] as const) {
       new RegExp(`${colorScheme}-mode`),
     );
 
-    expect(
-      await runAxe(page, { exclude: ['.va-popup-btn', '.va-popup'] }),
-    ).toEqual([]);
+    expect(await runAxe(page)).toEqual([]);
   });
 }

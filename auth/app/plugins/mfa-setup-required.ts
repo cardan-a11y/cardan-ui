@@ -1,27 +1,14 @@
-/**
- * Codes an API answers (403) to a session that still has to set up MFA: a
- * front end account (`mfa_setup_required`) or a back office one
- * (`backoffice_mfa_required`). Both enrol on `/mfa-setup`.
- *
- * Signing in already lands such a user there; this catches the requirement
- * starting mid-session (an organization switching it on, a role being added,
- * MFA switched off to move to a new app). Re-read the user so `mfa_required`
- * is current, then go to the setup page.
- */
+// Sends a session the API refuses (403) until MFA is set up to `/mfa-setup`
 const MFA_SETUP_CODES = ['mfa_setup_required', 'backoffice_mfa_required'];
 
 export default defineNuxtPlugin((nuxtApp) => {
-  // The refresh below goes through the same client, so an identity endpoint
-  // that answers one of these codes would re-enter this hook.
   let redirecting = false;
 
-  nuxtApp.hook('sanctum:error:response', async ({ response }) => {
+  nuxtApp.hook('sanctum:error:response', ({ response }) => {
     if (redirecting || response?.status !== 403) return;
 
-    // A JSON:API envelope (`errors[0].code`) or a plain body (`code`).
     const data = response._data as
-      | { code?: string; errors?: { code?: string }[] }
-      | undefined;
+      { code?: string; errors?: { code?: string }[] } | undefined;
 
     const code = data?.code ?? data?.errors?.[0]?.code;
     if (!code || !MFA_SETUP_CODES.includes(code)) return;
@@ -31,21 +18,25 @@ export default defineNuxtPlugin((nuxtApp) => {
 
     redirecting = true;
 
-    try {
-      await nuxtApp.runWithContext(async () => {
+    // Not awaited: the client rejects the request only once this hook returns
+    void nuxtApp
+      .runWithContext(async () => {
         try {
           await useAuth().refreshIdentity();
         } catch {
-          // A failed refresh must not keep the user from the setup page.
+          // Still to the setup page
         }
 
         await navigateTo({
           path: '/mfa-setup',
           query: { redirect: route.fullPath },
         });
+      })
+      .catch(() => {
+        // A guard cancelled the navigation
+      })
+      .finally(() => {
+        redirecting = false;
       });
-    } finally {
-      redirecting = false;
-    }
   });
 });

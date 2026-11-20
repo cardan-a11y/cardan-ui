@@ -28,11 +28,6 @@ mockNuxtImport(
 
 const logout = `POST ${academy.sanctum.endpoints.logout}` as const;
 
-/**
- * Signing out through nuxt-auth-sanctum's own `logout()`, from the dialog
- * the layout mounts and from the setup page that cannot be skipped. The
- * composable's own rules are in useLogoutDialog.test.ts.
- */
 describe('LogoutDialog (Academy)', () => {
   useScenario(academy);
 
@@ -86,7 +81,6 @@ describe('LogoutDialog (Academy)', () => {
     expect(signOut().attributes('aria-busy')).toBeUndefined();
     expect(useAuth().isAuthenticated.value).toBe(true);
 
-    // Closed and opened again, it asks afresh
     await buttonNamed(dialog, 'Cancel').trigger('click');
     await flushPromises();
     useLogoutDialog().logoutDialogRef.value?.openDialog();
@@ -132,7 +126,6 @@ describe('/mfa-setup page (Academy)', () => {
     await buttonNamed(wrapper, 'Skip for now').trigger('click');
     await flushPromises();
 
-    // On to where the sign-in was headed: the Academy's onLogin
     expect(navigate).toHaveBeenCalledExactlyOnceWith('/dashboard');
   });
 });

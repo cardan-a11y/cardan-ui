@@ -6,8 +6,7 @@ const searchDialogRef = useTemplateRef<DialogComponent>('searchDialog');
 const position = ref<DialogPosition>('center');
 const date = ref();
 
-// On a site the dialog opens by itself until a choice is stored; here it is
-// mounted on the first press of its button only, so a visit does not open it
+// Mounted on the first press only: mounted, it opens until a choice is stored
 const { openCookiesDialog } = useCookiesDialog();
 const cookiesDialogMounted = ref(false);
 

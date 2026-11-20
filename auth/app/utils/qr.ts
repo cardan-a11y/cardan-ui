@@ -16,12 +16,8 @@ const QR_ATTRIBUTES = [
 ];
 
 /**
- * Keeps only the elements and attributes a QR code consists of, so the SVG
- * the API answers can be inlined with `v-html`: a script, a handler
- * attribute, a link or a style in it is dropped, whatever the API was made
- * to return. The `rect` and `path` stay, so the recolouring in `MfaQr`
- * keeps working. Empty when it is no SVG at all, or without a DOM to parse it
- * in (the code is read on the client, after mount).
+ * Keeps only the elements and attributes of a QR code, so the API's SVG can be
+ * inlined with `v-html`. Empty for anything but an SVG, or without a DOM.
  */
 export function sanitizeQrSvg(svg: string): string {
   if (typeof DOMParser === 'undefined') return '';
@@ -43,7 +39,6 @@ export function sanitizeQrSvg(svg: string): string {
         child.nodeType !== Node.ELEMENT_NODE ||
         !QR_ELEMENTS.includes((child as Element).localName)
       ) {
-        // A comment, text or an element that is not part of a code
         child.remove();
       } else {
         clean(child as Element);

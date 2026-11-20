@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { useAuth, useRouter, useRuntimeConfig } from '#imports';
-import { client, navigate, useScenario } from './fortify';
+import { client, navigate, signIn, useScenario } from './fortify';
 import { academy } from './scenarios';
 
 mockNuxtImport('useSanctumClient', () => () => client);
@@ -19,11 +19,8 @@ async function targetFor(redirect: string | string[]) {
 }
 
 /**
- * `loginRedirectTarget()` decides where a sign-in lands: a security contract.
- * A `?redirect=` only counts when the browser would read it as a path of
- * this app; anything else (another site, however disguised) falls back to
- * `redirect.onLogin`. Under the Academy's redirect config, whose `onLogin`
- * is `/dashboard`.
+ * A security contract: a `?redirect=` counts only as a path of this app.
+ * Under the Academy's config, whose `onLogin` is `/dashboard`.
  */
 describe('useAuth: loginRedirectTarget', () => {
   useScenario(academy);
@@ -72,5 +69,23 @@ describe('useAuth: loginRedirectTarget', () => {
       query: { redirect: '/courses/1' },
     });
     expect(useAuth().loginRedirectTarget(to)).toBe('/courses/1');
+  });
+});
+
+/** The avatar's initials, from the payload's `name` */
+describe('useAuth: userInitials', () => {
+  it.each([
+    ['Jan van Dam', 'JD'],
+    ['Maria de la Cruz', 'MC'],
+    ['Ada', 'A'],
+    ['  Ada   Lovelace ', 'AL'],
+  ])('reads %j as %j', (name, initials) => {
+    signIn({ name });
+    expect(useAuth().userInitials.value).toBe(initials);
+  });
+
+  it('has none without a name', () => {
+    signIn({ name: '  ' });
+    expect(useAuth().userInitials.value).toBeUndefined();
   });
 });

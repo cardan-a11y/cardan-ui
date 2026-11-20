@@ -12,7 +12,6 @@ const Page = defineComponent({
   },
 });
 
-/** Mounts the page at an address and returns its focusHash */
 async function atAddress(address: string) {
   const wrapper = await mountSuspended(Page, {
     route: address,

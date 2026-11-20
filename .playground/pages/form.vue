@@ -4,6 +4,7 @@ useHead({ title: 'Form inputs' });
 const inputVariant = ref<InputVariant>('default');
 const singleSelection = ref('');
 const multiSelection = ref<string | string[]>();
+const filterSelection = ref<string[]>([]);
 const rangeValue = ref(0);
 const quantity = ref<number | undefined>(1);
 const min = ref(0);
@@ -22,13 +23,11 @@ const required = ref(false);
 const checked = ref(false);
 const avatar = ref<File>();
 
-/** As a 422 from the API after a submit: the field shows it until its value changes */
 const serverError = ref<string>();
 
 const multiselectMode = ref<'single' | 'multiple' | 'tags'>('multiple');
 const inputSize = ref<InputSize>('md');
 
-// Checkboxes and radios have no minimal variant
 const choiceVariant = computed(() =>
   inputVariant.value === 'minimal' ? 'default' : inputVariant.value,
 );
@@ -149,7 +148,6 @@ async function handleSubmit(formData: FormData) {
   console.log(formData);
   raw.value = Object.fromEntries(formData);
 
-  // The API's answer: a name that is taken, as long as the field says "Ada".
   // Cleared first, so the same answer shows again after the user typed
   serverError.value = undefined;
   await nextTick();
@@ -444,6 +442,30 @@ async function handleSubmit(formData: FormData) {
               :disabled="disabled"
               class="demo-multiselect"
             />
+
+            <p>
+              The list of options is fixed to the field and, in browsers with
+              the Popover API, shown in the top layer. A container that scrolls
+              or hides its overflow, such as a Popover or a Dialog, therefore
+              does not cut it off, and the list follows the field when the page
+              or the container scrolls. The MultiSelect in the popover below
+              shows this, as in a filter panel.
+            </p>
+
+            <Popover label="Filters" :max-width="320">
+              <div class="popover-settings-content">
+                <MultiSelect
+                  v-model="filterSelection"
+                  name="filter-multiselect"
+                  value-key="id"
+                  label-key="name"
+                  label="MultiSelect in a popover"
+                  placeholder="Filter by option"
+                  :options="multiSelectOptions"
+                  :size="inputSize"
+                />
+              </div>
+            </Popover>
           </section>
 
           <section>
@@ -492,7 +514,6 @@ async function handleSubmit(formData: FormData) {
       <template v-if="raw">
         <hr class="demo-divider" />
         <pre><code>{{ raw }}</code></pre>
-        <!-- <MarkdownPreview :content="'```ts\n' + raw + '\n```'" /> -->
       </template>
     </Card>
 
@@ -519,7 +540,6 @@ async function handleSubmit(formData: FormData) {
       <DemoDocumentUpload :disabled="disabled" />
     </Card>
 
-    <!-- What the two APIs answer, as extractApiError() reads it -->
     <Card class="demo-error-messages">
       <h2>ErrorMessage</h2>
 
@@ -561,7 +581,6 @@ async function handleSubmit(formData: FormData) {
     flex-basis: auto;
   }
 
-  /* ErrorMessage takes no margin: the page places it */
   .demo-error-messages [role='alert'] + h3 {
     margin-block-start: 1.5rem;
   }

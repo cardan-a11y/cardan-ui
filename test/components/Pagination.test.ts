@@ -19,7 +19,6 @@ async function mountPagination(
     attachTo: document.body,
   });
 
-  /** The button with this name */
   const button = (name: string) => {
     const found = wrapper
       .findAll('button')
@@ -28,7 +27,6 @@ async function mountPagination(
     return found.element as HTMLButtonElement;
   };
 
-  /** The element with the page count */
   const pageCount = () => {
     const found = wrapper
       .findAll('nav *')
@@ -71,7 +69,6 @@ describe('Pagination', () => {
     expect(button('Next page').disabled).toBe(false);
     expect(button('Last page').disabled).toBe(false);
 
-    // The page size is a named field
     expect(accessibleName(wrapper.get('select'))).toBe('items per page');
 
     expect(await checkA11y()).toHaveNoViolations();

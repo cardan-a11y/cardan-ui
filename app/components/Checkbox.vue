@@ -24,10 +24,7 @@ const {
   showInvalid?: boolean;
   /** Under the box when it is required and not ticked; "Tick this box to continue" by default */
   errorMessage?: string;
-  /**
-   * An error the browser cannot find, such as one from the server: the box
-   * shows this text and is described by it until it is ticked or unticked
-   */
+  /** An error the browser cannot find, such as the server's: shown until the box changes */
   customError?: string;
   tabindex?: string;
   id?: string;
@@ -46,26 +43,12 @@ const isTicked = computed(() =>
     : !!model.value,
 );
 
-const formShowInvalid = inject(formShowInvalidKey, ref(false));
-const customErrorActive = ref(false);
-
-/**
- * The custom error shows like the browser's own, and describes the box, but
- * does not keep the form from submitting again: the server judges the next
- * attempt
- */
-function applyCustomError() {
-  customErrorActive.value = !!customError;
-}
-
-onMounted(applyCustomError);
-watch(() => customError, applyCustomError, { flush: 'post' });
-
-/** The error text shows after a failed submit, or for a custom error */
-const errorShown = computed(
-  () =>
-    customErrorActive.value ||
-    (required && !isTicked.value && (showInvalid || formShowInvalid.value)),
+const { customErrorActive, clearCustomError, errorShown } = useCustomError(
+  () => customError,
+  {
+    invalid: () => required && !isTicked.value,
+    showInvalid: () => showInvalid,
+  },
 );
 </script>
 
@@ -90,7 +73,7 @@ const errorShown = computed(
       :aria-describedby="errorShown ? `error-${id}` : undefined"
       :aria-invalid="errorShown || undefined"
       type="checkbox"
-      @change="customErrorActive = false"
+      @change="clearCustomError"
     />
 
     <label
@@ -140,8 +123,6 @@ const errorShown = computed(
   }
 
   label {
-    /* Wraps its text beside the box instead of dropping under it: the row
-       wraps for the error text */
     flex: 1 1 0;
     min-width: 0;
     max-width: max-content;
@@ -239,8 +220,6 @@ const errorShown = computed(
   flex-basis: 100%;
 }
 
-/* A required box that is not ticked, once the form reports its state, or a
-   custom error */
 :where(.checkbox-wrapper.show-invalid:has(:invalid)),
 :where(.checkbox-wrapper.custom-error),
 :where(.show-invalid) .checkbox-wrapper:has(:invalid) {

@@ -43,7 +43,6 @@ async function mountDialog() {
   });
   const dialog = wrapper.get('dialog').element as HTMLDialogElement;
 
-  /** The button in the dialog with this name */
   const button = (name: string) => {
     const found = Array.from(dialog.querySelectorAll('button')).find(
       (button) => accessibleName(button) === name,
@@ -93,6 +92,17 @@ describe('CookiesDialog', () => {
       marketing: granted,
     });
 
+    const { dialog } = await mountDialog();
+
+    expect(dialog.open).toBe(false);
+  });
+
+  it('leaves the next dialog closed after one that unmounted while open, as on the way to another layout', async () => {
+    const first = await mountDialog();
+    expect(first.dialog.open).toBe(true);
+    first.wrapper.unmount();
+
+    setConsentCookie({ necessary: true, analytics: true, marketing: true });
     const { dialog } = await mountDialog();
 
     expect(dialog.open).toBe(false);

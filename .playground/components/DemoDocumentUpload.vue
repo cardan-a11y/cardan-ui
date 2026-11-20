@@ -1,9 +1,5 @@
 <script setup lang="ts">
-/**
- * FileInput in document mode, as Cardan Academy uses it for an exam
- * assignment: a chosen file goes to the list (the upload), and the zone
- * gives way to the file, with Replace and Delete.
- */
+/** FileInput in document mode, as Cardan Academy uses it for an exam assignment */
 defineProps<{ disabled?: boolean }>();
 
 type Upload = { id: number; file: File };

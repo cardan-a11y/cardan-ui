@@ -17,15 +17,7 @@ export function defaultLanguage(i18n: I18nOptions | undefined) {
   return (typeof locale === 'object' && locale.language) || code;
 }
 
-/**
- * Gives the HTML that no plugin renders a `lang`: the shell of an `ssr: false`
- * route, which only the browser fills, takes `app.head` and nothing else. It
- * is the language of the project's `i18n.defaultLocale`, unless the project
- * sets `app.head.htmlAttrs.lang` itself. Once the app runs, the html-lang
- * plugin follows the locale.
- *
- * Picked up from `modules/` like global-types, so it runs in every project.
- */
+/** Gives the shell of an `ssr: false` route, which no plugin renders, the default locale's `lang`. */
 export default defineNuxtModule({
   meta: { name: '@cardan/ui:html-lang' },
   setup(_options, nuxt) {

@@ -14,7 +14,6 @@ async function mountSpinButton(props: Record<string, unknown> = {}) {
     attachTo: document.body,
   });
 
-  /** The button with this name */
   const button = (name: string) => {
     const found = wrapper
       .findAll('button')
@@ -36,6 +35,15 @@ function model(wrapper: {
   emitted: (name: string) => unknown[][] | undefined;
 }) {
   return wrapper.emitted('update:modelValue')?.at(-1)?.[0];
+}
+
+/** Types into the field without making the number final, as before a blur */
+async function type(
+  input: { element: Element; trigger: (event: string) => Promise<void> },
+  text: string,
+) {
+  (input.element as HTMLInputElement).value = text;
+  await input.trigger('input');
 }
 
 afterEach(() => {
@@ -127,38 +135,41 @@ describe('SpinButton: roles, states and properties', () => {
     expect(input.element.value).toBe('8');
   });
 
-  it('is invalid for a number outside the range, with aria-invalid and the error once errors show', async () => {
+  it('shows the error of a typed number outside the range at once, with aria-invalid, until it is in range', async () => {
     const { wrapper, input } = await mountSpinButton();
+    const error = () =>
+      document.getElementById(input.attributes('aria-describedby') ?? '')
+        ?.textContent;
 
-    await input.setValue('12');
+    await type(input, '12');
 
     // The number reaches the model and the field holds its form back
     expect(model(wrapper)).toBe(12);
     expect(input.element.validity.valid).toBe(false);
-    // Not shown yet: a field is described by its error only while it shows
+    expect(input.attributes('aria-invalid')).toBe('true');
+    expect(error()).toContain('Enter 8 or less');
+    expect(await checkA11y()).toHaveNoViolations();
+
+    await type(input, '0');
+    expect(input.element.validity.valid).toBe(false);
+    expect(error()).toContain('Enter 1 or more');
+
+    await type(input, '4');
+    expect(input.element.validity.valid).toBe(true);
+    expect(input.attributes('aria-invalid')).toBeUndefined();
+    expect(input.attributes('aria-describedby')).toBeUndefined();
+  });
+
+  it('shows the range error of a number the parent sets only once errors show', async () => {
+    const { wrapper, input } = await mountSpinButton({ modelValue: 12 });
+
+    expect(input.element.validity.valid).toBe(false);
+    // Not typed: described by its error only once the form shows its errors
     expect(input.attributes('aria-invalid')).toBeUndefined();
     expect(input.attributes('aria-describedby')).toBeUndefined();
 
     await wrapper.setProps({ showInvalid: true });
-
     expect(input.attributes('aria-invalid')).toBe('true');
-    expect(
-      document.getElementById(input.attributes('aria-describedby') ?? '')
-        ?.textContent,
-    ).toContain('Enter 8 or less');
-    expect(await checkA11y()).toHaveNoViolations();
-
-    await input.setValue('0');
-    expect(input.element.validity.valid).toBe(false);
-    expect(
-      document.getElementById(input.attributes('aria-describedby') ?? '')
-        ?.textContent,
-    ).toContain('Enter 1 or more');
-
-    await input.setValue('4');
-    expect(input.element.validity.valid).toBe(true);
-    expect(input.attributes('aria-invalid')).toBeUndefined();
-    expect(input.attributes('aria-describedby')).toBeUndefined();
   });
 
   it('is invalid without a number when required, and described by its instruction', async () => {
@@ -271,7 +282,7 @@ describe('SpinButton: keyboard support', () => {
     expect(input.element.validity.valid).toBe(true);
   });
 
-  it('takes a typed number, and ignores a character that is not a digit', async () => {
+  it('takes a typed number, and ignores a character that is not a digit, with the caret where it was', async () => {
     const { wrapper, input } = await mountSpinButton();
 
     // As typing does: an input event alone (setValue also sends a change)
@@ -286,6 +297,13 @@ describe('SpinButton: keyboard support', () => {
     await type('6a.-');
     expect(input.element.value).toBe('6');
     expect(model(wrapper)).toBe(6);
+
+    // The caret stays where it was, after the digits before it
+    input.element.value = '1a6';
+    input.element.setSelectionRange(2, 2);
+    await input.trigger('input');
+    expect(input.element.value).toBe('16');
+    expect(input.element.selectionStart).toBe(1);
 
     // Final on blur or Enter: leading zeros go, and the parent hears of it
     await type('007');

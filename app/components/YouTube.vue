@@ -6,7 +6,6 @@ const { url } = defineProps<{
   aboveTheFold?: boolean;
 }>();
 
-/** The id in any YouTube URL the player can play (watch, short, live, embed, youtu.be). */
 const youtubeKey = computed(() => {
   const video = parseVideoUrl(url);
 
@@ -15,7 +14,6 @@ const youtubeKey = computed(() => {
 </script>
 
 <template>
-  <!-- The placeholder image is decorative: its button carries the name -->
   <ScriptYouTubePlayer
     v-if="youtubeKey"
     :video-id="youtubeKey"

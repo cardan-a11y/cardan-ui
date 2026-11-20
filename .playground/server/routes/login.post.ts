@@ -1,5 +1,3 @@
-// Any password asks for the second factor, so the login form continues to the
-// sign-in challenge; the password "wrong" shows the validation error instead
 export default defineEventHandler(async (event) => {
   const { password } = await readBody<{ password?: string }>(event);
 

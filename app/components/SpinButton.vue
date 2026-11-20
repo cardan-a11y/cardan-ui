@@ -2,25 +2,16 @@
 import type { StyleValue } from 'vue';
 
 /**
- * A number field with a button on each side to count down and up: the
- * alternative to `<Input type="number">` for a whole number of zero or more,
- * such as a quantity. It is the APG spinbutton
- * (https://www.w3.org/WAI/ARIA/apg/patterns/spinbutton/): a text field with
- * the `spinbutton` role, in which Arrow Up and Arrow Down count and a number
- * can be typed. The buttons are for a pointer, touch and voice control: they
- * stay out of the tab order, since the arrow keys do the same, and a live
- * region reads the new number when one is pressed, as focus is not in the
- * field then.
- *
- * Home and End stay with the text field, where they move the caret, unlike in
- * the pattern: a key that is pressed to edit the number would set a quantity
- * to its maximum.
- *
- * A typed number outside `min` and `max` reaches the model, as in Input: the
- * field is invalid until the number is in range, which its Form reports.
+ * The APG spinbutton for a whole number of zero or more, such as a quantity:
+ * the alternative to `<Input type="number">`. Where it leaves the pattern:
+ * - Home and End move the caret, not to `min` and `max`: a key pressed to
+ *   edit the number would set a quantity to its maximum.
+ * - The buttons, for pointer, touch and voice, are out of the tab order (the
+ *   arrow keys do the same) and announce the new number in a live region.
+ * - A typed number outside `min` and `max` reaches the model, and its error
+ *   shows at once, without a submit, until the number is in range.
  */
 
-// An attribute goes to the control; `class` and `style` stay on the wrapper
 defineOptions({ inheritAttrs: false });
 
 const { t } = useI18n();
@@ -51,10 +42,7 @@ const {
   instruction?: string;
   /** Shows the error now; a Form shows it after a failed submit */
   showInvalid?: boolean;
-  /**
-   * An error the browser cannot find, such as one from the server: the field
-   * shows this text and is described by it until its value changes
-   */
+  /** An error the browser cannot find, such as the server's: shown until the value changes */
   customError?: string;
   size?: InputSize;
 }>();
@@ -64,28 +52,18 @@ const emit = defineEmits<{
   change: [value: number | undefined];
 }>();
 
-const attrs = useAttrs();
-
-/** The attributes for the control, without the wrapper's `class` and `style` */
-function controlAttrs() {
-  return Object.fromEntries(
-    Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'),
-  );
-}
+const { attrs, controlAttrs } = useControlAttrs();
 
 function toText(value: number | undefined) {
   return value === undefined ? '' : String(value);
 }
 
-/** What the field shows: the model, or the digits being typed */
 const text = ref(toText(model.value));
 
-/** The number in the field; none while it is empty */
 const value = computed(() =>
   text.value === '' ? undefined : Number(text.value),
 );
 
-// A number the parent sets; not the one just typed, which may read "007"
 watch(model, (newValue) => {
   if (newValue !== value.value) text.value = toText(newValue);
 });
@@ -103,43 +81,30 @@ const invalid = computed(
   () => !!rangeError.value || (required && value.value === undefined),
 );
 
-/** In the document for the error styles to reveal: the range, or no number */
 const errorText = computed(
   () => rangeError.value ?? t('form.missing-value', { item: label }),
 );
 
 const inputRef = useTemplateRef<HTMLInputElement>('input');
 
-// A browser checks no range on a text field: this makes the field `:invalid`
-// for the Form and the error styles, as `min` and `max` do on a number field
 watchPostEffect(() => {
   inputRef.value?.setCustomValidity(rangeError.value ?? '');
 });
 
-const formShowInvalid = inject(formShowInvalidKey, ref(false));
-const customErrorActive = ref(false);
+const rangeErrorShown = ref(false);
 
-/**
- * The custom error shows like the field's own, and describes the field, but
- * does not keep the form from submitting again: the server judges the next
- * attempt, and the parent moves focus to the field (`focusElement()`)
- */
-function applyCustomError() {
-  customErrorActive.value = !!customError;
-}
+watch(rangeError, (error) => {
+  if (!error) rangeErrorShown.value = false;
+});
 
-onMounted(applyCustomError);
-watch(() => customError, applyCustomError, { flush: 'post' });
-
-/** The error text shows after a failed submit, with `show-invalid`, or for a custom error */
-const errorShown = computed(
-  () =>
-    customErrorActive.value ||
-    ((showInvalid || formShowInvalid.value) && invalid.value),
+const { customErrorActive, clearCustomError, errorShown } = useCustomError(
+  () => customError,
+  {
+    invalid: () => invalid.value,
+    showInvalid: () => showInvalid || rangeErrorShown.value,
+  },
 );
 
-// The error describes the field only while it shows; a project's own
-// `aria-describedby` comes first
 const ariaDescribedby = computed(
   () =>
     [
@@ -151,8 +116,7 @@ const ariaDescribedby = computed(
       .join(' ') || undefined,
 );
 
-/** Room for the longest number, three digits without a `max` */
-const digits = computed(() => Math.max(2, String(max ?? 999).length));
+const widthInDigits = computed(() => Math.max(2, String(max ?? 999).length));
 
 const chipSize = computed(() => (size === 'lg' ? 'sm' : 'xs'));
 
@@ -161,7 +125,6 @@ function handleInput(event: Event) {
   const typed = target.value;
   const number = typed.replace(/\D/g, '');
 
-  // A character that is not a digit is ignored, with the caret where it was
   if (number !== typed) {
     const caret = Math.max(
       0,
@@ -173,11 +136,10 @@ function handleInput(event: Event) {
 
   text.value = number;
   model.value = value.value;
-  // A new value clears the custom error, until the parent sets one again
-  customErrorActive.value = false;
+  if (rangeError.value) rangeErrorShown.value = true;
+  clearCustomError();
 }
 
-/** A typed number is final on blur or Enter: "007" reads "7" from then on */
 function handleChange() {
   text.value = toText(value.value);
   emit('change', value.value);
@@ -188,11 +150,10 @@ function setValue(newValue: number) {
 
   text.value = toText(newValue);
   model.value = newValue;
-  customErrorActive.value = false;
+  clearCustomError();
   emit('change', newValue);
 }
 
-/** Counts from the number in the field, back into the range; from nothing it starts at `min` */
 function step(delta: number) {
   setValue(
     value.value === undefined
@@ -202,7 +163,6 @@ function step(delta: number) {
 }
 
 function handleKeydown(event: KeyboardEvent) {
-  // An arrow with a modifier edits the text: Cmd+Arrow Up moves the caret
   if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
 
   if (event.key === 'ArrowUp') step(1);
@@ -217,20 +177,16 @@ const atMax = computed(
   () => max !== undefined && value.value !== undefined && value.value >= max,
 );
 
-/** For the live region: the number after a button was pressed */
 const announcement = ref('');
+
+const MAX_EXACT_DIGITS = String(Number.MAX_SAFE_INTEGER).length - 1;
 let announcementTimer: ReturnType<typeof setTimeout> | undefined;
 
-/**
- * A button at the end of the range stays focusable (`aria-disabled`), so
- * focus does not fall to the page at the last count, and ignores its clicks
- */
 function handleButton(delta: number) {
   if (delta < 0 ? atMin.value : atMax.value) return;
 
   step(delta);
 
-  // Emptied again, so the number is not found there later as stale text
   announcement.value = text.value;
   clearTimeout(announcementTimer);
   announcementTimer = setTimeout(() => (announcement.value = ''), 2000);
@@ -252,7 +208,10 @@ defineExpose({
   <FormField
     :id="id"
     :class="['spin-button', `input-size--${size}`, $attrs.class]"
-    :style="[`--spin-button-digits: ${digits}`, $attrs.style as StyleValue]"
+    :style="[
+      `--spin-button-digits: ${widthInDigits}`,
+      $attrs.style as StyleValue,
+    ]"
     :label="label"
     :hide-label="hideLabel"
     :required="required"
@@ -260,7 +219,7 @@ defineExpose({
     :chip-size="chipSize"
     :instruction="instruction"
     :error-text="customErrorActive ? customError : errorText"
-    :show-invalid="showInvalid"
+    :show-invalid="showInvalid || rangeErrorShown"
     :custom-error="customErrorActive"
   >
     <div class="spin-button-control">
@@ -277,7 +236,6 @@ defineExpose({
         <Icon name="material-symbols:remove-rounded" />
       </button>
 
-      <!-- At most 15 digits: a longer number is not exact any more -->
       <input
         :id="id"
         ref="input"
@@ -289,7 +247,7 @@ defineExpose({
         role="spinbutton"
         inputmode="numeric"
         autocomplete="off"
-        maxlength="15"
+        :maxlength="MAX_EXACT_DIGITS"
         :required="required"
         :disabled="disabled"
         :aria-valuenow="value"
@@ -333,7 +291,6 @@ defineExpose({
     text-align: center;
     font-variant-numeric: tabular-nums;
 
-    /* Its focus ring lies over the buttons next to it */
     &:focus {
       position: relative;
       z-index: 1;
@@ -385,7 +342,6 @@ defineExpose({
     }
   }
 
-  /* As wide as the field is high */
   &.input-size--sm .spin-button-step {
     inline-size: 2rem;
   }

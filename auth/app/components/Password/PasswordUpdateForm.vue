@@ -61,7 +61,6 @@ async function updatePassword() {
       required
     />
 
-    <!-- One form row: the requirements belong to the field above them -->
     <div class="password-new-field">
       <Input
         v-model="password"
@@ -93,7 +92,6 @@ async function updatePassword() {
         required
       />
 
-      <!-- Reveals all three password fields -->
       <PasswordReveal v-model="showPassword" />
     </div>
 
@@ -113,12 +111,6 @@ async function updatePassword() {
 .password-update-form {
   button[type='submit'] {
     max-width: max-content;
-  }
-
-  .password-requirements {
-    @container (min-width: 280px) {
-      background-color: var(--color-card-bg);
-    }
   }
 }
 </style>

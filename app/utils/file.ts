@@ -1,7 +1,4 @@
-/**
- * "2,4 MB" or "480 KB", in the app's locale unless another is given. Outside
- * a Nuxt context (a plain script, a test) there is no app locale: Dutch then.
- */
+/** "2,4 MB" or "480 KB", in the app's locale (Dutch outside a Nuxt app) or `locale`. */
 export function formatFileSize(
   bytes: number,
   locale = tryUseNuxtApp()?.$i18n.locale.value ?? 'nl',
@@ -22,31 +19,70 @@ export function getFileExtension(filename?: string) {
   return filename && dot > 0 ? filename.slice(dot + 1) : undefined;
 }
 
+/** FileInput's icon per file type, by extension or MIME type; the first match wins. */
+export const fileTypeIcons: [
+  matches: (extension: string, type: string) => boolean,
+  icon: string,
+][] = [
+  [
+    (ext) => ext === 'vue' || ext === 'ts',
+    'material-symbols:code-blocks-outline-rounded',
+  ],
+  [(ext) => ext === 'md', 'material-symbols:markdown-outline-rounded'],
+  [
+    (_, type) => type.includes('javascript'),
+    'material-symbols:javascript-outline-rounded',
+  ],
+  [(_, type) => type.includes('css'), 'material-symbols:css-outline-rounded'],
+  [(_, type) => type.includes('html'), 'material-symbols:html-outline-rounded'],
+  [(_, type) => type.includes('php'), 'material-symbols:php-outline-rounded'],
+  [
+    (_, type) => type.includes('json'),
+    'material-symbols:file-json-outline-rounded',
+  ],
+  [
+    (_, type) => type.includes('pdf'),
+    'material-symbols:picture-as-pdf-outline-rounded',
+  ],
+  [
+    (_, type) => type.includes('text/plain'),
+    'material-symbols:text-snippet-outline-rounded',
+  ],
+  [
+    (_, type) => type.includes('word') || type.includes('opendocument.text'),
+    'material-symbols:description-outline-rounded',
+  ],
+  [
+    (_, type) => type.includes('excel') || type.includes('spreadsheet'),
+    'material-symbols:table-outline-rounded',
+  ],
+  [
+    (_, type) => type.includes('powerpoint') || type.includes('presentation'),
+    'material-symbols:slideshow-outline-rounded',
+  ],
+  [
+    (_, type) => type.includes('illustrator'),
+    'material-symbols:draw-outline-rounded',
+  ],
+  [
+    (_, type) => type.includes('photoshop'),
+    'material-symbols:palette-outline-rounded',
+  ],
+  [
+    (_, type) => type.includes('video'),
+    'material-symbols:video-file-outline-rounded',
+  ],
+  [
+    (_, type) => type.includes('image'),
+    'material-symbols:image-outline-rounded',
+  ],
+];
+
 export function fileTypeIcon(file?: File) {
   if (!file) return 'material-symbols:upload-file-outline';
-  if (getFileExtension(file?.name) === 'vue')
-    return 'vscode-icons:file-type-vue';
-  if (getFileExtension(file?.name) === 'md')
-    return 'vscode-icons:file-type-markdown';
-  if (getFileExtension(file?.name) === 'ts')
-    return 'vscode-icons:file-type-typescript';
-  if (file?.type.includes('javascript')) return 'vscode-icons:file-type-js';
-  if (file?.type.includes('css')) return 'vscode-icons:file-type-css';
-  if (file?.type.includes('html')) return 'vscode-icons:file-type-html';
-  if (file?.type.includes('php')) return 'vscode-icons:file-type-php';
-  if (file?.type.includes('json')) return 'vscode-icons:file-type-json';
-  if (file?.type.includes('pdf')) return 'vscode-icons:file-type-pdf2';
-  if (file?.type.includes('text/plain')) return 'vscode-icons:file-type-text';
-  if (file?.type.includes('word') || file?.type.includes('opendocument.text'))
-    return 'vscode-icons:file-type-word';
-  if (file?.type.includes('excel') || file?.type.includes('spreadsheet'))
-    return 'vscode-icons:file-type-excel';
-  if (file?.type.includes('powerpoint') || file?.type.includes('presentation'))
-    return 'vscode-icons:file-type-powerpoint';
-  if (file?.type.includes('illustrator')) return 'vscode-icons:file-type-ai';
-  if (file?.type.includes('photoshop'))
-    return 'vscode-icons:file-type-photoshop';
-  if (file?.type.includes('video')) return 'vscode-icons:file-type-video';
-  if (file?.type.includes('image')) return 'vscode-icons:file-type-image';
-  return 'material-symbols:unknown-document-outline-rounded';
+  const extension = getFileExtension(file.name)?.toLowerCase() ?? '';
+  return (
+    fileTypeIcons.find(([matches]) => matches(extension, file.type))?.[1] ??
+    'material-symbols:unknown-document-outline-rounded'
+  );
 }

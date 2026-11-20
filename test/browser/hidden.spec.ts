@@ -1,12 +1,6 @@
-/**
- * Content out of view is out of the tab order too, which only a browser's
- * real tab order shows (happy-dom focuses anything). Where a panel has no
- * control of its own in the playground, the test puts a button in it.
- */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { focusWalk, gotoHydrated, tabOrder } from './helpers';
 
-/** A button added to the end of `container`, for a panel without controls */
 async function addButton(container: Locator, name: string) {
   await container.evaluate((el, name) => {
     const button = document.createElement('button');
@@ -17,7 +11,6 @@ async function addButton(container: Locator, name: string) {
   return container.getByRole('button', { name, includeHidden: true });
 }
 
-/** The panel a control points at with `aria-controls` */
 function controlled(page: Page, control: Locator) {
   return control
     .getAttribute('aria-controls')
@@ -62,7 +55,6 @@ test('Tabs: only the selected panel is in the tab order', async ({ page }) => {
     'button "In a hidden panel"',
   );
 
-  // Selected, its panel is reachable
   await unselected.click();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('tabpanel')).toBeFocused();
@@ -93,7 +85,7 @@ test("AppSidebar: hidden below the app's menu width, its links are out of the ta
     .evaluateAll((links) =>
       links.map((a) => a.textContent?.replace(/\s+/g, ' ').trim()),
     );
-  // The same links are in the header's menu, which is closed: none of them
+  // The header's closed menu has the same links
   for (const name of sidebarLinks) {
     expect(stops.map((stop) => stop.label)).not.toContain(`a "${name}"`);
   }
@@ -110,7 +102,6 @@ test('AppSidebar: collapsed to a rail, its links stay in the tab order with thei
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');
 
-  // The text is out of view only: still the name, still reachable
   const first = sidebar.getByRole('button', { name: 'Dashboard' });
   await expect(first).toBeVisible();
   await first.focus();

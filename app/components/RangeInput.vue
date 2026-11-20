@@ -31,10 +31,6 @@ const {
 
 const range = computed(() => max - min);
 
-/**
- * The value on the track; the minimum until there is one. The input shows
- * it too: on its own the browser would put the thumb in the middle
- */
 const value = computed(() => Number(model.value ?? min));
 
 function handleInput(event: Event) {
@@ -45,7 +41,6 @@ const ratio = computed(() => (value.value - min) / range.value);
 
 const ticksLength = computed(() => range.value / step + 1);
 
-// Every tick as { value, label }, whether it was passed as a number or an object
 const ticksList = computed(() =>
   (
     ticks ?? Array.from({ length: ticksLength.value }, (_, i) => i * step + min)
@@ -54,7 +49,6 @@ const ticksList = computed(() =>
   ),
 );
 
-/** The label of the tick at the value, when ticks have labels of their own */
 const computedAriaValuetext = computed(() => {
   if (ariaValuetext) return ariaValuetext;
 
@@ -160,7 +154,6 @@ const computedAriaValuetext = computed(() => {
     0 / var(--range-input-sx) 100% no-repeat var(--range-input-track-bg-color);
 }
 
-/* slider track */
 .range-input-wrapper .range-input::-webkit-slider-runnable-track {
   background-color: var(--range-input-track-bg-color);
   background: var(--range-input-progress-gradient);
@@ -175,7 +168,6 @@ const computedAriaValuetext = computed(() => {
   height: var(--range-input-track-height);
 }
 
-/* slider thumb */
 .range-input-wrapper .range-input::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -251,12 +243,10 @@ const computedAriaValuetext = computed(() => {
   );
 }
 
-/* slider focus: the ring is on the thumb */
 .range-input-wrapper .range-input:focus {
   outline: none;
 }
 
-/* slider ticks */
 .range-input-ticks {
   width: 100%;
   font-size: var(--font-size-xxs);
@@ -294,7 +284,6 @@ const computedAriaValuetext = computed(() => {
   }
 }
 
-/* slider output */
 .range-input-wrapper {
   output {
     --range-input-perc: calc(

@@ -35,10 +35,7 @@ const {
   showInvalid?: boolean;
   /** Under the group when it is required and no box is ticked; "Tick at least one option" by default */
   errorMessage?: string;
-  /**
-   * An error the browser cannot find, such as one from the server: the group
-   * shows this text and is described by it until a box is ticked or unticked
-   */
+  /** An error the browser cannot find, such as the server's: shown until a box changes */
   customError?: string;
   id?: string;
   variant?: 'default' | '3d';
@@ -46,13 +43,11 @@ const {
 
 const { t } = useI18n();
 
-/** The value of an option, as the box's `value` */
 function optionValue(option: T) {
   return option[valueKey] as string | number;
 }
 
-/** A text field of an option, for a prop that takes a string */
-function text(option: T, key?: keyof T & string) {
+function optionText(option: T, key?: keyof T & string) {
   const value = key === undefined ? undefined : option[key];
 
   return value === undefined ? undefined : String(value);
@@ -66,36 +61,18 @@ const hasSelection = computed(() =>
   Array.isArray(model.value) ? model.value.length > 0 : !!model.value,
 );
 
-const formShowInvalid = inject(formShowInvalidKey, ref(false));
-const customErrorActive = ref(false);
-
-/**
- * The custom error shows like the group's own, and describes the group, but
- * does not keep the form from submitting again: the server judges the next
- * attempt
- */
-function applyCustomError() {
-  customErrorActive.value = !!customError;
-}
-
-onMounted(applyCustomError);
-watch(() => customError, applyCustomError, { flush: 'post' });
-
-/** The error text shows after a failed submit, or for a custom error */
-const errorShown = computed(
-  () =>
-    customErrorActive.value ||
-    (required && !hasSelection.value && (showInvalid || formShowInvalid.value)),
+const { customErrorActive, clearCustomError, errorShown } = useCustomError(
+  () => customError,
+  {
+    invalid: () => required && !hasSelection.value,
+    showInvalid: () => showInvalid,
+  },
 );
 
 const listRef = useTemplateRef<HTMLElement>('list');
 
-/**
- * The browser's own `required` on a checkbox asks for that box, so on every
- * box of a group it would ask for all of them. The group asks for at least
- * one through the custom validity of its boxes: the form then reports it
- * like any other field and focuses the first box.
- */
+// Not `required` on each box, which would ask for every box: custom validity
+// asks for one
 function applyValidity() {
   const text = required && !hasSelection.value ? message.value : '';
 
@@ -106,7 +83,6 @@ function applyValidity() {
 
 onMounted(applyValidity);
 
-// Deep, so a box added to the options in place gets its validity too
 watch([hasSelection, message, () => required, () => options], applyValidity, {
   deep: true,
   flush: 'post',
@@ -122,10 +98,9 @@ watch([hasSelection, message, () => required, () => options], applyValidity, {
     ]"
   >
     <template v-if="options?.length">
-      <!-- The error describes the group only while it shows -->
       <fieldset
         :aria-describedby="errorShown ? `error-${id}` : undefined"
-        @change="customErrorActive = false"
+        @change="clearCustomError"
       >
         <legend
           v-if="label"
@@ -144,10 +119,10 @@ watch([hasSelection, message, () => required, () => options], applyValidity, {
             <Checkbox
               v-model="model"
               :value="optionValue(option)"
-              :label="text(option, labelKey)"
+              :label="optionText(option, labelKey)"
               :disabled="disabled || !!option[disabledKey]"
-              :title="text(option, titleKey)"
-              :name="name || text(option, nameKey)"
+              :title="optionText(option, titleKey)"
+              :name="name || optionText(option, nameKey)"
               :hide-label="option.hideLabel"
               :tabindex="tabindex"
               :variant="variant"
@@ -201,8 +176,6 @@ watch([hasSelection, message, () => required, () => options], applyValidity, {
   }
 }
 
-/* A required group without a ticked box, once the form reports its state, or
-   a custom error */
 :where(.checkboxes-wrapper.show-invalid:has(:invalid)),
 :where(.checkboxes-wrapper.custom-error),
 :where(.show-invalid) .checkboxes-wrapper:has(:invalid) {

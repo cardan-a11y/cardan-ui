@@ -31,7 +31,7 @@ The submit buttons on the login form and sign-in challenge are `--font-size-md`,
 
 ### Overriding styles
 
-The layer's own class names are stable hooks you can restyle from your app: `.login-form`, `.mfa-dialog`, `.mfa-setup`, `.mfa-challenge-wrapper`, `.mfa-code-input`, `.mfa-recovery-codes-card`. The errors show in Cardan UI's ErrorMessage, `.error-message`, as everywhere else in your app.
+The layer's own class names are stable hooks you can restyle from your app: `.login-form`, `.mfa-dialog`, `.mfa-setup`, `.mfa-challenge-wrapper`, `.mfa-code-input`, `.mfa-recovery-codes-card`. The errors show in Cardan UI's ErrorMessage, `.error-message`, as everywhere else in your app. The password requirements box is a light tint of the surface it sits on; `--password-requirements-bg` on a container gives it another background (AuthPage sets `--color-bg`).
 
 ## How to extend from Cardan Auth UI in your project
 
@@ -83,7 +83,7 @@ The layer calls these endpoints, relative to your configured `sanctum.baseUrl`: 
 | `/api/v1/profile/password`                      | `PATCH` (`updatePasswordMethod`) | `updatePassword`          | Change the password while signed in                                                                        |
 | `/api/v1/password-policy`                       | `GET`                            | `passwordPolicy`          | `{ data: { min_length, max_length } }`, or `false` without one. Public: the reset form reads it as a guest |
 
-Enable Fortify's `two-factor-authentication` feature with `confirm: true`. Leave Fortify's `resetPasswords` feature off: its routes tell a known address from an unknown one. The password endpoints take Fortify's fields (`token`, `email`, `password`, `password_confirmation`, `current_password`) and answer a known and an unknown address identically. Errors may come in Laravel's shape (`{ message, errors: { field: [...] } }`) or as a JSON:API envelope (`{ errors: [{ detail, source: { parameter } }] }`); Cardan UI's `extractApiError()` reads both. Point the reset email at your app's `/reset-password` page with `?token=…&email=…`; a mail without the `email`, such as Fortify's own, gets a visible email field on that page.
+Enable Fortify's `two-factor-authentication` feature with `confirm: true`. Leave Fortify's `resetPasswords` feature off: its routes tell a known address from an unknown one. The password endpoints take Fortify's fields (`token`, `email`, `password`, `password_confirmation`, `current_password`) and answer a known and an unknown address identically. Errors may come in Laravel's shape (`{ message, errors: { field: [...] } }`) or as a JSON:API envelope (`{ errors: [{ detail, source: { parameter } }] }`); Cardan UI's `extractApiError()` reads both. Point the reset email at your app's `/reset-password` page with `?token=…&email=…`; a mail without the `email`, such as Fortify's own, gets a visible email field on that page. Add `&locale=` with the account's language: a signed-out visitor sees `/login`, `/forgot-password`, `/reset-password` and `/two-factor-authentication` in the language a `?locale=` asks for, when the app offers it (a signed-in user keeps their own).
 
 The user payload tells the layer whether MFA is on: `mfa_enabled`, plus `mfa_required` (a role or organization requires it) and `mfa_exempt` (never remind this account, nor require it, whatever the role says). Without `mfa_enabled` the setup reminder stays off.
 
@@ -171,23 +171,23 @@ Everything variable is a small prop. The Cardan Academy form offers "Remember me
 
 The buttons of every form and dialog in this layer have the Cardan look: `black` for the main actions (sign in, enable, continue, confirm, done), `ghost` for skip, back and cancel, and `danger` for disabling MFA.
 
-| Prop                 | Default                        |                                                                       |
-| -------------------- | ------------------------------ | --------------------------------------------------------------------- |
-| `showPasswordToggle` | `true`                         | Reveal-password button beside the password field                      |
-| `divider`            | `false`                        | Rule between the fields and the submit button                         |
-| `remember`           | `false`                        | Show a "Remember me" checkbox, unticked; sends `remember: true` only when ticked |
-| `errorPosition`      | `'above-submit'`               | Or `'below-submit'`                                                   |
-| `size`               | `'lg'`                         | Input size                                                            |
-| `autofocus`          | `true`                         | Focus the email field on mount                                        |
-| `shake`              | `true`                         | Shake the fields when credentials are rejected                        |
-| `twoFactorPath`      | `'/two-factor-authentication'` | Where to go when a second factor is needed                            |
-| `loadingDelay`       | `0`                            | Hold the submit button loading this many ms after the request settles |
+| Prop                 | Default                        |                                                                                                                |
+| -------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `showPasswordToggle` | `true`                         | Reveal-password button beside the password field                                                               |
+| `divider`            | `false`                        | Rule between the fields and the submit button                                                                  |
+| `remember`           | `false`                        | Show a "Remember me" checkbox, unticked; sends `remember: true` only when ticked                               |
+| `errorPosition`      | `'above-submit'`               | Or `'below-submit'`                                                                                            |
+| `size`               | `'lg'`                         | Input size                                                                                                     |
+| `autofocus`          | `true`                         | Focus the email field on mount                                                                                 |
+| `shake`              | `true`                         | Shake the fields when credentials are rejected                                                                 |
+| `twoFactorPath`      | `'/two-factor-authentication'` | Where to go when a second factor is needed                                                                     |
+| `loadingDelay`       | `0`                            | Hold the submit button loading this many ms after a sign-in that navigates on, while the page transition plays |
 
-| Slot     | Scope       |                                                              |
-| -------- | ----------- | ------------------------------------------------------------ |
-| `error`  | `{ error }` | The error region, ErrorMessage with the API's error          |
+| Slot     | Scope       |                                                                |
+| -------- | ----------- | -------------------------------------------------------------- |
+| `error`  | `{ error }` | The error region, ErrorMessage with the API's error            |
 | `fields` |             | Extra fields after the password (and the remember-me checkbox) |
-| `footer` |             | Anything at the end of the form                              |
+| `footer` |             | Anything at the end of the form                                |
 
 | Model / Event   |                                                                                   |
 | --------------- | --------------------------------------------------------------------------------- |
@@ -346,7 +346,7 @@ The app's authentication surface, wrapping nuxt-auth-sanctum so app code has one
 | `user`, `isAuthenticated`, `init`, `login`, `logout`, `refreshIdentity` | Passed through from `useSanctumAuth()`                                                                                                                                                              |
 | `loginWithoutRedirect(credentials)`                                     | Posts the credentials and returns the raw response, without fetching the identity or redirecting — both wrong while a second factor is pending                                                      |
 | `loginRedirectTarget()`                                                 | Where to go after a successful login, following your Sanctum `redirect` config. A `?redirect=` only counts when the browser would read it as a path within your app. `false` when the app opted out |
-| `userName`, `userInitials`                                              | Read off the payload's `name`, for avatars                                                                                                                                                          |
+| `userName`, `userInitials`                                              | Read off the payload's `name`, for avatars; the initials are the first and last name's, so "Jan van Dam" is "JD"                                                                                    |
 
 `user` is typed as `{ data: AuthUser } | null`, and **`AuthUser` is an empty interface for your app to fill** by declaration merging. Put this anywhere in your app's types:
 

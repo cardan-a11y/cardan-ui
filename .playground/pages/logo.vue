@@ -141,7 +141,6 @@ const darkVariants: CardanLogoVariant[] = ['negative', 'white'];
   }
 }
 
-/* The fixed variants are shown on the background they are made for */
 .logo-demo-light,
 .logo-demo-dark {
   padding: 1.5rem;

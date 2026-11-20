@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ComponentPublicInstance } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import { NuxtLink } from '#components';
 
@@ -55,25 +56,16 @@ const { t } = useI18n();
 
 const opensNewWindow = computed(() => !download && target === '_blank');
 
-// An aria-label replaces the content, hidden text included; a title would
-// be read once more as the description, so the name is the one place
 const computedAriaLabel = computed(() =>
   ariaLabel && opensNewWindow.value
     ? `${ariaLabel} (${t('aria.open-new-window')})`
     : ariaLabel,
 );
 
-/**
- * A disabled link has no href, so it cannot be followed, and NuxtLink no
- * longer says whether it is the current page. Its link state comes from
- * NuxtLink here instead: the current page keeps its look (the classes
- * NuxtLink sets) and `aria-current`, disabled.
- */
 const linkTarget = to || href;
-// A link to a part of this page (`#section`) is never the current page
-const isPageLink =
-  !!linkTarget &&
-  !(typeof linkTarget === 'string' && linkTarget.startsWith('#'));
+const isSamePageAnchor =
+  typeof linkTarget === 'string' && linkTarget.startsWith('#');
+const isPageLink = !!linkTarget && !isSamePageAnchor;
 const linkState = isPageLink
   ? NuxtLink.useLink({
       to: toRef(() => to || href || ''),
@@ -92,11 +84,6 @@ const showExternalIcon = computed(() => {
   return !hideExternalIcon && target === '_blank';
 });
 
-/**
- * A loading button stays focusable instead of disabled, so it ignores its
- * clicks itself: no event, no navigation, no submit. The link listens in the
- * capture phase, before NuxtLink's own click handler navigates.
- */
 function handleClick(event: Event) {
   if (loading) {
     event.preventDefault();
@@ -105,12 +92,14 @@ function handleClick(event: Event) {
 
   emit('click');
 }
-const buttonRef = useTemplateRef<HTMLButtonElement | HTMLAnchorElement>(
+const buttonRef = useTemplateRef<HTMLButtonElement | ComponentPublicInstance>(
   'button',
 );
 
 function focusElement() {
-  buttonRef.value?.focus();
+  const target = buttonRef.value;
+  const element = target instanceof HTMLElement ? target : target?.$el;
+  (element as HTMLElement | undefined)?.focus();
 }
 
 defineExpose({ focusElement });
@@ -147,8 +136,6 @@ const emit = defineEmits<{
     :style="computedStyle"
     @click.capture="handleClick"
   >
-    <slot v-if="!showExternalIcon" name="icon" />
-
     <template v-if="loading">
       <Icon name="svg-spinners:90-ring-with-bg" />
       <span class="visuallyhidden">
@@ -156,7 +143,10 @@ const emit = defineEmits<{
       </span>
     </template>
 
-    <Icon v-else-if="icon" :name="icon" />
+    <template v-else>
+      <slot v-if="!showExternalIcon" name="icon" />
+      <Icon v-if="icon" :name="icon" />
+    </template>
 
     <span v-if="label" :class="['button-text', hideLabel && 'visuallyhidden']">
       {{ label }}
@@ -166,9 +156,9 @@ const emit = defineEmits<{
       <Icon name="material-symbols:open-in-new-rounded" class="external-link" />
     </template>
 
+    <template v-if="label && $slots.default">{{ ' ' }}</template>
     <slot name="default" />
 
-    <!-- In the name, after the label, as a link in a markdown text has it -->
     <span v-if="opensNewWindow" class="visuallyhidden">
       ({{ $t('aria.open-new-window') }})
     </span>
@@ -195,8 +185,6 @@ const emit = defineEmits<{
     :title="disabled ? undefined : title"
     @click="handleClick"
   >
-    <slot name="icon" />
-
     <template v-if="loading">
       <Icon name="svg-spinners:90-ring-with-bg" />
       <span class="visuallyhidden">
@@ -204,12 +192,16 @@ const emit = defineEmits<{
       </span>
     </template>
 
-    <Icon v-else-if="icon" :name="icon" />
+    <template v-else>
+      <slot name="icon" />
+      <Icon v-if="icon" :name="icon" />
+    </template>
 
     <span v-if="label" :class="['button-text', hideLabel && 'visuallyhidden']">
       {{ label }}
     </span>
 
+    <template v-if="label && $slots.default">{{ ' ' }}</template>
     <slot name="default" />
   </button>
 </template>
@@ -343,7 +335,6 @@ const emit = defineEmits<{
 
 .button-variant--primary {
   --focus-color: var(--color-accent-text);
-  /* Always white on purple, also in dark mode */
   color: var(--color-on-accent);
   background-color: var(--color-accent);
 
@@ -677,7 +668,6 @@ const emit = defineEmits<{
     }
   }
 
-  /* Without hover every item is underlined; the current page more heavily */
   @media (pointer: coarse) {
     text-decoration: underline;
     text-underline-offset: 0.25em;
@@ -700,7 +690,6 @@ const emit = defineEmits<{
       background-size: calc(100% - 0.5rem) var(--button-underline-thickness);
     }
 
-    /* The current page keeps its underline, with or without motion */
     &.router-link-exact-active {
       background-size: calc(100% - 0.5rem) var(--button-underline-thickness);
     }
@@ -709,7 +698,6 @@ const emit = defineEmits<{
       border-radius: var(--radius-xs);
     }
 
-    /* The underline grows in; with reduced motion it just appears */
     @media (prefers-reduced-motion: no-preference) {
       transition-timing-function: ease-in-out;
       transition:

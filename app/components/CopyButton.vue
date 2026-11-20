@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// The attributes, such as a project's own label, go to the button, not the status
 defineOptions({ inheritAttrs: false });
 
 const {
@@ -30,7 +29,6 @@ let reset: ReturnType<typeof setTimeout> | undefined;
 async function handleClick() {
   if (!text) return;
 
-  // Back to "copy" first, so the status is announced again on a second copy
   copied.value = false;
   failed.value = false;
   await nextTick();
@@ -39,7 +37,6 @@ async function handleClick() {
     await navigator.clipboard.writeText(String(text));
     copied.value = true;
   } catch {
-    // The page may not have the clipboard (no focus, no permission)
     failed.value = true;
   }
 
@@ -52,7 +49,6 @@ async function handleClick() {
 
 onUnmounted(() => clearTimeout(reset));
 
-/** "Copied" or "Copy failed" for a moment after a click, "Copy" otherwise */
 const label = computed(() => {
   if (copied.value) return t('general.copied');
   if (failed.value) return t('general.copy-failed');
@@ -81,8 +77,6 @@ const label = computed(() => {
     @click="handleClick"
   />
 
-  <!-- A screen reader announces a change in a live region that is already on
-       the page, not in the focused button's own name -->
   <span role="status" class="visuallyhidden">
     {{ copied || failed ? label : '' }}
   </span>

@@ -11,7 +11,7 @@ const { t } = useI18n();
 
 const started = ref(false);
 
-/** A URL that is no video keeps the YouTube embed with a dummy id, so the figure still renders. */
+// A URL that is no video still renders the figure, with a dummy id
 const video = computed<VideoSource>(
   () => parseVideoUrl(props.url) ?? { provider: 'youtube', id: 'e' },
 );
@@ -28,7 +28,6 @@ const metadataUrl = computed(() => {
   return `https://youtube.com/oembed?url=https://youtube.com/watch?v=${id}&format=json`;
 });
 
-// The key follows the URL, so a new video gets its own metadata
 const { data: videoData } = await useAsyncData<VideoMetaData>(
   () => `video:${props.url ?? ''}`,
   () => $fetch<VideoMetaData>(metadataUrl.value),
@@ -50,11 +49,6 @@ const ratio = computed(() => {
   return 16 / 9;
 });
 
-/**
- * `keyboard=0` and `disablekb=1` switch off the players' single-key shortcuts
- * on purpose: WCAG 2.1.4 Character Key Shortcuts. The players' own buttons
- * still work with the keyboard.
- */
 const embedUrl = computed(() => {
   const { provider, id, hash } = video.value;
 
@@ -65,14 +59,9 @@ const embedUrl = computed(() => {
   return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&disablekb=1`;
 });
 
-/** How many thumbnails of the video failed to load. */
 const thumbFailures = ref(0);
 
-/**
- * YouTube's hq720.webp is the sharpest, but not every video has one: after a
- * failure the one its metadata names, then hqdefault.jpg, which every video
- * has. Vimeo only names one.
- */
+// YouTube's sharpest thumbnail is missing for some videos; hqdefault.jpg never is
 const thumbUrl = computed(() => {
   const { provider, id } = video.value;
   const fromMetadata = videoData.value?.thumbnail_url;
@@ -107,7 +96,6 @@ const iframeTitle = computed(() =>
 
 const iframe = useTemplateRef('iframe');
 
-/** The player replaces the play button, so focus moves into it rather than to the body. */
 async function playVideo() {
   started.value = true;
   await nextTick();

@@ -1,9 +1,7 @@
 <script setup lang="ts">
 useHead({ title: 'Error page' });
 
-// The examples are text here: Prettier formats a template literal in the
-// template as HTML, and drops its indentation. Each is a fenced block for
-// MarkdownPreview.
+// Not in the template, where Prettier would format them as HTML
 const fence = (lang: string, code: string) =>
   ['```' + lang, code, '```'].join('\n');
 
@@ -37,7 +35,6 @@ const contentExample = fence(
   `<ErrorPageContent :status="404" :text="$t('catalog.not-found')" />`,
 );
 
-/** An error in the browser on this page itself, without a navigation */
 function showServerError() {
   showError({ status: 500 });
 }
@@ -67,8 +64,7 @@ function showServerError() {
         this page.
       </p>
 
-      <!-- No prefetch: with ISR (production) Nuxt fetches each link's payload,
-           which fails on purpose here and logs an error per link -->
+      <!-- No prefetch: under ISR each payload fetch fails and logs an error -->
       <ul class="error-page-demo-list">
         <li>
           <NuxtLink to="/this-page-does-not-exist" no-prefetch>
