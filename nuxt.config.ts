@@ -33,6 +33,16 @@ export default defineNuxtConfig({
   ],
 
   fonts: {
+    // Google only: every provider is contacted on each build, so one that is
+    // down (fonts.bunny.net answered 504) fails the build of every project
+    providers: {
+      adobe: false,
+      bunny: false,
+      fontshare: false,
+      fontsource: false,
+      googleicons: false,
+      npm: false,
+    },
     defaults: {
       weights: ['400 700'],
       styles: ['normal', 'italic'],
