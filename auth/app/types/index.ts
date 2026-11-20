@@ -84,6 +84,14 @@ declare global {
    * 3 confirm with code     6 disabled
    */
   type MfaStep = 1 | 2 | 3 | 4 | 5 | 6;
+
+  /** The auth layer's `useDialog()` keys, behind its own composables. */
+  interface LayerDialogKeys {
+    'auth:logout': true;
+    'auth:mfa': true;
+    'auth:mfa-recovery-codes': true;
+    'auth:password-confirmation': true;
+  }
 }
 
 type DeepPartial<T> = {

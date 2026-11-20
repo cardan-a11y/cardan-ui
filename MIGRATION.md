@@ -21,6 +21,13 @@ New: **`useNumber()`**, numbers, percentages and prices in the app's language (`
 - **`formatPercent` takes a fraction**, as `Intl.NumberFormat` does: divide a whole percentage by 100 and per mille by 1000 at the call.
 - PricingCard, Chip and `formatFileSize()` use them; what they show is unchanged.
 
+New: **`useDialog(key)`**, a dialog opened from another component (`/dialog` in the playground).
+
+- **It holds a dialog's ref under a key**: `const { dialogRef, close } = useDialog('audit')` with `<Dialog ref="dialogRef">` in the dialog's own component, `useDialog('audit').open()` anywhere else. `close()` resolves once the dialog has closed and `isOpen` follows it. It works for MobileMenu too, `useDialog<MobileMenuComponent>('menu')`, whose `close()` resolves at once. Mount one dialog per key: development warns about a second one, and about `open()` on a key without a mounted dialog.
+- **A project's own `useDialog` composable shadows the layer's** (the Auditor's `app/composables/useDialog.ts`), since a project's composable wins over one of the same name. Keep it until every caller has moved to the layer's, then delete it in the same commit. The auth layer is not affected: it calls the layer's under another name, `useLayerDialog`.
+- **Typed keys are optional**: any string is a key until a project lists its own in the global `DialogKeys` interface (`declare global { interface DialogKeys { audit: true } }`), which makes a typo a type error. The auth layer's keys stay valid.
+- **The auth layer's `useLogoutDialog()`, `useMfaDialog()` and `usePasswordConfirmation()` use it**, under the keys `auth:logout`, `auth:mfa`, `auth:mfa-recovery-codes` and `auth:password-confirmation`. They return the same names, so `logoutDialogRef.value?.openDialog()` keeps working; `closeMfaDialog()` and `closeMfaRecoveryCodesDialog()` now return a promise that resolves once the dialog has closed.
+
 ## Upgrading to 2.5
 
 New: AppShell, AppHeader, AppSidebar and SidebarLayout, the parts of an app's layout (`/layout` in the playground). Nothing changes in a project until it uses them.

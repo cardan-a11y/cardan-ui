@@ -27,6 +27,11 @@ useHead({ title: 'Changelog' });
           <code>formatFileSize()</code> use them. The playground shows them in
           both languages at <code>/numbers</code>.
         </li>
+        <li>
+          <code>useDialog(key)</code> opens and closes a dialog that another
+          component holds, through a shared key, with optional typed keys
+          (<code>DialogKeys</code>); the auth layer's dialog composables use it.
+        </li>
       </ul>
     </ChangelogEntry>
 

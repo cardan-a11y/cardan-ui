@@ -374,9 +374,9 @@ Every `useAuth().user` in your app is then typed against your own payload, with 
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `openMfaEnableDialog()`                     | Opens `MfaDialog` on the enable flow: intro → QR code → confirm code → recovery codes                                          |
 | `openMfaDisableDialog()`                    | Opens `MfaDialog` on the disable confirmation                                                                                  |
-| `closeMfaDialog()`                          |                                                                                                                                |
+| `closeMfaDialog()`                          | Returns a promise that resolves once the dialog has closed                                                                     |
 | `openMfaRecoveryCodesDialog()`              | Asks for the password, then opens the dialog on regenerating the recovery codes                                                |
-| `closeMfaRecoveryCodesDialog()`             |                                                                                                                                |
+| `closeMfaRecoveryCodesDialog()`             | Returns a promise that resolves once the dialog has closed                                                                     |
 | `mfaDialogRef`, `mfaRecoveryCodesDialogRef` | The underlying `Dialog` refs, if you need them                                                                                 |
 | `loadingMfaRecoveryCodesDialog`             | Loading state for the button that opens the recovery codes dialog, while it checks whether the password was confirmed recently |
 | `loadingMfaDisableDialog`                   | The same for the button that opens the disable confirmation; a second click while it loads opens nothing                       |

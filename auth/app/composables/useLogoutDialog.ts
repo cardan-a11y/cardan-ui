@@ -6,12 +6,8 @@ export function useLogoutDialog() {
   const nuxtApp = useNuxtApp();
   const { logout, isAuthenticated } = useAuth();
 
-  const logoutDialogRef = useState<DialogComponent | null>(
-    'logoutDialog',
-    () => null,
-  );
-
-  const closeDialog = async () => await logoutDialogRef.value?.closeDialog();
+  const { dialogRef: logoutDialogRef, close: closeDialog } =
+    useLayerDialog('auth:logout');
 
   /** Signs out, then closes the dialog; throws when the API refuses. */
   async function handleLogout() {
