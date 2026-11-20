@@ -18,6 +18,15 @@ useHead({ title: 'Changelog' });
           <code>--empty-message-font-style</code>. It replaces each project's
           own <code>.no-results</code> paragraph.
         </li>
+        <li>
+          <code>useNumber()</code> formats numbers, percentages and prices in
+          the app's language, with the pure <code>formatNumber()</code>,
+          <code>formatPercent()</code> and <code>formatCurrency()</code> (in
+          euros by default, from cents with <code>cents: true</code>, whole with
+          <code>decimals: 0</code>); PricingCard, Chip and
+          <code>formatFileSize()</code> use them. The playground shows them in
+          both languages at <code>/numbers</code>.
+        </li>
       </ul>
     </ChangelogEntry>
 

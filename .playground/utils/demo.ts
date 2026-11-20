@@ -86,6 +86,11 @@ export const navList: MenuItem[] = [
     label: 'Pricing Card',
   },
   {
+    id: 'numbers',
+    to: '/numbers',
+    label: 'Numbers & Prices',
+  },
+  {
     id: 'md',
     to: '/markdown',
     label: 'Markdown',

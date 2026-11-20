@@ -14,6 +14,13 @@ New: **EmptyMessage**, the text of an empty list or search (`/empty-message` in 
 - **It has no margin.** Set the spacing the paragraph had where the component is used.
 - **Its look comes from three optional variables** in `main.css`: `--empty-message-color` (`var(--color-grey-text)`), `--empty-message-font-size` (`1em`, the surrounding size) and `--empty-message-font-style` (`normal`). The Auditor keeps its small italic with `--empty-message-font-size: var(--font-size-sm)` and `--empty-message-font-style: italic`. On a tinted (`-bg`) surface, set `--empty-message-color` to the matching `--color-*-text` there.
 
+New: **`useNumber()`**, numbers, percentages and prices in the app's language (`/numbers` in the playground).
+
+- **It returns `formatNumber(value, { decimals? })`, `formatPercent(fraction, { decimals? })` and `formatCurrency(amount, { currency, cents, decimals })`** in the i18n locale; the pure versions, with a `locale` argument, are in `app/utils/number.ts`. A price is in euros by default, from cents with `cents: true`, and without decimals when the amount is whole (`decimals: 0` never shows them).
+- **It replaces a project's own price formatter** (`formatPrice()`) **and every `toLocaleString()` without a locale**, which follows the browser's language instead of the app's.
+- **`formatPercent` takes a fraction**, as `Intl.NumberFormat` does: divide a whole percentage by 100 and per mille by 1000 at the call.
+- PricingCard, Chip and `formatFileSize()` use them; what they show is unchanged.
+
 ## Upgrading to 2.5
 
 New: AppShell, AppHeader, AppSidebar and SidebarLayout, the parts of an app's layout (`/layout` in the playground). Nothing changes in a project until it uses them.

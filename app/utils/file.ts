@@ -4,10 +4,10 @@ export function formatFileSize(
   locale = tryUseNuxtApp()?.$i18n.locale.value ?? 'nl',
 ) {
   const kilobytes = Math.max(1, Math.round(bytes / 1000));
-  if (kilobytes < 1000) return `${kilobytes.toLocaleString(locale)} KB`;
+  if (kilobytes < 1000) return `${formatNumber(kilobytes, locale)} KB`;
 
   const megabytes = bytes / 1_000_000;
-  return `${megabytes.toLocaleString(locale, { maximumFractionDigits: 1 })} MB`;
+  return `${formatNumber(megabytes, locale, { maximumFractionDigits: 1 })} MB`;
 }
 
 /**
