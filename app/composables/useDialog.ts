@@ -69,6 +69,6 @@ export function useDialog<T extends OpenableDialog = DialogComponent>(
 
 /**
  * `useDialog` under a name no project uses. The auth layer calls this one: a
- * project's own `useDialog` (the Auditor's) shadows the layer's by name.
+ * project's own `useDialog` would shadow the layer's by name.
  */
 export const useLayerDialog = useDialog;
