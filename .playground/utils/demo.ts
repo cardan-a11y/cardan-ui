@@ -56,6 +56,11 @@ export const navList: MenuItem[] = [
     label: 'Modal Dialog',
   },
   {
+    id: 'confirm-dialog',
+    to: '/confirm-dialog',
+    label: 'Confirm Dialog',
+  },
+  {
     id: 'tooltip',
     to: '/tooltip',
     label: 'Tooltip & Popover',

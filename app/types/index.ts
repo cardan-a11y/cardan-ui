@@ -1,5 +1,6 @@
 import type { RouteLocationRaw } from 'vue-router';
 import type Dialog from '../components/Dialog.vue';
+import type ConfirmDialog from '../components/ConfirmDialog.vue';
 import type MobileMenu from '../components/MobileMenu.vue';
 import type Form from '../components/Form.vue';
 import type Textarea from '../components/Textarea.vue';
@@ -22,6 +23,19 @@ declare global {
   };
 
   type ToastColor = 'blue' | 'green' | 'red' | 'orange' | 'accent';
+
+  /** A request for `useConfirm().confirm()`: the props of ConfirmDialog, with the action it confirms */
+  type ConfirmOptions = {
+    label: string;
+    description?: string;
+    confirmLabel?: string;
+    confirmIcon?: string;
+    confirmVariant?: ButtonVariant;
+    challenge?: boolean;
+    autofocus?: boolean;
+    /** Runs on confirm, with its item in the closure; a throw shows in the dialog */
+    onConfirm: () => unknown;
+  };
 
   /** An API error in Laravel's shape, from `extractApiError()`, for ErrorMessage */
   type ApiErrorData = {
@@ -91,6 +105,7 @@ declare global {
   };
 
   type DialogComponent = InstanceType<typeof Dialog>;
+  type ConfirmDialogComponent = InstanceType<typeof ConfirmDialog>;
   type MobileMenuComponent = InstanceType<typeof MobileMenu>;
 
   /** What `useDialog()` needs of a dialog: Dialog and MobileMenu expose it. */

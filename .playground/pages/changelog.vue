@@ -32,6 +32,13 @@ useHead({ title: 'Changelog' });
           component holds, through a shared key, with optional typed keys
           (<code>DialogKeys</code>); the auth layer's dialog composables use it.
         </li>
+        <li>
+          New <strong>ConfirmDialog</strong> and <code>useConfirm()</code>, with
+          <strong>ConfirmDialogHost</strong> in the layout: one "are you sure?"
+          dialog with an optional digit challenge, whose action travels with the
+          request, so it never runs another list's handler. LogoutDialog is
+          built on it, and Dialog has a <code>focus-cancel</code> prop.
+        </li>
       </ul>
     </ChangelogEntry>
 

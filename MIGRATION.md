@@ -28,6 +28,15 @@ New: **`useDialog(key)`**, a dialog opened from another component (`/dialog` in 
 - **Typed keys are optional**: any string is a key until a project lists its own in the global `DialogKeys` interface (`declare global { interface DialogKeys { audit: true } }`), which makes a typo a type error. The auth layer's keys stay valid.
 - **The auth layer's `useLogoutDialog()`, `useMfaDialog()` and `usePasswordConfirmation()` use it**, under the keys `auth:logout`, `auth:mfa`, `auth:mfa-recovery-codes` and `auth:password-confirmation`. They return the same names, so `logoutDialogRef.value?.openDialog()` keeps working; `closeMfaDialog()` and `closeMfaRecoveryCodesDialog()` now return a promise that resolves once the dialog has closed.
 
+New: **ConfirmDialog**, **ConfirmDialogHost** and **`useConfirm()`**, one "are you sure?" dialog that only runs the action of the caller that opened it (`/confirm-dialog` in the playground).
+
+- **To use `useConfirm()`, mount `<ConfirmDialogHost />` once in the layout**, next to ToastManager and LogoutDialog. Without it `confirm()` resolves `false` and runs nothing.
+- **The action travels with the request**: `confirm({ label, description, onConfirm: () => deleteAudit(audit) })`, with the item in the closure. It resolves `true` once the action succeeded and the dialog has closed, `false` after a cancel; when the action throws, the dialog stays open and shows the error. After a confirmed delete, move focus yourself when the button that opened the dialog went with the item.
+- **`challenge: true` asks for a random digit first**, the Auditor's `method="input"`; `autofocus` starts focus in that field. The keys `general.confirm-number` and `general.confirm-number-description` are in the layer: a project drops its own copies.
+- **A dialog with markup in its text is a declarative `<ConfirmDialog>`**, with the text in its default slot, as the Academy's cart names the course in a `<strong lang>`. It emits `confirm` and `cancel` and keeps its state to itself.
+- **LogoutDialog (the auth layer) is a ConfirmDialog now**: `role="alertdialog"`, 420px wide, focus starts on Cancel. `useLogoutDialog()` is unchanged. A project's test that finds it by `role="dialog"` looks for `alertdialog`.
+- **Dialog has a `focus-cancel` prop**, which starts focus on its Cancel button.
+
 ## Upgrading to 2.5
 
 New: AppShell, AppHeader, AppSidebar and SidebarLayout, the parts of an app's layout (`/layout` in the playground). Nothing changes in a project until it uses them.

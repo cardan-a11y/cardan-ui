@@ -24,34 +24,17 @@ async function signOut() {
 </script>
 
 <template>
-  <Dialog
+  <ConfirmDialog
     ref="logoutDialogRef"
     class="logout-dialog"
     :label="$t('general.sign-out')"
-    @close="error = null"
-  >
-    <p>{{ $t('auth.confirm-logout') }}</p>
-
-    <ErrorMessage :data="error" />
-
-    <template #buttons>
-      <Button
-        variant="black"
-        icon="material-symbols:logout"
-        :label="$t('general.sign-out')"
-        :loading="loading"
-        @click="signOut"
-      />
-    </template>
-  </Dialog>
+    :description="$t('auth.confirm-logout')"
+    :confirm-label="$t('general.sign-out')"
+    confirm-icon="material-symbols:logout"
+    confirm-variant="black"
+    :loading="loading"
+    :error="error"
+    @confirm="signOut"
+    @cancel="error = null"
+  />
 </template>
-
-<style>
-.logout-dialog {
-  --dialog-max-width: 440px;
-
-  .dialog-buttons {
-    margin-block-start: 2.5rem;
-  }
-}
-</style>

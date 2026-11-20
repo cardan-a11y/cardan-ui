@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { defineComponent, h, type PropType } from 'vue';
 import { flushPromises } from '@vue/test-utils';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
-import { Dialog, MobileMenu } from '#components';
+import { ConfirmDialog, Dialog, MobileMenu } from '#components';
 
 // The development warnings are not tested: `import.meta.dev` is false here
 
@@ -15,6 +15,7 @@ declare global {
     'unmounted-key': true;
     'closing-key': true;
     'menu-key': true;
+    'confirm-key': true;
   }
 }
 
@@ -129,5 +130,23 @@ describe('useDialog', () => {
     await menu.close();
     await vi.waitFor(() => expect(dialog()?.open).toBe(false));
     expect(menu.isOpen.value).toBe(false);
+  });
+
+  it('follows a ConfirmDialog with isOpen', async () => {
+    const Owner = defineComponent({
+      setup() {
+        const { dialogRef } = useDialog<ConfirmDialogComponent>('confirm-key');
+        return () => h(ConfirmDialog, { ref: dialogRef, label: 'Delete?' });
+      },
+    });
+    await mountSuspended(Owner, { attachTo: document.body });
+    const { open, close, isOpen } = useDialog('confirm-key');
+
+    open();
+    await flushPromises();
+    expect(isOpen.value).toBe(true);
+
+    await close();
+    expect(isOpen.value).toBe(false);
   });
 });

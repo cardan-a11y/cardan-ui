@@ -31,7 +31,7 @@ test('LogoutDialog: closes on its own page before the sign-out leaves it', async
   });
 
   await page.getByRole('button', { name: 'Sign out' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Sign out' });
+  const dialog = page.getByRole('alertdialog', { name: 'Sign out' });
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: 'Sign out' }).click();
   await page.waitForURL((url) => url.pathname === '/');

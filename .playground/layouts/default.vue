@@ -39,6 +39,8 @@ const isAuthSubpage = computed(() => authPages.includes(route.path));
         <slot />
       </main>
     </div>
+
+    <ConfirmDialogHost />
   </AppShell>
 </template>
 
