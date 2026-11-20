@@ -7,6 +7,20 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.6.0" date="2026-11-20">
+      <ul>
+        <li>
+          New <strong>EmptyMessage</strong> component: the text of an empty list
+          or search, with an optional decorative icon and an
+          <code>actions</code> slot, styled through
+          <code>--empty-message-color</code>,
+          <code>--empty-message-font-size</code> and
+          <code>--empty-message-font-style</code>. It replaces each project's
+          own <code>.no-results</code> paragraph.
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.5.3" date="2026-11-20">
       <ul>
         <li>

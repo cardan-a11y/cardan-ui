@@ -4,6 +4,16 @@ This guide is for developers of projects that extend the layer. Each section say
 
 A release that needs nothing from projects has a one-line section that says so; what it changed is in the playground's changelog ([`.playground/pages/changelog.vue`](.playground/pages/changelog.vue)). The newest minor is at the top. Within a minor, its own notes come first, by topic, and its patch releases follow, newest first. The projects are kept up to date, so the file only holds the five most recent releases that ask something of them, with the one-line sections in between: each release that asks something removes the notes older than that. Older notes are in the history of this file (`git log -p MIGRATION.md`).
 
+## Upgrading to 2.6
+
+Everything in 2.6 is new and additive: a project that does nothing keeps working.
+
+New: **EmptyMessage**, the text of an empty list or search (`/empty-message` in the playground).
+
+- **It replaces a project's own `<p class="no-results">`**: `<EmptyMessage text="…" />`, or the text in its default slot, with the `v-if` or `v-else` on the component; a button such as "Reset filters" goes in its `actions` slot. Remove the project's `.no-results` styles afterwards.
+- **It has no margin.** Set the spacing the paragraph had where the component is used.
+- **Its look comes from three optional variables** in `main.css`: `--empty-message-color` (`var(--color-grey-text)`), `--empty-message-font-size` (`1em`, the surrounding size) and `--empty-message-font-style` (`normal`). The Auditor keeps its small italic with `--empty-message-font-size: var(--font-size-sm)` and `--empty-message-font-style: italic`. On a tinted (`-bg`) surface, set `--empty-message-color` to the matching `--color-*-text` there.
+
 ## Upgrading to 2.5
 
 New: AppShell, AppHeader, AppSidebar and SidebarLayout, the parts of an app's layout (`/layout` in the playground). Nothing changes in a project until it uses them.

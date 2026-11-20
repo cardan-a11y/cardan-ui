@@ -91,6 +91,11 @@ export const navList: MenuItem[] = [
     label: 'Markdown',
   },
   {
+    id: 'empty-message',
+    to: '/empty-message',
+    label: 'Empty message',
+  },
+  {
     id: 'skeleton',
     to: '/skeleton',
     label: 'Skeleton screens',
