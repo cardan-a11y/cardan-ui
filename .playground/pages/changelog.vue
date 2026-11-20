@@ -15,9 +15,8 @@ useHead({ title: 'Changelog' });
           <code>actions</code> slot, styled through
           <code>--empty-message-color</code>,
           <code>--empty-message-font-size</code> and
-          <code>--empty-message-font-style</code>, with its margin where it is
-          used through <code>--empty-message-margin-block</code>. It replaces
-          each project's own <code>.no-results</code> paragraph.
+          <code>--empty-message-font-style</code>. It replaces each project's
+          own <code>.no-results</code> paragraph.
         </li>
         <li>
           <code>useNumber()</code> formats numbers, percentages and prices in

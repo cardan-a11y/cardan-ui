@@ -13,8 +13,8 @@
  * - `--empty-message-font-size`: the surrounding size (`1em`) by default
  * - `--empty-message-font-style`: `normal` by default
  *
- * It has no outer margin. Where it is used, a class of the project's own on
- * the component sets `--empty-message-margin-block`.
+ * It sets no outer margin of its own. Where it is used, a class of the
+ * project's own on the component sets `margin`.
  */
 const { text = undefined, icon = undefined } = defineProps<{
   text?: string;
@@ -54,8 +54,12 @@ defineSlots<{
 </template>
 
 <style>
+/* Without specificity: a project's own margin wins in any stylesheet order */
+:where(.empty-message) {
+  margin-block: 0;
+}
+
 .empty-message {
-  margin-block: var(--empty-message-margin-block, 0);
   color: var(--empty-message-color, var(--color-grey-text));
   font-size: var(--empty-message-font-size, 1em);
   font-style: var(--empty-message-font-style, normal);
@@ -77,7 +81,6 @@ defineSlots<{
 
 .empty-message-wrapper {
   display: flex;
-  margin-block: var(--empty-message-margin-block, 0);
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem 1rem;
