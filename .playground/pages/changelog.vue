@@ -7,7 +7,7 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
-    <ChangelogEntry v="2.5.3" date="2026-11-19">
+    <ChangelogEntry v="2.5.3" date="2026-11-20">
       <ul>
         <li>
           SpinButton shows its range error as soon as a typed number is above
