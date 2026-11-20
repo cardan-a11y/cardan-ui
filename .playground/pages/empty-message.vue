@@ -48,7 +48,9 @@ function resetFilter() {
           class <code>empty-message</code>, just like the paragraph it
           replaces, so the markup of a page stays the same. The component has
           no outer margin: the spacing around it depends on where it is used,
-          so the page or the project sets it there.
+          so the page sets it there, with
+          <code>--empty-message-margin-block</code> on a class of its own on
+          the component.
         </p>
 
         <div class="demo-box">
@@ -178,6 +180,12 @@ function resetFilter() {
           <li>
             <code>--empty-message-font-style</code>: the font style,
             <code>normal</code> by default.
+          </li>
+          <li>
+            <code>--empty-message-margin-block</code>: the margin above and
+            below, <code>0</code> by default. Unlike the other three, it is
+            set where the component is used, on a class of the project's own,
+            and not once for the whole project.
           </li>
         </ul>
 

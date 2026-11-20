@@ -11,7 +11,8 @@ Everything in 2.6 is new and additive: a project that does nothing keeps working
 New: **EmptyMessage**, the text of an empty list or search (`/empty-message` in the playground).
 
 - **It replaces a project's own `<p class="no-results">`**: `<EmptyMessage text="…" />`, or the text in its default slot, with the `v-if` or `v-else` on the component; a button such as "Reset filters" goes in its `actions` slot. Remove the project's `.no-results` styles afterwards.
-- **It has no margin.** Set the spacing the paragraph had where the component is used.
+- **It has no margin.** Set the spacing the paragraph had where the component is used, with `--empty-message-margin-block` on a class of the project's own on the component (`.course-list-empty { --empty-message-margin-block: 0 1rem; }`). A rule on the layer's `.empty-message` class, or `margin` on the project's class, depends on which stylesheet loads last.
+- **A paragraph that must stay the project's own**, such as a live region that switches between hidden and shown, takes the class `empty-message` for the same look, in a component that also renders an EmptyMessage (its styles load with the component).
 - **Its look comes from three optional variables** in `main.css`: `--empty-message-color` (`var(--color-grey-text)`), `--empty-message-font-size` (`1em`, the surrounding size) and `--empty-message-font-style` (`normal`). The Auditor keeps its small italic with `--empty-message-font-size: var(--font-size-sm)` and `--empty-message-font-style: italic`. On a tinted (`-bg`) surface, set `--empty-message-color` to the matching `--color-*-text` there.
 
 New: **`useNumber()`**, numbers, percentages and prices in the app's language (`/numbers` in the playground).
