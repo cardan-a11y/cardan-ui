@@ -1,7 +1,7 @@
 <script setup lang="ts">
 useHead({ title: 'Auth UI' });
 
-const { logoutDialogRef } = useLogoutDialog();
+const { open: openLogoutDialog } = useLogoutDialog();
 </script>
 
 <template>
@@ -37,8 +37,12 @@ const { logoutDialogRef } = useLogoutDialog();
 
       <p>
         Asks before signing out, in a ConfirmDialog. An app mounts it once, in
-        its layout. Sign out ends the session, or only closes the dialog without
-        one.
+        its layout, as this playground does, and opens it with
+        <code>useLogoutDialog().open()</code>, from a button like this one or
+        from a menu item, as the user menu in the header does. From a menu,
+        <code>open()</code> waits until the closing menu has handed focus back
+        to its trigger, so focus returns there when the dialog closes. Sign out
+        ends the session, or only closes the dialog without one.
       </p>
 
       <Button
@@ -46,10 +50,8 @@ const { logoutDialogRef } = useLogoutDialog();
         size="lg"
         icon="material-symbols:logout"
         :label="$t('general.sign-out')"
-        @click="logoutDialogRef?.openDialog()"
+        @click="openLogoutDialog()"
       />
-
-      <LogoutDialog />
     </Card>
 
     <Card>

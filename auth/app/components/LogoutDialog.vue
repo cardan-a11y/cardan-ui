@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Asks before signing out. Mount it once, in your layout, and open it from
- * anywhere with `useLogoutDialog().logoutDialogRef.value?.openDialog()`.
+ * anywhere with `useLogoutDialog().open()`, also from a closing menu.
  */
 
 const { logoutDialogRef, handleLogout } = useLogoutDialog();

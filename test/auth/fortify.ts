@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, vi } from 'vitest';
 import {
   clearNuxtState,
   useAppConfig,
+  useNuxtApp,
   useRouter,
   useRuntimeConfig,
   useSanctumAuth,
@@ -147,6 +148,7 @@ const AUTH_STATE = [
   'passwordPolicy',
   'passwordPolicyRequested',
   'cardan-ui:toasts',
+  'cardan-auth:profile-locale',
 ];
 
 // happy-dom lacks the browser's rule for `hidden`: axe would see hidden fields
@@ -158,6 +160,9 @@ document.head.append(hiddenRule);
 // Before each test: test/setup.ts unmounts after the suite's hooks, and an
 // unmounting component still writes to this state
 beforeEach(async () => {
+  // The identity plugin's own request at start-up must not answer mid-test
+  await useNuxtApp().$identityReady;
+
   client.mockReset();
   navigate.mockReset();
   navigate.mockResolvedValue(undefined);
@@ -200,6 +205,9 @@ export function useScenario(scenario: AuthScenario) {
         endpoints: { ...cardanAuth.endpoints },
         updatePasswordMethod: cardanAuth.updatePasswordMethod,
         passwordPolicy: { ...cardanAuth.passwordPolicy },
+        localeFields: [...cardanAuth.localeFields],
+        themeField: cardanAuth.themeField,
+        authPages: [...cardanAuth.authPages],
       },
     });
 
@@ -211,6 +219,9 @@ export function useScenario(scenario: AuthScenario) {
       scenario.cardanAuth.passwordPolicy,
     );
     cardanAuth.updatePasswordMethod = scenario.cardanAuth.updatePasswordMethod;
+    cardanAuth.localeFields = [...scenario.cardanAuth.localeFields];
+    cardanAuth.themeField = scenario.cardanAuth.themeField;
+    cardanAuth.authPages = [...scenario.cardanAuth.authPages];
 
     restore = () => {
       Object.assign(sanctum.endpoints, saved.endpoints);
@@ -218,6 +229,9 @@ export function useScenario(scenario: AuthScenario) {
       Object.assign(cardanAuth.endpoints, saved.cardanAuth.endpoints);
       Object.assign(cardanAuth.passwordPolicy, saved.cardanAuth.passwordPolicy);
       cardanAuth.updatePasswordMethod = saved.cardanAuth.updatePasswordMethod;
+      cardanAuth.localeFields = saved.cardanAuth.localeFields;
+      cardanAuth.themeField = saved.cardanAuth.themeField;
+      cardanAuth.authPages = saved.cardanAuth.authPages;
     };
   });
 

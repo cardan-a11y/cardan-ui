@@ -12,5 +12,11 @@ export default defineEventHandler(async (event) => {
     };
   }
 
+  setCookie(event, DEMO_SESSION_COOKIE, '1', {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax',
+  });
+
   return {};
 });

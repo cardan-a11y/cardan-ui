@@ -52,6 +52,54 @@ useHead({ title: 'Changelog' });
           <strong>MultiSelect is deprecated</strong> and is removed in the next
           minor. The README lists the supported browsers with their versions.
         </li>
+        <li>
+          Cardan Auth UI 2.0.0 owns the Sanctum setup that each app wrote
+          itself. It registers <code>nuxt-auth-sanctum</code> and sets the
+          options every app shared (the sign-in and sign-out endpoints under
+          <code>/api/</code>, the redirects to <code>/login</code>, the global
+          middleware on), so an app sets only its <code>baseUrl</code>,
+          <code>origin</code>, <code>endpoints.user</code> and its own
+          redirects. With the global middleware on, a page for visitors only
+          uses <code>definePageMeta({ sanctum: { guestOnly: true } })</code>.
+        </li>
+        <li>
+          Cardan Auth UI loads the user itself, once, in the browser only, and
+          gives up after 10 seconds, so a cached public page never holds a
+          visitor's profile and a slow API never blocks the app. Its promise
+          <code>$identityReady</code> resolves whatever the answer, and the
+          layer's first middleware waits for it, so every other middleware knows
+          whether someone is signed in; a route with
+          <code>waitForIdentity: false</code> in its meta does not wait. This is
+          the one part of 2.6.0 that is not additive: an app that keeps its own
+          identity plugin fails at start-up, so the Academy and the Auditor
+          adopt it in the same release, as MIGRATION.md describes.
+        </li>
+        <li>
+          Cardan Auth UI sets the interface language: from the route's own
+          language (<code>locale</code> in its meta), from
+          <code>?locale=</code> on the signed-out pages, and for a signed-in
+          user from the profile fields an app names in
+          <code>cardanAuth.localeFields</code>. A language the user switches by
+          hand stays for the session. Every request to the API carries that
+          language in <code>Accept-Language</code>. With
+          <code>cardanAuth.themeField</code> the color mode follows the profile
+          too.
+        </li>
+        <li>
+          Cardan Auth UI exports <code>isAuthPage(path)</code>, which knows its
+          sign-in pages, <code>/mfa-setup</code> included, and the paths an app
+          adds in <code>cardanAuth.authPages</code>. It adds a preconnect link
+          to the API from <code>NUXT_PUBLIC_SANCTUM_BASE_URL</code>.
+        </li>
+        <li>
+          <code>useLogoutDialog().open()</code> opens the sign-out dialog, also
+          from a menu item: it waits until the closing menu has handed focus
+          back to its trigger, so focus returns there when the dialog closes.
+          UserMenu's own sign-out dialog (<code>logout</code>,
+          <code>openLogoutDialog()</code>) is deprecated and is removed in the
+          next major; the header's user menu in this playground signs out
+          through the auth layer's LogoutDialog.
+        </li>
       </ul>
     </ChangelogEntry>
 

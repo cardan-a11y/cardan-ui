@@ -6,11 +6,17 @@ import type AvatarButton from './AvatarButton.vue';
  * Popover API, like Popover, for the slot's links, buttons and fields (no menu
  * roles). Like Popover it leaves the pattern in one place: focus moves into
  * the panel when it opens. The slot's `hideMenu` closes it with focus back on
- * the button; `openLogoutDialog()` opens the sign-out dialog.
+ * the button.
+ *
+ * Its own sign-out dialog (`logout`, `openLogoutDialog()`,
+ * `closeLogoutDialog()`) is deprecated since 2.6.0 and goes in the next
+ * major: use the auth layer's `<LogoutDialog />` and
+ * `useLogoutDialog().open()` after `hideMenu()`.
  */
 const props = defineProps<{
   initials?: string;
   icon?: string;
+  /** @deprecated Since 2.6.0: the auth layer's `<LogoutDialog />` */
   logout?: CallableFunction;
   avatar?: string;
 }>();
@@ -96,7 +102,9 @@ function hideMenu() {
 defineExpose({
   hideMenu,
   focusMenu,
+  /** @deprecated Since 2.6.0: `hideMenu()`, then `useLogoutDialog().open()` */
   openLogoutDialog,
+  /** @deprecated Since 2.6.0, with `openLogoutDialog()` */
   closeLogoutDialog,
 });
 </script>

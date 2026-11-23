@@ -38,6 +38,11 @@ const cardanAuth: CardanAuthConfig = {
     maxLength: 128,
     serverChecks: true,
   },
+  // Empty, not the Academy's: app config joins arrays, so a default field
+  // would end up in every app's list
+  localeFields: [],
+  themeField: false,
+  authPages: [],
 };
 
 export default defineAppConfig({ cardanAuth });

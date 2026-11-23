@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { t } = useI18n();
 const userMenuRef = useTemplateRef<UserMenuComponent>('userMenu');
+const { open: openLogoutDialog } = useLogoutDialog();
 
 const showMenu = ref(false);
 
@@ -20,12 +21,9 @@ const menuItems = computed<MenuItem[]>(() => [
 ]);
 
 function showConfirmLogout() {
-  showMenu.value = false;
-  userMenuRef.value?.openLogoutDialog();
+  userMenuRef.value?.hideMenu();
+  openLogoutDialog();
 }
-
-/** The demo has no session: signing out only closes the menu. */
-function logout() {}
 </script>
 
 <template>
@@ -33,7 +31,6 @@ function logout() {}
     ref="userMenu"
     v-model="showMenu"
     :initials="user.initials"
-    :logout="logout"
   >
     <div class="user-info-wrapper">
       <span class="user-name">{{ user.name }}</span>

@@ -65,6 +65,23 @@ declare global {
       /** Whether the API also refuses breached, common and personal passwords; the forms list it. */
       serverChecks: boolean;
     };
+    /**
+     * The fields of the user payload with the account's language, in order:
+     * the first that holds a language the app offers is the profile's. A dotted
+     * path reaches into an object (`team.language`). Empty: the profile sets no
+     * language.
+     */
+    localeFields: string[];
+    /**
+     * The field of the user payload with the account's color mode, as a dotted
+     * path (`settings.theme`); `false` leaves the color mode to the browser.
+     */
+    themeField: string | false;
+    /**
+     * The app's own sign-in paths, for `isAuthPage()` next to the layer's: an
+     * exact path, or a prefix that ends in `/` (`/invitations/`).
+     */
+    authPages: string[];
   };
 
   /** Where `LoginForm` renders its error relative to the submit button. */
@@ -95,13 +112,38 @@ declare global {
 }
 
 type DeepPartial<T> = {
-  [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
+  [K in keyof T]?: T[K] extends unknown[]
+    ? T[K]
+    : T[K] extends object
+      ? DeepPartial<T[K]>
+      : T[K];
 };
 
 declare module 'nuxt/schema' {
   interface AppConfigInput {
     /** Cardan Auth UI's settings, see `CardanAuthConfig`. */
     cardanAuth?: DeepPartial<CardanAuthConfig>;
+  }
+}
+
+declare module '#app' {
+  interface NuxtApp {
+    /**
+     * Resolves once the identity request has answered, failed or timed out;
+     * never rejects. In the browser only.
+     */
+    $identityReady: Promise<void>;
+  }
+
+  interface PageMeta {
+    /**
+     * The language in the route's address: the interface follows it, for a
+     * visitor and a signed-in user. Set it on every such route, the default
+     * language's included.
+     */
+    locale?: string;
+    /** `false`: a navigation here does not wait for the identity request. */
+    waitForIdentity?: boolean;
   }
 }
 

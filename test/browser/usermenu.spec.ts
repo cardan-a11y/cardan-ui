@@ -162,14 +162,17 @@ for (const width of [320, 1280]) {
   });
 }
 
-test('Sign out closes the menu, opens the dialog, and closing that gives focus back to the trigger', async ({
+test('Sign out closes the menu, opens the LogoutDialog, and closing that gives focus back to the trigger', async ({
   page,
 }) => {
   const { trigger, panel, theme, signOut } = parts(page);
-  const dialog = page.getByRole('dialog', { name: 'Sign out' });
+  const dialog = page.getByRole('alertdialog', { name: 'Sign out' });
 
-  await trigger.click();
-  await signOut.click();
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await expect(theme).toBeFocused();
+  await signOut.focus();
+  await page.keyboard.press('Enter');
   await expect(panel).toBeHidden();
   await expect(dialog).toBeVisible();
   // Behind the modal dialog the trigger is out of the tree: read the attribute
@@ -179,12 +182,16 @@ test('Sign out closes the menu, opens the dialog, and closing that gives focus b
   await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();
 
-  await trigger.focus();
-  await page.keyboard.press('Enter');
-  await expect(theme).toBeFocused();
-  await signOut.focus();
-  await page.keyboard.press('Enter');
+  await trigger.click();
+  await signOut.click();
   await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+
+  // A visitor has no session to end: Sign out only closes the dialog
+  await trigger.click();
+  await signOut.click();
   await dialog.getByRole('button', { name: 'Sign out' }).click();
   await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();

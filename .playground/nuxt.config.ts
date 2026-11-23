@@ -1,3 +1,11 @@
+import { AUTH_PAGES } from '../auth/app/utils/authPages.ts';
+
+function isAuthDemoPath(path: string) {
+  return (
+    AUTH_PAGES.includes(path) || path === '/auth' || path.startsWith('/auth/')
+  );
+}
+
 export default defineNuxtConfig({
   extends: ['..', '../auth'],
 
@@ -27,19 +35,31 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ['@nuxt/image', '@nuxt/scripts', 'nuxt-auth-sanctum'],
+  modules: ['@nuxt/image', '@nuxt/scripts'],
 
   // Deployed elsewhere: NUXT_PUBLIC_SANCTUM_BASE_URL is the playground's own URL
   sanctum: {
     baseUrl: 'http://localhost:3003',
-    client: {
-      initialRequest: false,
+    // The documentation pages are for everyone
+    globalMiddleware: {
+      enabled: false,
     },
     redirect: {
       onLogin: '/auth',
       onAuthOnly: '/',
       onGuestOnly: '/auth',
       onLogout: '/',
+    },
+  },
+
+  hooks: {
+    // The documentation pages render without waiting for the user
+    'pages:extend'(pages) {
+      for (const page of pages) {
+        if (!isAuthDemoPath(page.path)) {
+          page.meta = { ...page.meta, waitForIdentity: false };
+        }
+      }
     },
   },
 

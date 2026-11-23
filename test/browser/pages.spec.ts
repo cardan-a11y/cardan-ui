@@ -38,6 +38,9 @@ for (const mode of modes) {
       test(route, async ({ page }) => {
         const problems: string[] = [];
         page.on('console', (message) => {
+          // A visitor's identity request: the mock API answers 401, as a real one
+          if (message.location().url.endsWith('/api/user')) return;
+
           if (
             message.type() === 'error' ||
             (message.type() === 'warning' && /hydrat/i.test(message.text()))

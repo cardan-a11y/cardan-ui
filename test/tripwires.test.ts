@@ -116,6 +116,14 @@ const tripwires: Tripwire[] = [
       'whether `sanctum:guest` is still registered only with `globalMiddleware` off',
   },
   {
+    name: "the identity plugin depends on the module's plugin by name",
+    package: 'nuxt-auth-sanctum',
+    checked: '3.1',
+    where: 'auth/app/plugins/identity.client.ts',
+    check:
+      'that the module\'s plugin is still named `nuxt-auth-sanctum` (`dependsOn`), and whether `client.initialRequest: false` still skips its own identity request',
+  },
+  {
     name: 'the logout dialog skips logout() without a session',
     package: 'nuxt-auth-sanctum',
     checked: '3.1',

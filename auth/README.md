@@ -13,7 +13,7 @@ This layer does **not** stand on its own. Extend it alongside its two dependenci
 | Dependency                                                            | Why                                                                                                                                                                                                                                                                                                                |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [Cardan UI](https://github.com/cardan-a11y/cardan-ui)                 | Supplies every component used here (`Button`, `Card`, `Dialog`, `Form`, `Input`, `CopyButton`), the `@nuxtjs/i18n` / `@nuxt/icon` / `@nuxtjs/color-mode` module setup, and the **design tokens** all styling in this layer is written against. Extend it as a layer — a peer of this one, not a nested dependency. |
-| [nuxt-auth-sanctum](https://github.com/manchenkoff/nuxt-auth-sanctum) | Provides `useSanctumClient()` and `useSanctumAuth()`, which this layer calls for the Fortify endpoints. Install it as a module in your app.                                                                                                                                                                        |
+| [nuxt-auth-sanctum](https://github.com/manchenkoff/nuxt-auth-sanctum) | Provides `useSanctumClient()` and `useSanctumAuth()`, which this layer calls for the Fortify endpoints. The layer registers the module and sets its defaults; add `nuxt-auth-sanctum` (`^3.1.5`) to your app's `package.json`, since a layer extended from GitHub brings no `node_modules`.                        |
 
 ### Design tokens
 
@@ -43,9 +43,36 @@ export default defineNuxtConfig({
     'github:cardan-a11y/cardan-ui',
   ],
 
-  modules: ['nuxt-auth-sanctum'],
+  sanctum: {
+    baseUrl: 'https://api.example.com',
+    origin: 'https://app.example.com',
+    endpoints: {
+      user: '/api/v1/profile',
+    },
+    // Only when `/` is not your app's home
+    redirect: {
+      onLogin: '/dashboard',
+      onGuestOnly: '/dashboard',
+    },
+  },
 });
 ```
+
+The layer registers `nuxt-auth-sanctum` itself, so your app does not list it in `modules` (listing it as well does no harm: Nuxt installs a module once). Keep it in your app's `package.json`. The layer also sets the `sanctum` options every Cardan app sets the same, so your app writes only what is its own: `baseUrl`, `origin`, `endpoints.user`, and `redirect.onLogin` and `redirect.onGuestOnly` when the module's default, `/`, is not your app's home. The module fills `runtimeConfig.public.sanctum` from these options, so your app does not repeat them there. These are the layer's defaults; set any of them in your app to override it:
+
+| `sanctum` option                       | Layer's value          | Module's own default |
+| -------------------------------------- | ---------------------- | -------------------- |
+| `endpoints.csrf`                       | `/sanctum/csrf-cookie` | the same             |
+| `endpoints.login`                      | `/api/login`           | `/login`             |
+| `endpoints.logout`                     | `/api/logout`          | `/logout`            |
+| `client.initialRequest`                | `false`                | `true`               |
+| `redirect.keepRequestedRoute`          | `true`                 | `false`              |
+| `redirect.onAuthOnly`                  | `/login`               | the same             |
+| `redirect.onLogout`                    | `/login`               | `/`                  |
+| `globalMiddleware.enabled`             | `true`                 | `false`              |
+| `globalMiddleware.allow404WithoutAuth` | `false`                | `true`               |
+
+`client.initialRequest` is off because the layer loads the user itself, in the browser only (see [The user at start-up](#the-user-at-start-up)). With the global middleware on, every page needs a signed-in user unless its meta says otherwise; an app whose 404 page must show to visitors sets `globalMiddleware.allow404WithoutAuth: true`, as Cardan Auditor does.
 
 When you develop the layers side by side locally, point at the checkouts instead:
 
@@ -78,12 +105,13 @@ The layer calls these endpoints, relative to your configured `sanctum.baseUrl`: 
 | `/api/user/confirmed-password-status`           | `GET`                            | `confirmedPasswordStatus` | Whether the password was confirmed recently                                                                |
 | `/api/user/confirm-password`                    | `POST`                           | `confirmPassword`         | Confirm the password                                                                                       |
 | your `sanctum.endpoints.login`                  | `POST`                           |                           | Sign in (path taken from your Sanctum config)                                                              |
+| your `sanctum.endpoints.user`                   | `GET`                            |                           | The user, `{ data: … }`: once at start-up in the browser, and after a sign-in or a change                  |
 | `/api/v1/auth/forgot-password`                  | `POST`                           | `forgotPassword`          | Request a reset link (`email`)                                                                             |
 | `/api/v1/auth/reset-password`                   | `POST`                           | `resetPassword`           | Set a new password from the reset link                                                                     |
 | `/api/v1/profile/password`                      | `PATCH` (`updatePasswordMethod`) | `updatePassword`          | Change the password while signed in                                                                        |
 | `/api/v1/password-policy`                       | `GET`                            | `passwordPolicy`          | `{ data: { min_length, max_length } }`, or `false` without one. Public: the reset form reads it as a guest |
 
-Enable Fortify's `two-factor-authentication` feature with `confirm: true`. Leave Fortify's `resetPasswords` feature off: its routes tell a known address from an unknown one. The password endpoints take Fortify's fields (`token`, `email`, `password`, `password_confirmation`, `current_password`) and answer a known and an unknown address identically. Errors may come in Laravel's shape (`{ message, errors: { field: [...] } }`) or as a JSON:API envelope (`{ errors: [{ detail, source: { parameter } }] }`); Cardan UI's `extractApiError()` reads both. Point the reset email at your app's `/reset-password` page with `?token=…&email=…`; a mail without the `email`, such as Fortify's own, gets a visible email field on that page. Add `&locale=` with the account's language: a signed-out visitor sees `/login`, `/forgot-password`, `/reset-password` and `/two-factor-authentication` in the language a `?locale=` asks for, when the app offers it (a signed-in user keeps their own).
+Enable Fortify's `two-factor-authentication` feature with `confirm: true`. Leave Fortify's `resetPasswords` feature off: its routes tell a known address from an unknown one. The password endpoints take Fortify's fields (`token`, `email`, `password`, `password_confirmation`, `current_password`) and answer a known and an unknown address identically. Errors may come in Laravel's shape (`{ message, errors: { field: [...] } }`) or as a JSON:API envelope (`{ errors: [{ detail, source: { parameter } }] }`); Cardan UI's `extractApiError()` reads both. Point the reset email at your app's `/reset-password` page with `?token=…&email=…`; a mail without the `email`, such as Fortify's own, gets a visible email field on that page. Add `&locale=` with the account's language: a signed-out visitor sees `/login`, `/forgot-password`, `/reset-password` and `/two-factor-authentication` in the language a `?locale=` asks for, when the app offers it (a signed-in user keeps their own, see [Language](#language)).
 
 The user payload tells the layer whether MFA is on: `mfa_enabled`, plus `mfa_required` (a role or organization requires it) and `mfa_exempt` (never remind this account, nor require it, whatever the role says). Without `mfa_enabled` the setup reminder stays off.
 
@@ -103,9 +131,14 @@ export default defineAppConfig({
     },
     updatePasswordMethod: 'PUT',
     passwordPolicy: { minLength: 8, maxLength: null, serverChecks: false },
+    localeFields: ['language', 'team.language'],
+    themeField: 'settings.theme',
+    authPages: ['/invitations/'],
   },
 });
 ```
+
+`localeFields` and `authPages` are empty by default on purpose: Nuxt joins the arrays of the app config of every layer instead of replacing them, so a default entry would end up in every app's list.
 
 | Key                                     | Default         |                                                                                                                                                                                                                                         |
 | --------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -113,6 +146,82 @@ export default defineAppConfig({
 | `updatePasswordMethod`                  | `'PATCH'`       | `'PUT'` for Fortify's own `/user/password` route                                                                                                                                                                                        |
 | `passwordPolicy.minLength`, `maxLength` | `14`, `128`     | Shown until the policy endpoint answers, or as the policy when `endpoints.passwordPolicy` is `false` or the endpoint answers with anything but a policy (a 401 from a route that is not public, say). `maxLength: null` sets no maximum |
 | `passwordPolicy.serverChecks`           | `true`          | Whether the API also refuses breached and common passwords and ones with personal information on save; the forms list those checks when it does                                                                                         |
+| `localeFields`                          | `[]`            | The fields of the user payload with the account's language, in order; a dotted path reaches into an object (`team.language`). Empty: the profile sets no language. See [Language](#language)                                            |
+| `themeField`                            | `false`         | The field of the user payload with the account's color mode, as a dotted path (`settings.theme`). `false` leaves the color mode to the browser. See [Color mode from the profile](#color-mode-from-the-profile)                         |
+| `authPages`                             | `[]`            | Your app's own sign-in paths, for `isAuthPage()` next to the layer's: an exact path, or a prefix that ends in `/` (`/invitations/`)                                                                                                     |
+
+### The user at start-up
+
+The layer loads the user itself, in place of nuxt-auth-sanctum's initial request, which would put one visitor's profile in a page a server or CDN caches. Its plugin, `cardan-auth:identity`, runs in the browser only and does not hold up the app: it starts one request to `sanctum.endpoints.user`, gives up after 10 seconds, and asks once, with no retry after an error, a 401 or the timeout. It never throws, so the app goes on with a guest whatever happens, and it never replaces a user that other code loaded while its request was under way.
+
+The plugin provides **`$identityReady`**, a promise that resolves once the request has answered, failed or timed out, and never rejects. That promise is the contract, not the plugin's name: the plugin does not wait for its request, so a plugin that `dependsOn` it knows nothing about the user yet. Code that needs to know whether someone is signed in awaits it:
+
+```ts
+// A plugin of your app: a hint for the next page load, once the user is known
+export default defineNuxtPlugin(({ $identityReady }) => {
+  const { isAuthenticated } = useAuth();
+
+  $identityReady.then(() => {
+    watch(isAuthenticated, rememberSignedIn, { immediate: true });
+  });
+});
+```
+
+`$identityReady` exists in the browser only. Your app must not provide it again: a layer's plugin and an app's copy both run, since Nuxt removes a double plugin by file and not by name, and a second `provide` of `$identityReady` throws at start-up.
+
+A signed-in user whose API does not answer within 10 seconds is a guest for that page load, so the Sanctum middleware sends them to `/login`.
+
+#### Waiting for the user before a page
+
+The layer's global middleware `00.identity.global` awaits `$identityReady` before any other middleware decides, so a guard that reads `isAuthenticated` sees the user. It returns at once on the server, and for a route whose meta has `waitForIdentity: false`.
+
+Set `waitForIdentity: false` on pages that a visitor sees the same as a signed-in user and that a server or CDN caches, such as a public catalog, so they render without waiting for the request. Route meta is plain data and child routes inherit it, so set it where your app knows those pages, in the `pages:extend` hook:
+
+```ts
+// nuxt.config.ts
+export default defineNuxtConfig({
+  hooks: {
+    'pages:extend'(pages) {
+      for (const page of pages) {
+        if (page.path === '/catalog') {
+          page.meta = { ...page.meta, waitForIdentity: false };
+        }
+      }
+    },
+  },
+});
+```
+
+`definePageMeta({ waitForIdentity: false })` in the page works too. Do not set it on a page that is excluded from the Sanctum middleware but still shows something for a signed-in user, such as a checkout: there the page needs the user first.
+
+#### The order of the middleware
+
+Nuxt runs global middleware per layer, Cardan UI's first, then the auth layer's, then your app's, and by file name within each. The auth layer's are `00.identity.global`, `01.locale.global` (see [Language](#language)) and `mfa-setup.global`, in that order. nuxt-auth-sanctum's own global middleware comes after all of these, since the layer leaves `sanctum.globalMiddleware.prepend` off: the module then adds its middleware after the files of your app and its layers. Your app's middleware therefore runs with the user known and the language set.
+
+A file in your app with the name of one of the layer's replaces the layer's, but runs at your app's place, after all of the layer's middleware. Do not keep a `00.identity.global` of your own: it would run after the layer's language resolver and `mfa-setup`, which would then decide before the user is known.
+
+### Language
+
+The layer sets the interface language from two sources, the address and the profile, so the first page and your app's own middleware already render in the right language. The address comes first, on every navigation, in this order:
+
+1. **The route's own language**, `locale` in its meta, for a visitor and a signed-in user alike, on the server too. Set it on every route with a language in its address, the default language's included: with `en` on `/en/catalog` but nothing on `/catalog`, a visitor going from one to the other keeps English.
+2. **`?locale=`** on `/login`, `/forgot-password`, `/reset-password` and `/two-factor-authentication`, for a visitor only: the link in the reset email. It does not count on `/mfa-setup`, nor on a page your app adds to `authPages`.
+
+For a signed-in user, when the address says nothing, **the profile** decides: the first field in `cardanAuth.localeFields` that holds a language your app offers. The profile's language applies on the first navigation, when the user object changes and its language differs from the one the layer last applied (a sign-in, a saved profile), and when the user leaves a route with its own language. It does not apply on every navigation, nor after `refreshIdentity()` brings the same language, so a language the user switched by hand with `setLocale()` stays for the session. A sign-out forgets the last applied language, so the next sign-in applies the profile again. The layer watches the user object, not the field: a profile form that edits the field in place does not switch the language before it is saved.
+
+With neither source the language stays as it is: a visitor keeps the language of the page they came from. The layer remembers no language of its own; an app that wants a visitor's last language back after a full page load keeps it itself, in a global middleware of its own, which runs after the layer's.
+
+`resolveLocale()` is the rule as a pure function, for a test or an app's own middleware: it returns `{ locale, source }`, with `source` `'address'` or `'profile'`, or `null` to leave the language alone.
+
+Every request through the Sanctum client, `useAuth().client` included, carries an `Accept-Language` header with the interface language's code, so the API's messages follow the interface and not the browser.
+
+### Color mode from the profile
+
+With `cardanAuth.themeField` set, the layer sets the color mode from that field of the user payload whenever the user object changes: after the load at start-up, a sign-in or a saved profile. The value becomes `useColorMode().preference` as it is, so the field holds a mode `@nuxtjs/color-mode` knows, such as `light`, `dark` or `system`; a profile without a value leaves the color mode alone. This is apart from the language's rules: on a route with its own language, or after a language switch by hand, the color mode still follows the profile. It is off by default. `useColorMode()` comes from `@nuxtjs/color-mode`, which Cardan UI registers; an app without Cardan UI installs that module to use this setting.
+
+### Preconnect to the API
+
+When `NUXT_PUBLIC_SANCTUM_BASE_URL` is set at build time, the layer adds `<link rel="preconnect">` to that origin to the head, so the browser opens the connection to the API while the app loads. Without the variable there is no link. It is read at build time, not from `sanctum.baseUrl`, because the link has to be in the shell of a page that renders in the browser. Your app does not add its own.
 
 ## Usage
 
@@ -140,9 +249,9 @@ The defaults render email, password with a reveal button, error region, rule, th
 
 ```vue
 <script setup lang="ts">
-// With nuxt-auth-sanctum's global middleware on, use
-// `sanctum: { guestOnly: true }` instead: `sanctum:guest` only exists with it off.
-definePageMeta({ middleware: ['sanctum:guest'] });
+// For visitors only. An app that turns the global middleware off uses
+// `middleware: ['sanctum:guest']` instead: it exists only then.
+definePageMeta({ sanctum: { guestOnly: true } });
 
 // Share the typed address with the forgot-password form beside it.
 const { userEmail } = useUserProfileDetails();
@@ -303,7 +412,7 @@ When the user payload has `mfa_enabled: false`, a sign-in on `/login` detours pa
 
 ### Signing out
 
-Mount `<LogoutDialog />` once, in your layout, and open it with `useLogoutDialog().logoutDialogRef.value?.openDialog()`. It asks before signing out, keeps its button loading while the API answers, and closes once the user is signed out, before nuxt-auth-sanctum goes to `redirect.onLogout` (through its `sanctum:logout` hook), so the dialog never shows the next page's language while it fades out; a refusal shows in the dialog (`handleLogout()` throws it), so the user knows they are still signed in. The sign-out link of `/mfa-setup`, there when the setup cannot be skipped, does the same on the page.
+Mount `<LogoutDialog />` once, in your layout, and open it with `useLogoutDialog().open()`. From a menu item, close the menu first (Cardan UI's UserMenu: `hideMenu()`), then call `open()`: it opens the dialog one task later, once the menu has handed focus back to its trigger, so focus returns to the trigger when the dialog closes. Your app needs no `setTimeout` of its own. `open()` returns a promise that resolves once the dialog is open. The dialog asks before signing out, keeps its button loading while the API answers, and closes once the user is signed out, before nuxt-auth-sanctum goes to `redirect.onLogout` (through its `sanctum:logout` hook), so the dialog never shows the next page's language while it fades out; a refusal shows in the dialog (`handleLogout()` throws it), so the user knows they are still signed in. The sign-out link of `/mfa-setup`, there when the setup cannot be skipped, does the same on the page.
 
 ### Password confirmation
 
@@ -360,13 +469,22 @@ Every `useAuth().user` in your app is then typed against your own payload, with 
 
 ### Other composables
 
-|                         |                                                                                                 |
-| ----------------------- | ----------------------------------------------------------------------------------------------- |
-| `useLoginEmail()`       | The address typed on the login page, shared with the forgot-password page                       |
-| `usePasswordPolicy()`   | `minLength`, `maxLength` and `serverChecks` of new passwords                                    |
-| `useCardanAuthConfig()` | The `cardanAuth` settings of the app config, see [Configuration](#configuration)                |
-| `useLogoutDialog()`     | `logoutDialogRef` to open `LogoutDialog`, and `handleLogout()`, which throws a refusal          |
-| `useMfaSetupReminder()` | `mfaEnabled`, `mfaRequired`, `mfaExempt`, `needsMfaSetup` and the reminder used by `/mfa-setup` |
+|                         |                                                                                                                            |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `useLoginEmail()`       | The address typed on the login page, shared with the forgot-password page                                                  |
+| `usePasswordPolicy()`   | `minLength`, `maxLength` and `serverChecks` of new passwords                                                               |
+| `useCardanAuthConfig()` | The `cardanAuth` settings of the app config, see [Configuration](#configuration)                                           |
+| `useLogoutDialog()`     | `open()` to open `LogoutDialog`, also from a closing menu; `logoutDialogRef`; and `handleLogout()`, which throws a refusal |
+| `useMfaSetupReminder()` | `mfaEnabled`, `mfaRequired`, `mfaExempt`, `needsMfaSetup` and the reminder used by `/mfa-setup`                            |
+
+### `isAuthPage()`
+
+`isAuthPage(path)` says whether a path is a sign-in page, for what your app shows around those pages, such as a header without navigation. It knows the layer's pages, exported as `AUTH_PAGES` (`/login`, `/forgot-password`, `/reset-password`, `/two-factor-authentication` and `/mfa-setup`), and the paths in your app's `cardanAuth.authPages`. It takes a path with or without its query and hash, and ignores a trailing slash, as nuxt-auth-sanctum does; an `authPages` entry that ends in `/` is a prefix, so `/invitations/` matches `/invitations/abc` but not `/invitations`.
+
+```ts
+const route = useRoute();
+const signingIn = computed(() => isAuthPage(route.path));
+```
 
 ### `useMfaDialog()`
 
@@ -422,7 +540,7 @@ The `password` namespace holds every password string: the field labels, the forg
 
 The layer also uses `general.back`, `general.continue`, `general.confirm`, `general.done`, `general.sign-in` and `general.email` from Cardan UI.
 
-The forms show the API's errors in Cardan UI's ErrorMessage, as the backend sends them. Send `Accept-Language` from your app's locale and translate Laravel's messages in the backend; ErrorMessage marks the messages with the `lang` of the API's `Content-Language` header, or English without one, so screen readers announce them in the right voice (WCAG 3.1.2).
+The forms show the API's errors in Cardan UI's ErrorMessage, as the backend sends them. The layer sends `Accept-Language` with the interface language (see [Language](#language)); translate Laravel's messages in the backend; ErrorMessage marks the messages with the `lang` of the API's `Content-Language` header, or English without one, so screen readers announce them in the right voice (WCAG 3.1.2).
 
 ## Accessibility
 
@@ -444,4 +562,4 @@ This layer lives in the `auth/` directory of the Cardan UI repository. From the 
 - Run `pnpm run dev` and open the Auth UI pages of the playground on [localhost:3003/auth](http://localhost:3003/auth)
 - Run `pnpm run lint` before opening a pull request
 
-The Cardan UI playground extends this layer and demoes it under `/auth`. It talks to mock Fortify endpoints in `.playground/server/routes`: any password is confirmed and any MFA code accepted except `000000`, and any password signs in except `wrong`; those show the validation error. The pages render client-side only, like the single-page apps that use the layer.
+The Cardan UI playground extends this layer and demoes it under `/auth`. It talks to mock Fortify endpoints in `.playground/server/routes`: any password is confirmed and any MFA code accepted except `000000`, and any password signs in except `wrong`; those show the validation error. The identity endpoint answers 401 until the sign-in challenge is solved, which sets a `demo-session` cookie that signing out removes: a visitor is a guest, as with a real API, and a reload keeps a session. The pages render client-side only, like the single-page apps that use the layer. The playground turns `sanctum.globalMiddleware` off, since its documentation pages are for everyone, and sets `waitForIdentity: false` on every page but `/auth` and the sign-in pages, so they render without waiting for the user.
