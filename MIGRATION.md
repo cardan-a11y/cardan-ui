@@ -38,6 +38,20 @@ New: **ConfirmDialog**, **ConfirmDialogHost** and **`useConfirm()`**, one "are y
 - **LogoutDialog (the auth layer) is a ConfirmDialog now**: `role="alertdialog"`, 420px wide, focus starts on Cancel. `useLogoutDialog()` is unchanged. A project's test that finds it by `role="dialog"` looks for `alertdialog`.
 - **Dialog has a `focus-cancel` prop**, which starts focus on its Cancel button.
 
+New: **ComboBox**, our own searchable single select (`/combobox` in the playground). **MultiSelect is deprecated**: it works as before in 2.6 and is removed in the next minor, with `@vueform/multiselect`.
+
+- **A single select moves over by changing the tag.** `v-model`, `options`, `label`, `value-key`, `label-key`, `size`, `name`, `required`, `disabled`, `placeholder`, `loading` and `no-options-text` keep their names. Remove `mode`, `searchable`, `autocomplete="off"`, `resolve-on-load`, `clear-on-search`, `native-support`, `object` and the `@open` workaround: ComboBox is always single and searchable, and loads a function's options when the field is first touched, or at once for a value without its option. An array that the page still fetches goes with `loading`, so a value shows no "Unknown option" meanwhile.
+- **`can-clear` and `can-deselect` are one prop, `can-clear`**, on by default. Picking the selected option again only closes the list; clearing is the clear button, or emptying the field and leaving it. A clear emits `null`.
+- **`v-model.number` goes**: the value is the option's value as it is.
+- **`name` puts the option's value in the form's `FormData`**, through a hidden input, where MultiSelect needed `native-support`. A disabled ComboBox submits nothing, as a native control: a form that sends its `FormData` and needs the value of a disabled field sets it itself.
+- **`object` becomes `v-model:selected`**, which holds the selected option next to the value in `v-model`. With it a field shows its label without loading its list.
+- **Typed text is never a value, and typing picks nothing.** When focus leaves, or before its Form checks a submit, the field shows the selected option's label again, and a field the user emptied clears the value. Enter and Tab pick only an option the arrow keys highlighted.
+- **A project that styled a set filter** through `.multiselect-single-label` or `.multiselect-option.is-selected` uses the class `has-value` on ComboBox's wrapper.
+- **A project's test** finds the text field by `role="combobox"` and its label; the name no longer holds the selection, which is the field's value.
+- **Selecting several, tags and the create option have no ComboBox yet**: those fields stay on MultiSelect until their follow-ups.
+- **A list too long to load whole takes `server-search`**: the function is then `options(query, { signal, page })`, asked after a pause in typing, and may answer one page as `{ options, more }`. Such a field needs `v-model:selected` to show the label of its value.
+- **Browsers**: nothing new. ComboBox needs what Tooltip, Popover and UserMenu already need; the README now lists the supported browsers with their versions.
+
 ## Upgrading to 2.5
 
 New: AppShell, AppHeader, AppSidebar and SidebarLayout, the parts of an app's layout (`/layout` in the playground). Nothing changes in a project until it uses them.

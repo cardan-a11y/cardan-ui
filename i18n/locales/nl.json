@@ -21,6 +21,19 @@
     "yes": "Ja",
     "no": "Nee"
   },
+  "combobox": {
+    "clear": "{label} wissen",
+    "cleared": "Waarde gewist",
+    "failed": "De opties konden niet worden geladen. Open de lijst opnieuw om het nog eens te proberen.",
+    "loading": "Opties laden…",
+    "more-failed": "Meer opties konden niet worden geladen",
+    "more-loaded": "Meer opties geladen",
+    "no-options": "Er zijn geen opties",
+    "no-results": "Geen opties gevonden voor je zoekopdracht",
+    "results": "{count} optie | {count} opties",
+    "search-failed": "Het zoeken is mislukt. Pas de tekst aan om opnieuw te zoeken.",
+    "unknown-option": "Onbekende optie"
+  },
   "cookies": {
     "accept": "Accepteren",
     "deny": "Weigeren",

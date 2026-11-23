@@ -46,6 +46,11 @@ export const navList: MenuItem[] = [
     label: 'Form inputs',
   },
   {
+    id: 'combobox',
+    to: '/combobox',
+    label: 'ComboBox',
+  },
+  {
     id: 'table',
     to: '/table',
     label: 'Table, Pagination & Filter',

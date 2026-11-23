@@ -21,6 +21,19 @@
     "yes": "Yes",
     "no": "No"
   },
+  "combobox": {
+    "clear": "Clear {label}",
+    "cleared": "Value cleared",
+    "failed": "The options could not be loaded. Open the list again to retry.",
+    "loading": "Loading options…",
+    "more-failed": "More options could not be loaded",
+    "more-loaded": "More options loaded",
+    "no-options": "There are no options",
+    "no-results": "No options match your search",
+    "results": "{count} option | {count} options",
+    "search-failed": "The search failed. Change the text to search again.",
+    "unknown-option": "Unknown option"
+  },
   "cookies": {
     "accept": "Accept",
     "deny": "Deny",

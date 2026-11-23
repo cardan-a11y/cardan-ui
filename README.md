@@ -11,7 +11,16 @@ Cardan UI is a [Nuxt Layer](https://nuxt.com/docs/getting-started/layers) in a p
 
 ## Browser support
 
-Cardan UI targets evergreen browsers. Tooltip, Popover and UserMenu place their content with the Popover API and CSS anchor positioning, with `position-try-fallbacks` to flip it when there is no room. Tooltip and Popover anchor it to their `popovertarget` button, its implicit anchor; UserMenu anchors its panel to the box of the header's height around its avatar button, so the panel opens under the header's line. A browser without anchor positioning (Safari before 26, Firefox without the `layout.css.anchor-positioning.enabled` flag) still opens and closes them, but without `placement` and `span`: the content shows at its static position, which can be away from the trigger (UserMenu's panel then covers the header, from the trigger's start edge on).
+Cardan UI supports the browsers below, from the version that has everything its components use.
+
+- Chrome 131 and later
+- Edge 131 and later
+- Firefox 148 and later
+- Safari 26 and later, on macOS and on iOS
+
+Tooltip, Popover, UserMenu and ComboBox show their content with the Popover API and place it with CSS anchor positioning. Tooltip and Popover anchor their content to their `popovertarget` button, its implicit anchor. UserMenu anchors its panel to the box of the header's height around its avatar button, so the panel opens under the header's line. ComboBox anchors its list to its field. UserMenu and ComboBox keep their anchor to themselves with `anchor-scope`, which sets the Chrome and Edge version. Tooltip and Popover choose the side with the most room through `position-try-order`, which sets the Firefox version: Firefox 147 turned anchor positioning on, but without that property.
+
+An older browser is not supported. It still opens and closes these components, but it shows their content at its static position, which can be away from the trigger.
 
 ## Cardan Auth UI
 

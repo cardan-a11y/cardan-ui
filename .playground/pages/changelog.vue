@@ -39,6 +39,19 @@ useHead({ title: 'Changelog' });
           request, so it never runs another list's handler. LogoutDialog is
           built on it, and Dialog has a <code>focus-cancel</code> prop.
         </li>
+        <li>
+          New <strong>ComboBox</strong> component: a searchable single select of
+          our own, after the combobox pattern of the ARIA Authoring Practices
+          Guide, with no library under it. Its value is always one of its
+          options, <code>v-model:selected</code> holds the selected option so a
+          field shows its label without its list, and <code>options</code> can
+          be a function that is asked when the field is first touched, or that
+          searches on the server and answers in pages
+          (<code>server-search</code>). Its list is in the top layer and stays
+          above a phone's keyboard.
+          <strong>MultiSelect is deprecated</strong> and is removed in the next
+          minor. The README lists the supported browsers with their versions.
+        </li>
       </ul>
     </ChangelogEntry>
 
