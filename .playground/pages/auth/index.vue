@@ -5,7 +5,7 @@ const { open: openLogoutDialog } = useLogoutDialog();
 </script>
 
 <template>
-  <div class="demo-page">
+  <div class="demo-page auth-demo">
     <h1>Auth UI</h1>
 
     <p>
@@ -18,40 +18,6 @@ const { open: openLogoutDialog } = useLogoutDialog();
     <Card>
       <h2>MFA dialogs</h2>
       <MfaDemo />
-    </Card>
-
-    <Card>
-      <h2>Password update form</h2>
-
-      <p>
-        Changes the password while signed in, for an account settings page. Its
-        requirements box stands out on a card or in a dialog as well as on the
-        page.
-      </p>
-
-      <PasswordUpdateForm />
-    </Card>
-
-    <Card>
-      <h2>Logout dialog</h2>
-
-      <p>
-        Asks before signing out, in a ConfirmDialog. An app mounts it once, in
-        its layout, as this playground does, and opens it with
-        <code>useLogoutDialog().open()</code>, from a button like this one or
-        from a menu item, as the user menu in the header does. From a menu,
-        <code>open()</code> waits until the closing menu has handed focus back
-        to its trigger, so focus returns there when the dialog closes. Sign out
-        ends the session, or only closes the dialog without one.
-      </p>
-
-      <Button
-        variant="outline"
-        size="lg"
-        icon="material-symbols:logout"
-        :label="$t('general.sign-out')"
-        @click="openLogoutDialog()"
-      />
     </Card>
 
     <Card>
@@ -84,5 +50,53 @@ const { open: openLogoutDialog } = useLogoutDialog();
         <li><NuxtLink to="/mfa-setup">MFA setup</NuxtLink></li>
       </ul>
     </Card>
+
+    <div class="two-cols">
+      <Card>
+        <h2>Password update form</h2>
+
+        <p>
+          Changes the password while signed in, for an account settings page.
+          Its requirements box stands out on a card or in a dialog as well as on
+          the page.
+        </p>
+
+        <PasswordUpdateForm />
+      </Card>
+
+      <Card>
+        <h2>Logout dialog</h2>
+
+        <p>
+          Asks before signing out, in a ConfirmDialog. An app mounts it once, in
+          its layout, as this playground does, and opens it with
+          <code>useLogoutDialog().open()</code>, from a button like this one or
+          from a menu item, as the user menu in the header does. From a menu,
+          <code>open()</code> waits until the closing menu has handed focus back
+          to its trigger, so focus returns there when the dialog closes. Sign
+          out ends the session, or only closes the dialog without one.
+        </p>
+
+        <Button
+          variant="outline"
+          size="lg"
+          icon="material-symbols:logout"
+          :label="$t('general.sign-out')"
+          @click="openLogoutDialog()"
+        />
+      </Card>
+    </div>
   </div>
 </template>
+
+<style>
+.auth-demo {
+  .two-cols {
+    @container (min-width: 720px) {
+      display: grid;
+      gap: 1.5rem;
+      grid-template-columns: auto auto;
+    }
+  }
+}
+</style>
