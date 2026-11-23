@@ -110,6 +110,7 @@ const computedAriaDescribedby = computed(
   }
 
   .switch {
+    flex-shrink: 0;
     padding-block: 3px;
     padding-inline: 3px;
     background-color: var(--color-grey-graphic);
