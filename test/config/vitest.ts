@@ -11,7 +11,7 @@ import { dependenciesOf } from './serve.mjs';
  * ```ts
  * // vitest.config.ts of a project
  * import { defineVitestConfig } from '@nuxt/test-utils/config';
- * import { cardanVitestConfig } from '../cardan-ui/test/config/vitest';
+ * import { cardanVitestConfig } from '../cardan-ui/test/config/vitest.ts';
  *
  * export default defineVitestConfig(
  *   cardanVitestConfig({
