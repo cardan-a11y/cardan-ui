@@ -96,13 +96,6 @@ for (const [name, open] of Object.entries(popupsOpenedByKeyboard)) {
   test(`${name} in a Dialog: Tab through its open popup never drops focus`, async ({
     page,
   }) => {
-    // @vuepic/vue-datepicker 14: Shift+Tab on `.dp--menu` closes the calendar without moving
-    // focus (intermittent, so fixme, not failing). Tripwire: test/tripwires.test.ts.
-    test.fixme(
-      name === 'DatePicker',
-      'Tab out of the DatePicker calendar can drop focus on the body',
-    );
-
     const dialog = await openDialog(page);
     await expect(await open(page, dialog)).toBeVisible();
 

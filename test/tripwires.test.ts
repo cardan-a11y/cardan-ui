@@ -23,10 +23,10 @@ const tripwires: Tripwire[] = [
   {
     name: 'DatePicker renders its own input in the library slot',
     package: '@vuepic/vue-datepicker',
-    checked: '14.0',
-    where: 'app/components/DatePicker.vue, test/browser/containers.spec.ts',
+    checked: '14.1',
+    where: 'app/components/DatePicker.vue, test/browser/datepicker.spec.ts',
     check:
-      'the `dp-input` slot props and the key handler the input calls, the classes of the library input; whether the input handler still parses text that arrives without a key (a paste, a drop) while text input is off; whether Shift+Tab out of the calendar still drops focus (the test.fixme)',
+      'the `dp-input` slot props and the key handler the input calls, the classes of the library input; whether the input handler still parses text that arrives without a key (a paste, a drop) while text input is off; whether Tab from an empty field still reaches the open calendar; whether the library still closes the calendar without moving focus (Escape, Shift+Tab on its menu), which `handleClose` makes up for',
   },
   {
     name: 'MultiSelect fixes Escape, the empty options and the dropdown placement',

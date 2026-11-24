@@ -2,3 +2,6 @@ allowBuilds:
   esbuild: true
   unrs-resolver: false
   vue-demi: false
+# For the #1283 fix, released 2026-11-23: remove once that version is a day old
+minimumReleaseAgeExclude:
+  - '@vuepic/vue-datepicker@14.1.0'

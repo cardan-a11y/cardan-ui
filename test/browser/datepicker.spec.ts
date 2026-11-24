@@ -24,6 +24,49 @@ test('DatePicker: Enter opens the calendar, Escape closes it with focus on the f
   await expect(combobox).toBeFocused();
 });
 
+test('DatePicker: Tab from an empty field moves into the open calendar, which stays open', async ({
+  page,
+}) => {
+  await gotoHydrated(page, '/form');
+  const combobox = page.getByRole('combobox', { name: 'DatePicker' });
+  await expect(combobox).toHaveValue('');
+
+  await combobox.focus();
+  await page.keyboard.press('Enter');
+  const calendar = page.locator(
+    `#${await combobox.getAttribute('aria-controls')}`,
+  );
+  await expect(calendar).toBeVisible();
+
+  await page.keyboard.press('Tab');
+  await expect(calendar).toBeVisible();
+  await expect(combobox).toHaveAttribute('aria-expanded', 'true');
+  expect(
+    await calendar.evaluate((el) => el.contains(document.activeElement)),
+  ).toBe(true);
+});
+
+for (const key of ['Escape', 'Shift+Tab']) {
+  test(`DatePicker: ${key} in the calendar closes it with focus on the field`, async ({
+    page,
+  }) => {
+    await gotoHydrated(page, '/form');
+    const combobox = page.getByRole('combobox', { name: 'DatePicker' });
+
+    await combobox.focus();
+    await page.keyboard.press('Enter');
+    const calendar = page.locator(
+      `#${await combobox.getAttribute('aria-controls')}`,
+    );
+    await page.keyboard.press('Tab');
+    await expect(calendar).toBeFocused();
+
+    await page.keyboard.press(key);
+    await expect(calendar).toBeHidden();
+    await expect(combobox).toBeFocused();
+  });
+}
+
 test('DatePicker: a day picked in the calendar fills the field, the clear button empties it', async ({
   page,
 }) => {
