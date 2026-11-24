@@ -5,6 +5,7 @@ export default defineNuxtPlugin({
 
   setup(nuxtApp) {
     const { user } = useSanctumAuth<{ data: AuthUser }>();
+    const { apply } = useProfileLocale();
     const applied = useState<string | null>(
       'cardan-auth:profile-locale',
       () => null,
@@ -21,21 +22,7 @@ export default defineNuxtPlugin({
       await nuxtApp.$router.isReady().catch(() => {});
       if (user.value !== value) return;
 
-      const { $i18n } = nuxtApp;
-      const resolved = resolveLocale({
-        route: nuxtApp.$router.currentRoute.value,
-        user: value.data as Record<string, unknown>,
-        localeFields: useCardanAuthConfig().localeFields,
-        locales: $i18n.localeCodes.value,
-      });
-      if (resolved?.source !== 'profile' || resolved.locale === applied.value) {
-        return;
-      }
-
-      applied.value = resolved.locale;
-      if ($i18n.locale.value !== resolved.locale) {
-        await $i18n.setLocale(resolved.locale as typeof $i18n.locale.value);
-      }
+      await apply(value);
     });
   },
 });

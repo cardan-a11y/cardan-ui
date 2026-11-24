@@ -80,8 +80,11 @@ useHead({ title: 'Changelog' });
           <code>?locale=</code> on the signed-out pages, and for a signed-in
           user from the profile fields an app names in
           <code>cardanAuth.localeFields</code>. A language the user switches by
-          hand stays for the session. Every request to the API carries that
-          language in <code>Accept-Language</code>. With
+          hand stays for the session. After a save,
+          <code>useProfileLocale().apply()</code> resolves once
+          the interface shows the profile's new language, so a toast that
+          follows is in it. Every request to the API carries that language in
+          <code>Accept-Language</code>. With
           <code>cardanAuth.themeField</code> the color mode follows the profile
           too.
         </li>

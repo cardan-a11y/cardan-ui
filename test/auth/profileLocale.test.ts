@@ -6,6 +6,7 @@ import {
   useAppConfig,
   useColorMode,
   useNuxtApp,
+  useProfileLocale,
   useRouter,
   useSanctumAuth,
 } from '#imports';
@@ -239,6 +240,67 @@ describe('the profile language (Auditor)', () => {
 
   it('reads only the fields the app names', async () => {
     await identity(auditor.user({ preferred_locale: 'nl' }));
+    expect(locale()).toBe('en');
+  });
+});
+
+/** Holds the next `setLocale()` until the returned function releases it */
+function holdNextSetLocale() {
+  const { $i18n } = useNuxtApp();
+  const setLocale = $i18n.setLocale;
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  vi.spyOn($i18n, 'setLocale').mockImplementationOnce(async (code) => {
+    await held;
+    await setLocale(code);
+  });
+  return release;
+}
+
+describe('useProfileLocale().apply()', () => {
+  useScenario(auditor);
+
+  it('resolves once the interface shows the saved language, before the watcher would', async () => {
+    await useRouter().push('/dashboard');
+    await identity(auditor.user({ language: 'nl' }));
+
+    signIn(auditor.user({ language: 'en' }));
+    await useProfileLocale().apply();
+
+    expect(locale()).toBe('en');
+  });
+
+  it('waits for a switch the watcher started', async () => {
+    await useRouter().push('/dashboard');
+    await identity(auditor.user({ language: 'nl' }));
+
+    const { $i18n } = useNuxtApp();
+    const release = holdNextSetLocale();
+
+    signIn(auditor.user({ language: 'en' }));
+    await flushPromises();
+    expect($i18n.setLocale).toHaveBeenCalledOnce();
+
+    let applied = false;
+    const applying = useProfileLocale()
+      .apply()
+      .then(() => (applied = true));
+    await flushPromises();
+    expect(applied).toBe(false);
+
+    release();
+    await applying;
+    expect(locale()).toBe('en');
+  });
+
+  it('keeps a switch by hand when the saved language is the one applied', async () => {
+    await useRouter().push('/dashboard');
+    await identity(auditor.user({ language: 'nl' }));
+    await switchTo('en');
+
+    signIn(auditor.user({ language: 'nl' }));
+    await useProfileLocale().apply();
+
     expect(locale()).toBe('en');
   });
 });

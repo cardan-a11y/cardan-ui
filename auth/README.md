@@ -209,6 +209,18 @@ The layer sets the interface language from two sources, the address and the prof
 
 For a signed-in user, when the address says nothing, **the profile** decides: the first field in `cardanAuth.localeFields` that holds a language your app offers. The profile's language applies on the first navigation, when the user object changes and its language differs from the one the layer last applied (a sign-in, a saved profile), and when the user leaves a route with its own language. It does not apply on every navigation, nor after `refreshIdentity()` brings the same language, so a language the user switched by hand with `setLocale()` stays for the session. A sign-out forgets the last applied language, so the next sign-in applies the profile again. The layer watches the user object, not the field: a profile form that edits the field in place does not switch the language before it is saved.
 
+The layer's watcher switches the language a moment after the user object changes, so a text your page shows right after a save, such as a toast, would still be in the old language. Await `useProfileLocale().apply()` after `refreshIdentity()` and before that text: it applies the profile's language by the same rules, or waits for the switch the watcher started, and resolves once the interface shows it. Call it in a handler, once the app has started, not in route middleware.
+
+```ts
+const { refreshIdentity } = useAuth();
+const { apply } = useProfileLocale();
+
+await client('/api/profile', { method: 'PATCH', body });
+await refreshIdentity();
+await apply();
+createToast({ label: $t('toasts.profile-updated') });
+```
+
 With neither source the language stays as it is: a visitor keeps the language of the page they came from. The layer remembers no language of its own; an app that wants a visitor's last language back after a full page load keeps it itself, in a global middleware of its own, which runs after the layer's.
 
 `resolveLocale()` is the rule as a pure function, for a test or an app's own middleware: it returns `{ locale, source }`, with `source` `'address'` or `'profile'`, or `null` to leave the language alone.
