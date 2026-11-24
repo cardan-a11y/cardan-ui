@@ -96,14 +96,14 @@ describe('LanguageSelect', () => {
     expect(roleOf(fieldset)).toBe('group');
     expect(accessibleName(fieldset)).toBe('Language');
     expect(radios.map((radio) => accessibleName(radio))).toEqual([
-      'English',
       'Nederlands',
+      'English',
     ]);
     // A screen reader reads each name in its own language
     expect(
       radios.map((radio) => radio.labels?.[0]?.getAttribute('lang')),
-    ).toEqual(['en', 'nl']);
-    expect(radios.map((radio) => radio.checked)).toEqual([true, false]);
+    ).toEqual(['nl', 'en']);
+    expect(radios.map((radio) => radio.checked)).toEqual([false, true]);
     expect(await checkA11y()).toHaveNoViolations();
   });
 
@@ -112,7 +112,7 @@ describe('LanguageSelect', () => {
       attachTo: document.body,
     });
 
-    await wrapper.findAll('input')[1]!.setValue(true);
+    await wrapper.findAll('input')[0]!.setValue(true);
     await vi.waitFor(() => expect(useNuxtApp().$i18n.locale.value).toBe('nl'));
     await nextTick();
 

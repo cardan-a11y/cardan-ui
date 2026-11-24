@@ -10,10 +10,6 @@ export default defineNuxtConfig({
   extends: ['..', '../auth'],
 
   $production: {
-    image: {
-      domains: ['i.ytimg.com', 'i.vimeocdn.com'],
-    },
-
     // Cached like cardan-cms-nuxt's pages, so a component that renders per
     // visitor shows up here first; the mock endpoints answer per session
     routeRules: {
@@ -86,32 +82,10 @@ export default defineNuxtConfig({
 
   css: ['~/assets/playground.css'],
 
-  icon: {
-    clientBundle: {
-      scan: true,
-      sizeLimitKb: 256,
-    },
-  },
-
+  // The layer adds the packages of its components (modules/optimize-deps.ts)
   vite: {
     optimizeDeps: {
-      include: [
-        'markdown-it',
-        'highlight.js/lib/core',
-        'highlight.js/lib/languages/xml',
-        'highlight.js/lib/languages/css',
-        'highlight.js/lib/languages/javascript',
-        'highlight.js/lib/languages/typescript',
-        'highlight.js/lib/languages/json',
-        'highlight.js/lib/languages/bash',
-        '@mdit/plugin-attrs',
-        '@mdit/plugin-mark',
-        'vue-axe',
-        'date-fns/locale',
-        '@vuepic/vue-datepicker',
-        '@vueform/multiselect',
-        'compressorjs',
-      ],
+      include: ['vue-axe'],
     },
   },
 

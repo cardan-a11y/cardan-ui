@@ -1,6 +1,16 @@
 import { bundledIcons } from './app/utils/icons.ts';
 
+// VideoPlayer's thumbnails. Spread: a literal `image` key fails the typecheck
+// of a project without @nuxt/image (cardan-support-nuxt)
+const videoThumbnails: Record<string, unknown> = {
+  image: {
+    domains: ['i.ytimg.com', 'i.vimeocdn.com'],
+  },
+};
+
 export default defineNuxtConfig({
+  ...videoThumbnails,
+
   $development: {
     modules: ['@nuxtjs/html-validator'],
 
@@ -48,6 +58,16 @@ export default defineNuxtConfig({
       styles: ['normal', 'italic'],
       subsets: ['latin', 'latin-ext'],
     },
+    // main.css's font, up to --font-weight-extrabold. A variable font: Google
+    // serves the same files as for 400 700
+    families: [
+      {
+        name: 'Hanken Grotesk',
+        weights: ['400 800'],
+        styles: ['normal', 'italic'],
+        subsets: ['latin', 'latin-ext'],
+      },
+    ],
   },
 
   typescript: {
@@ -71,8 +91,13 @@ export default defineNuxtConfig({
   },
 
   icon: {
+    // The browser never asks Iconify's API under the 'server' provider. No
+    // provider here: @nuxt/icon picks it per project (README)
+    fallbackToApi: 'server-only',
     clientBundle: {
       icons: bundledIcons,
+      scan: true,
+      sizeLimitKb: 256,
     },
   },
 
@@ -87,9 +112,11 @@ export default defineNuxtConfig({
     strategy: 'no_prefix',
     detectBrowserLanguage: false,
     defaultLocale: 'nl',
+    // The order of LanguageSwitcher. A project with its own locale files keeps
+    // its own list: @nuxtjs/i18n loads a layer's files from its own list only
     locales: [
-      { code: 'en', language: 'en', file: 'en.json', name: 'English' },
       { code: 'nl', language: 'nl', file: 'nl.json', name: 'Nederlands' },
+      { code: 'en', language: 'en', file: 'en.json', name: 'English' },
     ],
   },
 

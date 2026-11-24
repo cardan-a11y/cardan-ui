@@ -22,14 +22,14 @@ describe('LanguageSwitcher', () => {
     const links = wrapper.findAll('a');
     // The code, then the language's name in hidden text
     expect(links.map((link) => accessibleName(link))).toEqual([
-      'EN (English)',
       'NL (Nederlands)',
+      'EN (English)',
     ]);
     // A screen reader reads each name in its own language (WCAG 3.1.2)
-    expect(links.map((link) => link.attributes('lang'))).toEqual(['en', 'nl']);
+    expect(links.map((link) => link.attributes('lang'))).toEqual(['nl', 'en']);
     expect(links.map((link) => link.attributes('aria-current'))).toEqual([
-      'true',
       undefined,
+      'true',
     ]);
 
     expect(await checkA11y()).toHaveNoViolations();
@@ -65,6 +65,6 @@ describe('LanguageSwitcher', () => {
 
     expect(
       wrapper.findAll('a').map((link) => link.attributes('aria-current')),
-    ).toEqual([undefined, 'true']);
+    ).toEqual(['true', undefined]);
   });
 });

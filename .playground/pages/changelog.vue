@@ -53,6 +53,18 @@ useHead({ title: 'Changelog' });
           minor. The README lists the supported browsers with their versions.
         </li>
         <li>
+          The layer sets the config its own components need, which each project
+          copied until now: Hanken Grotesk with the weights 400 to 800 (and
+          <code>--font-weight-extrabold</code> in the <code>main.css</code>
+          template), the packages of its components in
+          <code>vite.optimizeDeps.include</code> (only those the project
+          installs), VideoPlayer's thumbnail hosts in
+          <code>image.domains</code>, and the icon bundle's
+          <code>scan</code> and <code>sizeLimitKb</code> with
+          <code>fallbackToApi: 'server-only'</code>. The locales are in the
+          order Nederlands, English. The README lists what the layer configures.
+        </li>
+        <li>
           Cardan Auth UI 2.0.0 owns the Sanctum setup that each app wrote
           itself. It registers <code>nuxt-auth-sanctum</code> and sets the
           options every app shared (the sign-in and sign-out endpoints under
@@ -81,9 +93,9 @@ useHead({ title: 'Changelog' });
           user from the profile fields an app names in
           <code>cardanAuth.localeFields</code>. A language the user switches by
           hand stays for the session. After a save,
-          <code>useProfileLocale().apply()</code> resolves once
-          the interface shows the profile's new language, so a toast that
-          follows is in it. Every request to the API carries that language in
+          <code>useProfileLocale().apply()</code> resolves once the interface
+          shows the profile's new language, so a toast that follows is in it.
+          Every request to the API carries that language in
           <code>Accept-Language</code>. With
           <code>cardanAuth.themeField</code> the color mode follows the profile
           too.
