@@ -7,7 +7,7 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
-    <ChangelogEntry v="2.6.0" date="2026-11-20">
+    <ChangelogEntry v="2.6.0" date="2026-11-24">
       <ul>
         <li>
           New <strong>EmptyMessage</strong> component: the text of an empty list
@@ -132,11 +132,27 @@ useHead({ title: 'Changelog' });
           <code>test/</code> folder: the vitest config, the browser suite's
           server and Playwright config, the tripwire runner (also for a
           workaround that waits for a Cardan UI release), API fakes for vitest
-          and Playwright that fail a test on a request no route answers, the
-          axe helper <code>expectNoViolations()</code> that needs no type shim,
-          and a reusable CI workflow. The layer's own suite runs on it, and
-          <code>test/projects.json</code> is the one list of projects. A
-          project keeps its own files until it moves over.
+          and Playwright that fail a test on a request no route answers, the axe
+          helper <code>expectNoViolations()</code> that needs no type shim, and
+          a reusable CI workflow. The layer's own suite runs on it, and
+          <code>test/projects.json</code> is the one list of projects. A project
+          keeps its own files until it moves over.
+        </li>
+        <li>
+          DatePicker: Escape and Shift+Tab in the calendar close it with focus
+          back on the field, where it was left on the page, and with
+          @vuepic/vue-datepicker 14.1 Tab from an empty field no longer closes
+          the calendar (vue-datepicker#1283, Auditor finding CAN-11.F47). After
+          a click outside, focus stays where the click put it.
+        </li>
+        <li>
+          Switch keeps its width in a row that is too narrow for its label,
+          which wraps instead.
+        </li>
+        <li>
+          Dependencies updated: vue 3.5.46, vue-router 5.5.1, @vueuse 15.1,
+          @playwright/test 1.65.1, vitest 5.1.1, md-editor-v3 7.1.1 and other
+          patch and minor releases.
         </li>
       </ul>
     </ChangelogEntry>

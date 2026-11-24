@@ -15,8 +15,14 @@ export async function loadIdentity(): Promise<void> {
       { ignoreResponseError: true, timeout: IDENTITY_TIMEOUT_MS },
     );
 
-    if (response.ok && response._data && user.value === null) {
-      user.value = response._data;
+    const data = response._data;
+    if (
+      response.ok &&
+      data &&
+      typeof data === 'object' &&
+      user.value === null
+    ) {
+      user.value = data;
     }
   } catch {
     // A failed or timed-out request: a guest

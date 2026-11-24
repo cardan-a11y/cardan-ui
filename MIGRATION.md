@@ -6,7 +6,9 @@ A release that needs nothing from projects has a one-line section that says so; 
 
 ## Upgrading to 2.6
 
-Everything in 2.6 is additive, except the identity load of the auth layer (Cardan Auth UI 2.0.0): an app that extends the auth layer adopts it in the same release, in the order below. cardan-support-nuxt and cardan-cms-nuxt extend only the base layer, so neither has to change anything for 2.6, but both notice the config the layer now sets itself: cms no longer lets the browser fetch an icon from Iconify's API and loads its video thumbnails through `/_ipx` in development too, and support would carry the layer's Dutch too, which it leaves out with `i18n.bundle.onlyLocales: 'en'`.
+Everything in 2.6 is additive, except the identity load of the auth layer (Cardan Auth UI 2.0.0): an app that extends the auth layer adopts it in the same release, in the order below. cardan-support-nuxt and cardan-cms-nuxt extend only the base layer, so neither has to change its app for 2.6, but both notice the config the layer now sets itself: cms no longer lets the browser fetch an icon from Iconify's API and loads its video thumbnails through `/_ipx` in development too, and support, which already carries the layer's Dutch, gets its locales in the order `nl`, `en` (nothing shows it there) and can leave the Dutch out with `i18n.bundle.onlyLocales: 'en'`.
+
+**Every project matches the layer's `@playwright/test`**, 1.65.1 since 2.6.0, in the same change that takes 2.6: a project's specs pass their `Page` and `Locator` to the layer's `test/browser/helpers.ts`, which types them from the layer's own copy, so `pnpm run typecheck` fails in a project on another version (TS2345, in CI too, where the layer's `main` is checked out beside the project). Each project's branch that waits for 2.6 already has it, with the other updates of 24 November 2026 (vue 3.5.46), so all four merge right after the layer.
 
 New: **the auth layer owns the Sanctum setup** that cardan-academy-nuxt and cardan-auditor-nuxt each wrote themselves: the module and its defaults, the identity load at start-up, `Accept-Language` on the API's requests, the language from the address and the profile, the color mode from the profile, the list of sign-in pages and the API's preconnect link. `auth/README.md` describes each. The auth layer is 2.0.0 and its peer `nuxt-auth-sanctum` is `^3.1.5`.
 
@@ -18,10 +20,10 @@ New: **the auth layer owns the Sanctum setup** that cardan-academy-nuxt and card
 - **Remove the app's profile-language code**: the Academy's watcher on `preferred_locale` in `app/layouts/default.vue` and the address half of its `public-locale` middleware, the Auditor's `app/plugins/user-locale.ts`. Name the profile's fields in `app.config.ts` instead, in order: `cardanAuth: { localeFields: ['preferred_locale'] }` in the Academy, `['language', 'team.language']` in the Auditor. The layer adds no field of its own.
 - **Set `locale` in the route meta of every route with a language in its address**, the default language's included: the Academy sets `nl` on the Dutch catalog pages in `pages:extend` and `en` on the English copies it makes there, or a visitor going from `/en/catalog` to `/catalog` keeps English.
 - **Set `waitForIdentity: false` in the route meta of a cached public page**, in `pages:extend`, so a navigation there does not wait for the user: the Academy's catalog, `/catalog` and below, on the Dutch originals, from which the copies take it. It replaces the path check `isPublicPagePath` in the Academy's identity middleware. Child routes inherit it. A page excluded from the Sanctum middleware that still needs the user first, such as the checkout or the Auditor's report, does not set it.
-- **Remove the `setLocale()` after a profile save** (the Auditor's `pages/profile.vue` and `pages/user/index.vue`): the layer applies the saved language. A page that shows a text right after the save, such as a toast, awaits `useProfileLocale().apply()` after `refreshIdentity()` first, or the text is in the old language.
+- **Remove the `setLocale()` after a profile save** (the Auditor's `app/pages/profile.vue` and `app/pages/user/index.vue`): the layer applies the saved language. A page that shows a text right after the save, such as a toast, awaits `useProfileLocale().apply()` after `refreshIdentity()` first, or the text is in the old language.
 - **The Academy keeps the language a visitor had last** (`cardan-academy-locale` in local storage) in its own middleware, which runs after the layer's. The layer has no such source.
 - **The theme from the profile is off unless named**: the Academy sets `cardanAuth: { themeField: 'settings.theme' }` and removes its theme watcher in `app/layouts/default.vue`; the Auditor leaves it off and keeps the theme in the browser.
-- **Replace the app's own list of sign-in paths** (the Academy's in `app/layouts/default.vue`, the Auditor's in `components/TheHeader.vue`) with `isAuthPage(path)`, which knows the layer's five pages, `/mfa-setup` included. An app adds its own in `cardanAuth: { authPages: ['/invitations/'] }`: an exact path, or a prefix that ends in `/`.
+- **Replace the app's own list of sign-in paths** (the Academy's in `app/layouts/default.vue`, the Auditor's in `app/components/TheHeader.vue`) with `isAuthPage(path)`, which knows the layer's five pages, `/mfa-setup` included. An app adds its own in `cardanAuth: { authPages: ['/invitations/'] }`: an exact path, or a prefix that ends in `/`.
 - **Remove the app's preconnect link to the API** from `app.head`: the layer adds it from `NUXT_PUBLIC_SANCTUM_BASE_URL` at build time.
 - **Open the sign-out dialog from a menu with `useLogoutDialog().open()`**, after the menu's `hideMenu()`, and remove the `setTimeout(() => logoutDialogRef.value?.openDialog())` around it (the Academy's `TheUserMenu.vue`, the Auditor's `AppHeaderMenu.vue`): `open()` waits that one task itself.
 - **The identity request gives up after 10 seconds.** A signed-in user on an API that does not answer in time is then a guest, and the Sanctum middleware sends them to `/login`. The Academy already works this way; the Auditor waited without a limit and retried.
@@ -29,7 +31,7 @@ New: **the auth layer owns the Sanctum setup** that cardan-academy-nuxt and card
 
 New: **the layer sets the config its own components need**, which each project copied from another until now. The README's section "What the layer configures" describes every key. Config merges, so a project that keeps its copy still works; the copies can go once the project is on 2.6.
 
-- **Remove `fonts.families` with Hanken Grotesk** (the Academy and the Auditor): the layer loads it with the weights `400 800`, in normal and italic, for `latin` and `latin-ext`. A project that keeps its entry has two after the merge; `@nuxt/fonts` makes them one, the project's options first. cardan-cms-nuxt's own Montserrat entry is not affected. `@nuxt/fonts` can also go from the project's `modules`, as can `devtools: { enabled: false }`: the layer registers and sets both.
+- **Remove `fonts.families` with Hanken Grotesk** (the Academy and the Auditor): the layer loads it with the weights `400 800`, in normal and italic, for `latin` and `latin-ext`. A project that keeps its entry has two after the merge; `@nuxt/fonts` makes them one, the project's options first. cardan-cms-nuxt's own Montserrat entry is not affected. A project that set no entry (cardan-support-nuxt) gets the range `400 800` where it was `400 700`, without a change of its own: the same two font files, since Hanken Grotesk is a variable font. `@nuxt/fonts` can also go from the project's `modules`, as can `devtools: { enabled: false }`: the layer registers and sets both.
 - **Add `--font-weight-extrabold: 800`** to the font weights in the project's `main.css`, after `--font-weight-bold`. No layer component reads it; it is there for a project's own headings. The Academy and the Auditor already have it.
 - **Remove from `vite.optimizeDeps.include` the packages of the layer's components**: markdown-it, `@mdit/plugin-attrs`, `@mdit/plugin-mark`, `highlight.js/lib/core` and the six `highlight.js/lib/languages/*`, `@vuepic/vue-datepicker`, `date-fns`, `date-fns/locale`, `@vueform/multiselect`, `compressorjs` and `md-editor-v3`. The layer's module adds each one the project installs itself, and none it does not, so Vite does not warn about a package it cannot find. Keep the project's own packages in the list (the Auditor's `diff` and `vuedraggable`, `@vueuse/integrations/useChangeCase`). The Academy now also gets `compressorjs`, which it installs without listing it, and the Auditor the bare `date-fns`, which DatePicker imports.
 - **Remove `i.ytimg.com` and `i.vimeocdn.com` from `image.domains`**: the layer lists them, at the top level. A project that keeps them has them twice, and `@nuxt/image` removes the duplicates. In the Auditor, cms and the playground, which listed them under `$production` only, a thumbnail in development now goes through `/_ipx` as in production, instead of straight from YouTube or Vimeo. cardan-support-nuxt, which has no `@nuxt/image`, needs no change: the layer writes the key so that its typecheck passes.
@@ -38,6 +40,8 @@ New: **the layer sets the config its own components need**, which each project c
 - **Keep `i18n.locales`** in a project with its own locale files: `@nuxtjs/i18n` loads a layer's locale files only from that layer's own list, so a project without its list loses its `nl.json` and `en.json`. The layer's and the auth layer's lists are now in the order `nl`, `en`, which is the order of LanguageSwitcher and LanguageSelect where the project's own list does not set one. The Academy and cms already list `nl`, `en`; the Auditor changes its list to `nl`, `en` for the same order. cardan-support-nuxt has no list and renders no LanguageSwitcher, so it shows nothing of the order. It sets `i18n.bundle.onlyLocales: 'en'` with its adoption of 2.6, which keeps the layer's Dutch out of its build.
 
 New: **a shared test harness** in the layer's `test/` folder: the vitest config, the browser suite's server and Playwright config, the tripwire runner, the API fakes for vitest and Playwright, the asserting axe helper `expectNoViolations()` and a reusable CI workflow. Existing projects need to do nothing: their own files keep working, also `expect(await checkA11y()).toHaveNoViolations()` with their own `vitest-axe` shim. Each project moves over in its own issue.
+
+Fixed: **DatePicker's calendar with the keyboard.** A project that uses DatePicker raises `@vuepic/vue-datepicker` to `^14.1.0`, as cardan-auditor-nuxt does: 14.1 no longer closes the calendar on Tab from an empty field (Vuepic/vue-datepicker#1283, Cardan Auditor finding CAN-11.F47). The layer's wrapper now puts focus back on the field after Escape or Shift+Tab in the calendar, where the library left it on the page; after a click outside, focus stays where the click put it.
 
 Deprecated: **UserMenu's own sign-out dialog**, its `logout` prop and its `openLogoutDialog()` and `closeLogoutDialog()`. They work as before in 2.6 and are removed in the next major. Use the auth layer's `<LogoutDialog />`, mounted once in the layout, and in the menu item's handler call `hideMenu()`, then `useLogoutDialog().open()`. Neither app uses them.
 
@@ -223,49 +227,3 @@ Also a round of audit fixes. Paste the token, rename what a project sets, and ch
     );
   }
   ```
-
-## Upgrading to 2.3
-
-### 2.3.8
-
-2.3.8 needs nothing from projects. See changelog for details.
-
-### 2.3.7
-
-2.3.7 is a round of accessibility and form fixes, with the card surface and gradient of the brand book. Paste the token values below into your `main.css`; the rest keeps working, but check the items after it.
-
-- **Paste these token values into your `main.css`**: the card surface of the brand book (Kaart, `#FBFAF9`, where cards were white), the new brand gradient `--gradient-bg` (once per page, under a card), and two graphics that failed the 3:1 that borders, icons and indicators need. Dark `--color-red-graphic` was 2.66:1 on the page and is 3.42:1, and it draws every error border, also the new one of a required Checkbox; light `--color-yellow-graphic` was 2.77:1 and is 3.37:1. cardan-cms-nuxt keeps its own dark red, which passes.
-
-  ```css
-  :where(:root) {
-    --cardan-card: #fbfaf9;
-    --gradient-bg: linear-gradient(
-      in srgb 110.32deg,
-      var(--color-accent-bg) 0%,
-      var(--color-green-bg) 76.34%
-    );
-  }
-
-  :where(.light-mode) {
-    --color-card-bg: var(--cardan-card);
-    --color-yellow-graphic: hsl(45 80% 36%);
-  }
-
-  :where(.dark-mode) {
-    --color-red-graphic: var(--cardan-error);
-  }
-  ```
-
-- **A required Checkbox is checked by the form.** `required` now sets `required` on the input, so a Form does not submit while the box is unticked: it moves focus to the box and shows "Tick this box to continue" under it, or your `error-message`. A check of your own after submit no longer runs; move its text to `error-message` (cardan-academy-nuxt's checkout terms). For a group, pass `required` to CheckboxGroup, which asks for one box, not to every box (cardan-cms-nuxt's `StatamicCheckboxGroup`), or each box shows the error.
-- **Tabs puts an attribute on its wrapper only.** Until now every attribute on `<Tabs>`, a `class`, an `id`, an `aria-labelledby`, landed on the wrapper and on the tablist. CSS that selected the class on the tablist (`.tablist.my-tabs`) matches nothing now, and an `aria-labelledby` names the wrapper instead of the tablist; use the `aria-label` prop for the tablist's name. The projects select their classes on the wrapper, which keeps working. The arrow keys act on `keydown` and no longer scroll the page; Home and End go to the first and last tab.
-- **Select, CheckboxGroup and RadioGroup type their options.** `options` is `T[]`, and `value-key`, `label-key`, `disabled-key`, `name-key` and `title-key` must name a field of `T`: a key that is not in the option type is a type error now, which is the point. An untyped array keeps working. The option types are `SelectOption` and `GroupOption`.
-- **Focus returns to the element that opened a Dialog when it closes**, also with Escape; until now it fell to the page, because the rest of the page was still `inert` when the browser restored it. A dialog that moved focus itself on close keeps doing so.
-- **Focus moves on Vue's next tick instead of after a timer** in FocusLoop, UserMenu, AvatarButton, MobileMenu and MarkdownEditor, so it lands as soon as the element exists, also with reduced motion. A test that waited for the old timer can read focus right after the next tick.
-- **LanguageSelect and LanguageSwitcher list the locales of the i18n config** (`locales` from `useI18n()`), with the `name` and `language` of each. The radio ids are `language-option-<code>` (were `-english` and `-dutch`). A third language needs an entry in the config and, for DatePicker, its date-fns locale in `dateFnsLocales` in `DatePicker.vue`.
-- **`useCookiesDialog()` no longer returns `cookiesDialogRef`.** Open the dialog with `openCookiesDialog()`, or set `cookiesDialogOpen`; CookiesDialog follows the flag. The shared state keys are `cardan-ui:cookie-consent`, `cardan-ui:cookies-dialog-open` and `cardan-ui:toasts` (were `cookieConsent`, `cookiesDialogRef` and `toasts`); read them through `useCookiesDialog()` and `useToast()`, never with `useState()` directly. The `cookieConsent` browser cookie keeps its name, so saved choices stay valid.
-- **The layer bundles the icons its components show on first paint, and the ones two or more projects use** (`bundledIcons` in `app/utils/icons.ts`, through `icon.clientBundle.icons` in its `nuxt.config.ts`; a project's own list is merged with it). **Install `@iconify-json/svg-spinners` and `@iconify-json/material-symbols`** if your project lacks one (cardan-support-nuxt has no `svg-spinners`): a listed icon whose collection is missing fails the production build, whether a page shows it or not. Then remove those icons from your own `icon.clientBundle.icons`: in cardan-academy-nuxt `material-symbols:close-rounded`, `material-symbols:more-horiz` and `svg-spinners:90-ring-with-bg`.
-- **MobileMenu renders its dialog on the server** through Nuxt's `#teleports`, always: the `teleport-to` prop is removed. No project passed it.
-- **`useDate()` reads the locale through `useI18n()`**, so call it in `setup`, as the components do; it no longer works from a plugin, a store or a callback outside a component. No project calls it there.
-- **The field components render through the new FormField component**: the label with its chip, the control, the error text and the instruction, in that order. The classes are the same (`.form-field-wrapper`, `label`, `.instruction`, `.error-wrapper`), so CSS keeps working. Two things change: the error text sits directly under the field in every field, above the instruction, where Select and Textarea showed it below; and an Input without a `label` renders no empty `<label>`.
-- **FileInput keeps the chosen file as its value** while an image is compressed, and the compressed file replaces it; the value no longer goes empty in between. A watcher on the value sees the chosen file first and then the compressed one.
-- **A link in a markdown text ends in hidden text "(open in new window)"** in the current language, and gets that title only when it has none of its own. The icon after the link is decorative now; CSS that changed its alternative text can go.

@@ -141,6 +141,20 @@ describe('identity load (Academy)', () => {
     expect(useSanctumAuth().user.value).toBeNull();
   });
 
+  it('stays a guest when the address answers 200 with an HTML page', async () => {
+    identityApi(
+      user,
+      () =>
+        new Response('<!doctype html><title>App</title>', {
+          headers: { 'content-type': 'text/html' },
+        }),
+    );
+
+    await loadIdentity();
+
+    expect(useSanctumAuth().user.value).toBeNull();
+  });
+
   it('resolves when the client throws before the request', async () => {
     // As an app's test mocks `useSanctumClient` without `.raw`
     clientOverride.current = vi.fn();

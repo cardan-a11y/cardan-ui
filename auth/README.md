@@ -152,12 +152,13 @@ export default defineAppConfig({
 
 ### The user at start-up
 
-The layer loads the user itself, in place of nuxt-auth-sanctum's initial request, which would put one visitor's profile in a page a server or CDN caches. Its plugin, `cardan-auth:identity`, runs in the browser only and does not hold up the app: it starts one request to `sanctum.endpoints.user`, gives up after 10 seconds, and asks once, with no retry after an error, a 401 or the timeout. It never throws, so the app goes on with a guest whatever happens, and it never replaces a user that other code loaded while its request was under way.
+The layer loads the user itself, in place of nuxt-auth-sanctum's initial request, which would put one visitor's profile in a page a server or CDN caches. Its plugin, `cardan-auth:identity`, runs in the browser only and does not hold up the app: it starts one request to `sanctum.endpoints.user`, gives up after 10 seconds, and asks once, with no retry after an error, a 401 or the timeout (as long as your app leaves `sanctum.client.retry` at the module's `false`: the request goes through the module's client, which retries a failed connection when that is set). It never throws, so the app goes on with a guest whatever happens, and it never replaces a user that other code loaded while its request was under way.
 
 The plugin provides **`$identityReady`**, a promise that resolves once the request has answered, failed or timed out, and never rejects. That promise is the contract, not the plugin's name: the plugin does not wait for its request, so a plugin that `dependsOn` it knows nothing about the user yet. Code that needs to know whether someone is signed in awaits it:
 
 ```ts
-// A plugin of your app: a hint for the next page load, once the user is known
+// app/plugins/signed-in-hint.client.ts, a browser-only plugin of your app:
+// a hint for the next page load, once the user is known
 export default defineNuxtPlugin(({ $identityReady }) => {
   const { isAuthenticated } = useAuth();
 
@@ -167,7 +168,7 @@ export default defineNuxtPlugin(({ $identityReady }) => {
 });
 ```
 
-`$identityReady` exists in the browser only. Your app must not provide it again: a layer's plugin and an app's copy both run, since Nuxt removes a double plugin by file and not by name, and a second `provide` of `$identityReady` throws at start-up.
+`$identityReady` exists in the browser only: on the server it is `undefined`, so code that reads it is a `.client` plugin, as above, or runs in `onMounted`. Your app must not provide it again: a layer's plugin and an app's copy both run, since Nuxt removes a double plugin by file and not by name, and a second `provide` of `$identityReady` throws at start-up.
 
 A signed-in user whose API does not answer within 10 seconds is a guest for that page load, so the Sanctum middleware sends them to `/login`.
 
