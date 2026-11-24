@@ -65,6 +65,13 @@ useHead({ title: 'Changelog' });
           order Nederlands, English. The README lists what the layer configures.
         </li>
         <li>
+          UserMenu: an item that closes it right after it opened, before the
+          browser reported the opening, now closes it and leaves focus on its
+          button, and focus that already moved into its panel stays there. A
+          sign-out dialog opened that quickly returned focus to the page instead
+          of the button.
+        </li>
+        <li>
           Cardan Auth UI 2.0.0 owns the Sanctum setup that each app wrote
           itself. It registers <code>nuxt-auth-sanctum</code> and sets the
           options every app shared (the sign-in and sign-out endpoints under

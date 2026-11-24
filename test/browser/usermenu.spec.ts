@@ -162,6 +162,47 @@ for (const width of [320, 1280]) {
   });
 }
 
+test('an item that closes it before its open event arrives leaves focus on the trigger, not in the closed panel', async ({
+  page,
+}) => {
+  const { trigger, panel, signOut } = parts(page);
+  const dialog = page.getByRole('alertdialog', { name: 'Sign out' });
+
+  // One task: the browser queues the popover's `toggle` event for later
+  await trigger.focus();
+  await trigger.evaluate((button: HTMLElement) => {
+    button.click();
+    [...document.querySelectorAll<HTMLElement>('.user-menu-popover button')]
+      .find((item) => item.textContent?.trim() === 'Sign out')!
+      .click();
+  });
+  await expect(dialog).toBeVisible();
+  await expect(panel).toBeHidden();
+  await expect(signOut).toBeHidden();
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+});
+
+test('focus that moved into the panel before its open event arrives stays there', async ({
+  page,
+}) => {
+  const { trigger, panel, signOut } = parts(page);
+
+  await trigger.focus();
+  await trigger.evaluate((button: HTMLElement) => {
+    button.click();
+    [...document.querySelectorAll<HTMLElement>('.user-menu-popover button')]
+      .find((item) => item.textContent?.trim() === 'Sign out')!
+      .focus();
+  });
+  await expect(panel).toBeVisible();
+  // The open event has run once the trigger says so
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await expect(signOut).toBeFocused();
+});
+
 test('Sign out closes the menu, opens the LogoutDialog, and closing that gives focus back to the trigger', async ({
   page,
 }) => {

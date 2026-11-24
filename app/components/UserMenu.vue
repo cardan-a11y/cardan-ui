@@ -52,7 +52,11 @@ function onToggle(event: Event) {
 
   if (open) {
     nextTick(() => {
-      firstFocusable(contentRef.value)?.focus();
+      // Focus already in the panel stays: the event comes a task after the
+      // trigger opened it, so a key may have moved focus in first
+      const content = contentRef.value;
+      if (content?.contains(document.activeElement)) return;
+      firstFocusable(content)?.focus();
     });
   } else {
     unpark();
@@ -96,6 +100,8 @@ async function focusMenu() {
 // before, which in Safari (a click does not focus a button) is not the trigger
 function hideMenu() {
   showMenu.value = false;
+  // Itself: `showMenu` lags a task behind an open from the trigger
+  if (isOpen()) contentRef.value?.hidePopover();
   focusMenu();
 }
 
