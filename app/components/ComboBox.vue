@@ -844,11 +844,13 @@ function onDocumentPressEnd() {
 onMounted(() => {
   document.addEventListener('pointerdown', onDocumentPress, true);
   document.addEventListener('pointerup', onDocumentPressEnd, true);
+  document.addEventListener('pointercancel', onDocumentPressEnd, true);
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', onDocumentPress, true);
   document.removeEventListener('pointerup', onDocumentPressEnd, true);
+  document.removeEventListener('pointercancel', onDocumentPressEnd, true);
   untrackViewport();
   forgetOptions();
 });

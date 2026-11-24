@@ -413,6 +413,22 @@ test('ComboBox: dragging the scrollbar of the list keeps it open and focus in th
   await expect(combobox).toBeFocused();
 });
 
+test('ComboBox: after a pan in the list, focus can leave the field', async ({
+  page,
+}) => {
+  const combobox = client(page);
+  await combobox.focus();
+  await page.keyboard.press('ArrowDown', { delay: 10 });
+  const list = listOf(page);
+
+  // A touch pan ends in pointercancel, not pointerup
+  await list.dispatchEvent('pointerdown');
+  await list.dispatchEvent('pointercancel');
+  await page.keyboard.press('Shift+Tab');
+
+  await expect(combobox).not.toBeFocused();
+});
+
 test('ComboBox: Enter with the list open picks and does not submit; with it closed it submits', async ({
   page,
 }) => {

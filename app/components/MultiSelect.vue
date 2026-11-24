@@ -3,6 +3,12 @@ import Multiselect from '@vueform/multiselect';
 import type MultiselectProps from '@vueform/multiselect';
 import type { ComponentPublicInstance, StyleValue } from 'vue';
 
+/**
+ * Deprecated since 2.6.0 and removed in the next minor: a single select is
+ * ComboBox; selecting several, tags and the create option stay here until
+ * ComboBox has them.
+ */
+
 defineOptions({ inheritAttrs: false });
 
 const { t } = useI18n();
