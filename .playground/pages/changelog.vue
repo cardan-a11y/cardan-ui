@@ -67,9 +67,9 @@ useHead({ title: 'Changelog' });
         <li>
           UserMenu: an item that closes it right after it opened, before the
           browser reported the opening, now closes it and leaves focus on its
-          button, and focus that already moved into its panel stays there. A
-          sign-out dialog opened that quickly returned focus to the page instead
-          of the button.
+          button. A sign-out dialog opened that quickly returned focus to the
+          page instead of the button. In UserMenu and Popover, focus that
+          already moved into the panel by then stays there.
         </li>
         <li>
           Cardan Auth UI 2.0.0 owns the Sanctum setup that each app wrote

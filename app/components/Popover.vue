@@ -67,7 +67,11 @@ const SLIDE_IN_PX = 8;
 function onToggle(event: Event) {
   if ((event as ToggleEvent).newState === 'open') {
     nextTick(() => {
-      const first = firstFocusable(popoverContentRef.value);
+      // Focus already in it stays: the event comes a task after the trigger
+      // opened it, so a key may have moved focus in first
+      const content = popoverContentRef.value;
+      if (content?.contains(document.activeElement)) return;
+      const first = firstFocusable(content);
       if (!first) return;
 
       // A plain focus() makes Chromium scroll a menu above its trigger to the
