@@ -68,10 +68,10 @@ const tripwires: Tripwire[] = [
       'whether the client head still defers `dispose` until a page transition settles',
   },
   {
-    name: 'global-types references the layer types',
+    name: 'the prepare:types hooks reference the layer types',
     package: 'nuxt',
     checked: '4.6',
-    where: 'modules/global-types.ts',
+    where: 'nuxt.config.ts, auth/nuxt.config.ts',
     check:
       "whether the generated tsconfig still excludes the consumer's node_modules for the layer's `app/`",
   },

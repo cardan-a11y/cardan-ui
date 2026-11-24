@@ -1,4 +1,9 @@
+import { fileURLToPath } from 'node:url';
 import { bundledIcons } from './app/utils/icons.ts';
+
+const globalTypes = fileURLToPath(
+  new URL('./app/types/index.ts', import.meta.url),
+);
 
 // VideoPlayer's thumbnails. Spread: a literal `image` key fails the typecheck
 // of a project without @nuxt/image (cardan-support-nuxt)
@@ -75,9 +80,13 @@ export default defineNuxtConfig({
   },
 
   hooks: {
-    // Without it a project's typecheck reads the layer's own vue-router unless
-    // versions and peers match, and its typed routes miss the layer's files
-    'prepare:types'({ tsConfig }) {
+    'prepare:types'({ tsConfig, references }) {
+      // Nuxt 4.6's generated tsconfig excludes the consumer's `node_modules`,
+      // where the layer lives. Tripwire: test/tripwires.test.ts.
+      references.push({ path: globalTypes });
+
+      // Without it a project's typecheck reads the layer's own vue-router unless
+      // versions and peers match, and its typed routes miss the layer's files
       const paths = tsConfig.compilerOptions?.paths;
       const project = paths?.['#vue-router']?.[0]?.match(
         /^.*node_modules\/vue-router(?=\/|$)/,

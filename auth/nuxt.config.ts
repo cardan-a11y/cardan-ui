@@ -1,5 +1,11 @@
+import { fileURLToPath } from 'node:url';
+
 // The API's origin, so the browser opens its connection while the SPA loads
 const apiOrigin = process.env.NUXT_PUBLIC_SANCTUM_BASE_URL;
+
+const globalTypes = fileURLToPath(
+  new URL('./app/types/index.ts', import.meta.url),
+);
 
 export default defineNuxtConfig({
   pages: true,
@@ -37,6 +43,14 @@ export default defineNuxtConfig({
 
   typescript: {
     includeWorkspace: true,
+  },
+
+  hooks: {
+    // Nuxt 4.6's generated tsconfig excludes the consumer's `node_modules`,
+    // where the layer lives. Tripwire: test/tripwires.test.ts.
+    'prepare:types'({ references }) {
+      references.push({ path: globalTypes });
+    },
   },
 
   // Only the locale files: the rest of the i18n setup is the app's
