@@ -2,7 +2,7 @@ import { beforeEach, describe, it, expect } from 'vitest';
 import { h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { AppSidebar } from '#components';
-import { accessibleName, checkA11y, roleOf } from '../a11y';
+import { accessibleName, expectNoViolations, roleOf } from '../a11y';
 
 /**
  * A labelled `aside` (a complementary landmark) around the app's navigation.
@@ -39,7 +39,7 @@ describe('AppSidebar', () => {
     // Not collapsible unless asked: no button
     expect(wrapper.find('button').exists()).toBe(false);
 
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('takes its own label, and names its button after it', async () => {
@@ -75,7 +75,7 @@ describe('AppSidebar', () => {
       aside.element,
     );
     expect(button.attributes('aria-expanded')).toBe('true');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await button.trigger('click');
     await nextTick();
@@ -85,7 +85,7 @@ describe('AppSidebar', () => {
     // Folded, the landmark and its button keep their names
     expect(accessibleName(aside)).toBe('Sidebar menu');
     expect(accessibleName(button)).toBe('Sidebar menu');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await button.trigger('click');
     await nextTick();

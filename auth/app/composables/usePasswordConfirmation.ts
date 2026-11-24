@@ -17,10 +17,11 @@ export function usePasswordConfirmation() {
   const { client } = useAuth();
   const { endpoints } = useCardanAuthConfig();
 
-  const passwordConfirmationDialogRef = useState<DialogComponent | null>(
-    'passwordConfirmationDialogRef',
-    () => null,
-  );
+  const {
+    dialogRef: passwordConfirmationDialogRef,
+    open: openPasswordConfirmationDialog,
+    close: closePasswordConfirmationDialog,
+  } = useLayerDialog('auth:password-confirmation');
 
   const passwordConfirmationError = useState<ApiErrorData | null>(
     'passwordConfirmationError',
@@ -38,15 +39,21 @@ export function usePasswordConfirmation() {
     () => 0,
   );
 
+  /** The stack hands over on purpose: not the second binding useDialog warns of */
+  function handOverTo(dialog: DialogComponent | null) {
+    passwordConfirmationDialogRef.value = null;
+    passwordConfirmationDialogRef.value = dialog;
+  }
+
   function registerPasswordConfirmationDialog(dialog: DialogComponent) {
     mountedDialogs.push(dialog);
-    passwordConfirmationDialogRef.value = dialog;
+    handOverTo(dialog);
   }
 
   function unregisterPasswordConfirmationDialog(dialog: DialogComponent) {
     const index = mountedDialogs.lastIndexOf(dialog);
     if (index !== -1) mountedDialogs.splice(index, 1);
-    passwordConfirmationDialogRef.value = mountedDialogs.at(-1) ?? null;
+    handOverTo(mountedDialogs.at(-1) ?? null);
   }
 
   function settle(confirmed: boolean) {
@@ -78,7 +85,7 @@ export function usePasswordConfirmation() {
     pendingAfterConfirm = afterConfirm ?? null;
     passwordConfirmationError.value = null;
     passwordConfirmationRequest.value++;
-    passwordConfirmationDialogRef.value.openDialog();
+    openPasswordConfirmationDialog();
 
     return new Promise((resolve) => {
       settlePending = resolve;
@@ -124,7 +131,7 @@ export function usePasswordConfirmation() {
       // Its errors are the caller's to show; the password was accepted
     } finally {
       confirmedPending = true;
-      passwordConfirmationDialogRef.value?.closeDialog();
+      void closePasswordConfirmationDialog();
       loadingPasswordConfirmation.value = false;
     }
 

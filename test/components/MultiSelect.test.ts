@@ -5,9 +5,9 @@ import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { MultiSelect } from '#components';
 import {
   accessibleName,
-  checkA11y,
   description,
   expectFocused,
+  expectNoViolations,
   roleOf,
 } from '../a11y';
 import { mountInForm } from '../form';
@@ -40,14 +40,14 @@ describe('MultiSelect', () => {
     const combobox = wrapper.get('[role="combobox"]');
     expect(roleOf(combobox)).toBe('combobox');
     expect(accessibleName(combobox)).toBe('Toppings');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await wrapper.setProps({ modelValue: ['cheese'] });
     await nextTick();
 
     // The library names it by the selection: the label follows
     expect(accessibleName(combobox)).toMatch(/^Cheese.*Toppings$/);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('is described by its instruction, and by its error only while the error shows', async () => {
@@ -65,7 +65,7 @@ describe('MultiSelect', () => {
 
     expect(description(combobox)).toBe('Two at most Toppings is missing');
     expect(combobox.attributes('aria-invalid')).toBe('true');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await wrapper.setProps({ modelValue: ['ham'] });
     await nextTick();
@@ -104,7 +104,7 @@ describe('MultiSelect', () => {
 
     expect(description(combobox)).toBe('Ham is sold out');
     expect(combobox.attributes('aria-invalid')).toBe('true');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     const cheese = wrapper
       .findAll('[role="option"]')
@@ -169,7 +169,7 @@ describe('MultiSelect', () => {
       combobox.getAttribute('aria-controls'),
     );
     expect(new Set(listboxes).size).toBe(2);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
   it('asks an options function again when it opens without options, so a first empty answer does not stay', async () => {
     const answers = [[], options];

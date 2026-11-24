@@ -59,6 +59,16 @@ A change in `auth/` must keep every step of these flows working, for a
 mouse, keyboard and screen reader user. Walk each flow the diff touches,
 following `auth/README.md` (Usage and Accessibility):
 
+- **Start-up**: the identity is asked once, in the browser only, and
+  `$identityReady` resolves after an answer, a failure or the 10 s timeout,
+  never rejecting; `00.identity.global` waits for it before the other
+  middleware, except with `meta.waitForIdentity: false`. A slow or failing
+  API leaves a guest, not a blank or stuck page.
+- **Language**: a route's `meta.locale` wins for everyone; `?locale=` only on
+  the four signed-out pages, for a visitor; else the profile's
+  `localeFields`, on the first navigation, a sign-in, a saved profile and
+  leaving a route with its own language. A switch by hand stays across
+  navigations and `refreshIdentity()`; `Accept-Language` follows it.
 - **Sign in**: `/login` posts the credentials, refreshes the identity and
   continues to `?redirect=`. A redirect to another site must fall back to
   `redirect.onLogin` (`useAuth()`). When Fortify answers `two_factor: true`,
@@ -86,11 +96,14 @@ following `auth/README.md` (Usage and Accessibility):
 - **Forgot and reset password**: the reset signs the user in, through the
   challenge when MFA is on; the requirements come from the policy endpoint
   or the `passwordPolicy` setting.
-- **Sign out**: `LogoutDialog` asks before signing out.
+- **Sign out**: `LogoutDialog` asks before signing out; opened from a menu
+  with `useLogoutDialog().open()`, focus returns to the menu's trigger when
+  it closes.
 
 Also 🔴 Important in `auth/`: a password, code or token that ends up in a
-URL, storage, a log or an error message; a changed endpoint default or
-`cardanAuth` setting without a note in `auth/README.md`; a focus move or
+URL, storage, a log or an error message; a changed endpoint default,
+`sanctum` default or `cardanAuth` setting without a note in
+`auth/README.md`; a focus move or
 `role="alert"` error region from the Accessibility section that no longer
 happens.
 

@@ -2,7 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Search } from '#components';
-import { accessibleName, checkA11y, expectFocused, roleOf } from '../a11y';
+import {
+  accessibleName,
+  expectFocused,
+  expectNoViolations,
+  roleOf,
+} from '../a11y';
 
 async function mountSearch(props: Record<string, unknown> = {}) {
   const wrapper = await mountSuspended(Search, {
@@ -30,7 +35,7 @@ describe('Search', () => {
     expect(roleOf(input)).toBe('searchbox');
     expect(accessibleName(input)).toBe('search');
     expect(button('search')?.attributes('type')).toBe('submit');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('names the field by its label', async () => {
@@ -56,7 +61,7 @@ describe('Search', () => {
     await input.setValue('accessibility');
     const reset = button('Reset');
     expect(reset?.attributes('type')).toBe('reset');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     reset!.element.focus();
     await reset!.trigger('click');
@@ -76,6 +81,6 @@ describe('Search', () => {
     expect(button('search')).toBeUndefined();
     expect(roleOf(wrapper.get('form'))).toBe('search');
     expect(accessibleName(input)).toBe('search');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });

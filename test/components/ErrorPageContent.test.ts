@@ -5,7 +5,7 @@ import { nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { ErrorPageContent } from '#components';
 import { errorPageFallback } from '../../app/components/ErrorPageContent.vue';
-import { accessibleName, checkA11y, roleOf } from '../a11y';
+import { accessibleName, expectNoViolations, roleOf } from '../a11y';
 
 /**
  * What the error page says and where its link leads. The page itself in the
@@ -117,7 +117,7 @@ describe('ErrorPageContent', () => {
     expect(prevented).toBe(false);
     expect(back).not.toHaveBeenCalled();
 
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('goes back to the earlier page of the app in the history', async () => {

@@ -50,6 +50,9 @@ const layerDefaults: CardanAuthConfig = {
   },
   updatePasswordMethod: 'PATCH',
   passwordPolicy: { minLength: 14, maxLength: 128, serverChecks: true },
+  localeFields: [],
+  themeField: false,
+  authPages: [],
 };
 
 /**
@@ -71,7 +74,12 @@ export const academy: AuthScenario = {
       onAuthOnly: '/login',
     },
   },
-  cardanAuth: layerDefaults,
+  cardanAuth: {
+    ...layerDefaults,
+    localeFields: ['preferred_locale'],
+    themeField: 'settings.theme',
+    authPages: ['/invitations/'],
+  },
   user: (fields = {}) => ({
     email: 'ada@example.com',
     name: 'Ada Lovelace',
@@ -141,6 +149,9 @@ export const auditor: AuthScenario = {
     },
     updatePasswordMethod: 'PUT',
     passwordPolicy: { minLength: 8, maxLength: null, serverChecks: false },
+    localeFields: ['language', 'team.language'],
+    themeField: false,
+    authPages: [],
   },
   user: (fields = {}) => ({
     email: 'ada@example.com',

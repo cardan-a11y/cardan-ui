@@ -3,11 +3,10 @@ import { flushPromises } from '@vue/test-utils';
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { MfaSetup } from '#components';
 import { useMfa } from '#imports';
-import { accessibleName, checkA11y, expectFocused } from '../a11y';
+import { accessibleName, expectFocused, expectNoViolations } from '../a11y';
 import {
   RECOVERY_CODES,
   buttonNamed,
-  client,
   fortify,
   navigate,
   refuse,
@@ -17,7 +16,6 @@ import {
 } from './fortify';
 import { academy } from './scenarios';
 
-mockNuxtImport('useSanctumClient', () => () => client);
 mockNuxtImport(
   'navigateTo',
   () =>
@@ -59,7 +57,7 @@ describe('MfaSetup', () => {
     expect(accessibleName(wrapper.get('[role="img"]'))).toBe(
       'QR code for setting up multi-factor authentication',
     );
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await button('Continue').trigger('click');
     await flushPromises();
@@ -83,7 +81,7 @@ describe('MfaSetup', () => {
       RECOVERY_CODES,
     );
     expect(wrapper.emitted('refresh')).toHaveLength(1);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await button("I've stored my recovery codes").trigger('click');
     expect(wrapper.emitted('done')).toHaveLength(1);

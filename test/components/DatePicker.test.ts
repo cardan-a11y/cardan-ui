@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { defineComponent, h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { DatePicker } from '#components';
-import { accessibleName, checkA11y, description } from '../a11y';
+import { accessibleName, description, expectNoViolations } from '../a11y';
 import { addToPage } from '../dom';
 import { mountInForm } from '../form';
 
@@ -27,7 +27,7 @@ describe('DatePicker', () => {
     expect(accessibleName(input)).toBe('Start');
     expect(wrapper.get('label').attributes('for')).toBe(input.attributes('id'));
     expect(description(input)).toBe('The first day');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('describes its input by the error only while the error shows', async () => {
@@ -42,7 +42,7 @@ describe('DatePicker', () => {
 
     expect(description(input)).toBe('Start is missing');
     expect(input.attributes('aria-invalid')).toBe('true');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await wrapper.setProps({ modelValue: new Date(2026, 10, 9) });
     await nextTick();
@@ -74,7 +74,7 @@ describe('DatePicker', () => {
     const input = wrapper.get('input');
     expect(description(input)).toBe('The course is full that day');
     expect(input.attributes('aria-invalid')).toBe('true');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     // A date picked in the calendar, which opens after a moment
     await input.trigger('click');
@@ -148,7 +148,7 @@ describe('DatePicker', () => {
       'The first day',
       'The last day',
     ]);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('names its input by the label alone, as a combobox whose aria-expanded follows the calendar', async () => {

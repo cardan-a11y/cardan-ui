@@ -26,6 +26,35 @@ test('Popover: opens from its trigger, expanded follows, focus on the first item
   expect((await axNode(trigger)).properties.expanded).toBe(false);
 });
 
+test('Popover: focus that moved into it before its open event arrives stays there', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: 'More options' });
+  const list = page.getByRole('navigation', { name: 'More options' });
+
+  // One task: the browser queues the popover's `toggle` event for later
+  await trigger.focus();
+  await trigger.evaluate((button: HTMLElement) => {
+    const panel = document.getElementById(
+      button.getAttribute('popovertarget')!,
+    )!;
+    // Its own focus move has run one task after the event
+    panel.addEventListener(
+      'toggle',
+      () => setTimeout(() => (panel.dataset.settled = '')),
+      { once: true },
+    );
+    button.click();
+    [...panel.querySelectorAll<HTMLElement>('button')]
+      .find((item) => item.textContent?.trim() === 'Duplicate')!
+      .focus();
+  });
+  await page.waitForFunction(() => document.querySelector('[data-settled]'));
+
+  await expect(list).toBeVisible();
+  await expect(list.getByRole('button', { name: 'Duplicate' })).toBeFocused();
+});
+
 test('Popover: Tab past the last item leaves and closes it', async ({
   page,
 }) => {

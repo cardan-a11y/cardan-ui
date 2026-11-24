@@ -7,6 +7,156 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.6.0" date="2026-11-24">
+      <ul>
+        <li>
+          New <strong>EmptyMessage</strong> component: the text of an empty list
+          or search, with an optional decorative icon and an
+          <code>actions</code> slot, styled through
+          <code>--empty-message-color</code>,
+          <code>--empty-message-font-size</code> and
+          <code>--empty-message-font-style</code>. It replaces each project's
+          own <code>.no-results</code> paragraph.
+        </li>
+        <li>
+          <code>useNumber()</code> formats numbers, percentages and prices in
+          the app's language, with the pure <code>formatNumber()</code>,
+          <code>formatPercent()</code> and <code>formatCurrency()</code> (in
+          euros by default, from cents with <code>cents: true</code>, whole with
+          <code>decimals: 0</code>); PricingCard, Chip and
+          <code>formatFileSize()</code> use them. The playground shows them in
+          both languages at <code>/numbers</code>.
+        </li>
+        <li>
+          <code>useDialog(key)</code> opens and closes a dialog that another
+          component holds, through a shared key, with optional typed keys
+          (<code>DialogKeys</code>); the auth layer's dialog composables use it.
+        </li>
+        <li>
+          New <strong>ConfirmDialog</strong> and <code>useConfirm()</code>, with
+          <strong>ConfirmDialogHost</strong> in the layout: one "are you sure?"
+          dialog with an optional digit challenge, whose action travels with the
+          request, so it never runs another list's handler. LogoutDialog is
+          built on it, and Dialog has a <code>focus-cancel</code> prop.
+        </li>
+        <li>
+          New <strong>ComboBox</strong> component: a searchable single select of
+          our own, after the combobox pattern of the ARIA Authoring Practices
+          Guide, with no library under it. Its value is always one of its
+          options, <code>v-model:selected</code> holds the selected option so a
+          field shows its label without its list, and <code>options</code> can
+          be a function that is asked when the field is first touched, or that
+          searches on the server and answers in pages
+          (<code>server-search</code>). Its list is in the top layer and stays
+          above a phone's keyboard.
+          <strong>MultiSelect is deprecated</strong> and is removed in the next
+          minor. The README lists the supported browsers with their versions.
+        </li>
+        <li>
+          The layer sets the config its own components need, which each project
+          copied until now: Hanken Grotesk with the weights 400 to 800 (and
+          <code>--font-weight-extrabold</code> in the <code>main.css</code>
+          template), the packages of its components in
+          <code>vite.optimizeDeps.include</code> (only those the project
+          installs), VideoPlayer's thumbnail hosts in
+          <code>image.domains</code>, and the icon bundle's
+          <code>scan</code> and <code>sizeLimitKb</code> with
+          <code>fallbackToApi: 'server-only'</code>. The locales are in the
+          order Nederlands, English. The README lists what the layer configures.
+        </li>
+        <li>
+          The layer no longer logs a hint at start-up when a project has no
+          <code>@nuxt/image</code> or <code>@nuxt/scripts</code>: the README
+          says which components need them.
+        </li>
+        <li>
+          UserMenu: an item that closes it right after it opened, before the
+          browser reported the opening, now closes it and leaves focus on its
+          button. A sign-out dialog opened that quickly returned focus to the
+          page instead of the button. In UserMenu and Popover, focus that
+          already moved into the panel by then stays there.
+        </li>
+        <li>
+          Cardan Auth UI 2.0.0 owns the Sanctum setup that each app wrote
+          itself. It registers <code>nuxt-auth-sanctum</code> and sets the
+          options every app shared (the sign-in and sign-out endpoints under
+          <code>/api/</code>, the redirects to <code>/login</code>, the global
+          middleware on), so an app sets only its <code>baseUrl</code>,
+          <code>origin</code>, <code>endpoints.user</code> and its own
+          redirects. With the global middleware on, a page for visitors only
+          uses <code>definePageMeta({ sanctum: { guestOnly: true } })</code>.
+        </li>
+        <li>
+          Cardan Auth UI loads the user itself, once, in the browser only, and
+          gives up after 10 seconds, so a cached public page never holds a
+          visitor's profile and a slow API never blocks the app. Its promise
+          <code>$identityReady</code> resolves whatever the answer, and the
+          layer's first middleware waits for it, so every other middleware knows
+          whether someone is signed in; a route with
+          <code>waitForIdentity: false</code> in its meta does not wait. This is
+          the one part of 2.6.0 that is not additive: an app that keeps its own
+          identity plugin fails at start-up, so the Academy and the Auditor
+          adopt it in the same release, as MIGRATION.md describes.
+        </li>
+        <li>
+          Cardan Auth UI sets the interface language: from the route's own
+          language (<code>locale</code> in its meta), from
+          <code>?locale=</code> on the signed-out pages, and for a signed-in
+          user from the profile fields an app names in
+          <code>cardanAuth.localeFields</code>. A language the user switches by
+          hand stays for the session. After a save,
+          <code>useProfileLocale().apply()</code> resolves once the interface
+          shows the profile's new language, so a toast that follows is in it.
+          Every request to the API carries that language in
+          <code>Accept-Language</code>. With
+          <code>cardanAuth.themeField</code> the color mode follows the profile
+          too.
+        </li>
+        <li>
+          Cardan Auth UI exports <code>isAuthPage(path)</code>, which knows its
+          sign-in pages, <code>/mfa-setup</code> included, and the paths an app
+          adds in <code>cardanAuth.authPages</code>. It adds a preconnect link
+          to the API from <code>NUXT_PUBLIC_SANCTUM_BASE_URL</code>.
+        </li>
+        <li>
+          <code>useLogoutDialog().open()</code> opens the sign-out dialog, also
+          from a menu item: it waits until the closing menu has handed focus
+          back to its trigger, so focus returns there when the dialog closes.
+          UserMenu's own sign-out dialog (<code>logout</code>,
+          <code>openLogoutDialog()</code>) is deprecated and is removed in the
+          next major; the header's user menu in this playground signs out
+          through the auth layer's LogoutDialog.
+        </li>
+        <li>
+          A shared test harness for the projects, in the layer's
+          <code>test/</code> folder: the vitest config, the browser suite's
+          server and Playwright config, the tripwire runner (also for a
+          workaround that waits for a Cardan UI release), API fakes for vitest
+          and Playwright that fail a test on a request no route answers, the axe
+          helper <code>expectNoViolations()</code> that needs no type shim, and
+          a reusable CI workflow. The layer's own suite runs on it, and
+          <code>test/projects.json</code> is the one list of projects. A project
+          keeps its own files until it moves over.
+        </li>
+        <li>
+          DatePicker: Escape and Shift+Tab in the calendar close it with focus
+          back on the field, where it was left on the page, and with
+          @vuepic/vue-datepicker 14.1 Tab from an empty field no longer closes
+          the calendar (vue-datepicker#1283, Auditor finding CAN-11.F47). After
+          a click outside, focus stays where the click put it.
+        </li>
+        <li>
+          Switch keeps its width in a row that is too narrow for its label,
+          which wraps instead.
+        </li>
+        <li>
+          Dependencies updated: vue 3.5.46, vue-router 5.5.1, @vueuse 15.1,
+          @playwright/test 1.65.1, vitest 5.1.1, md-editor-v3 7.1.1 and other
+          patch and minor releases.
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.5.3" date="2026-11-20">
       <ul>
         <li>

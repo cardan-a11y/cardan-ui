@@ -2,7 +2,12 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { MobileMenu } from '#components';
-import { accessibleName, checkA11y, expectFocused, roleOf } from '../a11y';
+import {
+  accessibleName,
+  expectFocused,
+  expectNoViolations,
+  roleOf,
+} from '../a11y';
 import { addToPage } from '../dom';
 
 /**
@@ -66,13 +71,13 @@ describe('MobileMenu', () => {
     expect(accessibleName(trigger)).toBe('Menu');
     expect(roleOf(dialog)).toBe('dialog');
     expect(trigger.attributes('aria-expanded')).toBe('false');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await open();
 
     expect(dialog.open).toBe(true);
     expect(trigger.attributes('aria-expanded')).toBe('true');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('names the dialog by its label', async () => {

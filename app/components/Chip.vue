@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { locale } = useI18n();
+const { formatNumber } = useNumber();
 
 const {
   label = undefined,
@@ -30,7 +30,7 @@ const computedStyle = computed(() => ({
 }));
 
 const formattedLabel = computed(() =>
-  typeof label === 'number' ? label.toLocaleString(locale.value) : label,
+  typeof label === 'number' ? formatNumber(label) : label,
 );
 </script>
 

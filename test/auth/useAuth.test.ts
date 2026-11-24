@@ -1,10 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { useAuth, useRouter, useRuntimeConfig } from '#imports';
-import { client, navigate, signIn, useScenario } from './fortify';
+import { navigate, signIn, useScenario } from './fortify';
 import { academy } from './scenarios';
 
-mockNuxtImport('useSanctumClient', () => () => client);
 mockNuxtImport(
   'navigateTo',
   () =>

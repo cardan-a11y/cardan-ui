@@ -159,11 +159,25 @@ function handleOpen() {
   isExpanded.value = true;
 }
 
+// The library closes the calendar without moving focus (Escape, Shift+Tab on
+// its menu, a picked day), which drops it on the body: back to the field then,
+// unless a click outside the field put it there. Tripwire: test/tripwires.test.ts.
+let lastInputWasPointer = false;
+
 function handleClose() {
   isExpanded.value = false;
+  const active = document.activeElement;
+  const lost = !active || active === document.body;
+  if (
+    (lost && !lastInputWasPointer) ||
+    (active && document.getElementById(menuId)?.contains(active))
+  ) {
+    document.getElementById(inputId)?.focus();
+  }
 }
 
 function preventEscape(event: KeyboardEvent) {
+  lastInputWasPointer = false;
   if (event.key === 'Escape' && isExpanded.value) {
     event.preventDefault();
     datepickerRef.value?.closeMenu();
@@ -171,12 +185,20 @@ function preventEscape(event: KeyboardEvent) {
   }
 }
 
+function notePointer() {
+  lastInputWasPointer = true;
+}
+
 onMounted(() => {
   isMounted.value = true;
   document.addEventListener('keydown', preventEscape);
+  document.addEventListener('pointerdown', notePointer, true);
 });
 
-onUnmounted(() => document.removeEventListener('keydown', preventEscape));
+onUnmounted(() => {
+  document.removeEventListener('keydown', preventEscape);
+  document.removeEventListener('pointerdown', notePointer, true);
+});
 
 const weekStart = computed(() => {
   const given = attrs['week-start'] ?? attrs.weekStart;

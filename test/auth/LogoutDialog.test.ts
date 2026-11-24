@@ -4,10 +4,9 @@ import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { LogoutDialog } from '#components';
 import { useAuth, useLogoutDialog } from '#imports';
 import MfaSetupPage from '../../auth/app/pages/mfa-setup.vue';
-import { accessibleName, checkA11y } from '../a11y';
+import { accessibleName, expectNoViolations } from '../a11y';
 import {
   buttonNamed,
-  client,
   fortify,
   navigate,
   pending,
@@ -18,7 +17,6 @@ import {
 } from './fortify';
 import { academy } from './scenarios';
 
-mockNuxtImport('useSanctumClient', () => () => client);
 mockNuxtImport(
   'navigateTo',
   () =>
@@ -49,7 +47,7 @@ describe('LogoutDialog (Academy)', () => {
 
     expect(accessibleName(dialog)).toBe('Sign out');
     expect(dialog.text()).toContain('Are you sure you want to sign out?');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     const button = signOut();
     await button.trigger('click');
@@ -116,7 +114,7 @@ describe('/mfa-setup page (Academy)', () => {
       .map((alert) => alert.text())
       .filter(Boolean);
     expect(alerts).toEqual(['Something went wrong. Please try again later.']);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('offers a skip, and no sign-out, when MFA is a reminder', async () => {

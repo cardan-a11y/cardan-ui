@@ -11,6 +11,7 @@ const {
   ariaLabel = undefined,
   role = undefined,
   headerIcon = undefined,
+  focusCancel = false,
 } = defineProps<{
   label?: string;
   ariaLabel?: string;
@@ -27,6 +28,8 @@ const {
   closeButtonIconSize?: FontSize;
   role?: 'dialog' | 'alertdialog';
   headerIcon?: string;
+  /** Focus starts on Cancel, the least destructive action of an alertdialog */
+  focusCancel?: boolean;
 }>();
 
 const dialogTemplateRef = useTemplateRef<HTMLDialogElement>('dialog');
@@ -142,6 +145,7 @@ defineExpose({
         <Button
           :label="$t('general.cancel')"
           variant="outline"
+          :autofocus="focusCancel || undefined"
           @click="closeDialog"
         />
 

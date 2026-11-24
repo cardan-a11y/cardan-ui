@@ -3,9 +3,8 @@ import { flushPromises } from '@vue/test-utils';
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { MfaChallenge } from '#components';
 import { useMfa, useToast } from '#imports';
-import { accessibleName, checkA11y, expectFocused } from '../a11y';
+import { accessibleName, expectFocused, expectNoViolations } from '../a11y';
 import {
-  client,
   fortify,
   navigate,
   refuse,
@@ -15,7 +14,6 @@ import {
 } from './fortify';
 import { scenarios } from './scenarios';
 
-mockNuxtImport('useSanctumClient', () => () => client);
 mockNuxtImport(
   'navigateTo',
   () =>
@@ -57,7 +55,7 @@ describe.each(scenarios)('MfaChallenge ($name)', (scenario) => {
     expect(accessibleName(code)).toMatch(/^Confirmation code/);
     expect(code.attributes('autocomplete')).toBe('one-time-code');
     expect(code.attributes('inputmode')).toBe('numeric');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('starts without the code and error of a challenge abandoned earlier', async () => {
@@ -96,7 +94,7 @@ describe.each(scenarios)('MfaChallenge ($name)', (scenario) => {
     expect(accessibleName(recovery)).toMatch(/^Recovery code/);
     expect(recovery.attributes('autocomplete')).toBe('off');
     expect(wrapper.text()).toContain('Enter one of your recovery codes');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await button('Use a verification code').trigger('click');
     await flushPromises();

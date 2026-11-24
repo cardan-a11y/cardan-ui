@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { ErrorMessage } from '#components';
 import { extractApiError } from '#imports';
-import { checkA11y } from '../a11y';
+import { expectNoViolations } from '../a11y';
 import { fetchError } from '../fetch';
 import academyCheckout from '../fixtures/api-errors/academy-checkout-validation.json';
 
@@ -29,7 +29,7 @@ describe('ErrorMessage', () => {
     ]);
     expect(wrapper.get('ul').attributes('lang')).toBe('en');
     expect(wrapper.text()).not.toContain('and 1 more error');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it("lists the Academy's checkout errors under nested keys, in Dutch", async () => {

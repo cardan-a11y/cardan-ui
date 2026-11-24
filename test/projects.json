@@ -1,0 +1,36 @@
+[
+  {
+    "folder": "cardan-academy-nuxt",
+    "name": "academy"
+  },
+  {
+    "folder": "cardan-auditor-nuxt",
+    "name": "auditor"
+  },
+  {
+    "folder": "cardan-cms-nuxt",
+    "name": "cms",
+    "allow": {
+      "why": "Until its rebrand the cms keeps its own palette and scale, without these tokens of the template",
+      "tokens": [
+        "--cardan-*",
+        "--color-secondary",
+        "--color-secondary-hover",
+        "--gradient-bg",
+        "--hsl-app-nav",
+        "--line-height-ui"
+      ]
+    },
+    "contrast": {
+      "why": "Its own light orange graphic: 2.95:1 on the page, 2.33:1 on the track",
+      "known": [
+        "light-mode --color-orange-graphic on --color-bg",
+        "light-mode --color-orange-graphic on --color-track"
+      ]
+    }
+  },
+  {
+    "folder": "cardan-support-nuxt",
+    "name": "support"
+  }
+]

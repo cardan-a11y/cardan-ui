@@ -25,15 +25,10 @@ const emit = defineEmits<{
   click: [];
 }>();
 
-const { locale } = useI18n();
+const { formatCurrency } = useNumber();
 
 const formattedPrice = computed(() =>
-  price?.toLocaleString(locale.value, {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }),
+  price === undefined ? undefined : formatCurrency(price, { decimals: 0 }),
 );
 </script>
 

@@ -2,7 +2,7 @@ import { describe, it, expect, onTestFinished, vi } from 'vitest';
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime';
 import { MarkdownPreview } from '#components';
 import { renderMarkdown } from '../../app/components/Markdown/renderer';
-import { accessibleName, checkA11y } from '../a11y';
+import { accessibleName, expectNoViolations } from '../a11y';
 
 // Counts every use of highlight.js (the component reads `hljs` once per
 // load), so a text without a code block provably does not load it
@@ -36,7 +36,7 @@ describe('MarkdownPreview', () => {
       expect(wrapper.find('code.hljs .hljs-keyword').exists()).toBe(true),
     );
     expect(useHighlight).toHaveBeenCalledTimes(1);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('colours a code block after mount and keeps its text', async () => {
@@ -53,7 +53,7 @@ describe('MarkdownPreview', () => {
       expect(code.find('.hljs-selector-class').exists()).toBe(true),
     );
     expect(code.text()).toContain('.a { color: red; }');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('gives the header cells of a table a scope', async () => {
@@ -65,7 +65,7 @@ describe('MarkdownPreview', () => {
     const headers = wrapper.findAll('th');
     expect(headers).toHaveLength(2);
     expect(headers.map((th) => th.attributes('scope'))).toEqual(['col', 'col']);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('says in hidden text that a link opens in a new window', async () => {
@@ -83,7 +83,7 @@ describe('MarkdownPreview', () => {
     expect(docs?.attributes('title')).toBeUndefined();
     expect(guide?.get('.visuallyhidden').text()).toBe('(open in new window)');
     expect(docs?.get('.visuallyhidden').text()).toBe('(open in new window)');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('renders a bare video link as a player, or as a link with videos-as-links', async () => {
@@ -173,7 +173,7 @@ describe('MarkdownPreview', () => {
     }
     expect(guide?.attributes('target')).toBe('_blank');
     expect(guide?.get('.visuallyhidden').text()).toBe('(open in new window)');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('judges a link by the origin it is given, as on the server', () => {
@@ -206,6 +206,6 @@ describe('MarkdownPreview', () => {
     // highlight.js loaded, found no grammar: the block keeps its escaped text
     await vi.waitFor(() => expect(useHighlight).toHaveBeenCalled());
     expect(code.find('span').exists()).toBe(false);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });

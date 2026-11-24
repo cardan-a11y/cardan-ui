@@ -25,7 +25,7 @@ test('LoginForm: one Enter after a fill without input events signs in with the f
   const login = page.waitForRequest(
     (request) =>
       request.method() === 'POST' &&
-      new URL(request.url()).pathname === '/login',
+      new URL(request.url()).pathname === '/api/login',
   );
   await page.keyboard.press('Enter');
 

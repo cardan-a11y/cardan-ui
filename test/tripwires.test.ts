@@ -1,32 +1,20 @@
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { tripwires, type Tripwire } from './tripwires';
 
 /**
  * Workarounds that hold for one major.minor of a dependency, or its internals:
  * an entry fails once the installed version leaves `checked`; then remove the
  * workaround, or confirm it and update `checked`. Its comment points here.
+ * The runner is test/tripwires.ts, which the projects use too.
  */
-interface Tripwire {
-  /** What the workaround does, the name of its test */
-  name: string;
-  package: string;
-  /** major.minor of `package`, or the range `parent` declares for it */
-  checked: string;
-  /** Reads `checked` as the range this package lists in `dependencies` */
-  parent?: string;
-  where: string;
-  check: string;
-}
-
-const tripwires: Tripwire[] = [
+const entries: Tripwire[] = [
   {
     name: 'DatePicker renders its own input in the library slot',
     package: '@vuepic/vue-datepicker',
-    checked: '14.0',
-    where: 'app/components/DatePicker.vue, test/browser/containers.spec.ts',
+    checked: '14.1',
+    where: 'app/components/DatePicker.vue, test/browser/datepicker.spec.ts',
     check:
-      'the `dp-input` slot props and the key handler the input calls, the classes of the library input; whether the input handler still parses text that arrives without a key (a paste, a drop) while text input is off; whether Shift+Tab out of the calendar still drops focus (the test.fixme)',
+      'the `dp-input` slot props and the key handler the input calls, the classes of the library input; whether the input handler still parses text that arrives without a key (a paste, a drop) while text input is off; whether Tab from an empty field still reaches the open calendar; whether the library still closes the calendar without moving focus (Escape, Shift+Tab on its menu), which `handleClose` makes up for',
   },
   {
     name: 'MultiSelect fixes Escape, the empty options and the dropdown placement',
@@ -45,11 +33,11 @@ const tripwires: Tripwire[] = [
     check: 'remove the cast once md-editor-v3 depends on markdown-it 15',
   },
   {
-    name: 'vitest-axe matchers augment vitest by hand',
+    name: "the axe helper casts to vitest-axe's matchers",
     package: 'vitest-axe',
     checked: '0.1',
-    where: 'test/vitest-axe.d.ts',
-    check: 'whether the release augments `vitest` itself',
+    where: 'test/a11y.ts',
+    check: 'whether the release types `vitest` itself, so the cast can go',
   },
   {
     name: 'error-origin reads the private _processingMiddleware',
@@ -68,10 +56,10 @@ const tripwires: Tripwire[] = [
       'whether the client head still defers `dispose` until a page transition settles',
   },
   {
-    name: 'global-types references the layer types',
+    name: 'the prepare:types hooks reference the layer types',
     package: 'nuxt',
     checked: '4.6',
-    where: 'modules/global-types.ts',
+    where: 'nuxt.config.ts, auth/nuxt.config.ts',
     check:
       "whether the generated tsconfig still excludes the consumer's node_modules for the layer's `app/`",
   },
@@ -116,6 +104,14 @@ const tripwires: Tripwire[] = [
       'whether `sanctum:guest` is still registered only with `globalMiddleware` off',
   },
   {
+    name: "the identity plugin depends on the module's plugin by name",
+    package: 'nuxt-auth-sanctum',
+    checked: '3.1',
+    where: 'auth/app/plugins/identity.client.ts',
+    check:
+      "that the module's plugin is still named `nuxt-auth-sanctum` (`dependsOn`), and whether `client.initialRequest: false` still skips its own identity request",
+  },
+  {
     name: 'the logout dialog skips logout() without a session',
     package: 'nuxt-auth-sanctum',
     checked: '3.1',
@@ -125,29 +121,4 @@ const tripwires: Tripwire[] = [
   },
 ];
 
-const root = resolve(__dirname, '..');
-
-function manifest(pkg: string): {
-  version: string;
-  dependencies?: Record<string, string>;
-} {
-  return JSON.parse(
-    readFileSync(resolve(root, 'node_modules', pkg, 'package.json'), 'utf8'),
-  );
-}
-
-describe('tripwires', () => {
-  it.each(tripwires)('$name', (entry) => {
-    const found = entry.parent
-      ? manifest(entry.parent).dependencies?.[entry.package]
-      : manifest(entry.package).version.split('.').slice(0, 2).join('.');
-    const version = entry.parent
-      ? `${found} in ${entry.parent}`
-      : manifest(entry.package).version;
-
-    expect(
-      found,
-      `${entry.package} is now ${version}: re-check ${entry.where} (${entry.check}), then remove the workaround or update this entry.`,
-    ).toBe(entry.checked);
-  });
-});
+tripwires(resolve(__dirname, '..'), entries);

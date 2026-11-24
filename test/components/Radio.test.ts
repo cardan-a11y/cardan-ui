@@ -2,7 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { defineComponent, h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Radio, RadioGroup } from '#components';
-import { accessibleName, checkA11y, description, roleOf } from '../a11y';
+import {
+  accessibleName,
+  description,
+  expectNoViolations,
+  roleOf,
+} from '../a11y';
 import { mountInForm } from '../form';
 
 const answers = [
@@ -20,7 +25,7 @@ describe('Radio', () => {
     const radio = wrapper.get('input');
     expect(roleOf(radio)).toBe('radio');
     expect(accessibleName(radio)).toBe('Yes');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });
 
@@ -37,7 +42,7 @@ describe('RadioGroup', () => {
     const radios = wrapper.findAll('input');
     expect(radios.map((radio) => accessibleName(radio))).toEqual(['Yes', 'No']);
     expect(radios.map((radio) => radio.element.checked)).toEqual([true, false]);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('keeps its error for the form to reveal when required', async () => {
@@ -64,7 +69,7 @@ describe('RadioGroup', () => {
     // a radio does not take it
     expect(group.attributes('aria-invalid')).toBeUndefined();
     expect(group.findAll('[aria-invalid]')).toHaveLength(0);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await wrapper.setProps({ modelValue: 'no' });
     expect(description(group)).toBe('');
@@ -127,7 +132,7 @@ describe('RadioGroup', () => {
     const group = wrapper.get('fieldset');
 
     expect(description(group)).toBe('Yes is no longer possible');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await wrapper.findAll('input')[1]!.setValue(true);
 
@@ -161,6 +166,6 @@ describe('RadioGroup', () => {
       (radio) => radio.id,
     );
     expect(new Set(ids).size).toBe(4);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });

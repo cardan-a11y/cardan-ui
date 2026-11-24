@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
+import { projects } from './project-list';
 import { checkTokens, describeMissing, reachableFiles } from './tokens';
 
 const root = resolve(__dirname, '..');
@@ -19,10 +20,10 @@ describe('the main.css template', () => {
 });
 
 /**
- * The projects that extend the layer, as scenarios of their own main.css,
- * when they are checked out next to this repository (not in CI). Each one is
- * checked against the layers it extends: the auth layer only where its
- * nuxt.config names it.
+ * The projects that extend the layer (test/projects.json), as scenarios of
+ * their own main.css, when they are checked out next to this repository (not
+ * in CI). Each one is checked against the layers it extends: the auth layer
+ * only where its nuxt.config names it.
  *
  * `allow` lists the tokens a project lacks on purpose. They are forgiven only
  * in layer files the project cannot reach: a layer component its own files
@@ -30,27 +31,9 @@ describe('the main.css template', () => {
  * whatever props it is given; every composable, util, plugin and page of the
  * layer counts too.
  */
-const projects: { name: string; allow: string[] }[] = [
-  { name: 'cardan-academy-nuxt', allow: [] },
-  { name: 'cardan-auditor-nuxt', allow: [] },
-  {
-    name: 'cardan-cms-nuxt',
-    // Until its rebrand the cms keeps its own palette and scale, without
-    // these tokens of the template
-    allow: [
-      '--cardan-*',
-      '--color-secondary',
-      '--color-secondary-hover',
-      '--gradient-bg',
-      '--hsl-app-nav',
-      '--line-height-ui',
-    ],
-  },
-  { name: 'cardan-support-nuxt', allow: [] },
-];
-
-describe.each(projects)('$name', ({ name, allow }) => {
-  const project = resolve(root, '..', name);
+describe.each(projects)('$folder', ({ folder, allow: allowed }) => {
+  const project = resolve(root, '..', folder);
+  const allow = allowed?.tokens ?? [];
   const mainCss = join(project, 'app/assets/main.css');
   const checkedOut = existsSync(mainCss);
 

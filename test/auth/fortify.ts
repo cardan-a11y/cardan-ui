@@ -1,34 +1,46 @@
-import { afterEach, beforeEach, expect, vi } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 import {
   clearNuxtState,
   useAppConfig,
+  useNuxtApp,
   useRouter,
   useRuntimeConfig,
   useSanctumAuth,
 } from '#imports';
 import type { DOMWrapper } from '@vue/test-utils';
 import { accessibleName } from '../a11y';
+import {
+  api,
+  client,
+  requests as sentTo,
+  resetApi,
+  type RequestOptions,
+} from '../api';
 import { fetchError } from '../fetch';
 import type { AuthScenario } from './scenarios';
 
 /**
- * The fake API behind the auth layer: nuxt-auth-sanctum's client. Importing it
- * resets the layer's state before each test. `mockNuxtImport` only works in the
- * test file itself, so every suite adds:
+ * The fake API behind the auth layer, on the API fake of test/api.ts: the
+ * Sanctum client answers the routes of the last `fortify()`, and a request to
+ * any other fails the test. test/api-setup.ts puts the client in place for
+ * every test. Importing this file resets the layer's state before each test.
+ * A navigation is not mocked for every test, so a suite that follows one adds:
  *
  * ```ts
- * mockNuxtImport('useSanctumClient', () => () => client);
  * mockNuxtImport('navigateTo', () => (...args: unknown[]) => navigate(...args));
  * ```
+ *
+ * `mockNuxtImport()` works in a test file or a setup file, not in a helper
+ * such as this one.
  */
 
-/** The Sanctum client: answers with the routes of the last `fortify()` */
-export const client = vi.fn();
+/** The Sanctum client, test/api.ts's */
+export { client };
 
 /** Every navigation; resolves at once, the router stays where it is */
 export const navigate = vi.fn();
 
-/** Answers a request: the value is the response, a throw its failure */
+/** Answers a request with its body: the value is the response, a throw its failure */
 export type Handler = (body: unknown) => unknown;
 
 /**
@@ -37,37 +49,25 @@ export type Handler = (body: unknown) => unknown;
  */
 export type Routes = Record<string, Handler>;
 
-let unmatched: string[] = [];
-
 /**
  * The API answers these routes, and only these: a request to any other is
  * refused and fails the test afterwards, so a flow cannot pass on a request
  * nobody modelled.
  */
 export function fortify(routes: Routes) {
-  client.mockImplementation(
-    async (url: string, options: { method?: string; body?: unknown } = {}) => {
-      const route = `${(options.method ?? 'GET').toUpperCase()} ${url}`;
-      const handler = routes[route];
-
-      if (!handler) {
-        unmatched.push(route);
-        throw new Error(`No route for ${route}`);
-      }
-
-      return await handler(options.body);
-    },
+  api(
+    Object.fromEntries(
+      Object.entries(routes).map(([route, handler]) => [
+        route,
+        (options: RequestOptions) => handler(options.body),
+      ]),
+    ),
   );
 }
 
 /** The bodies of the requests sent to a route, in order */
 export function requests(route: string): unknown[] {
-  return client.mock.calls
-    .filter(
-      ([url, options]) =>
-        `${(options?.method ?? 'GET').toUpperCase()} ${url}` === route,
-    )
-    .map(([, options]) => options?.body);
+  return sentTo(route).map((options) => options.body);
 }
 
 /** A handler that fails as ofetch throws a refused request */
@@ -135,10 +135,10 @@ const AUTH_STATE = [
   'recoveryCodeInputRef',
   'loadingMfaRecoveryCodesDialog',
   'loadingMfaDisableDialog',
-  'mfaDialogRef',
-  'mfaRecoveryCodesDialogRef',
-  'logoutDialog',
-  'passwordConfirmationDialogRef',
+  'cardan-ui:dialog:auth:mfa',
+  'cardan-ui:dialog:auth:mfa-recovery-codes',
+  'cardan-ui:dialog:auth:logout',
+  'cardan-ui:dialog:auth:password-confirmation',
   'passwordConfirmationError',
   'loadingPasswordConfirmation',
   'passwordConfirmationRequest',
@@ -147,6 +147,7 @@ const AUTH_STATE = [
   'passwordPolicy',
   'passwordPolicyRequested',
   'cardan-ui:toasts',
+  'cardan-auth:profile-locale',
 ];
 
 // happy-dom lacks the browser's rule for `hidden`: axe would see hidden fields
@@ -158,11 +159,13 @@ document.head.append(hiddenRule);
 // Before each test: test/setup.ts unmounts after the suite's hooks, and an
 // unmounting component still writes to this state
 beforeEach(async () => {
-  client.mockReset();
+  // The identity plugin's own request at start-up must not answer mid-test
+  await useNuxtApp().$identityReady;
+
+  // The plugin's request does not count for the test
+  resetApi();
   navigate.mockReset();
   navigate.mockResolvedValue(undefined);
-  unmatched = [];
-  fortify({});
 
   // Removed, not reset: a default can depend on the next test's scenario
   clearNuxtState(
@@ -172,10 +175,6 @@ beforeEach(async () => {
   sessionStorage.clear();
 
   await useRouter().push('/');
-});
-
-afterEach(() => {
-  expect(unmatched, 'requests to routes the test did not answer').toEqual([]);
 });
 
 /**
@@ -200,6 +199,9 @@ export function useScenario(scenario: AuthScenario) {
         endpoints: { ...cardanAuth.endpoints },
         updatePasswordMethod: cardanAuth.updatePasswordMethod,
         passwordPolicy: { ...cardanAuth.passwordPolicy },
+        localeFields: [...cardanAuth.localeFields],
+        themeField: cardanAuth.themeField,
+        authPages: [...cardanAuth.authPages],
       },
     });
 
@@ -211,6 +213,9 @@ export function useScenario(scenario: AuthScenario) {
       scenario.cardanAuth.passwordPolicy,
     );
     cardanAuth.updatePasswordMethod = scenario.cardanAuth.updatePasswordMethod;
+    cardanAuth.localeFields = [...scenario.cardanAuth.localeFields];
+    cardanAuth.themeField = scenario.cardanAuth.themeField;
+    cardanAuth.authPages = [...scenario.cardanAuth.authPages];
 
     restore = () => {
       Object.assign(sanctum.endpoints, saved.endpoints);
@@ -218,6 +223,9 @@ export function useScenario(scenario: AuthScenario) {
       Object.assign(cardanAuth.endpoints, saved.cardanAuth.endpoints);
       Object.assign(cardanAuth.passwordPolicy, saved.cardanAuth.passwordPolicy);
       cardanAuth.updatePasswordMethod = saved.cardanAuth.updatePasswordMethod;
+      cardanAuth.localeFields = saved.cardanAuth.localeFields;
+      cardanAuth.themeField = saved.cardanAuth.themeField;
+      cardanAuth.authPages = saved.cardanAuth.authPages;
     };
   });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { useLogoutDialog, useNuxtApp } from '#imports';
 
@@ -18,10 +18,13 @@ mockNuxtImport('useSanctumAuth', () => () => ({
 }));
 
 /** A mounted LogoutDialog, as far as the composable is concerned */
-function dialog() {
+function dialog(openDialog = vi.fn()) {
   const { logoutDialogRef } = useLogoutDialog();
   const closeDialog = vi.fn();
-  logoutDialogRef.value = { closeDialog } as unknown as DialogComponent;
+  logoutDialogRef.value = {
+    openDialog,
+    closeDialog,
+  } as unknown as DialogComponent;
   return closeDialog;
 }
 
@@ -29,6 +32,31 @@ describe('useLogoutDialog', () => {
   beforeEach(() => {
     logout.mockReset();
     isAuthenticated.value = true;
+    useLogoutDialog().logoutDialogRef.value = null;
+  });
+
+  it('open() opens the dialog one task later, once a closing menu has handed focus back', async () => {
+    // A menu that hands focus back in a microtask, like UserMenu's hideMenu()
+    let focusBack = false;
+    const openDialog = vi.fn(() => focusBack);
+    dialog(openDialog);
+    queueMicrotask(() => (focusBack = true));
+
+    const opened = useLogoutDialog().open();
+    await nextTick();
+    expect(openDialog).not.toHaveBeenCalled();
+
+    await opened;
+    expect(openDialog).toHaveBeenCalledOnce();
+    expect(openDialog).toHaveReturnedWith(true);
+  });
+
+  it('open() resolves without a mounted dialog', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await expect(useLogoutDialog().open()).resolves.toBeUndefined();
+
+    warn.mockRestore();
   });
 
   it('signs out, then closes the dialog', async () => {

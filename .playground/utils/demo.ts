@@ -46,6 +46,11 @@ export const navList: MenuItem[] = [
     label: 'Form inputs',
   },
   {
+    id: 'combobox',
+    to: '/combobox',
+    label: 'ComboBox',
+  },
+  {
     id: 'table',
     to: '/table',
     label: 'Table, Pagination & Filter',
@@ -54,6 +59,11 @@ export const navList: MenuItem[] = [
     id: 'dialog',
     to: '/dialog',
     label: 'Modal Dialog',
+  },
+  {
+    id: 'confirm-dialog',
+    to: '/confirm-dialog',
+    label: 'Confirm Dialog',
   },
   {
     id: 'tooltip',
@@ -86,9 +96,19 @@ export const navList: MenuItem[] = [
     label: 'Pricing Card',
   },
   {
+    id: 'numbers',
+    to: '/numbers',
+    label: 'Numbers & Prices',
+  },
+  {
     id: 'md',
     to: '/markdown',
     label: 'Markdown',
+  },
+  {
+    id: 'empty-message',
+    to: '/empty-message',
+    label: 'Empty message',
   },
   {
     id: 'skeleton',

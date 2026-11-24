@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { AvatarButton } from '#components';
-import { accessibleName, checkA11y } from '../a11y';
+import { accessibleName, expectNoViolations } from '../a11y';
 
 /**
  * The button is named by its label, followed by the initials it shows;
@@ -15,7 +15,7 @@ async function nameOf(props: Record<string, unknown>) {
     attachTo: document.body,
   });
   const button = wrapper.get('button').element;
-  expect(await checkA11y()).toHaveNoViolations();
+  await expectNoViolations();
   return accessibleName(button);
 }
 

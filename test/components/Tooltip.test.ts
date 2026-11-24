@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Tooltip } from '#components';
-import { accessibleName, checkA11y, expectFocused, roleOf } from '../a11y';
+import {
+  accessibleName,
+  expectFocused,
+  expectNoViolations,
+  roleOf,
+} from '../a11y';
 import { addToPage, fakePopover, leave, toggle } from '../dom';
 
 /**
@@ -36,7 +41,7 @@ describe('Tooltip', () => {
 
     expect(roleOf(trigger)).toBe('button');
     expect(accessibleName(trigger)).toBe('More info about Password');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('is named by a label it shows, and "More info" without one', async () => {
@@ -59,7 +64,7 @@ describe('Tooltip', () => {
 
     expect(content.textContent?.trim()).toBe('At least 12 characters.');
     expectFocused(trigger);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     // Closed, the text goes, so the next open is announced again
     await toggle(content, 'closed');

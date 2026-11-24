@@ -1,6 +1,13 @@
 import { expect } from 'vitest';
 import axeCore from 'axe-core';
 import { axe } from 'vitest-axe';
+import * as matchers from 'vitest-axe/matchers';
+import type { AxeMatchers } from 'vitest-axe/matchers';
+
+// For a project that still writes `expect(…).toHaveNoViolations()` with a
+// type shim of its own; the layer's tests use expectNoViolations(). Goes once
+// every project does
+expect.extend(matchers);
 
 /**
  * axe over the whole document, without the landmark rule. In happy-dom it pins
@@ -8,6 +15,17 @@ import { axe } from 'vitest-axe';
  */
 export function checkA11y() {
   return axe(document.body, { rules: { region: { enabled: false } } });
+}
+
+/**
+ * checkA11y() finds no violation. The matcher stays in this file: a
+ * `declare module 'vitest'` here would type the checkout's vitest, not a
+ * project's, so the call casts instead (vitest-axe 0.1 types an old vitest).
+ * Tripwire: test/tripwires.test.ts.
+ */
+export async function expectNoViolations(): Promise<void> {
+  const results = await checkA11y();
+  (expect(results) as unknown as AxeMatchers).toHaveNoViolations();
 }
 
 /** An element, or what `find()` or `get()` of @vue/test-utils returns */

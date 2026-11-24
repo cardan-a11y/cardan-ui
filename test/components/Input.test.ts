@@ -2,7 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { defineComponent, h, nextTick, ref } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Input } from '#components';
-import { accessibleName, checkA11y, description, expectFocused } from '../a11y';
+import {
+  accessibleName,
+  description,
+  expectFocused,
+  expectNoViolations,
+} from '../a11y';
 import { mountInForm } from '../form';
 
 /** An Input with a v-model in a Form with a submit button */
@@ -29,7 +34,7 @@ describe('Input', () => {
     });
 
     expect(accessibleName(wrapper.get('input'))).toBe('Name');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('names a required field with its "required" chip as a word of its own', async () => {
@@ -75,7 +80,7 @@ describe('Input', () => {
 
     expect(description(input)).toBe('As on your passport Required');
     expect(input.attributes('aria-invalid')).toBe('true');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     // Valid: not described, whatever the form shows
     await wrapper.setProps({ modelValue: 'Ada' });
@@ -96,7 +101,7 @@ describe('Input', () => {
     expect(input.attributes('aria-invalid')).toBe('true');
     // The server judges the next submit: the browser does not hold it back
     expect(input.element.checkValidity()).toBe(true);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await input.setValue('ada@cardan.com');
 
@@ -161,7 +166,7 @@ describe('Input', () => {
       'Given name',
       'Family name',
     ]);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   // The Laravel APIs trim a text and refuse an empty one

@@ -2,7 +2,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Dialog } from '#components';
-import { accessibleName, checkA11y, roleOf } from '../a11y';
+import {
+  accessibleName,
+  expectFocused,
+  expectNoViolations,
+  roleOf,
+} from '../a11y';
 import { addToPage } from '../dom';
 
 /**
@@ -49,7 +54,7 @@ describe('Dialog', () => {
     expect(roleOf(dialog)).toBe('dialog');
     expect(accessibleName(dialog)).toBe('Settings');
     expect(accessibleName(button('Close'))).toBe('Close');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('is named by aria-label without a label, and passes role alertdialog on', async () => {
@@ -61,7 +66,7 @@ describe('Dialog', () => {
 
     expect(roleOf(dialog)).toBe('alertdialog');
     expect(accessibleName(dialog)).toBe('Delete the course?');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('closes with its close button, no longer visible before the dialog closes', async () => {
@@ -136,6 +141,16 @@ describe('Dialog', () => {
     button('Cancel').click();
 
     await vi.waitFor(() => expect(dialog.open).toBe(false));
+  });
+
+  it('starts focus on Cancel with focus-cancel', async () => {
+    const { button } = await mountDialog(
+      { focusCancel: true },
+      { default: '<p>Delete?</p>', buttons: '<button>Delete</button>' },
+    );
+    await settle();
+
+    expectFocused(button('Cancel'));
   });
 
   it('closes on a click on the backdrop, never on a click inside', async () => {

@@ -1,33 +1,16 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { projects } from '../project-list';
 import { checkContrast, contrastKey } from './helpers';
 
 const files: { name: string; path: string; known: string[] }[] = [
+  // The layer's own template, not a project
   { name: 'template', path: '../../app/assets/main.css', known: [] },
-  {
-    name: 'academy',
-    path: '../../../cardan-academy-nuxt/app/assets/main.css',
-    known: [],
-  },
-  {
-    name: 'auditor',
-    path: '../../../cardan-auditor-nuxt/app/assets/main.css',
-    known: [],
-  },
-  {
-    name: 'cms',
-    path: '../../../cardan-cms-nuxt/app/assets/main.css',
-    // Its own light orange graphic: 2.95:1 on the page, 2.33:1 on the track
-    known: [
-      'light-mode --color-orange-graphic on --color-bg',
-      'light-mode --color-orange-graphic on --color-track',
-    ],
-  },
-  {
-    name: 'support',
-    path: '../../../cardan-support-nuxt/app/assets/main.css',
-    known: [],
-  },
+  ...projects.map(({ folder, name, contrast }) => ({
+    name,
+    path: `../../../${folder}/app/assets/main.css`,
+    known: contrast?.known ?? [],
+  })),
 ];
 
 for (const file of files) {

@@ -3,11 +3,10 @@ import { flushPromises } from '@vue/test-utils';
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { PasswordConfirmationDialog } from '#components';
 import { usePasswordConfirmation } from '#imports';
-import { accessibleName, checkA11y, expectFocused } from '../a11y';
+import { accessibleName, expectFocused, expectNoViolations } from '../a11y';
 import { fetchError } from '../fetch';
 import {
   buttonNamed,
-  client,
   fortify,
   navigate,
   refuseWith,
@@ -17,7 +16,6 @@ import {
 } from './fortify';
 import { academy, scenarios } from './scenarios';
 
-mockNuxtImport('useSanctumClient', () => () => client);
 mockNuxtImport(
   'navigateTo',
   () =>
@@ -92,7 +90,7 @@ describe('usePasswordConfirmation', () => {
     expect(username.element.getAttribute('value')).toBe('ada@example.com');
     expect(username.attributes('hidden')).toBeDefined();
     expect(buttonNamed(dialog, 'Confirm').attributes('disabled')).toBeDefined();
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     unlock();
     await confirmWith('secret');

@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { nextTick, type Component } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { ThemeSwitch, ThemeToggle } from '#components';
-import { accessibleName, checkA11y } from '../a11y';
+import { accessibleName, expectNoViolations } from '../a11y';
 
 /**
  * A toggle button (https://www.w3.org/WAI/ARIA/apg/patterns/button/): its
@@ -30,7 +30,7 @@ describe.each([
 
     expect(accessibleName(button.element)).toBe('Dark mode');
     expect(button.attributes('aria-pressed')).toBe('false');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await button.trigger('click');
     await nextTick();

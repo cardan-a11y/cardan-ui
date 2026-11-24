@@ -2,7 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { defineComponent, h, nextTick, reactive } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Checkbox, CheckboxGroup } from '#components';
-import { accessibleName, checkA11y, description, roleOf } from '../a11y';
+import {
+  accessibleName,
+  description,
+  expectNoViolations,
+  roleOf,
+} from '../a11y';
 import { mountInForm } from '../form';
 
 const toppings = [
@@ -20,7 +25,7 @@ describe('Checkbox', () => {
     const checkbox = wrapper.get('input');
     expect(roleOf(checkbox)).toBe('checkbox');
     expect(accessibleName(checkbox)).toBe('I agree');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('passes required on to the box, and is described by its error once it shows', async () => {
@@ -41,7 +46,7 @@ describe('Checkbox', () => {
 
     expect(description(checkbox)).toBe('Tick this box to continue');
     expect(checkbox.attributes('aria-invalid')).toBe('true');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await checkbox.setValue(true);
     expect(description(checkbox)).toBe('');
@@ -76,7 +81,7 @@ describe('Checkbox', () => {
     expect(checkbox.attributes('aria-invalid')).toBe('true');
     // The server judges the next submit: the browser does not hold it back
     expect((checkbox.element as HTMLInputElement).checkValidity()).toBe(true);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await checkbox.setValue(false);
 
@@ -99,7 +104,7 @@ describe('CheckboxGroup', () => {
       'Cheese',
       'Ham',
     ]);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('asks for at least one box when required', async () => {
@@ -130,7 +135,7 @@ describe('CheckboxGroup', () => {
 
     expect(boxes.every((box) => box.checkValidity())).toBe(true);
     expect(description(group)).toBe('');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('shows its error after a failed submit of its form', async () => {
@@ -181,7 +186,7 @@ describe('CheckboxGroup', () => {
     const group = wrapper.get('fieldset');
 
     expect(description(group)).toBe('Ham is sold out');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await wrapper.get('input').setValue(true);
 
@@ -222,6 +227,6 @@ describe('CheckboxGroup', () => {
         description(group),
       ),
     ).toEqual(['Choose a pizza topping', 'Choose a sandwich topping']);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });

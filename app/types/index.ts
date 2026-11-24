@@ -1,5 +1,6 @@
 import type { RouteLocationRaw } from 'vue-router';
 import type Dialog from '../components/Dialog.vue';
+import type ConfirmDialog from '../components/ConfirmDialog.vue';
 import type MobileMenu from '../components/MobileMenu.vue';
 import type Form from '../components/Form.vue';
 import type Textarea from '../components/Textarea.vue';
@@ -22,6 +23,19 @@ declare global {
   };
 
   type ToastColor = 'blue' | 'green' | 'red' | 'orange' | 'accent';
+
+  /** A request for `useConfirm().confirm()`: the props of ConfirmDialog, with the action it confirms */
+  type ConfirmOptions = {
+    label: string;
+    description?: string;
+    confirmLabel?: string;
+    confirmIcon?: string;
+    confirmVariant?: ButtonVariant;
+    challenge?: boolean;
+    autofocus?: boolean;
+    /** Runs on confirm, with its item in the closure; a throw shows in the dialog */
+    onConfirm: () => unknown;
+  };
 
   /** An API error in Laravel's shape, from `extractApiError()`, for ErrorMessage */
   type ApiErrorData = {
@@ -91,7 +105,31 @@ declare global {
   };
 
   type DialogComponent = InstanceType<typeof Dialog>;
+  type ConfirmDialogComponent = InstanceType<typeof ConfirmDialog>;
   type MobileMenuComponent = InstanceType<typeof MobileMenu>;
+
+  /** What `useDialog()` needs of a dialog: Dialog and MobileMenu expose it. */
+  type OpenableDialog = {
+    openDialog: () => void;
+    closeDialog: () => Promise<void> | void;
+    isVisible: boolean;
+  };
+
+  /**
+   * The keys of `useDialog()`. Empty, so any string is a key; a project that
+   * lists its own makes a typo a type error (see `useDialog()`).
+   */
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface DialogKeys {}
+
+  /** The keys of the layers' own dialogs, valid next to a project's `DialogKeys`. */
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface LayerDialogKeys {}
+
+  type DialogKey =
+    | (keyof DialogKeys extends never ? string : keyof DialogKeys)
+    | keyof LayerDialogKeys;
+
   type FormComponent = InstanceType<typeof Form>;
   type TextareaComponent = InstanceType<typeof Textarea>;
   type InputComponent = InstanceType<typeof Input>;

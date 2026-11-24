@@ -113,6 +113,50 @@ function makeToast() {
     </Card>
 
     <Card>
+      <h2>Opening a dialog from another component</h2>
+
+      <p>
+        A dialog is often opened from somewhere other than the component that
+        holds it: a button in the header opens a search dialog, a row in a table
+        opens the dialog that edits it. Both components then need the dialog's
+        ref. <code>useDialog(key)</code> keeps that ref under a key, so every
+        component that calls it with the same key reaches the same dialog,
+        without passing a ref through props or keeping one in a composable of
+        your own.
+      </p>
+
+      <p>
+        The component that holds the dialog binds <code>dialogRef</code> as its
+        template ref: <code>&lt;Dialog ref="dialogRef"&gt;</code> after
+        <code>const { dialogRef, close } = useDialog('search')</code>. Any other
+        component opens it with <code>useDialog('search').open()</code>.
+        <code>close()</code> returns a promise that resolves once the dialog has
+        played its exit animation and closed, and <code>isOpen</code> follows
+        whether the dialog is open. The same works for a MobileMenu, with
+        <code>useDialog&lt;MobileMenuComponent&gt;('menu')</code>.
+      </p>
+
+      <p>
+        The button below is one component and the dialog it opens is another,
+        mounted at the end of this page. In development, the console warns when
+        <code>open()</code> is called for a key whose dialog is not mounted, and
+        when a second dialog is bound to a key that already holds one: the last
+        one mounted would win, so each dialog needs its own key. A dialog that
+        only asks whether the user is sure goes through
+        <code>useConfirm()</code> instead.
+      </p>
+
+      <p>
+        Any string is a key. A project that lists its keys in the
+        <code>DialogKeys</code> interface turns a typo in a key into a type
+        error; this playground lists its own in
+        <code>types/dialog-keys.ts</code>.
+      </p>
+
+      <DemoShortcutsButton />
+    </Card>
+
+    <Card>
       <h2>Mobile Menu</h2>
 
       <div class="flex-wrapper">
@@ -273,6 +317,8 @@ function makeToast() {
         </ul>
       </template>
     </Dialog>
+
+    <DemoShortcutsDialog />
 
     <CookiesDialog
       v-if="cookiesDialogMounted"

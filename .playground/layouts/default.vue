@@ -1,15 +1,7 @@
 <script setup lang="ts">
 const route = useRoute();
 
-const authPages = [
-  '/login',
-  '/forgot-password',
-  '/reset-password',
-  '/two-factor-authentication',
-  '/mfa-setup',
-];
-
-const isAuthSubpage = computed(() => authPages.includes(route.path));
+const isAuthSubpage = computed(() => isAuthPage(route.path));
 </script>
 
 <template>
@@ -39,6 +31,9 @@ const isAuthSubpage = computed(() => authPages.includes(route.path));
         <slot />
       </main>
     </div>
+
+    <ConfirmDialogHost />
+    <LogoutDialog />
   </AppShell>
 </template>
 

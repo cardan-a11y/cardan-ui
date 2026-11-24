@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { nextTick } from 'vue';
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { VideoPlayer } from '#components';
-import { accessibleName, checkA11y, expectFocused } from '../a11y';
+import { accessibleName, expectFocused, expectNoViolations } from '../a11y';
 
 /**
  * A thumbnail and a play button named with the video's title; after a
@@ -52,7 +52,7 @@ describe('VideoPlayer', () => {
     );
     expect(fetchMetadata).toHaveBeenCalledOnce();
     expect(wrapper.get('img').attributes('alt')).toBe('Cardan intro');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('starts a titled YouTube player without key shortcuts, and moves focus into it', async () => {
@@ -77,7 +77,7 @@ describe('VideoPlayer', () => {
     const src = new URL(iframe.attributes('src')!);
     expect(src.hostname).toBe('www.youtube-nocookie.com');
     expect(src.searchParams.get('disablekb')).toBe('1');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('starts a Vimeo player without key shortcuts', async () => {
@@ -98,7 +98,7 @@ describe('VideoPlayer', () => {
 
     expect(accessibleName(wrapper.get('button').element)).toBe('Play video');
     expect(wrapper.get('img').attributes('alt')).toBe('');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await wrapper.get('button').trigger('click');
     await nextTick();

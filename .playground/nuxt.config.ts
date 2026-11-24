@@ -1,11 +1,15 @@
+import { AUTH_PAGES } from '../auth/app/utils/authPages.ts';
+
+function isAuthDemoPath(path: string) {
+  return (
+    AUTH_PAGES.includes(path) || path === '/auth' || path.startsWith('/auth/')
+  );
+}
+
 export default defineNuxtConfig({
   extends: ['..', '../auth'],
 
   $production: {
-    image: {
-      domains: ['i.ytimg.com', 'i.vimeocdn.com'],
-    },
-
     // Cached like cardan-cms-nuxt's pages, so a component that renders per
     // visitor shows up here first; the mock endpoints answer per session
     routeRules: {
@@ -27,19 +31,31 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ['@nuxt/image', '@nuxt/scripts', 'nuxt-auth-sanctum'],
+  modules: ['@nuxt/image', '@nuxt/scripts'],
 
   // Deployed elsewhere: NUXT_PUBLIC_SANCTUM_BASE_URL is the playground's own URL
   sanctum: {
     baseUrl: 'http://localhost:3003',
-    client: {
-      initialRequest: false,
+    // The documentation pages are for everyone
+    globalMiddleware: {
+      enabled: false,
     },
     redirect: {
       onLogin: '/auth',
       onAuthOnly: '/',
       onGuestOnly: '/auth',
       onLogout: '/',
+    },
+  },
+
+  hooks: {
+    // The documentation pages render without waiting for the user
+    'pages:extend'(pages) {
+      for (const page of pages) {
+        if (!isAuthDemoPath(page.path)) {
+          page.meta = { ...page.meta, waitForIdentity: false };
+        }
+      }
     },
   },
 
@@ -66,32 +82,10 @@ export default defineNuxtConfig({
 
   css: ['~/assets/playground.css'],
 
-  icon: {
-    clientBundle: {
-      scan: true,
-      sizeLimitKb: 256,
-    },
-  },
-
+  // The layer adds the packages of its components (modules/optimize-deps.ts)
   vite: {
     optimizeDeps: {
-      include: [
-        'markdown-it',
-        'highlight.js/lib/core',
-        'highlight.js/lib/languages/xml',
-        'highlight.js/lib/languages/css',
-        'highlight.js/lib/languages/javascript',
-        'highlight.js/lib/languages/typescript',
-        'highlight.js/lib/languages/json',
-        'highlight.js/lib/languages/bash',
-        '@mdit/plugin-attrs',
-        '@mdit/plugin-mark',
-        'vue-axe',
-        'date-fns/locale',
-        '@vuepic/vue-datepicker',
-        '@vueform/multiselect',
-        'compressorjs',
-      ],
+      include: ['vue-axe'],
     },
   },
 

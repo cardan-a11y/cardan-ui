@@ -3,7 +3,7 @@ import { h } from 'vue';
 import type { VueWrapper } from '@vue/test-utils';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { SidebarLayout } from '#components';
-import { accessibleName, checkA11y, roleOf } from '../a11y';
+import { accessibleName, expectNoViolations, roleOf } from '../a11y';
 
 /**
  * Which column sits where on screen is CSS, and the browser suite's. What is
@@ -47,7 +47,7 @@ describe('SidebarLayout', () => {
     // The panel has no role of its own: its content brings the landmark
     expect(roleOf(side.parentElement!)).toBeNull();
 
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('puts the side panel first in the document with side="start"', async () => {
@@ -61,7 +61,7 @@ describe('SidebarLayout', () => {
     const { main, side } = parts(wrapper);
     expect(precedes(side, main)).toBe(true);
 
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('names the panel as its complementary landmark with side-label, without a tab stop while nothing scrolls', async () => {
@@ -80,7 +80,7 @@ describe('SidebarLayout', () => {
     // happy-dom lays nothing out, so nothing overflows
     expect(panel.hasAttribute('tabindex')).toBe(false);
 
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('adds nothing to a sticky panel without side-label', async () => {
