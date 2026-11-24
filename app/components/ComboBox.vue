@@ -1207,7 +1207,6 @@ defineExpose({
     padding: 0;
     border: none;
     border-radius: var(--radius-sm);
-    font-size: 1.25rem;
     color: var(--color-text);
     background: none;
     cursor: pointer;
