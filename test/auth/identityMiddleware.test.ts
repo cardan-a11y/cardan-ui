@@ -2,10 +2,9 @@ import { describe, it, expect, onTestFinished, vi } from 'vitest';
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { useRouter } from '#imports';
 import identityMiddleware from '../../auth/app/middleware/00.identity.global';
-import { client, navigate, signIn, useScenario } from './fortify';
+import { navigate, signIn, useScenario } from './fortify';
 import { academy } from './scenarios';
 
-mockNuxtImport('useSanctumClient', () => () => client);
 mockNuxtImport(
   'navigateTo',
   () =>

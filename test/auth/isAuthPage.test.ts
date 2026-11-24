@@ -2,10 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { computed, effectScope, ref } from 'vue';
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { AUTH_PAGES, isAuthPage, useAppConfig } from '#imports';
-import { client, navigate, useScenario } from './fortify';
+import { navigate, useScenario } from './fortify';
 import { academy, auditor } from './scenarios';
 
-mockNuxtImport('useSanctumClient', () => () => client);
 mockNuxtImport(
   'navigateTo',
   () =>

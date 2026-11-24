@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { RangeInput } from '#components';
-import { accessibleName, checkA11y, roleOf } from '../a11y';
+import { accessibleName, expectNoViolations, roleOf } from '../a11y';
 
 /**
  * A native slider (`<input type="range">`): the browser gives it the role,
@@ -40,7 +40,7 @@ describe('RangeInput', () => {
     expect(input.attributes('min')).toBe('10');
     expect(input.attributes('max')).toBe('50');
     expect(input.attributes('step')).toBe('10');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('has the minimum as its value until there is one, not the middle of the track', async () => {
@@ -79,7 +79,7 @@ describe('RangeInput', () => {
       modelValue: 1,
     });
     expect(input.attributes('aria-valuetext')).toBeUndefined();
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('has no value text for numeric ticks, which the number already says', async () => {
@@ -113,13 +113,13 @@ describe('RangeInput', () => {
       .findAll('[aria-hidden="true"]')
       .find((element) => element.text().includes('Medium'));
     expect(ticks?.text()).toMatch(/Small\s*Medium\s*Large/);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('is disabled with its input', async () => {
     const { input } = await mountRange({ disabled: true });
 
     expect((input.element as HTMLInputElement).disabled).toBe(true);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });

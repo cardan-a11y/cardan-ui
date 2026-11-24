@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Breadcrumbs } from '#components';
-import { accessibleName, checkA11y, roleOf } from '../a11y';
+import { accessibleName, expectNoViolations, roleOf } from '../a11y';
 
 /**
  * The APG breadcrumb pattern
@@ -50,7 +50,7 @@ describe('Breadcrumbs', () => {
     expect(current[0]!.text()).toBe('Webinars');
     expect(roleOf(current[0]!)).not.toBe('link');
 
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('shows an item without a link as text, not current, and a language where given', async () => {
@@ -77,7 +77,7 @@ describe('Breadcrumbs', () => {
 
     expect(wrapper.get('[aria-current="page"]').text()).toBe('Webinars');
 
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('renders no landmark without items', async () => {

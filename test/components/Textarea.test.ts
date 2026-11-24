@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { defineComponent, h, nextTick, ref } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Textarea } from '#components';
-import { accessibleName, checkA11y, description } from '../a11y';
+import { accessibleName, description, expectNoViolations } from '../a11y';
 import { mountInForm } from '../form';
 
 describe('Textarea', () => {
@@ -13,7 +13,7 @@ describe('Textarea', () => {
     });
 
     expect(accessibleName(wrapper.get('textarea'))).toBe('Message');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('shows the error under the field, above the instruction, and is described by both', async () => {
@@ -46,7 +46,7 @@ describe('Textarea', () => {
       error!.compareDocumentPosition(instruction!) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('describes the field by its error only while the error shows', async () => {
@@ -69,7 +69,7 @@ describe('Textarea', () => {
 
     expect(description(textarea)).toBe('Write a message');
     expect(textarea.attributes('aria-invalid')).toBe('true');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     // Valid: not described, whatever the form shows
     await wrapper.setProps({ modelValue: 'Hello' });
@@ -106,7 +106,7 @@ describe('Textarea', () => {
     expect((textarea.element as HTMLTextAreaElement).checkValidity()).toBe(
       true,
     );
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await textarea.setValue('Hello, a question about the course');
 
@@ -149,7 +149,7 @@ describe('Textarea', () => {
       'One at a time',
       'Optional',
     ]);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   // Only spaces are left to the API, which trims them and refuses an empty text

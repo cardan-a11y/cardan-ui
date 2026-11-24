@@ -1,0 +1,75 @@
+# The check of a project that extends the layer: lint, types and tests
+# against this repository's checkout beside it. A project's ci.yml keeps its
+# own triggers and calls it:
+#
+#   jobs:
+#     check:
+#       uses: cardan-a11y/cardan-ui/.github/workflows/project.yml@main
+#
+# A change here reaches every project's next run, as a layer release does.
+# Branch protection names the job "check / check" (caller job / this job).
+# The layer's own ci.yml is a different job: it also builds the playground.
+name: Project check
+
+on:
+  workflow_call:
+    inputs:
+      layer-ref:
+        description: >-
+          The branch of cardan-ui to test against: `main`, or, to try a project
+          branch that waits for a release, that release branch; removed again
+          before the project branch merges, so CI checks against main
+        type: string
+        default: main
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: project
+    steps:
+      # The typecheck and the tests read Cardan UI from ../cardan-ui, as in
+      # development: its main, which production builds against too. A change
+      # that needs a newer layer (a component, a test helper such as
+      # #layer-test, a renamed property) merges only once that layer release
+      # is on main. `layer-ref` lets such a branch try the release branch
+      # meanwhile; it drops the input before it merges. The browser tests
+      # run locally only
+      - uses: actions/checkout@v6
+        with:
+          path: project
+      - uses: actions/checkout@v6
+        with:
+          repository: cardan-a11y/cardan-ui
+          ref: ${{ inputs.layer-ref }}
+          path: cardan-ui
+      # The pnpm version comes from packageManager in package.json
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: project/package.json
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install Cardan UI's packages
+        working-directory: cardan-ui
+        run: pnpm install --ignore-scripts
+
+      # Writes the playground's .nuxt/ that cardan-ui's tsconfig references;
+      # vitest reads it when it compiles ../cardan-ui/test
+      - name: Prepare Cardan UI's playground
+        working-directory: cardan-ui
+        run: pnpm run dev:prepare
+
+      - name: Install packages
+        run: pnpm install
+
+      - name: Run linter
+        run: pnpm run lint
+
+      - name: Check types
+        run: pnpm run typecheck
+
+      - name: Run tests
+        run: pnpm test

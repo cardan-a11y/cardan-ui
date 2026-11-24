@@ -3,7 +3,7 @@ import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { nextTick } from 'vue';
 import { CookiesButton, CookiesDialog } from '#components';
 import { useCookiesDialog, useRuntimeConfig } from '#imports';
-import { accessibleName, checkA11y, description } from '../a11y';
+import { accessibleName, description, expectNoViolations } from '../a11y';
 
 /**
  * The consent dialog, the button that opens it and the state they share.
@@ -79,7 +79,7 @@ describe('CookiesDialog', () => {
 
     expect(dialog.open).toBe(true);
     expect(accessibleName(dialog)).toBe('Cookies');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it.each([
@@ -195,7 +195,7 @@ describe('CookiesButton', () => {
     await nextTick();
 
     expect(accessibleName(button)).toBe('Cookies (Cookies are accepted)');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });
 

@@ -2,7 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Pagination } from '#components';
-import { accessibleName, checkA11y, expectFocused, roleOf } from '../a11y';
+import {
+  accessibleName,
+  expectFocused,
+  expectNoViolations,
+  roleOf,
+} from '../a11y';
 
 async function mountPagination(
   props: { page: number; lastPage: number },
@@ -71,7 +76,7 @@ describe('Pagination', () => {
 
     expect(accessibleName(wrapper.get('select'))).toBe('items per page');
 
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('goes to the page a button names', async () => {
@@ -112,7 +117,7 @@ describe('Pagination', () => {
     await activate('Next page');
     expect(button('Next page').disabled).toBe(true);
     expectFocused(button('Previous page'));
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('moves focus to the way on when the button under it is disabled on the first page', async () => {

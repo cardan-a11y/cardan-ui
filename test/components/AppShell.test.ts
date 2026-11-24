@@ -3,7 +3,12 @@ import { defineComponent, h, nextTick } from 'vue';
 import type { VueWrapper } from '@vue/test-utils';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { AppHeader, AppShell, Dialog, MobileMenu } from '#components';
-import { accessibleName, checkA11y, expectFocused, roleOf } from '../a11y';
+import {
+  accessibleName,
+  expectFocused,
+  expectNoViolations,
+  roleOf,
+} from '../a11y';
 import { afterRouteFocus } from '../dom';
 
 /**
@@ -51,7 +56,7 @@ describe('AppShell', () => {
     expect(target.tagName).toBe('MAIN');
     expect(target.getAttribute('tabindex')).toBe('-1');
 
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('takes its own skip links, in order', async () => {
@@ -390,6 +395,6 @@ describe('AppHeader', () => {
       header.findAll('a, button').map((item) => accessibleName(item)),
     ).toEqual(['Cardan', 'Audits', 'Account']);
 
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });

@@ -2,7 +2,12 @@ import { afterEach, describe, it, expect, vi } from 'vitest';
 import { computed } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Button, NuxtLink } from '#components';
-import { accessibleName, checkA11y, expectFocused, roleOf } from '../a11y';
+import {
+  accessibleName,
+  expectFocused,
+  expectNoViolations,
+  roleOf,
+} from '../a11y';
 
 describe('Button', () => {
   afterEach(() => {
@@ -22,7 +27,7 @@ describe('Button', () => {
 
     await button.trigger('click');
     expect(wrapper.emitted('click')).toHaveLength(1);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('keeps its label as the name when it shows only its icon', async () => {
@@ -36,7 +41,7 @@ describe('Button', () => {
     });
 
     expect(accessibleName(wrapper.get('button'))).toBe('Close');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('takes an aria-label as its name instead of the label', async () => {
@@ -112,7 +117,7 @@ describe('Button', () => {
     const link = wrapper.get('a');
     expect(link.attributes('target')).toBe('_blank');
     expect(accessibleName(link)).toBe('Documentation (open in new window)');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     // Also when an aria-label replaces the content
     await wrapper.setProps({ ariaLabel: 'The documentation' });
@@ -169,7 +174,7 @@ describe('Button', () => {
 
     // Still the current page, as NuxtLink says it of an enabled one
     expect(link.attributes('aria-current')).toBe('page');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     // Enabled, NuxtLink says it itself: Button adds nothing
     await wrapper.setProps({ disabled: false });

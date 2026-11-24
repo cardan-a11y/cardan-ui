@@ -12,7 +12,6 @@ import {
 } from './fortify';
 import { academy } from './scenarios';
 
-mockNuxtImport('useSanctumClient', () => () => client);
 mockNuxtImport(
   'navigateTo',
   () =>

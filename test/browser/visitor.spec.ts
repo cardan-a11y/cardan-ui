@@ -1,15 +1,21 @@
-import { expect, test } from '@playwright/test';
+import { expect, test as base } from '@playwright/test';
+import { withApi } from './api';
 import { gotoHydrated } from './helpers';
+
+// The API answers a guest, and nothing else: a page that asks for more fails
+const test = withApi(base, expect, {
+  routes: {
+    'GET /api/user': () => ({
+      status: 401,
+      body: { message: 'Unauthenticated.' },
+    }),
+  },
+});
 
 test('a documentation page renders for a visitor, without a detour to /login', async ({
   page,
+  api,
 }) => {
-  let identityRequests = 0;
-  await page.route('**/api/user', (route) => {
-    identityRequests++;
-    return route.continue();
-  });
-
   await gotoHydrated(page, '/buttons');
   expect(new URL(page.url()).pathname).toBe('/buttons');
   await expect(
@@ -21,5 +27,5 @@ test('a documentation page renders for a visitor, without a detour to /login', a
   await expect(
     page.getByRole('main').getByRole('heading', { level: 1 }),
   ).toBeVisible();
-  expect(identityRequests).toBe(1);
+  expect(api.requestsTo('/api/user')).toHaveLength(1);
 });

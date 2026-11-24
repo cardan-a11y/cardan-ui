@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { Component } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { ProgressCircle, ProgressMeter } from '#components';
-import { accessibleName, checkA11y, roleOf } from '../a11y';
+import { accessibleName, expectNoViolations, roleOf } from '../a11y';
 
 /**
  * A meter (https://www.w3.org/WAI/ARIA/apg/patterns/meter/) or, with
@@ -32,7 +32,7 @@ describe('ProgressMeter', () => {
     expect(meter.getAttribute('aria-valuemin')).toBe('0');
     expect(meter.getAttribute('aria-valuemax')).toBe('10');
     expect(meter.getAttribute('aria-valuetext')).toBe('7 of 10');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('keeps its name with a hidden label', async () => {
@@ -81,7 +81,7 @@ describe('ProgressMeter', () => {
     });
     expect(roleOf(bar)).toBe('progressbar');
     expect(bar.getAttribute('aria-busy')).toBe('true');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     const done = await mount(ProgressMeter, {
       label: 'Upload',
@@ -105,7 +105,7 @@ describe('ProgressCircle', () => {
     expect(meter.getAttribute('aria-valuemin')).toBe('0');
     expect(meter.getAttribute('aria-valuemax')).toBe('100');
     expect(meter.getAttribute('aria-valuetext')).toBe('42%');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('is named by its label, and says "7 of 10" with showValue', async () => {

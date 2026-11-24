@@ -127,6 +127,17 @@ useHead({ title: 'Changelog' });
           next major; the header's user menu in this playground signs out
           through the auth layer's LogoutDialog.
         </li>
+        <li>
+          A shared test harness for the projects, in the layer's
+          <code>test/</code> folder: the vitest config, the browser suite's
+          server and Playwright config, the tripwire runner (also for a
+          workaround that waits for a Cardan UI release), API fakes for vitest
+          and Playwright that fail a test on a request no route answers, the
+          axe helper <code>expectNoViolations()</code> that needs no type shim,
+          and a reusable CI workflow. The layer's own suite runs on it, and
+          <code>test/projects.json</code> is the one list of projects. A
+          project keeps its own files until it moves over.
+        </li>
       </ul>
     </ChangelogEntry>
 

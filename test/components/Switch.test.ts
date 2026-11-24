@@ -2,7 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { h } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Switch } from '#components';
-import { accessibleName, checkA11y, description, roleOf } from '../a11y';
+import {
+  accessibleName,
+  description,
+  expectNoViolations,
+  roleOf,
+} from '../a11y';
 import { mountInForm } from '../form';
 
 /**
@@ -26,7 +31,7 @@ describe('Switch', () => {
     expect(accessibleName(control)).toBe('Dark mode');
     expect(control.attributes('aria-checked')).toBe('false');
     expect(description(control)).toBe('Easier on the eyes at night');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await wrapper.setProps({ modelValue: true });
     expect(control.attributes('aria-checked')).toBe('true');
@@ -58,7 +63,7 @@ describe('Switch', () => {
     const control = wrapper.get('[role="switch"]');
     expect((control.element as HTMLButtonElement).disabled).toBe(true);
     expect(control.attributes('aria-checked')).toBe('false');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('posts its state with its form, as the true and false values when given', async () => {

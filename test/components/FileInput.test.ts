@@ -2,7 +2,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { defineComponent, h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { FileInput } from '#components';
-import { accessibleName, checkA11y, description, expectFocused } from '../a11y';
+import {
+  accessibleName,
+  description,
+  expectFocused,
+  expectNoViolations,
+} from '../a11y';
 import { addToPage } from '../dom';
 import { mountInForm } from '../form';
 
@@ -48,7 +53,7 @@ describe('FileInput', () => {
     expect(accessibleName(input)).toBe('Profile picture');
     expect(description(input)).toBe('(max. 2 MB)');
     expect(input.attributes('aria-invalid')).toBeUndefined();
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('shows that a required file is missing after a failed submit of its form', async () => {
@@ -86,7 +91,7 @@ describe('FileInput', () => {
       '(max. 1 MB)',
       'PDF (max. 5 MB)',
     ]);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });
 
@@ -104,7 +109,7 @@ describe('FileInput with a circle', () => {
 
     expect(wrapper.get('img').attributes('src')).toBe('/favicon.svg');
     expect(description(wrapper.get('input'))).toContain('max.');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('shows a picture the parent loads later, and again once cleared', async () => {
@@ -144,7 +149,7 @@ describe('FileInput in document mode', () => {
     const input = wrapper.get('input');
     expect(input.attributes('accept')).toBe('.pdf,.docx');
     expect(description(input)).toBe('PDF or DOCX (max. 5 MB)');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('hands on a file of an accepted type and turns down another', async () => {
@@ -166,7 +171,7 @@ describe('FileInput in document mode', () => {
     expect(wrapper.emitted('select')).toEqual([[pdf]]);
     expect(input.hasAttribute('aria-invalid')).toBe(false);
     expect(description(input)).toBe('PDF (max. 5 MB)');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });
 

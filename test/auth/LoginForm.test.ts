@@ -3,7 +3,12 @@ import { defineComponent, h, ref } from 'vue';
 import { flushPromises } from '@vue/test-utils';
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { LoginForm } from '#components';
-import { accessibleName, checkA11y, description, expectFocused } from '../a11y';
+import {
+  accessibleName,
+  description,
+  expectFocused,
+  expectNoViolations,
+} from '../a11y';
 import { fetchError } from '../fetch';
 import {
   client,
@@ -17,7 +22,6 @@ import {
 } from './fortify';
 import { scenarios } from './scenarios';
 
-mockNuxtImport('useSanctumClient', () => () => client);
 mockNuxtImport(
   'navigateTo',
   () =>
@@ -73,7 +77,7 @@ describe.each(scenarios)('LoginForm ($name)', (scenario) => {
     expect(reveal!.attributes('aria-pressed')).toBe('true');
     expect(password.attributes('type')).toBe('text');
 
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('shows an empty field as an error on the field and focuses it', async () => {
@@ -107,7 +111,7 @@ describe.each(scenarios)('LoginForm ($name)', (scenario) => {
     expectFocused(submit);
     expect(wrapper.emitted('error')).toHaveLength(1);
     expect(navigate).not.toHaveBeenCalled();
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('says so when the browser was offline', async () => {
@@ -212,7 +216,7 @@ describe.each(scenarios)('LoginForm ($name)', (scenario) => {
 
     expect(accessibleName(box)).toBe('Remember me');
     expect(box.element.checked).toBe(false);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await signIn();
     await box.setValue(true);

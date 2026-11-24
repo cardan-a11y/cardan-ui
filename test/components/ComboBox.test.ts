@@ -5,9 +5,9 @@ import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { ComboBox } from '#components';
 import {
   accessibleName,
-  checkA11y,
   description,
   expectFocused,
+  expectNoViolations,
   roleOf,
 } from '../a11y';
 import { addToPage, leave, press } from '../dom';
@@ -123,7 +123,7 @@ describe('ComboBox: roles, states and properties', () => {
     expect(wrapper.get('label').attributes('for')).toBe(input.attributes('id'));
     expect(accessibleName(input)).toBe('Topping');
     expect(input.attributes('aria-autocomplete')).toBe('list');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('has aria-expanded false and no aria-controls while the list is closed', async () => {
@@ -142,7 +142,7 @@ describe('ComboBox: roles, states and properties', () => {
     const listbox = wrapper.get('[role="listbox"]');
     expect(input.attributes('aria-controls')).toBe(listbox.attributes('id'));
     expect(labels()).toEqual(['Cheese', 'Ham', 'Jalapeños']);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('names the listbox and the open button by the label, without the required chip', async () => {
@@ -182,7 +182,7 @@ describe('ComboBox: roles, states and properties', () => {
     await wrapper.setProps({ required: true });
     expect(accessibleName(input)).toBe('Topping required');
     expect(input.attributes('aria-required')).toBe('true');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });
 
@@ -435,7 +435,7 @@ describe('ComboBox: where it leaves the pattern', () => {
         .findAll('[role="option"]')
         .map((option) => option.attributes('aria-selected')),
     ).toEqual(['false', 'true', 'false']);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('opens the list whole with a value in the field, and shortens it only after typing', async () => {
@@ -666,7 +666,7 @@ describe('ComboBox: where it leaves the pattern', () => {
     expect(
       wrapper.get<HTMLInputElement>('input[type="hidden"]').element.disabled,
     ).toBe(true);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });
 
@@ -684,7 +684,7 @@ describe('ComboBox: the field', () => {
 
     expect(description(input)).toBe('One per pizza Topping is missing');
     expect(input.attributes('aria-invalid')).toBe('true');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await wrapper.setProps({ modelValue: 'ham' });
 
@@ -700,7 +700,7 @@ describe('ComboBox: the field', () => {
 
     expect(description(input)).toBe('Ham is sold out');
     expect(input.attributes('aria-invalid')).toBe('true');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await input.trigger('click');
     await option('Cheese').trigger('click');
@@ -764,7 +764,7 @@ describe('ComboBox: the field', () => {
     );
     expect(listboxes.every(Boolean)).toBe(true);
     expect(new Set(listboxes).size).toBe(2);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('exposes focusElement(), which focuses the text field', async () => {
@@ -1066,7 +1066,7 @@ describe('ComboBox: the states of the list', () => {
       expect(wrapper.find('[role="listbox"]').exists()).toBe(false);
       expect(input.attributes('aria-expanded')).toBe('false');
       expect(input.attributes('aria-controls')).toBeUndefined();
-      expect(await checkA11y()).toHaveNoViolations();
+      await expectNoViolations();
     },
   );
 
@@ -1086,7 +1086,7 @@ describe('ComboBox: the states of the list', () => {
 
     expect(status()).toBe('No options match your search');
     vi.useRealTimers();
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('says the number of results after a pause in typing', async () => {
@@ -1539,7 +1539,7 @@ describe('ComboBox: pages', () => {
     const first = () => wrapper.findAll('[role="option"]')[0]!;
     expect(first().attributes('aria-setsize')).toBe('-1');
     expect(first().attributes('aria-posinset')).toBe('1');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     // Down Arrow on the last loaded option, twice: pages 2 and 3
     await press('ArrowDown');

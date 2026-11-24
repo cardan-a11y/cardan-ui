@@ -7,10 +7,14 @@ import {
   PasswordUpdateForm,
 } from '#components';
 import { useLoginEmail, useMfaSetupReminder, useToast } from '#imports';
-import { accessibleName, checkA11y, description, expectFocused } from '../a11y';
+import {
+  accessibleName,
+  description,
+  expectFocused,
+  expectNoViolations,
+} from '../a11y';
 import {
   buttonNamed,
-  client,
   fortify,
   navigate,
   refuse,
@@ -22,7 +26,6 @@ import {
 } from './fortify';
 import { academy, scenarios, type AuthScenario } from './scenarios';
 
-mockNuxtImport('useSanctumClient', () => () => client);
 mockNuxtImport(
   'navigateTo',
   () =>
@@ -81,7 +84,7 @@ describe.each(scenarios)('PasswordForgotForm ($name)', (scenario) => {
       'We have emailed your password reset link.',
     );
     expect(submit.attributes('disabled')).toBeDefined();
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await email.setValue('grace@example.com');
     expect(status.text()).toBe('');
@@ -165,7 +168,7 @@ describe.each(scenarios)('PasswordResetForm ($name)', (scenario) => {
     expect(description(password)).toContain(
       'Password meets length requirement',
     );
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('takes the address from the link, for password managers only', async () => {
@@ -341,7 +344,7 @@ describe.each(scenarios)('PasswordUpdateForm ($name)', (scenario) => {
         field(name).attributes('type'),
       ),
     ).toEqual(['text', 'text', 'text']);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it(`saves with the app’s method and route, clears the fields and says so`, async () => {

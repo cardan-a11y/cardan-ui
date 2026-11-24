@@ -6,9 +6,9 @@ import { ConfirmDialog, ConfirmDialogHost } from '#components';
 import { useConfirm } from '#imports';
 import {
   accessibleName,
-  checkA11y,
   description,
   expectFocused,
+  expectNoViolations,
   roleOf,
 } from '../a11y';
 import { fetchError } from '../fetch';
@@ -317,7 +317,7 @@ describe('useConfirm: a failing action', () => {
     const alert = dialog().querySelector('[role="alert"]')!;
     expect(alert.textContent).toContain('Apple is in a basket.');
     expect(dialogButton('Delete').getAttribute('aria-busy')).toBeNull();
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     dialogButton('Delete').click();
     await expect(result).resolves.toBe(true);
@@ -369,7 +369,7 @@ describe('useConfirm: the digit challenge', () => {
 
     await type(input, digit);
     expect(dialogButton('Delete').disabled).toBe(false);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
     dialogButton('Delete').click();
     await expect(result).resolves.toBe(true);
     expect(deleteVegetable).toHaveBeenCalledExactlyOnceWith('leek');
@@ -416,7 +416,7 @@ describe('ConfirmDialog', () => {
     expect(accessibleName(dialog)).toBe('Delete the course?');
     expect(description(dialog)).toBe('The course goes from your cart.');
     expectFocused(buttonIn(dialog, 'Cancel'));
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('is described by its slot when the description needs markup', async () => {

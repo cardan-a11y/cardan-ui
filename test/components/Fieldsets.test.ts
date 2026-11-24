@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { defineComponent, h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { LanguageSelect, ThemeSelect } from '#components';
-import { accessibleName, checkA11y, roleOf } from '../a11y';
+import { accessibleName, expectNoViolations, roleOf } from '../a11y';
 
 /**
  * ThemeSelect and LanguageSelect: a group of native radios under a legend.
@@ -63,7 +63,7 @@ describe('ThemeSelect', () => {
       'System',
     ]);
     expect(radios.map((radio) => radio.checked)).toEqual([false, true, false]);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('sets the preference to the radio that is chosen', async () => {
@@ -80,7 +80,7 @@ describe('ThemeSelect', () => {
     await mountTwice(ThemeSelect);
 
     expectSeparateGroups();
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });
 
@@ -104,7 +104,7 @@ describe('LanguageSelect', () => {
       radios.map((radio) => radio.labels?.[0]?.getAttribute('lang')),
     ).toEqual(['nl', 'en']);
     expect(radios.map((radio) => radio.checked)).toEqual([false, true]);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('switches the language to the radio that is chosen', async () => {
@@ -124,6 +124,6 @@ describe('LanguageSelect', () => {
     await mountTwice(LanguageSelect);
 
     expectSeparateGroups();
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });

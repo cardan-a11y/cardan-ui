@@ -4,11 +4,10 @@ import { flushPromises } from '@vue/test-utils';
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { MfaDialog, PasswordConfirmationDialog } from '#components';
 import { useMfa, useMfaDialog } from '#imports';
-import { accessibleName, checkA11y, expectFocused } from '../a11y';
+import { accessibleName, expectFocused, expectNoViolations } from '../a11y';
 import {
   RECOVERY_CODES,
   buttonNamed,
-  client,
   fortify,
   navigate,
   refuse,
@@ -19,7 +18,6 @@ import {
 } from './fortify';
 import { academy } from './scenarios';
 
-mockNuxtImport('useSanctumClient', () => () => client);
 mockNuxtImport(
   'navigateTo',
   () =>
@@ -72,7 +70,7 @@ describe('MfaDialog: enabling', () => {
 
     expect(dialog.attributes('open')).toBeDefined();
     expect(accessibleName(dialog)).toBe('Multi-factor authentication');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await button('Enable MFA').trigger('click');
     await flushPromises();
@@ -86,7 +84,7 @@ describe('MfaDialog: enabling', () => {
     expect(qr.find('script').exists()).toBe(false);
     expect(dialog.text()).toContain('JBSW Y3DP EHPK 3PXP');
     expectFocused(stepWith(qr.element));
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await button('Continue').trigger('click');
     await flushPromises();
@@ -106,7 +104,7 @@ describe('MfaDialog: enabling', () => {
     expect(codes).toEqual(RECOVERY_CODES);
     expectFocused(stepWith(dialog.get('li').element));
     expect(wrapper.emitted('refresh')).toHaveLength(1);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('keeps the code step with the error in the alert after a wrong code', async () => {

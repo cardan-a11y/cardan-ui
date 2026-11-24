@@ -3,7 +3,7 @@ import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { nextTick } from 'vue';
 import { Toast, ToastManager } from '#components';
 import { useToast } from '#imports';
-import { accessibleName, checkA11y, expectFocused } from '../a11y';
+import { accessibleName, expectFocused, expectNoViolations } from '../a11y';
 import { addToPage } from '../dom';
 
 /**
@@ -98,7 +98,7 @@ describe('Toast', () => {
     // No role of its own, so it is not announced twice
     expect(toast?.hasAttribute('role')).toBe(false);
     expect(accessibleName(closeButton('Saved'))).toBe('Close');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('moves focus from a closed toast to the next one, the one before, and then back where it came from', async () => {

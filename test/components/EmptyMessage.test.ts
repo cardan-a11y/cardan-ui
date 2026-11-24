@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { h } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { EmptyMessage } from '#components';
-import { accessibleName, checkA11y, roleOf } from '../a11y';
+import { accessibleName, expectNoViolations, roleOf } from '../a11y';
 
 describe('EmptyMessage', () => {
   it('is a single paragraph with the text of its prop', async () => {
@@ -13,7 +13,7 @@ describe('EmptyMessage', () => {
 
     expect(wrapper.element.tagName).toBe('P');
     expect(wrapper.text()).toBe('No courses found.');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('takes its text from the default slot', async () => {
@@ -46,7 +46,7 @@ describe('EmptyMessage', () => {
     const icon = wrapper.get('.iconify, svg');
     expect(icon.attributes('aria-hidden')).toBe('true');
     expect(accessibleName(wrapper.get('p'))).toBe('No courses found.');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('puts a named action after the text', async () => {
@@ -73,6 +73,6 @@ describe('EmptyMessage', () => {
       paragraphs[0]!.element.compareDocumentPosition(button.element) &
       Node.DOCUMENT_POSITION_FOLLOWING;
     expect(actionFollowsText).toBeTruthy();
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });

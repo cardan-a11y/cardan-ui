@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { SpinButton } from '#components';
-import { accessibleName, checkA11y, description } from '../a11y';
+import { accessibleName, description, expectNoViolations } from '../a11y';
 
 /**
  * The rows of the APG spinbutton pattern and its quantity example
@@ -58,7 +58,7 @@ describe('SpinButton: roles, states and properties', () => {
     expect(input.attributes('role')).toBe('spinbutton');
     expect(wrapper.get('label').attributes('for')).toBe(input.attributes('id'));
     expect(wrapper.get('label').text()).toBe('Adults');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('has the value, the minimum and the maximum in aria-valuenow, -valuemin and -valuemax', async () => {
@@ -148,7 +148,7 @@ describe('SpinButton: roles, states and properties', () => {
     expect(input.element.validity.valid).toBe(false);
     expect(input.attributes('aria-invalid')).toBe('true');
     expect(error()).toContain('Enter 8 or less');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await type(input, '0');
     expect(input.element.validity.valid).toBe(false);
@@ -192,7 +192,7 @@ describe('SpinButton: roles, states and properties', () => {
     expect(document.getElementById(error ?? '')?.textContent).toContain(
       'Adults is missing',
     );
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await wrapper.setProps({ modelValue: 2 });
     expect(input.element.validity.valid).toBe(true);
@@ -358,7 +358,7 @@ describe('SpinButton: buttons', () => {
     expect(decrease.attributes('disabled')).toBeDefined();
     expect(increase.attributes('disabled')).toBeDefined();
     expect(wrapper.emitted('update:modelValue')).toBeUndefined();
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });
 
@@ -387,7 +387,7 @@ describe('SpinButton: as a field', () => {
     expect(input.attributes('aria-invalid')).toBe('true');
     // The server judges the next submit: the browser does not hold it back
     expect(input.element.checkValidity()).toBe(true);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await input.setValue('3');
     expect(description(input)).toBe('Everyone aged 12 or older');

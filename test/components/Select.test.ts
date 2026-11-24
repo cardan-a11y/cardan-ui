@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { defineComponent, h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Select } from '#components';
-import { accessibleName, checkA11y, description } from '../a11y';
+import { accessibleName, description, expectNoViolations } from '../a11y';
 import { mountInForm } from '../form';
 
 const options = [
@@ -19,7 +19,7 @@ describe('Select', () => {
 
     expect(accessibleName(wrapper.get('select'))).toBe('Colour');
     expect(wrapper.findAll('option').map((o) => o.text())).toContain('Green');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('shows the error under the select, above the instruction, and is described by both', async () => {
@@ -51,7 +51,7 @@ describe('Select', () => {
       error!.compareDocumentPosition(instruction!) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('reads the value, label and disabled state from the named keys', async () => {
@@ -103,7 +103,7 @@ describe('Select', () => {
 
     expect(description(select)).toBe('Choose a colour');
     expect(select.attributes('aria-invalid')).toBe('true');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     // Valid: not described, whatever the form shows
     await select.setValue('green');
@@ -144,7 +144,7 @@ describe('Select', () => {
     expect(select.attributes('aria-invalid')).toBe('true');
     // The server judges the next submit: the browser does not hold it back
     expect((select.element as HTMLSelectElement).checkValidity()).toBe(true);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await select.setValue('green');
 
@@ -187,6 +187,6 @@ describe('Select', () => {
       'Of the badge',
       'Of the text',
     ]);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });

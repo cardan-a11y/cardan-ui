@@ -3,7 +3,12 @@ import { nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Popover } from '#components';
 import { useRouter } from '#imports';
-import { accessibleName, checkA11y, expectFocused, roleOf } from '../a11y';
+import {
+  accessibleName,
+  expectFocused,
+  expectNoViolations,
+  roleOf,
+} from '../a11y';
 import { addToPage, fakePopover, leave } from '../dom';
 
 /**
@@ -61,7 +66,7 @@ describe('Popover', () => {
     // Rendered while closed, where the native popover hides it
     expect(accessibleName(item('Edit'))).toBe('Edit');
     expect(accessibleName(item('Delete'))).toBe('Delete');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('is named "More options" without a label', async () => {
@@ -77,7 +82,7 @@ describe('Popover', () => {
     await popover.show();
 
     expectFocused(item('Edit'));
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('moves focus to the checked radio of a group that comes first, its tab stop', async () => {
@@ -197,6 +202,6 @@ describe('Popover', () => {
     const next = new MouseEvent('click', { bubbles: true, cancelable: true });
     button.dispatchEvent(next);
     expect(next.defaultPrevented).toBe(false);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });

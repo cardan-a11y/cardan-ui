@@ -11,10 +11,9 @@ import {
   useSanctumAuth,
 } from '#imports';
 import localeMiddleware from '../../auth/app/middleware/01.locale.global';
-import { client, navigate, signIn, useScenario } from './fortify';
+import { navigate, signIn, useScenario } from './fortify';
 import { academy, auditor } from './scenarios';
 
-mockNuxtImport('useSanctumClient', () => () => client);
 mockNuxtImport(
   'navigateTo',
   () =>

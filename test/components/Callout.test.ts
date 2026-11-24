@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Callout } from '#components';
-import { accessibleName, checkA11y, roleOf } from '../a11y';
+import { accessibleName, expectNoViolations, roleOf } from '../a11y';
 
 /**
  * The colour and the icon of a callout say how serious it is; a hidden word
@@ -24,7 +24,7 @@ describe('Callout', () => {
     expect(wrapper.text()).toMatch(
       new RegExp(`^${severity}\\s*The course starts Monday\\.$`),
     );
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('adds no severity to the neutral accent callout', async () => {
@@ -45,6 +45,6 @@ describe('Callout', () => {
     const section = wrapper.get('section').element;
     expect(roleOf(section)).toBe('region');
     expect(accessibleName(section)).toBe('Course dates');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });

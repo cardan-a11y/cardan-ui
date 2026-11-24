@@ -1,9 +1,6 @@
-import { afterEach, expect } from 'vitest';
+import { afterEach } from 'vitest';
 import { enableAutoUnmount } from '@vue/test-utils';
 import { registerEndpoint } from '@nuxt/test-utils/runtime';
-import * as matchers from 'vitest-axe/matchers';
-
-expect.extend(matchers);
 
 // A failed test must not leave its component for the next test's axe run
 enableAutoUnmount(afterEach);

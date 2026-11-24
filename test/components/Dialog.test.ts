@@ -2,7 +2,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Dialog } from '#components';
-import { accessibleName, checkA11y, expectFocused, roleOf } from '../a11y';
+import {
+  accessibleName,
+  expectFocused,
+  expectNoViolations,
+  roleOf,
+} from '../a11y';
 import { addToPage } from '../dom';
 
 /**
@@ -49,7 +54,7 @@ describe('Dialog', () => {
     expect(roleOf(dialog)).toBe('dialog');
     expect(accessibleName(dialog)).toBe('Settings');
     expect(accessibleName(button('Close'))).toBe('Close');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('is named by aria-label without a label, and passes role alertdialog on', async () => {
@@ -61,7 +66,7 @@ describe('Dialog', () => {
 
     expect(roleOf(dialog)).toBe('alertdialog');
     expect(accessibleName(dialog)).toBe('Delete the course?');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('closes with its close button, no longer visible before the dialog closes', async () => {

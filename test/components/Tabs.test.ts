@@ -2,7 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { defineComponent, h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Tabs } from '#components';
-import { accessibleName, checkA11y, expectFocused, roleOf } from '../a11y';
+import {
+  accessibleName,
+  expectFocused,
+  expectNoViolations,
+  roleOf,
+} from '../a11y';
 import { press } from '../dom';
 
 /**
@@ -62,7 +67,7 @@ describe('Tabs', () => {
       'false',
       'false',
     ]);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('has ids of its own, also next to another Tabs with the same values', async () => {
@@ -110,7 +115,7 @@ describe('Tabs', () => {
     await press('ArrowLeft');
     expectFocused(tab('A'));
     expect(selected()).toEqual(['A']);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('moves to the first and the last enabled tab with Home and End', async () => {

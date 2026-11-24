@@ -3,11 +3,10 @@ import { flushPromises } from '@vue/test-utils';
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { MfaRecoveryCodesDialog, MfaSettings } from '#components';
 import { useMfa, useMfaDialog } from '#imports';
-import { accessibleName, checkA11y, expectFocused } from '../a11y';
+import { accessibleName, expectFocused, expectNoViolations } from '../a11y';
 import {
   RECOVERY_CODES,
   buttonNamed,
-  client,
   fortify,
   navigate,
   pending,
@@ -20,7 +19,6 @@ import {
 } from './fortify';
 import { academy } from './scenarios';
 
-mockNuxtImport('useSanctumClient', () => () => client);
 mockNuxtImport(
   'navigateTo',
   () =>
@@ -78,7 +76,7 @@ describe('MfaSettings: disabling (Academy)', () => {
         .filter((button) => !button.element.closest('dialog'))
         .map((button) => accessibleName(button)),
     ).toEqual(['Regenerate recovery codes', 'Disable MFA']);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it.each([
@@ -252,7 +250,7 @@ describe('MfaSettings: replacing the recovery codes (Academy)', () => {
     const heading = dialog.get('h2');
     expect(heading.text()).toBe('Recovery codes');
     expectFocused(heading);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await buttonNamed(dialog, "I've stored my recovery codes").trigger('click');
     await flushPromises();

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Accordion } from '#components';
-import { accessibleName, checkA11y, roleOf } from '../a11y';
+import { accessibleName, expectNoViolations, roleOf } from '../a11y';
 
 /**
  * The APG accordion pattern
@@ -49,7 +49,7 @@ describe('Accordion', () => {
     expect(panel().hasAttribute('inert')).toBe(false);
     // A parent with v-model:open hears the click, so it can close it again
     expect(wrapper.emitted('update:open')).toEqual([[true]]);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
 
     await trigger.trigger('click');
 
@@ -88,6 +88,6 @@ describe('Accordion', () => {
 
     expect(roleOf(panel())).toBe('region');
     expect(accessibleName(panel())).toBe('Lesson 1');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });

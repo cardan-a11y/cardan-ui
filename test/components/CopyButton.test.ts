@@ -3,7 +3,7 @@ import { nextTick } from 'vue';
 import { flushPromises } from '@vue/test-utils';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { CopyButton } from '#components';
-import { accessibleName, checkA11y } from '../a11y';
+import { accessibleName, expectNoViolations } from '../a11y';
 
 /**
  * The result of a copy is announced through a status region that is on the
@@ -38,7 +38,7 @@ describe('CopyButton', () => {
 
     expect(accessibleName(button.element)).toBe('Copy');
     expect(status.text()).toBe('');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('copies the text and announces "Copied", then goes back to "Copy" after 2 seconds', async () => {

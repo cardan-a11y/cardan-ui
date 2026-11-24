@@ -3,7 +3,12 @@ import { h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { UserMenu } from '#components';
 import { useNuxtApp, useRouter } from '#imports';
-import { accessibleName, checkA11y, expectFocused, roleOf } from '../a11y';
+import {
+  accessibleName,
+  expectFocused,
+  expectNoViolations,
+  roleOf,
+} from '../a11y';
 import { addToPage, fakePopover, leave, press } from '../dom';
 
 /**
@@ -80,7 +85,7 @@ describe('UserMenu', () => {
     expect(panel.hasAttribute('popover')).toBe(true);
     // Rendered while closed, where the native popover hides it
     expect(panel.contains(item('Profile'))).toBe(true);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('is named "Gebruikersmenu" and the initials in Dutch', async () => {
@@ -99,7 +104,7 @@ describe('UserMenu', () => {
     expect(wrapper.emitted('update:modelValue')).toEqual([[true]]);
     expectFocused(item('Profile'));
     expect(inert()).toBe(0);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('opens and closes through v-model, anchored to its trigger', async () => {
@@ -218,7 +223,7 @@ describe('UserMenu', () => {
     expect(dialog.open).toBe(true);
     expect(accessibleName(dialog)).toBe('Sign out');
     expect(inert()).toBe(0);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('signs out from the dialog, which closes and gives focus back to the trigger', async () => {

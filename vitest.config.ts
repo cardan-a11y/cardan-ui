@@ -11,7 +11,8 @@ export default defineVitestConfig({
         domEnvironment: 'happy-dom',
       },
     },
-    setupFiles: ['./test/setup.ts'],
+    // test/api-setup.ts: nuxt-auth-sanctum's client is the API fake in every test
+    setupFiles: ['./test/api-setup.ts', './test/setup.ts'],
     include: ['test/**/*.test.ts'],
   },
 });

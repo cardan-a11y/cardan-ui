@@ -5,7 +5,6 @@ import { useMfaSetupReminder, useNuxtApp, useRouter } from '#imports';
 import mfaSetupMiddleware from '../../auth/app/middleware/mfa-setup.global';
 import { fetchError } from '../fetch';
 import {
-  client,
   fortify,
   navigate,
   refuse,
@@ -15,7 +14,6 @@ import {
 } from './fortify';
 import { academy, auditor } from './scenarios';
 
-mockNuxtImport('useSanctumClient', () => () => client);
 mockNuxtImport(
   'navigateTo',
   () =>

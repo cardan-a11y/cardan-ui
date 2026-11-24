@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Table } from '#components';
-import { accessibleName, checkA11y } from '../a11y';
+import { accessibleName, expectNoViolations } from '../a11y';
 
 const rows = `
   <thead><tr><th scope="col">Name</th><th scope="col">Score</th></tr></thead>
@@ -19,7 +19,7 @@ describe('Table', () => {
     const table = wrapper.get('table');
     expect(accessibleName(table.element)).toBe('Results');
     expect(table.get('caption').text()).toBe('Results');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('is busy only while it loads', async () => {

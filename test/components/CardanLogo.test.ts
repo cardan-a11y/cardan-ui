@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { CardanLogo } from '#components';
-import { accessibleName, checkA11y, roleOf } from '../a11y';
+import { accessibleName, expectNoViolations, roleOf } from '../a11y';
 
 /**
  * The logo is one image with a name, whatever its form; the product of a
@@ -40,7 +40,7 @@ describe('CardanLogo', () => {
 
     expect(roleOf(logo)).toBe('img');
     expect(accessibleName(logo)).toBe(name);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('is hidden from assistive technology when decorative', async () => {
@@ -49,7 +49,7 @@ describe('CardanLogo', () => {
     expect(logo.getAttribute('aria-hidden')).toBe('true');
     expect(logo.hasAttribute('role')).toBe(false);
     expect(logo.hasAttribute('aria-label')).toBe(false);
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   // The name has its width in Hanken Grotesk and is fitted to it in any font,

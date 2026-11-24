@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { MenuList } from '#components';
-import { accessibleName, checkA11y, roleOf } from '../a11y';
+import { accessibleName, expectNoViolations, roleOf } from '../a11y';
 import { addToPage } from '../dom';
 
 /**
@@ -45,7 +45,7 @@ describe('MenuList', () => {
 
     expect(wrapper.find('[role^="menu"]').exists()).toBe(false);
 
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('is named by aria-label, or by the element aria-labelledby names', async () => {
@@ -61,7 +61,7 @@ describe('MenuList', () => {
     await wrapper.setProps({ ariaLabelledby: 'settings-heading' });
 
     expect(accessibleName(wrapper.get('nav'))).toBe('Settings');
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('makes a list in a list a group in the same landmark, named by its item', async () => {
@@ -94,7 +94,7 @@ describe('MenuList', () => {
       'Billing',
     ]);
 
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   it('emits the item clicked and runs its onClick, also from a list in a list', async () => {
@@ -155,6 +155,6 @@ describe('MenuList', () => {
       .find((b) => accessibleName(b) === 'Export')!;
     expect((exportButton.element as HTMLButtonElement).disabled).toBe(true);
 
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 });

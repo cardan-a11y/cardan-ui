@@ -2,7 +2,7 @@ import { afterEach, describe, it, expect, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { LanguageSwitcher } from '#components';
-import { accessibleName, checkA11y, roleOf } from '../a11y';
+import { accessibleName, expectNoViolations, roleOf } from '../a11y';
 
 describe('LanguageSwitcher', () => {
   afterEach(async () => {
@@ -32,7 +32,7 @@ describe('LanguageSwitcher', () => {
       'true',
     ]);
 
-    expect(await checkA11y()).toHaveNoViolations();
+    await expectNoViolations();
   });
 
   // A page's address in another language is not its own with another prefix:
