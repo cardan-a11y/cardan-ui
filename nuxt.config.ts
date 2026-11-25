@@ -1,9 +1,21 @@
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { useNuxt } from 'nuxt/kit';
 import { bundledIcons } from './app/utils/icons.ts';
 
 const globalTypes = fileURLToPath(
   new URL('./app/types/index.ts', import.meta.url),
 );
+
+function packageDir(rootDir: string, name: string) {
+  try {
+    const require = createRequire(join(rootDir, 'package.json'));
+    return dirname(require.resolve(`${name}/package.json`));
+  } catch {
+    return undefined;
+  }
+}
 
 // VideoPlayer's thumbnails. Spread: a literal `image` key fails the typecheck
 // of a project without @nuxt/image (cardan-support-nuxt)
@@ -92,6 +104,14 @@ export default defineNuxtConfig({
         /^.*node_modules\/vue-router(?=\/|$)/,
       )?.[0];
       if (paths && project) paths['vue-router'] = [project];
+
+      // test/browser types a project's Page with the project's Playwright: the
+      // layer's own copy of another version is another type (TS2345)
+      const playwright = packageDir(
+        useNuxt().options.rootDir,
+        '@playwright/test',
+      );
+      if (paths && playwright) paths['@playwright/test'] = [playwright];
     },
   },
 

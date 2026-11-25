@@ -90,6 +90,10 @@ New: **ComboBox**, our own searchable single select (`/combobox` in the playgrou
 - **A list too long to load whole takes `server-search`**: the function is then `options(query, { signal, page })`, asked after a pause in typing, and may answer one page as `{ options, more }`. Such a field needs `v-model:selected` to show the label of its value.
 - **Browsers**: nothing new. ComboBox needs what Tooltip, Popover and UserMenu already need; the README now lists the supported browsers with their versions.
 
+### 2.6.1
+
+- **A project's Playwright no longer has to match the layer's.** A project's typecheck types the layer's `test/browser/helpers.ts` and `api.ts` with the project's own `@playwright/test`, so a Playwright update in the layer or in a project no longer fails the other's `pnpm run typecheck` (TS2345). Nothing to do; the rule in 2.6 to match 1.65.1 can be forgotten once a project takes 2.6.1.
+
 ## Upgrading to 2.5
 
 New: AppShell, AppHeader, AppSidebar and SidebarLayout, the parts of an app's layout (`/layout` in the playground). Nothing changes in a project until it uses them.
