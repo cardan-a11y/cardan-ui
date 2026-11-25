@@ -47,10 +47,15 @@ export function mergeInclude(own: string[] | undefined, layer: string[]) {
   return [...new Set([...(own ?? []), ...layer])];
 }
 
-/** Adds the packages of the layer's components to `vite.optimizeDeps.include`. */
+/**
+ * Adds the packages of the layer's components to `vite.optimizeDeps.include`,
+ * in development only: nothing else reads the list.
+ */
 export default defineNuxtModule({
   meta: { name: '@cardan/ui:optimize-deps' },
   async setup(_options, nuxt) {
+    if (!nuxt.options.dev) return;
+
     const found = await projectDependencies(nuxt.options.rootDir);
     const optimizeDeps = (nuxt.options.vite.optimizeDeps ??= {});
     optimizeDeps.include = mergeInclude(optimizeDeps.include, found);

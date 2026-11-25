@@ -1,5 +1,13 @@
 import type { RouteLocationNormalized } from 'vue-router';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  onTestFinished,
+  vi,
+} from 'vitest';
 import { defineComponent } from 'vue';
 import { flushPromises } from '@vue/test-utils';
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
@@ -86,6 +94,34 @@ describe('the profile language (Academy)', () => {
 
     await useRouter().push('/dashboard');
     expect(locale()).toBe('nl');
+  });
+
+  describe("with a project's i18n hook that throws", () => {
+    beforeEach(() => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const unhook = useNuxtApp().hook('i18n:beforeLocaleSwitch', () => {
+        throw new Error('A hook of the project');
+      });
+      onTestFinished(unhook);
+    });
+
+    it('goes on with the navigation, in the language it had', async () => {
+      signIn(user('nl'));
+
+      await useRouter().push('/dashboard');
+
+      expect(useRouter().currentRoute.value.path).toBe('/dashboard');
+      expect(locale()).toBe('en');
+      expect(console.error).toHaveBeenCalledOnce();
+    });
+
+    it('resolves apply() after a save, in the language it had', async () => {
+      await useRouter().push('/dashboard');
+      signIn(user('nl'));
+
+      await expect(useProfileLocale().apply()).resolves.toBeUndefined();
+      expect(locale()).toBe('en');
+    });
   });
 
   it('applies after a sign-in, without a navigation', async () => {
@@ -354,6 +390,12 @@ describe('the color mode from the profile', () => {
 
       await identity(academy.user({ settings: { theme: 'light' } }));
       expect(useColorMode().preference).toBe('light');
+    });
+
+    it('keeps the color mode when the profile holds a value that is no mode', async () => {
+      useColorMode().preference = 'dark';
+      await identity(academy.user({ settings: { theme: 'sepia' } }));
+      expect(useColorMode().preference).toBe('dark');
     });
 
     it('keeps the color mode when the profile has none', async () => {

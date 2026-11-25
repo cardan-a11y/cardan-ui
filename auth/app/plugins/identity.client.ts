@@ -12,7 +12,12 @@ export async function loadIdentity(): Promise<void> {
 
     const response = await useSanctumClient().raw<{ data: AuthUser }>(
       config.endpoints.user,
-      { ignoreResponseError: true, timeout: IDENTITY_TIMEOUT_MS },
+      {
+        ignoreResponseError: true,
+        // Not ofetch's `timeout` (1.x), whose timer stops at the headers: a
+        // body that stalls would keep `$identityReady` pending
+        signal: AbortSignal.timeout(IDENTITY_TIMEOUT_MS),
+      },
     );
 
     const data = response._data;

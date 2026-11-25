@@ -20,6 +20,24 @@ export function profileField(
   return value;
 }
 
+type I18n = ReturnType<typeof useNuxtApp>['$i18n'];
+
+/**
+ * Switches the interface's language and never rejects: when a project's i18n
+ * hook throws, or the navigation after the switch fails, the language stays
+ * as it is and the navigation or save that asked goes on.
+ */
+export async function switchLocale(i18n: I18n, locale: string): Promise<void> {
+  try {
+    await i18n.setLocale(locale as typeof i18n.locale.value);
+  } catch (error) {
+    console.error(
+      `[cardan-auth] The switch to the language "${locale}" failed.`,
+      error,
+    );
+  }
+}
+
 export type ResolvedLocale = {
   locale: string;
   /** `address`: the route's own language or `?locale=`; `profile`: the user's */

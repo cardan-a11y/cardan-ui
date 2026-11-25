@@ -505,7 +505,7 @@ useHead({ title: 'Changelog' });
               through a live region. Every day of its calendar is named with its
               weekday, and the headers carry the full weekday names (Auditor
               finding CAN-11.F48); the keyboard access of the calendar waits on
-              vue-datepicker#1283.
+              vue-datepicker#1283 (fixed in 2.6.0).
             </li>
             <li>
               FileInput: a paste into a text field, an editor or another

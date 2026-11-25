@@ -1167,6 +1167,36 @@ describe('ComboBox: what the review found', () => {
     expect(emitted).toEqual(['selected null']);
   });
 
+  it('empties v-model:selected when the parent sets a value the list has no option for', async () => {
+    const { wrapper, input, emitted } = await mountComboBox({
+      modelValue: 'ham',
+      selected: { value: 'ham', label: 'Ham' },
+    });
+
+    await wrapper.setProps({ modelValue: 'salami' } as never);
+    await nextTick();
+
+    expect(input.element.value).toBe('Unknown option');
+    expect(emitted).toEqual(['selected null']);
+  });
+
+  it('empties v-model:selected for such a value only once the list has loaded', async () => {
+    let answer!: (list: typeof options) => void;
+    const { wrapper, emitted } = await mountComboBox({
+      options: () => new Promise((resolve) => (answer = resolve)),
+      modelValue: 'ham',
+      selected: { value: 'ham', label: 'Ham' },
+    });
+
+    await wrapper.setProps({ modelValue: 'salami' } as never);
+    await flushPromises();
+    expect(emitted).toEqual([]);
+
+    answer(options);
+    await flushPromises();
+    expect(emitted).toEqual(['selected null']);
+  });
+
   it('shows no "Unknown option" for an array that still loads', async () => {
     const { wrapper, input } = await mountComboBox({
       options: [],
@@ -1223,6 +1253,41 @@ describe('ComboBox: what the review found', () => {
     expect(event.defaultPrevented).toBe(true);
     expect(input.attributes('aria-expanded')).toBe('false');
     expect(wrapper.props('modelValue')).toBeNull();
+  });
+
+  it('gives focus back to the field once per press in the list', async () => {
+    const { wrapper, input } = await mountComboBox();
+    await input.trigger('click');
+    const focus = vi.spyOn(input.element, 'focus');
+
+    wrapper
+      .get('.combobox-popup')
+      .element.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    await leaveField(input);
+    expect(focus).toHaveBeenCalledOnce();
+    expect(input.attributes('aria-expanded')).toBe('true');
+
+    // No pointerup arrived, as when the press ended outside the window
+    await leaveField(input);
+    expect(focus).toHaveBeenCalledOnce();
+    expect(input.attributes('aria-expanded')).toBe('false');
+  });
+
+  it('forgets a press in the list when another window takes focus', async () => {
+    const { wrapper, input } = await mountComboBox();
+    await input.trigger('click');
+    const focus = vi.spyOn(input.element, 'focus');
+
+    wrapper
+      .get('.combobox-popup')
+      .element.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    vi.spyOn(document, 'hasFocus').mockReturnValueOnce(false);
+    leave(input.element, null);
+    expect(input.attributes('aria-expanded')).toBe('true');
+
+    await leaveField(input);
+    expect(focus).not.toHaveBeenCalled();
+    expect(input.attributes('aria-expanded')).toBe('false');
   });
 
   it('keeps the search on a press on its own label', async () => {
@@ -1423,6 +1488,22 @@ describe('ComboBox: search on the server', () => {
 
     expect(labels()).toHaveLength(4);
     expect(calls).toHaveLength(2);
+  });
+
+  it('keeps v-model:selected for a value the loaded list does not hold', async () => {
+    const { options } = server();
+    const { input, emitted } = await mountComboBox({
+      options,
+      serverSearch: true,
+      modelValue: 99,
+      selected: { value: 99, label: 'Page nine' },
+    });
+
+    await input.trigger('click');
+    await flushPromises();
+
+    expect(input.element.value).toBe('Page nine');
+    expect(emitted).toEqual([]);
   });
 
   it('shows the label of v-model:selected without asking, and no label for a value without it', async () => {

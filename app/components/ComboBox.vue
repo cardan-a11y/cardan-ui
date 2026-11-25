@@ -45,8 +45,9 @@ import type { StyleValue } from 'vue';
  * (or at once for a value without its option) and again only after a failure
  * or an empty answer, a new `options-key` or `refreshOptions()`.
  * `v-model:selected` holds the selected option itself, so a field shows its
- * label without its list. The wrapper has the class `has-value` while there
- * is a value.
+ * label without its list. It is `null` without a value, and for a value the
+ * whole list has no option for. The wrapper has the class `has-value` while
+ * there is a value.
  *
  * With `server-search` the function does the search, for a list too long to
  * load whole: `options(query, { signal, page })` is asked after a pause in
@@ -55,7 +56,8 @@ import type { StyleValue } from 'vue';
  * `{ options, more }`: the next one is asked when the highlight or the
  * scroll reaches the end, and Down Arrow on the last loaded option then
  * loads and does not wrap. The label cannot come from such a list, so a
- * value needs `v-model:selected`.
+ * value needs `v-model:selected`, which a value outside the loaded pages
+ * keeps.
  */
 
 defineOptions({ inheritAttrs: false });
@@ -67,7 +69,6 @@ type Loader = (
   context: { signal: AbortSignal; page: number },
 ) => Answer | Promise<Answer>;
 
-/** One answer of the options function, with the pages that followed it */
 interface Listing {
   query: string;
   options: T[];
@@ -75,8 +76,7 @@ interface Listing {
   page: number;
 }
 
-/** The pause in typing before `server-search` asks, in milliseconds */
-const SEARCH_PAUSE = 300;
+const SEARCH_PAUSE_MS = 300;
 
 const { t } = useI18n();
 
@@ -157,18 +157,15 @@ function labelOf(option: T) {
   return String(isRecord(option) ? (option[labelKey] ?? '') : option);
 }
 
-/** Without case and diacritics: "e" finds "é" */
-function fold(text: string) {
+function foldCaseAndDiacritics(text: string) {
   return text
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase();
 }
 
-/** The list on open: the answer to an empty query */
 const loaded = shallowRef<Listing>();
 const loadState = ref<'idle' | 'loading' | 'loaded' | 'failed'>('idle');
-/** With `server-search`: the answer to the text in the field */
 const found = shallowRef<Listing>();
 const searchState = ref<'idle' | 'loading' | 'failed'>('idle');
 const isLoadingMore = ref(false);
@@ -183,8 +180,7 @@ const isServerSearch = computed(() => !!serverSearch && isLoader.value);
 const allOptions = computed(() =>
   Array.isArray(options) ? options : (loaded.value?.options ?? []),
 );
-/** The whole list is here, so a value without an option has none */
-const isKnown = computed(
+const hasWholeList = computed(
   () =>
     !loading &&
     (isLoader.value
@@ -204,7 +200,6 @@ async function ask(
     query,
     page,
     options: isList ? answer : answer.options,
-    // A list that is filtered in the browser has to be whole
     more: !isList && !!answer.more && isServerSearch.value,
   };
 }
@@ -231,7 +226,6 @@ async function load() {
   highlighted.value = -1;
 }
 
-/** The first touch asks; later ones only after a failure or an empty answer */
 function touch() {
   if (disabled || !isLoader.value || loadState.value === 'loading') return;
 
@@ -255,7 +249,6 @@ function forgetSearch() {
   searchState.value = 'idle';
 }
 
-/** After a pause in typing; the request that typing overtook is aborted */
 function searchSoon() {
   const query = text.value.trim();
 
@@ -266,9 +259,8 @@ function searchSoon() {
     return;
   }
 
-  // The results of the search before stay in the list meanwhile
   searchState.value = 'loading';
-  searchTimer = setTimeout(() => void search(query), SEARCH_PAUSE);
+  searchTimer = setTimeout(() => void search(query), SEARCH_PAUSE_MS);
 }
 
 function forgetSearchRequest() {
@@ -297,15 +289,12 @@ async function search(query: string) {
     searchState.value = 'failed';
   }
 
-  // Enter never picks an option of the search before
   highlighted.value = -1;
   if (isOpen.value) sayResults(0);
 }
 
-/** The next page of the list that shows, one request at a time */
 async function loadMore() {
   const current = listing.value;
-  // Not while a search is under way: the list that shows is the one before
   if (
     !current?.more ||
     isLoadingMore.value ||
@@ -325,10 +314,8 @@ async function loadMore() {
     const longer = {
       ...next,
       options: [...current.options, ...next.options],
-      // A page without options would be asked for again and again
       more: next.more && next.options.length > 0,
     };
-    // Only the list it started from takes the page
     if (current === found.value) found.value = longer;
     else if (current === loaded.value) loaded.value = longer;
 
@@ -357,7 +344,6 @@ async function refreshOptions() {
   await load();
 }
 
-/** A search the user has typed is asked again once the options are forgotten */
 function resumeSearch() {
   if (isServerSearch.value && query.value) searchSoon();
 }
@@ -381,10 +367,9 @@ const valueLabel = computed(() => {
   if (!hasValue.value) return '';
   if (selectedOption.value !== undefined) return labelOf(selectedOption.value);
 
-  return isKnown.value ? t('combobox.unknown-option') : '';
+  return hasWholeList.value ? t('combobox.unknown-option') : '';
 });
 
-/** A value without its option, which only the whole list can give */
 const needsList = computed(
   () =>
     hasValue.value &&
@@ -394,7 +379,6 @@ const needsList = computed(
 );
 
 const text = ref(valueLabel.value);
-/** The user edited the text since focus or a pick: the list filters on it */
 const isEdited = ref(false);
 
 function endEdit() {
@@ -423,7 +407,6 @@ watch(isLoader, reloadOptions);
 watch(isServerSearch, reloadOptions);
 watch(needsList, loadForLabel);
 
-// An option found in the list is handed to `v-model:selected`
 watch(selectedOption, giveSelected);
 
 function giveSelected() {
@@ -433,16 +416,19 @@ function giveSelected() {
   }
 }
 
-// A value the parent emptied takes its option along
-watch(hasValue, (valueIsThere) => {
+watch([hasValue, hasWholeList, selectedOption], dropSelectedOfAnotherValue);
+
+function dropSelectedOfAnotherValue() {
+  const isUnknown = hasWholeList.value && selectedOption.value === undefined;
+
   if (
-    !valueIsThere &&
+    (!hasValue.value || isUnknown) &&
     selected.value !== null &&
     selected.value !== undefined
   ) {
     selected.value = null;
   }
-});
+}
 
 if (import.meta.dev) {
   watchEffect(() => {
@@ -468,22 +454,20 @@ const highlighted = ref(-1);
 
 const query = computed(() => (isEdited.value ? text.value.trim() : ''));
 
-/** The answer that shows, which may have more pages */
 const listing = computed(() =>
   isServerSearch.value && query.value ? found.value : loaded.value,
 );
 
 const shown = computed(() => {
   if (isServerSearch.value) {
-    // Until the first answer of a search, the list before stays
     return (query.value && found.value?.options) || allOptions.value;
   }
 
-  const folded = fold(query.value);
+  const folded = foldCaseAndDiacritics(query.value);
 
   return folded
     ? allOptions.value.filter((option) =>
-        fold(labelOf(option)).includes(folded),
+        foldCaseAndDiacritics(labelOf(option)).includes(folded),
       )
     : allOptions.value;
 });
@@ -496,7 +480,6 @@ const isBusy = computed(
     isLoadingMore.value,
 );
 
-/** The text in the popup when there is no option to show */
 const message = computed(() => {
   if (shown.value.length) return undefined;
   if (
@@ -518,7 +501,6 @@ const message = computed(() => {
   return t('combobox.no-results');
 });
 
-/** A listbox without options is invalid, so the popup may be open without one */
 const hasList = computed(() => isOpen.value && shown.value.length > 0);
 const activeIndex = computed(() =>
   hasList.value && highlighted.value < shown.value.length
@@ -558,7 +540,6 @@ function move(step: 1 | -1) {
     activeIndex.value === count - 1 &&
     listing.value?.more
   ) {
-    // With more pages the last loaded option does not wrap to the first
     void loadMore();
   } else {
     highlighted.value = (activeIndex.value + step + count) % count;
@@ -584,7 +565,6 @@ function say(statusText: () => string, delay = 0) {
   }, delay);
 }
 
-/** After a pause in typing: the text of the popup, or the number of results */
 function sayResults(delay: number) {
   say(
     () =>
@@ -598,8 +578,6 @@ watch([isOpen, message], ([nowOpen, newMessage]) => {
   if (nowOpen && newMessage && !isEdited.value) say(() => newMessage);
 });
 
-// An answer that arrives after the pause in typing is said too; a search
-// on the server says its own
 watch(
   [loadState, () => loading],
   ([, nowLoading], [stateBefore, wasLoading]) => {
@@ -647,7 +625,6 @@ const ariaDescribedby = computed(
 const chipSize = computed(() => (size === 'lg' ? 'sm' : 'xs'));
 
 function setValue(option: T | null) {
-  // The option first, so a watcher on the value reads the new one
   selected.value = option;
   model.value = option === null ? null : valueOf(option);
   clearCustomError();
@@ -657,7 +634,6 @@ function setValue(option: T | null) {
 function pick(option: T) {
   if (!hasValue.value || valueOf(option) !== model.value) setValue(option);
 
-  // Not read back from the model: the parent's update arrives a tick later
   text.value = labelOf(option);
   endEdit();
   close();
@@ -675,10 +651,6 @@ function clear() {
   inputRef.value?.focus();
 }
 
-/**
- * What leaving does, and a submit: the field shows its value again, and a
- * field the user emptied clears it. Returns whether anything changed.
- */
 function settle() {
   const wasBusy = isEdited.value || isOpen.value;
   const isEmptied = isEdited.value && text.value.trim() === '';
@@ -738,12 +710,10 @@ function onInput(event: Event) {
   open();
 
   if (isServerSearch.value) searchSoon();
-  // A search on the server says its results when they arrive
   if (!isServerSearch.value || !query.value) sayResults(600);
 }
 
 function onKeydown(event: KeyboardEvent) {
-  // An input method composing a character keeps its keys
   if (event.isComposing) return;
 
   switch (event.key) {
@@ -776,7 +746,6 @@ function onKeydown(event: KeyboardEvent) {
     case 'Escape':
       if (!isOpen.value) return;
 
-      // Only the popup closes: a Dialog or Popover around it stays open
       event.preventDefault();
       event.stopPropagation();
       text.value = valueLabel.value;
@@ -784,7 +753,6 @@ function onKeydown(event: KeyboardEvent) {
       close();
       break;
     case 'Tab': {
-      // The list closes also when focus goes to the clear button
       const option = shown.value[activeIndex.value];
       if (option !== undefined) pick(option);
       else close();
@@ -812,12 +780,18 @@ function onFocusOut(event: FocusEvent) {
   const next = event.relatedTarget as Node | null;
 
   if (next && rootRef.value?.contains(next)) return;
-  // Another window took focus: nothing closes
-  if (!next && !document.hasFocus()) return;
+  // Another window took focus: nothing closes, and the pointerup of a press
+  // that was held may never arrive
+  if (!next && !document.hasFocus()) {
+    isPressInPopup = false;
+    return;
+  }
 
-  // A press on the list's scrollbar takes focus in Firefox (148): until it
-  // no longer does, focus goes back
+  // Until a press on the list's scrollbar no longer takes focus in Firefox
+  // (148): a press in the popup that takes focus gives it back, in every
+  // browser, once per press
   if (isPressInPopup) {
+    isPressInPopup = false;
     inputRef.value?.focus();
     return;
   }
@@ -825,13 +799,11 @@ function onFocusOut(event: FocusEvent) {
   settle();
 }
 
-/** A press that moves focus nowhere (an empty part of the page) settles too */
 function onDocumentPress(event: PointerEvent) {
   const target = event.target as Node;
 
   isPressInPopup = !!popupRef.value?.contains(target);
 
-  // The field's own label is part of it: a press there keeps the search
   const field = rootRef.value?.closest('.form-field-wrapper') ?? rootRef.value;
 
   if (!field?.contains(target) && (isOpen.value || isEdited.value)) settle();
@@ -855,18 +827,15 @@ onBeforeUnmount(() => {
   forgetOptions();
 });
 
-/** What the visual viewport leaves out of the layout viewport: the phone's keyboard */
-const insets = ref<{ top: number; bottom: number }>();
+const keyboardInsets = ref<{ top: number; bottom: number }>();
 
-/**
- * The part the visual viewport leaves out becomes an inset of the list's
- * room, until iOS makes the layout viewport smaller for its keyboard.
- */
+// Until iOS makes the layout viewport smaller for its keyboard: the part the
+// visual viewport leaves out becomes an inset of the list's room
 function trackViewport() {
   const viewport = window.visualViewport;
 
   if (!viewport || Math.abs(viewport.scale - 1) > 0.01) {
-    insets.value = undefined;
+    keyboardInsets.value = undefined;
     return;
   }
 
@@ -877,10 +846,10 @@ function trackViewport() {
     Math.round(document.documentElement.clientHeight - visibleEnd),
   );
 
-  insets.value = top || bottom ? { top, bottom } : undefined;
+  keyboardInsets.value = top || bottom ? { top, bottom } : undefined;
 
   clearTimeout(revealTimer);
-  if (insets.value) revealTimer = setTimeout(revealField, 250);
+  if (keyboardInsets.value) revealTimer = setTimeout(revealField, 250);
 }
 
 let revealTimer: ReturnType<typeof setTimeout> | undefined;
@@ -915,7 +884,6 @@ function revealField() {
   );
 }
 
-/** What scrolls the field: a container of its own, the window, or nothing (in a Dialog) */
 function scrollerOf(element: Element) {
   for (
     let parent = element.parentElement;
@@ -940,7 +908,7 @@ function untrackViewport() {
   clearTimeout(revealTimer);
   window.visualViewport?.removeEventListener('resize', trackViewport);
   window.visualViewport?.removeEventListener('scroll', trackViewport);
-  insets.value = undefined;
+  keyboardInsets.value = undefined;
 }
 
 watch(
@@ -962,7 +930,6 @@ watch(
   { flush: 'post' },
 );
 
-/** A page that does not fill the list leaves a pointer nothing to scroll */
 function fillList() {
   const list = popupRef.value?.querySelector('[role="listbox"]');
 
@@ -971,7 +938,6 @@ function fillList() {
   }
 }
 
-// Both after the watcher that shows the popup: a hidden list has no size
 watch([isOpen, listing], ([nowOpen]) => nowOpen && fillList(), {
   flush: 'post',
 });
@@ -1023,9 +989,9 @@ defineExpose({
       ref="root"
       class="combobox-root"
       :style="
-        insets && {
-          '--combobox-inset-top': `${insets.top}px`,
-          '--combobox-inset-bottom': `${insets.bottom}px`,
+        keyboardInsets && {
+          '--combobox-inset-top': `${keyboardInsets.top}px`,
+          '--combobox-inset-bottom': `${keyboardInsets.bottom}px`,
         }
       "
       @pointerdown="touch"

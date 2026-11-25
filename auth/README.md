@@ -152,7 +152,7 @@ export default defineAppConfig({
 
 ### The user at start-up
 
-The layer loads the user itself, in place of nuxt-auth-sanctum's initial request, which would put one visitor's profile in a page a server or CDN caches. Its plugin, `cardan-auth:identity`, runs in the browser only and does not hold up the app: it starts one request to `sanctum.endpoints.user`, gives up after 10 seconds, and asks once, with no retry after an error, a 401 or the timeout (as long as your app leaves `sanctum.client.retry` at the module's `false`: the request goes through the module's client, which retries a failed connection when that is set). The load never throws, so the app goes on with a guest whatever the API answers, and it never replaces a user that other code loaded while its request was under way.
+The layer loads the user itself, in place of nuxt-auth-sanctum's initial request, which would put one visitor's profile in a page a server or CDN caches. Its plugin, `cardan-auth:identity`, runs in the browser only and does not hold up the app: it starts one request to `sanctum.endpoints.user`, gives up after 10 seconds, also when the answer stalls half way, and asks once, with no retry after an error, a 401 or the timeout (as long as your app leaves `sanctum.client.retry` at the module's `false`: the request goes through the module's client, which retries a failed connection when that is set). The load never throws, so the app goes on with a guest whatever the API answers, and it never replaces a user that other code loaded while its request was under way.
 
 The plugin provides **`$identityReady`**, a promise that resolves once the request has answered, failed or timed out, and never rejects. That promise is the contract, not the plugin's name: the plugin does not wait for its request, so a plugin that `dependsOn` it knows nothing about the user yet. Code that needs to know whether someone is signed in awaits it:
 
@@ -168,13 +168,13 @@ export default defineNuxtPlugin(({ $identityReady }) => {
 });
 ```
 
-`$identityReady` exists in the browser only: on the server it is `undefined`, so code that reads it is a `.client` plugin, as above, or runs in `onMounted`. Your app must not provide it again: a layer's plugin and an app's copy both run, since Nuxt removes a double plugin by file and not by name, and a second `provide` of `$identityReady` throws at start-up.
+On the server, which sends no identity request, `$identityReady` is a promise that is already resolved, so code that awaits it runs in both places; the user is known in the browser only. Your app must not provide it again: a layer's plugin and an app's copy both run, since Nuxt removes a double plugin by file and not by name, and a second `provide` of `$identityReady` throws at start-up.
 
 A signed-in user whose API does not answer within 10 seconds is a guest for that page load, so the Sanctum middleware sends them to `/login`.
 
 #### Waiting for the user before a page
 
-The layer's global middleware `00.identity.global` awaits `$identityReady` before any other middleware decides, so a guard that reads `isAuthenticated` sees the user. It returns at once on the server, and for a route whose meta has `waitForIdentity: false`.
+The layer's global middleware `00.identity.global` awaits `$identityReady` before any other middleware decides, so a guard that reads `isAuthenticated` sees the user. On the server the promise is already resolved, and a route whose meta has `waitForIdentity: false` does not wait.
 
 Set `waitForIdentity: false` on pages that a visitor sees the same as a signed-in user and that a server or CDN caches, such as a public catalog, so they render without waiting for the request. Route meta is plain data and child routes inherit it, so set it where your app knows those pages, in the `pages:extend` hook:
 
@@ -197,7 +197,7 @@ export default defineNuxtConfig({
 
 #### The order of the middleware
 
-Nuxt runs global middleware per layer, Cardan UI's first, then the auth layer's, then your app's, and by file name within each. The auth layer's are `00.identity.global`, `01.locale.global` (see [Language](#language)) and `mfa-setup.global`, in that order. nuxt-auth-sanctum's own global middleware comes after all of these, since the layer leaves `sanctum.globalMiddleware.prepend` off: the module then adds its middleware after the files of your app and its layers. Your app's middleware therefore runs with the user known and the language set.
+Nuxt runs global middleware per layer, then your app's, and by file name within each. The layers go in the reverse of their order in `extends`: with the auth layer listed before Cardan UI, as the projects do, Cardan UI's run first and then the auth layer's; listed after it, the auth layer's run first. The auth layer's are `00.identity.global`, `01.locale.global` (see [Language](#language)) and `mfa-setup.global`, in that order. nuxt-auth-sanctum's own global middleware comes after all of these, since the layer leaves `sanctum.globalMiddleware.prepend` off: the module then adds its middleware after the files of your app and its layers. Your app's middleware therefore runs with the user known and the language set.
 
 A file in your app with the name of one of the layer's replaces the layer's, but runs at your app's place, after all of the layer's middleware. Do not keep a `00.identity.global` of your own: it would run after the layer's language resolver and `mfa-setup`, which would then decide before the user is known.
 
@@ -226,11 +226,11 @@ With neither source the language stays as it is: a visitor keeps the language of
 
 `resolveLocale()` is the rule as a pure function, for a test or an app's own middleware: it returns `{ locale, source }`, with `source` `'address'` or `'profile'`, or `null` to leave the language alone.
 
-Every request through the Sanctum client, `useAuth().client` included, carries an `Accept-Language` header with the interface language's code, so the API's messages follow the interface and not the browser.
+Every request through the Sanctum client, `useAuth().client` included, carries an `Accept-Language` header with the interface language's code, so the API's messages follow the interface and not the browser. A request that sets the header itself keeps its own, such as one for content in another language than the interface.
 
 ### Color mode from the profile
 
-With `cardanAuth.themeField` set, the layer sets the color mode from that field of the user payload whenever the user object changes: after the load at start-up, a sign-in or a saved profile. The value becomes `useColorMode().preference` as it is, so the field holds a mode `@nuxtjs/color-mode` knows, such as `light`, `dark` or `system`; a profile without a value leaves the color mode alone. This is apart from the language's rules: on a route with its own language, or after a language switch by hand, the color mode still follows the profile. It is off by default. `useColorMode()` comes from `@nuxtjs/color-mode`, which Cardan UI registers; an app without Cardan UI installs that module to use this setting.
+With `cardanAuth.themeField` set, the layer sets the color mode from that field of the user payload whenever the user object changes: after the load at start-up, a sign-in or a saved profile. The field holds `light`, `dark` or `system`, which becomes `useColorMode().preference`; a profile without a value, or with any other, leaves the color mode alone. This is apart from the language's rules: on a route with its own language, or after a language switch by hand, the color mode still follows the profile. It is off by default. `useColorMode()` comes from `@nuxtjs/color-mode`, which Cardan UI registers; an app without Cardan UI installs that module to use this setting.
 
 ### Preconnect to the API
 

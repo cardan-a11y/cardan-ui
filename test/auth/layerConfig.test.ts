@@ -112,9 +112,8 @@ describe('auth layer configuration', { timeout: 60_000 }, () => {
 
     // Registered from the layer's modules/ folder, not by nuxt.config.ts
     expect(modules).toContain('@cardan/ui:optimize-deps');
-    expect(options.vite.optimizeDeps?.include).toEqual(
-      expect.arrayContaining(['markdown-it', '@vuepic/vue-datepicker']),
-    );
+    // Its list is for development only, and this is a build
+    expect(options.vite.optimizeDeps?.include).toBeUndefined();
   });
 
   it('installs nuxt-auth-sanctum once when the app lists it too', async () => {

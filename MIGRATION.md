@@ -93,6 +93,9 @@ New: **ComboBox**, our own searchable single select (`/combobox` in the playgrou
 ### 2.6.1
 
 - **A project's Playwright no longer has to match the layer's.** A project's typecheck types the layer's `test/browser/helpers.ts` and `api.ts` with the project's own `@playwright/test`, so a Playwright update in the layer or in a project no longer fails the other's `pnpm run typecheck` (TS2345). Nothing to do; the rule in 2.6 to match 1.65.1 can be forgotten once a project takes 2.6.1.
+- **The auth layer's follow-ups need nothing from a project.** A Sanctum request that sets its own `Accept-Language` keeps it (the Academy's catalog requests for a training in another language than the interface), the identity request's 10 seconds also cover an answer that stalls half way, `cardanAuth.themeField` takes only `light`, `dark` and `system`, a project's i18n hook that throws no longer aborts a navigation, and `$identityReady` is a resolved promise on the server, where it was `undefined`.
+- **ComboBox's `v-model:selected` becomes `null`** when the parent sets a value that the whole list has no option for, where it kept the option of the value before. Not with `server-search`, where `selected` is the only source of the label. Nothing to do.
+- **TypeScript stays on 6.0.x** (`6.0.3`, exact, in the layer and the projects) until the tools run on TypeScript 7: vue-tsc 3.3.14 does not start on it (it loads `typescript/lib/tsc`, which 7.0 no longer exports) and typescript-eslint 8.74, which `@nuxt/eslint` 1.17 lints with, accepts `typescript <6.1.0` (checked on 25 November 2026). Nuxt's exact `4.6.4` is the subject of the update to 4.7.
 
 ## Upgrading to 2.5
 
