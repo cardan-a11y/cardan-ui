@@ -47,6 +47,8 @@ describe('identity middleware', () => {
   useScenario(academy);
 
   it('holds a navigation until the identity is known, so the next middleware decides on it', async () => {
+    // The mfa-setup guard decides: Sanctum's global middleware is off in the
+    // playground, and its place after this one is pinned in layerConfig.test.ts
     const answer = identityUnderWay();
 
     const navigation = useRouter().push('/forgot-password');

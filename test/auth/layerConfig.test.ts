@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { buildNuxt, loadNuxt } from 'nuxt/kit';
 import type { NuxtApp, NuxtOptions } from 'nuxt/schema';
+import { bundledIcons } from '../../app/utils/icons';
 
 const root = resolve(__dirname, '../..');
 const authLayer = resolve(root, 'auth');
@@ -86,6 +87,34 @@ describe('auth layer configuration', { timeout: 60_000 }, () => {
         allow404WithoutAuth: true,
       },
     });
+  });
+
+  // The only test of the base layer's config as a project gets it
+  it("brings the base layer's config and its optimize-deps module", async () => {
+    const { options, modules } = await resolveFixture('auth-app');
+    // The modules' keys, which NuxtOptions does not type here
+    const { icon, image, fonts } = options as NuxtOptions &
+      Record<'icon' | 'image' | 'fonts', unknown>;
+
+    expect(icon).toMatchObject({
+      fallbackToApi: 'server-only',
+      clientBundle: { icons: bundledIcons, scan: true, sizeLimitKb: 256 },
+    });
+    // Spread from a Record in nuxt.config.ts: no typecheck sees a typo
+    expect(image).toMatchObject({
+      domains: ['i.ytimg.com', 'i.vimeocdn.com'],
+    });
+    expect(fonts).toMatchObject({
+      families: expect.arrayContaining([
+        expect.objectContaining({ name: 'Hanken Grotesk' }),
+      ]),
+    });
+
+    // Registered from the layer's modules/ folder, not by nuxt.config.ts
+    expect(modules).toContain('@cardan/ui:optimize-deps');
+    expect(options.vite.optimizeDeps?.include).toEqual(
+      expect.arrayContaining(['markdown-it', '@vuepic/vue-datepicker']),
+    );
   });
 
   it('installs nuxt-auth-sanctum once when the app lists it too', async () => {

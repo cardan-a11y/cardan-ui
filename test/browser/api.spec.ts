@@ -55,17 +55,145 @@ test('answers the routes a test names, with their segments, and records the requ
   ]);
 });
 
-test('a request no route answers fails the test afterwards', async ({
+test('a request no route answers gets 599 and is kept as unanswered', async ({
   page,
   api,
 }) => {
-  // The failure is the fixture's check after the test
-  test.fail();
   await gotoHydrated(page, '/buttons');
 
-  expect((await send(page, '/api/nothing')).status).toBe(599);
+  expect(await send(page, '/api/nothing')).toEqual({
+    status: 599,
+    text: 'No route for GET /api/nothing',
+  });
   expect(api.unanswered).toEqual(['GET /api/nothing']);
+  expect(api.requestsTo('/api/nothing')).toMatchObject([{ answered: false }]);
+
+  // Taken here so this test passes; the next test leaves it to the fixture
+  api.unanswered.splice(0);
 });
+
+// No `expect` of its own: the only failure that can count as the expected one
+// is the fixture's check after the test
+test('a request no route answers fails the test afterwards', async ({
+  page,
+  // Asked for, as a test that reads it does; the next test does not
+  api: _api,
+}) => {
+  test.fail();
+  await gotoHydrated(page, '/buttons');
+  await send(page, '/api/nothing');
+});
+
+test('a request no route answers fails a test that never asks for `api` too', async ({
+  page,
+}) => {
+  test.fail();
+  await gotoHydrated(page, '/buttons');
+  await send(page, '/api/nothing');
+});
+
+test("an exact route wins over a `:name` route, and a test's routes over the suite's", async ({
+  page,
+  api,
+}) => {
+  api.answer({
+    'GET /api/audits/new': () => ({ body: 'exact' }),
+    'GET /api/audits/:id': ({ params }) => ({ body: params.id }),
+    'GET /api/user': () => ({ body: { id: 1 } }),
+  });
+  await gotoHydrated(page, '/buttons');
+
+  expect((await send(page, '/api/audits/new')).text).toBe('"exact"');
+  expect((await send(page, '/api/audits/7')).text).toBe('"7"');
+  expect(await send(page, '/api/user')).toEqual({
+    status: 200,
+    text: '{"id":1}',
+  });
+});
+
+test("every answer has the suite's headers, an unanswered one too", async ({
+  page,
+  api,
+}) => {
+  await gotoHydrated(page, '/buttons');
+
+  // The suite's Set-Cookie: the browser keeps the cookie from either answer
+  for (const path of ['/api/user', '/api/nothing']) {
+    await page.context().clearCookies();
+    await send(page, path);
+    expect(await page.context().cookies()).toContainEqual(
+      expect.objectContaining({ name: 'XSRF-TOKEN', value: 'browser-suite' }),
+    );
+  }
+
+  expect(api.unanswered).toEqual(['GET /api/nothing']);
+  api.unanswered.splice(0);
+});
+
+/** The options a suite sets for a stricter API */
+const strict = withApi(base, expect, {
+  routes: { 'GET /api/user': () => ({ status: 401, body: {} }) },
+  errorType: 'application/problem+json',
+  unansweredStatus: 404,
+  otherOrigins: 'abort',
+});
+
+strict(
+  "an error answer has the suite's content type, an unanswered request its status",
+  async ({ page, api }) => {
+    api.answer({
+      'POST /api/audits': () => ({ status: 422, body: { message: 'Invalid' } }),
+      'GET /api/audits': () => ({ body: [] }),
+    });
+    await gotoHydrated(page, '/buttons');
+
+    const types = await page.evaluate(async () =>
+      Promise.all(
+        [
+          fetch('/api/audits', { method: 'POST' }),
+          fetch('/api/audits'),
+          fetch('/api/nothing'),
+        ].map(async (request) => {
+          const response = await request;
+          return `${response.status} ${response.headers.get('content-type')}`;
+        }),
+      ),
+    );
+    expect(types).toEqual([
+      '422 application/problem+json',
+      '200 application/json',
+      '404 null',
+    ]);
+
+    expect(api.unanswered).toEqual(['GET /api/nothing']);
+    api.unanswered.splice(0);
+  },
+);
+
+strict(
+  'another origin is aborted and kept as unanswered, unless `external()` answers it',
+  async ({ page, api }) => {
+    api.external(
+      (request) => request.url().startsWith('https://pay.example.com/'),
+      () => ({ text: 'Paid', headers: { 'Content-Type': 'text/html' } }),
+    );
+    await gotoHydrated(page, '/buttons');
+
+    const fetched = await page.evaluate(() =>
+      fetch('https://elsewhere.example.com/x').then(
+        () => 'answered',
+        () => 'failed',
+      ),
+    );
+    expect(fetched).toBe('failed');
+    expect(api.unanswered).toEqual(['GET https://elsewhere.example.com/x']);
+    api.unanswered.splice(0);
+
+    await page.goto('https://pay.example.com/return');
+    await expect(page.locator('body')).toHaveText('Paid');
+    expect(api.unanswered).toEqual([]);
+  },
+);
 
 test('the route key: method, exact segments, `:name` segments, no trailing slash', () => {
   expect(matchRoute('GET /api/audits/:id', 'get', '/api/audits/7/')).toEqual({
