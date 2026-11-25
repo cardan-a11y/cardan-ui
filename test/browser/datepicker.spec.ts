@@ -84,6 +84,22 @@ test('DatePicker: a day picked in the calendar fills the field, the clear button
   await expect(combobox).toHaveValue('');
 });
 
+test('DatePicker: text that arrives without a key, as from a paste or autofill, is read as a date', async ({
+  page,
+}) => {
+  await gotoHydrated(page, '/form');
+  const combobox = page.getByRole('combobox', { name: 'DatePicker' });
+
+  await combobox.fill('2026-03-15');
+  await combobox.blur();
+  await expect(combobox).toHaveValue('2026-03-15');
+
+  await combobox.click();
+  await expect(
+    page.getByRole('gridcell', { selected: true }).filter({ hasText: /^15$/ }),
+  ).toBeVisible();
+});
+
 test('DatePicker in a Dialog: Escape closes the calendar first, then the dialog', async ({
   page,
 }) => {

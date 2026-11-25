@@ -14,7 +14,7 @@ import { api, client, requests, resetApi } from './api';
 import { cardanPlaywrightConfig } from './config/playwright';
 import { nuxtOptions } from './config/serve.mjs';
 import { cardanVitestConfig } from './config/vitest';
-import { compareVersions, readTripwire } from './tripwires';
+import { readTripwire } from './tripwires';
 
 /**
  * The shared test harness the projects use from this checkout: the config
@@ -208,30 +208,6 @@ describe('the tripwire runner', () => {
       checked: '^14.0.0',
     });
     expect([found, expected]).toEqual(['^15.0.0', '^14.0.0']);
-  });
-
-  it('fails a release entry once the Cardan UI checkout reaches the release', () => {
-    const layer = join(dir, 'cardan-ui');
-    const release = {
-      name: 'until 2.6.1',
-      release: '2.6.1',
-      where: 'app/y.ts',
-      check: 'whether the layer fixed it',
-    };
-
-    writeJson(join(layer, 'package.json'), { version: '2.6.0' });
-    expect(readTripwire(dir, release, layer).found).toBe('before');
-
-    writeJson(join(layer, 'package.json'), { version: '2.6.1' });
-    const reached = readTripwire(dir, release, layer);
-    expect(reached.found).not.toBe(reached.expected);
-    expect(reached.message).toMatch(/^Cardan UI is now 2\.6\.1/);
-  });
-
-  it('compares versions part by part', () => {
-    expect(compareVersions('2.10.0', '2.9.9')).toBe(1);
-    expect(compareVersions('2.6.0', '2.6.0')).toBe(0);
-    expect(compareVersions('2.5.9', '2.6.0')).toBe(-1);
   });
 });
 

@@ -200,7 +200,7 @@ function positionDropdown() {
 }
 
 // The library has no placement of its own; anchor positioning can take over
-// once every target browser has it (README). Tripwire: test/tripwires.test.ts.
+// once every target browser has it (README)
 async function placeDropdown() {
   setDropdownLayer(true);
   positionDropdown();
@@ -247,7 +247,8 @@ function stopFollowing() {
 }
 
 // The library asks an options function only on load, so a first empty answer
-// stayed. Tripwire: test/tripwires.test.ts.
+// stayed: asked again on open, as in its README's example #15
+// (test/components/MultiSelect.test.ts)
 function handleOpen(instance: MultiselectProps) {
   isExpanded.value = true;
 
@@ -286,8 +287,8 @@ onMounted(() => {
   if (autofocus) setTimeout(() => focusElement(), 200);
 });
 
-// The library blurs the field on Escape: a no-op `blur` until the event leaves
-// the wrapper keeps focus on it. Tripwire: test/tripwires.test.ts.
+// The library blurs the field on Escape and has no option against it: a no-op
+// `blur` until the event leaves keeps focus (test/browser/multiselect.spec.ts)
 function keepFocusOnEscape(event: KeyboardEvent) {
   if (event.key !== 'Escape') return;
 

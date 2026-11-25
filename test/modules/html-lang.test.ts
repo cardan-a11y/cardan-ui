@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { defaultLanguage } from '../../modules/html-lang';
+import { defaultDirection, defaultLanguage } from '../../modules/html-lang';
 import { htmlLangAttrs } from '../../app/plugins/html-lang';
 
 /**
@@ -37,6 +37,16 @@ describe('html-lang', () => {
       lang: 'ar',
       dir: 'rtl',
     });
+    expect(htmlLangAttrs({ code: 'he' }, 'rtl')).toEqual({
+      lang: 'he',
+      dir: 'rtl',
+    });
+  });
+
+  it("hands the plugin i18n's defaultDirection, ltr without one", () => {
+    expect(defaultDirection({ defaultDirection: 'rtl' })).toBe('rtl');
+    expect(defaultDirection(undefined)).toBe('ltr');
+    expect(useRuntimeConfig().public.cardanUi.defaultDirection).toBe('ltr');
   });
 
   it('sets them on <html> after a change of locale', async () => {

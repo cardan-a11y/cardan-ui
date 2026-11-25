@@ -55,8 +55,9 @@ intent.
      workaround comment that does not name what is wrong or missing and when
      it can go; a third-party private field or undocumented behaviour with
      no public way, whose comment does not name the public ways tried, or
-     that has no entry in the repository's tripwire test
-     (`tripwires.test.ts` in its test folder); a new tripwire entry for
+     that has neither an entry in the repository's tripwire test
+     (`tripwires.test.ts` in its test folder) nor a test on the real
+     dependency that its comment names; a new tripwire entry for
      anything else (a workaround on public APIs, a wait for a Cardan UI
      release), which fails at every update for nothing.
    A project change that needs a Cardan UI release not yet on `main` (a

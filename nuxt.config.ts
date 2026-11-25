@@ -81,8 +81,8 @@ export default defineNuxtConfig({
 
   hooks: {
     'prepare:types'({ tsConfig, references }) {
-      // Nuxt 4.6's generated tsconfig excludes the consumer's `node_modules`,
-      // where the layer lives. Tripwire: test/tripwires.test.ts.
+      // The generated tsconfig excludes the consumer's `node_modules`, where the
+      // layer lives (the projects' typecheck fails without it); harmless after
       references.push({ path: globalTypes });
 
       // Without it a project's typecheck reads the layer's own vue-router unless
@@ -114,6 +114,8 @@ export default defineNuxtConfig({
     public: {
       // CookiesDialog's Google Tag Manager container: NUXT_PUBLIC_GTM_ID
       gtmId: '',
+      // i18n's `defaultDirection`, which the html-lang module copies here
+      cardanUi: { defaultDirection: 'ltr' },
     },
   },
 

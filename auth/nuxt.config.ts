@@ -46,8 +46,8 @@ export default defineNuxtConfig({
   },
 
   hooks: {
-    // Nuxt 4.6's generated tsconfig excludes the consumer's `node_modules`,
-    // where the layer lives. Tripwire: test/tripwires.test.ts.
+    // The generated tsconfig excludes the consumer's `node_modules`, where the
+    // layer lives (the projects' typecheck fails without it); harmless after
     'prepare:types'({ references }) {
       references.push({ path: globalTypes });
     },

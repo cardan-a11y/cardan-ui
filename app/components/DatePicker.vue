@@ -19,7 +19,7 @@ import '@vuepic/vue-datepicker/dist/main.css';
  * An attribute goes to the date picker, `aria-describedby` and `placeholder` to
  * the input, `class` and `style` to the wrapper; `ariaLabels.input`, the
  * classes of `ui.input` and the `invalid` event do not reach the input.
- * Tripwire: test/tripwires.test.ts.
+ * test/browser/datepicker.spec.ts pins what the library does here.
  */
 defineOptions({ inheritAttrs: false });
 
@@ -145,7 +145,7 @@ function libraryInputClasses(isMenuOpen: boolean) {
 }
 
 // The library's key handler cancels Escape too: skipped while the calendar is
-// closed, so a Dialog around it closes. Tripwire: test/tripwires.test.ts.
+// closed, so a Dialog around it closes (test/browser/datepicker.spec.ts)
 function handleKeydown(
   event: KeyboardEvent,
   isMenuOpen: boolean,
@@ -161,7 +161,7 @@ function handleOpen() {
 
 // The library closes the calendar without moving focus (Escape, Shift+Tab on
 // its menu, a picked day), which drops it on the body: back to the field then,
-// unless a click outside the field put it there. Tripwire: test/tripwires.test.ts.
+// unless a click outside the field put it there (test/browser/datepicker.spec.ts)
 let lastInputWasPointer = false;
 
 function handleClose() {

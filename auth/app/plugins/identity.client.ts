@@ -30,11 +30,16 @@ export async function loadIdentity(): Promise<void> {
 }
 
 // In place of nuxt-auth-sanctum's initial request, which would put one
-// visitor's profile in a cached page. Tripwire: test/tripwires.test.ts.
+// visitor's profile in a cached page. Runs after the module's plugin, as
+// module plugins come first; test/auth/identity.test.ts fails at start-up if not.
 export default defineNuxtPlugin({
   name: 'cardan-auth:identity',
-  dependsOn: ['nuxt-auth-sanctum'],
   setup() {
+    if (!useSanctumClient()) {
+      throw new Error(
+        "[cardan-auth] The identity plugin ran before nuxt-auth-sanctum's: no Sanctum client.",
+      );
+    }
     return { provide: { identityReady: loadIdentity() } };
   },
 });

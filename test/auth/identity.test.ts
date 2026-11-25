@@ -10,10 +10,16 @@ import { signIn, useScenario } from './fortify';
 import { academy, auditor } from './scenarios';
 
 // The real Sanctum client, unless a test puts another in its place
-const clientOverride = vi.hoisted(() => ({ current: undefined as unknown }));
+const clientOverride = vi.hoisted(() => ({
+  current: undefined as unknown,
+  missing: false,
+}));
 mockNuxtImport(
   'useSanctumClient',
-  () => () => clientOverride.current ?? useNuxtApp().$sanctumClient,
+  () => () =>
+    clientOverride.missing
+      ? undefined
+      : (clientOverride.current ?? useNuxtApp().$sanctumClient),
 );
 
 /** The API behind the identity endpoint, for this test; counts its requests */
@@ -68,7 +74,7 @@ describe('identity load (Academy)', () => {
 
   const { user } = academy.sanctum.endpoints;
 
-  it('is under way from start-up, as $identityReady', async () => {
+  it("is under way from start-up, after nuxt-auth-sanctum's plugin, as $identityReady", async () => {
     const ready = useNuxtApp().$identityReady;
     expect(ready).toBeInstanceOf(Promise);
     await expect(ready).resolves.toBeUndefined();
@@ -153,6 +159,15 @@ describe('identity load (Academy)', () => {
     await loadIdentity();
 
     expect(useSanctumAuth().user.value).toBeNull();
+  });
+
+  it("fails loudly when it runs before nuxt-auth-sanctum's plugin", () => {
+    clientOverride.missing = true;
+    onTestFinished(() => {
+      clientOverride.missing = false;
+    });
+
+    expect(() => identityPlugin(useNuxtApp())).toThrow(/no Sanctum client/);
   });
 
   it('resolves when the client throws before the request', async () => {

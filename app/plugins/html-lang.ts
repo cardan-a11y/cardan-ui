@@ -1,21 +1,10 @@
-/**
- * The i18n module's `defaultDirection`, which it defines at build time.
- * Tripwire: test/tripwires.test.ts.
- */
-declare const __DEFAULT_DIRECTION__: string | undefined;
-
 type Direction = 'ltr' | 'rtl' | 'auto';
 
-const defaultDirection = (
-  typeof __DEFAULT_DIRECTION__ === 'string' ? __DEFAULT_DIRECTION__ : 'ltr'
-) as Direction;
-
 /** `<html lang>` and `dir` for a locale */
-export function htmlLangAttrs(locale: {
-  code: string;
-  language?: string;
-  dir?: Direction;
-}): { lang: string; dir: Direction } {
+export function htmlLangAttrs(
+  locale: { code: string; language?: string; dir?: Direction },
+  defaultDirection: Direction = 'ltr',
+): { lang: string; dir: Direction } {
   return {
     lang: locale.language || locale.code,
     dir: locale.dir || defaultDirection,
@@ -28,11 +17,13 @@ export default defineNuxtPlugin({
   dependsOn: ['i18n:plugin'],
   setup(nuxtApp) {
     const locale = nuxtApp.$i18n.localeProperties;
+    const defaultDirection = useRuntimeConfig().public.cardanUi
+      .defaultDirection as Direction;
 
     useHead({
       htmlAttrs: {
-        lang: () => htmlLangAttrs(locale.value).lang,
-        dir: () => htmlLangAttrs(locale.value).dir,
+        lang: () => htmlLangAttrs(locale.value, defaultDirection).lang,
+        dir: () => htmlLangAttrs(locale.value, defaultDirection).dir,
       },
     });
   },

@@ -100,7 +100,7 @@ export default defineNuxtConfig({
 
   experimental: {
     // compatibilityVersion 5 drops the server auto-imports that @nuxtjs/i18n
-    // and @nuxt/image still need. Tripwire: test/tripwires.test.ts.
+    // and @nuxt/image still need: goes once the build in CI passes without it
     nitroAutoImports: true,
   },
 
