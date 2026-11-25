@@ -17,7 +17,7 @@
     "preview": "nuxt preview .playground",
     "postinstall": "nuxt prepare .playground",
     "lint": "eslint .",
-    "typecheck": "node test/typecheck.mjs",
+    "typecheck": "vue-tsc --noEmit -p .playground/.nuxt/tsconfig.app.json",
     "test": "vitest run",
     "test:browser": "playwright test -c test/browser",
     "test:projects": "node test/projects.mjs",

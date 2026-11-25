@@ -104,14 +104,5 @@ export default defineNuxtConfig({
     nitroAutoImports: true,
   },
 
-  // The layer as a project on compatibilityVersion 4 sees it, for the second
-  // run of `pnpm run typecheck` (test/typecheck.mjs)
-  $env: {
-    'untyped-routes': {
-      buildDir: '.nuxt-untyped-routes',
-      experimental: { typedPages: false },
-    },
-  },
-
   compatibilityDate: '2025-03-19',
 });
