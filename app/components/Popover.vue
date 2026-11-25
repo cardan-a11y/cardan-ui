@@ -87,6 +87,17 @@ function onToggle(event: Event) {
   }
 }
 
+// Safari does not focus a clicked trigger, so the browser has nothing to give
+// focus back to: focus in the panel goes to the trigger before it hides
+function onBeforeToggle(event: Event) {
+  if ((event as ToggleEvent).newState !== 'closed') return;
+  if (popoverContentRef.value?.contains(document.activeElement)) focusTrigger();
+}
+
+function focusTrigger() {
+  triggerRef.value?.focus({ preventScroll: true });
+}
+
 const { onPress, onFocusOut, unpark } = useFocusLeave({
   elements: () => [popoverContentRef.value, triggerRef.value],
   close: hidePopover,
@@ -102,6 +113,10 @@ watch(
 
 function handleMenuClick(item: MenuItem) {
   emit('click', item);
+  // Safari does not focus a clicked item, so focus fell around the panel
+  // (`main`); focus the click's handler moved elsewhere is left alone
+  const content = popoverContentRef.value;
+  if (content && document.activeElement?.contains(content)) focusTrigger();
   hidePopover();
 }
 
@@ -176,6 +191,7 @@ const emit = defineEmits<{
       :data-placement="placement"
       :data-span="span"
       :style="contentStyle"
+      @beforetoggle="onBeforeToggle"
       @toggle="onToggle"
       @mousedown="onPress"
       @focusout="onFocusOut"

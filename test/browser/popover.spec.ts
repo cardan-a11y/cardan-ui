@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Locator, test } from '@playwright/test';
 import { axNode, focusStop, gotoHydrated } from './helpers';
 
 test.beforeEach(async ({ page }) => {
@@ -24,6 +24,64 @@ test('Popover: opens from its trigger, expanded follows, focus on the first item
   await expect(list).toBeHidden();
   await expect(trigger).toBeFocused();
   expect((await axNode(trigger)).properties.expanded).toBe(false);
+});
+
+// Safari's state after a click on the trigger: a click does not focus a
+// button there, so nothing had focus as the panel opened
+async function openWithoutFocus(trigger: Locator) {
+  await trigger.evaluate((button: HTMLElement) => {
+    (document.activeElement as HTMLElement | null)?.blur();
+    document
+      .getElementById(button.getAttribute('popovertarget')!)!
+      .showPopover();
+  });
+}
+
+test('Popover: Escape gives focus back to the trigger, also when nothing had focus as it opened', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: 'Popover label' });
+  const link = page.getByRole('link', {
+    name: 'accessibility of the popover attribute',
+  });
+
+  await openWithoutFocus(trigger);
+  await expect(link).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(link).toBeHidden();
+  await expect(trigger).toBeFocused();
+});
+
+test('Popover: an item that closes it leaves focus on the trigger, also when nothing had focus as it opened', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: 'More options' });
+  const list = page.getByRole('navigation', { name: 'More options' });
+
+  await openWithoutFocus(trigger);
+  await list.getByRole('button', { name: 'Duplicate' }).click();
+  await expect(list).toBeHidden();
+  await expect(trigger).toBeFocused();
+});
+
+test('Popover: an item clicked in Safari, which leaves focus on the element around the panel, closes it with focus on the trigger', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: 'More options' });
+  const list = page.getByRole('navigation', { name: 'More options' });
+  const duplicate = list.getByRole('button', { name: 'Duplicate' });
+
+  await openWithoutFocus(trigger);
+  await expect(list.getByRole('button', { name: 'Edit' })).toBeFocused();
+  // Safari's click: the press moves focus to the nearest focusable element
+  // around the item, not to the item
+  await duplicate.evaluate((item: HTMLElement) => {
+    item.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    item.parentElement!.closest<HTMLElement>('[tabindex="-1"]')!.focus();
+    item.click();
+  });
+  await expect(list).toBeHidden();
+  await expect(trigger).toBeFocused();
 });
 
 test('Popover: focus that moved into it before its open event arrives stays there', async ({
