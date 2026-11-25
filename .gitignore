@@ -2,6 +2,7 @@
 .output
 .data
 .nuxt
+.nuxt-untyped-routes
 .nitro
 .cache
 dist
