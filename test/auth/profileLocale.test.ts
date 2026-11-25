@@ -1,3 +1,4 @@
+import type { RouteLocationNormalized } from 'vue-router';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import { flushPromises } from '@vue/test-utils';
@@ -40,7 +41,10 @@ const switchTo = (code: string) =>
 /** Runs the middleware alone for a navigation to `path` */
 async function visit(path: string) {
   const router = useRouter();
-  await localeMiddleware(router.resolve(path), router.currentRoute.value);
+  await localeMiddleware(
+    router.resolve(path) as RouteLocationNormalized,
+    router.currentRoute.value,
+  );
   return locale();
 }
 

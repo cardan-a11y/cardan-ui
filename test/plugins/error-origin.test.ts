@@ -1,5 +1,6 @@
 import { afterEach, describe, it, expect } from 'vitest';
 import { START_LOCATION } from 'vue-router';
+import type { RouteLocationNormalized } from 'vue-router';
 import type { NuxtError } from '#app';
 import middleware, {
   endMiddleware,
@@ -79,8 +80,8 @@ describe('error-origin', () => {
 
   it('keeps a newer navigation in middleware when an older one it cancelled ends', async () => {
     const router = useRouter();
-    const older = router.resolve('/error-page');
-    const newer = router.resolve('/form');
+    const older = router.resolve('/error-page') as RouteLocationNormalized;
+    const newer = router.resolve('/form') as RouteLocationNormalized;
 
     await middleware(older, START_LOCATION);
     await middleware(newer, START_LOCATION);

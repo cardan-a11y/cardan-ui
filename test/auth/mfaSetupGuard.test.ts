@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import type { RouteLocationNormalized } from 'vue-router';
+import { describe, it, expect, vi } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { useMfaSetupReminder, useNuxtApp, useRouter } from '#imports';
@@ -23,7 +24,7 @@ mockNuxtImport(
 
 /** Runs the global middleware for a navigation to `path` */
 function navigateToPath(path: string) {
-  const to = useRouter().resolve(path);
+  const to = useRouter().resolve(path) as RouteLocationNormalized;
   return mfaSetupMiddleware(to, useRouter().currentRoute.value);
 }
 
@@ -204,6 +205,9 @@ describe('mfa-setup-required plugin (Academy)', () => {
     });
 
     await refused(403, jsonApi('mfa_setup_required'));
+    // The identity request waits out its own refusal, a turn more than above
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalled());
+    await flushPromises();
 
     expect(requests(identity)).toHaveLength(1);
     expect(navigate).toHaveBeenCalledOnce();
