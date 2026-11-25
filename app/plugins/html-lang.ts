@@ -12,9 +12,11 @@ export function htmlLangAttrs(
 }
 
 /** Keeps `<html lang>` and `dir` in step with the i18n locale. */
+// Runs after @nuxtjs/i18n's plugin, as module plugins come first and i18n's
+// is sequential (`parallelPlugin` off, the default); without `$i18n` setup
+// throws at start-up.
 export default defineNuxtPlugin({
   name: 'cardan-ui:html-lang',
-  dependsOn: ['i18n:plugin'],
   setup(nuxtApp) {
     const locale = nuxtApp.$i18n.localeProperties;
     const defaultDirection = useRuntimeConfig().public.cardanUi
