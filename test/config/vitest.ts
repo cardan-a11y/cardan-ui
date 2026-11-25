@@ -26,6 +26,9 @@ import { dependenciesOf } from './serve.mjs';
  *   project, not from ../cardan-ui/node_modules: without it a layer file loads
  *   a second Vue and rendering fails ("Cannot read properties of null (reading
  *   'ce')").
+ * - **inline**: the libraries the layer's components wrap (DatePicker's,
+ *   MultiSelect's, MarkdownEditor's) go through Vite with the project's Vue,
+ *   also when the project does not install them; `inline` adds more.
  * - **`#layer-test`**: set here for vitest, to this checkout's `test/`. For
  *   `pnpm run typecheck` the project adds the tsconfig path in its
  *   `$development` block (`typescript.tsConfig.compilerOptions.paths`), never
@@ -47,7 +50,12 @@ export interface CardanVitestOptions {
   globals?: boolean;
   /** Mocks nuxt-auth-sanctum's client for every test (test/api-setup.ts) */
   sanctumClient?: boolean;
+  /** Packages to inline besides the wrapped libraries (`server.deps.inline`) */
+  inline?: (string | RegExp)[];
 }
+
+/** The libraries the layer's components wrap: from the checkout they load a second Vue */
+const wrappedLibraries = [/@vueform\//, /@vuepic\//, /md-editor-v3/];
 
 /** This checkout's `test/` */
 const layerTest = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -68,6 +76,9 @@ export function cardanVitestConfig(options: CardanVitestOptions) {
         ...(options.setupFiles ?? []),
       ],
       include: options.include ?? ['test/**/*.test.ts'],
+      server: {
+        deps: { inline: [...wrappedLibraries, ...(options.inline ?? [])] },
+      },
       ...(options.exclude ? { exclude: options.exclude } : {}),
       ...(options.globals !== undefined ? { globals: options.globals } : {}),
     },

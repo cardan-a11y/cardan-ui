@@ -1,5 +1,5 @@
 import { expect, test as base, type Page } from '@playwright/test';
-import { matchRoute, withApi } from './api';
+import { Api, matchRoute, withApi } from './api';
 import { gotoHydrated } from './helpers';
 
 /** The Playwright API fake of api.ts, as a project uses it */
@@ -130,6 +130,64 @@ test("every answer has the suite's headers, an unanswered one too", async ({
   api.unanswered.splice(0);
 });
 
+test('a route added again counts as the last one added', async ({
+  page,
+  api,
+}) => {
+  const byId = () => ({ body: 'by id' });
+  api.answer({
+    'GET /api/audits/:id': byId,
+    'GET /api/:list/7': () => ({ body: 'by list' }),
+  });
+  api.answer({ 'GET /api/audits/:id': byId });
+  await gotoHydrated(page, '/buttons');
+
+  expect((await send(page, '/api/audits/7')).text).toBe('"by id"');
+});
+
+test('a handler that throws is answered as unanswered, with its error', async ({
+  page,
+  api,
+}) => {
+  api.answer({
+    'GET /api/audits/:id': () => {
+      throw new Error('No audit 7 in this test');
+    },
+  });
+  await gotoHydrated(page, '/buttons');
+
+  expect(await send(page, '/api/audits/7')).toEqual({
+    status: 599,
+    text: 'GET /api/audits/:id threw Error: No audit 7 in this test',
+  });
+  expect(api.unanswered).toEqual([
+    'GET /api/audits/7: GET /api/audits/:id threw Error: No audit 7 in this test',
+  ]);
+  expect(api.requestsTo('/api/audits/7')).toMatchObject([
+    { route: 'GET /api/audits/:id', answered: false },
+  ]);
+  api.unanswered.splice(0);
+});
+
+test('a route key no request can match throws when it is added', ({
+  page,
+  api,
+}) => {
+  for (const key of [
+    'get /api/audits',
+    'GET /api/audits?page=2',
+    'GET api/audits',
+  ]) {
+    expect(() => api.answer({ [key]: () => ({}) }), key).toThrow(
+      `Route "${key}" never matches`,
+    );
+  }
+  // The suite's routes too
+  expect(
+    () => new Api(page, { routes: { 'post /api/audits': () => ({}) } }),
+  ).toThrow('Route "post /api/audits" never matches');
+});
+
 /** The options a suite sets for a stricter API */
 const strict = withApi(base, expect, {
   routes: { 'GET /api/user': () => ({ status: 401, body: {} }) },
@@ -192,6 +250,32 @@ strict(
     await page.goto('https://pay.example.com/return');
     await expect(page.locator('body')).toHaveText('Paid');
     expect(api.unanswered).toEqual([]);
+  },
+);
+
+strict(
+  'an `external()` handler that throws aborts the request and keeps its error',
+  async ({ page, api }) => {
+    api.external(
+      (request) => request.url().startsWith('https://pay.example.com/'),
+      () => {
+        throw new Error('No payment in this test');
+      },
+    );
+    await gotoHydrated(page, '/buttons');
+
+    const fetched = await page.evaluate(() =>
+      fetch('https://pay.example.com/x').then(
+        () => 'answered',
+        () => 'failed',
+      ),
+    );
+    expect(fetched).toBe('failed');
+    expect(api.unanswered).toEqual([
+      'GET https://pay.example.com/x: the handler threw Error: No payment in this test',
+    ]);
+    expect(api.requestsTo('/x')).toMatchObject([{ answered: false }]);
+    api.unanswered.splice(0);
   },
 );
 

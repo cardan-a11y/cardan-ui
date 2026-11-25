@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
@@ -12,11 +12,13 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useSanctumClient } from '#imports';
+import { useSanctumClient, useSanctumUser } from '#imports';
 import { api, client, requests, resetApi } from './api';
 import { cardanPlaywrightConfig } from './config/playwright';
 import { nuxtOptions } from './config/serve.mjs';
 import { cardanVitestConfig } from './config/vitest';
+import { fetchError } from './fetch';
+import { loadIdentity } from './identity';
 import { readTripwire } from './tripwires';
 
 /**
@@ -130,6 +132,25 @@ describe('the config functions', () => {
     ]);
     expect(config.resolve.alias['#layer-test']).toBe(join(root, 'test'));
     expect(config.test.setupFiles).toEqual([]);
+  });
+
+  it('cardanVitestConfig inlines the wrapped libraries, and the ones a project adds', () => {
+    writeJson(join(dir, 'package.json'), {});
+
+    const inline = (options = {}) =>
+      cardanVitestConfig({ root: dir, ...options }).test.server.deps.inline;
+    const wrapped = [
+      '@vueform/multiselect',
+      '@vuepic/vue-datepicker',
+      'md-editor-v3',
+    ];
+
+    for (const id of wrapped) {
+      expect(inline().some((pattern) => new RegExp(pattern).test(id))).toBe(
+        true,
+      );
+    }
+    expect(inline({ inline: [/@tiptap\//] })).toContainEqual(/@tiptap\//);
   });
 
   it("cardanVitestConfig lists the API fake's setup file before the project's", () => {
@@ -260,10 +281,18 @@ describe('the config functions', () => {
   });
 });
 
-describe('serve', () => {
+describe('serve', { timeout: 30_000 }, () => {
+  type Run = {
+    args?: string[];
+    build?: 'ok' | 'fail' | 'hang';
+    server?: number | 'stay';
+    /** Sends the signal once the log's last line starts with `after` */
+    stop?: { after: string; signal: NodeJS.Signals };
+  };
+
   /** Runs serve() in a process of its own, with stand-ins for nuxt/kit and
    * the built server; each step writes what it sees to a log */
-  function runServe(options: { args?: string[]; serverExit?: number } = {}) {
+  async function runServe(options: Run = {}) {
     const log = join(dir, 'log');
     const entry = join(
       dir,
@@ -271,9 +300,10 @@ describe('serve', () => {
     );
     const server = [
       "import { appendFileSync } from 'node:fs';",
-      'const { SITE_URL, SERVER_ONLY, PORT, LOG, SERVER_EXIT } = process.env;',
+      'const { SITE_URL, SERVER_ONLY, PORT, LOG, SERVER } = process.env;',
       "appendFileSync(LOG, ['server', SITE_URL, SERVER_ONLY, PORT].join(' ') + '\\n');",
-      'process.exit(Number(SERVER_EXIT));',
+      "if (SERVER === 'stay') setInterval(() => {}, 1000);",
+      'else process.exit(Number(SERVER));',
     ].join('\n');
     const script = join(dir, 'serve.mjs');
     writeFileSync(
@@ -292,10 +322,14 @@ describe('serve', () => {
         name: 'site',
         port: 4999,
         kit: async () => {
-          log('kit', process.env.SITE_URL);
+          log('kit', process.env.SITE_URL, 'SITE_NOTHING' in process.env);
           return {
             loadNuxt: async () => {
               log('build', process.env.SITE_URL, process.env.SERVER_ONLY ?? '-');
+              if (process.env.BUILD === 'fail') throw new Error('Broken config');
+              if (process.env.BUILD === 'hang') {
+                await new Promise(() => setInterval(() => {}, 1000));
+              }
               return { close: async () => {} };
             },
             buildNuxt: async () => {
@@ -305,58 +339,98 @@ describe('serve', () => {
             writeTypes: async () => {},
           };
         },
-        env: ({ origin }) => ({ SITE_URL: origin }),
+        env: ({ origin }) => ({ SITE_URL: origin, SITE_NOTHING: undefined }),
         serverEnv: { SERVER_ONLY: 'yes' },
         onExit: () => log('onExit'),
       });
       `,
     );
 
-    const { status, stderr } = spawnSync(
-      process.execPath,
-      [script, ...(options.args ?? [])],
-      {
-        // A hang fails the test rather than blocking the worker
-        timeout: 30_000,
-        env: {
-          ...process.env,
-          PORT: undefined,
-          LOG: log,
-          SERVER_EXIT: String(options.serverExit ?? 0),
-        },
-        encoding: 'utf8',
+    const child = spawn(process.execPath, [script, ...(options.args ?? [])], {
+      env: {
+        ...process.env,
+        PORT: undefined,
+        LOG: log,
+        BUILD: options.build ?? 'ok',
+        SERVER: String(options.server ?? 0),
       },
+      stdio: 'ignore',
+    });
+    const exited = new Promise<number | null>((resolve) =>
+      child.on('exit', (code) => resolve(code)),
     );
-    return {
-      status,
-      stderr,
-      log: existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n') : [],
-      built: existsSync(entry),
-    };
+    const lines = () =>
+      existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n') : [];
+
+    try {
+      const { stop } = options;
+      if (stop) {
+        await vi.waitFor(
+          () => expect(lines().at(-1)).toMatch(new RegExp(`^${stop.after}`)),
+          { timeout: 10_000 },
+        );
+        child.kill(stop.signal);
+      }
+      return { status: await exited, log: lines(), built: existsSync(entry) };
+    } finally {
+      child.kill('SIGKILL');
+    }
   }
 
-  it("sets `env` before it imports nuxt/kit, keeps `serverEnv` out of the build, and exits with the server's code after onExit", () => {
-    const { status, log } = runServe({ serverExit: 3 });
+  const start = [
+    'kit http://localhost:4999 false',
+    'build http://localhost:4999 -',
+  ];
+
+  it("sets `env` before it imports nuxt/kit, keeps `serverEnv` out of the build, and exits with the server's code after onExit", async () => {
+    const { status, log } = await runServe({ server: 3 });
 
     expect(log).toEqual([
-      'kit http://localhost:4999',
-      'build http://localhost:4999 -',
+      ...start,
       'server http://localhost:4999 yes 4999',
       'onExit',
     ]);
     expect(status).toBe(3);
   });
 
-  it('stops after the build with `--build-only`, and calls onExit', () => {
-    const { status, log, built } = runServe({ args: ['--build-only'] });
+  it('stops after the build with `--build-only`, and calls onExit', async () => {
+    const { status, log, built } = await runServe({ args: ['--build-only'] });
 
-    expect(log).toEqual([
-      'kit http://localhost:4999',
-      'build http://localhost:4999 -',
-      'onExit',
-    ]);
+    expect(log).toEqual([...start, 'onExit']);
     expect(built).toBe(true);
     expect(status).toBe(0);
+  });
+
+  it('calls onExit and exits 1 when the build fails', async () => {
+    const { status, log, built } = await runServe({ build: 'fail' });
+
+    expect(log).toEqual([...start, 'onExit']);
+    expect(built).toBe(false);
+    expect(status).toBe(1);
+  });
+
+  it('calls onExit when stopped during the build, and exits 128 + the signal', async () => {
+    const { status, log } = await runServe({
+      build: 'hang',
+      stop: { after: 'build', signal: 'SIGINT' },
+    });
+
+    expect(log).toEqual([...start, 'onExit']);
+    expect(status).toBe(130);
+  });
+
+  it('stops the server on a signal, calls onExit once, and exits 128 + the signal', async () => {
+    const { status, log } = await runServe({
+      server: 'stay',
+      stop: { after: 'server', signal: 'SIGTERM' },
+    });
+
+    expect(log).toEqual([
+      ...start,
+      'server http://localhost:4999 yes 4999',
+      'onExit',
+    ]);
+    expect(status).toBe(143);
   });
 });
 
@@ -400,6 +474,31 @@ describe('the tripwire runner', () => {
     });
     expect([found, expected]).toEqual(['^15.0.0', '^14.0.0']);
   });
+
+  it('says what to re-check when the package is not installed', () => {
+    const { found, expected, message } = readTripwire(dir, entry);
+    expect(found).not.toBe(expected);
+    expect(message).toBe(
+      'some-lib is not installed: re-check app/x.ts (whether it is fixed), then remove the workaround or update this entry.',
+    );
+  });
+
+  it('says what to re-check when the parent no longer depends on the package, or is not installed', () => {
+    const withParent = { ...entry, parent: 'parent-lib', checked: '^14.0.0' };
+    expect(readTripwire(dir, withParent).message).toMatch(
+      /^parent-lib is not installed: re-check app\/x\.ts/,
+    );
+
+    writeJson(join(dir, 'node_modules/parent-lib/package.json'), {
+      version: '8.0.0',
+      dependencies: {},
+    });
+    const { found, expected, message } = readTripwire(dir, withParent);
+    expect(found).not.toBe(expected);
+    expect(message).toMatch(
+      /^some-lib is no longer a dependency of parent-lib: re-check app\/x\.ts/,
+    );
+  });
 });
 
 // This file has no mockNuxtImport line of its own: test/api-setup.ts mocks
@@ -440,5 +539,81 @@ describe('the vitest API fake', () => {
       ok: false,
       status: 401,
     });
+  });
+
+  it('answers the same routes through `client.raw`, as a response', async () => {
+    api({
+      'GET /api/user': () => ({ data: { id: 1 } }),
+      'GET /api/invitations/7': () => {
+        throw fetchError(410, { message: 'Expired' });
+      },
+    });
+    const { raw } = useSanctumClient();
+
+    await expect(raw('/api/user')).resolves.toEqual({
+      ok: true,
+      status: 200,
+      _data: { data: { id: 1 } },
+    });
+    await expect(
+      raw('/api/invitations/7', { ignoreResponseError: true }),
+    ).resolves.toEqual({
+      ok: false,
+      status: 410,
+      _data: { message: 'Expired' },
+    });
+    await expect(raw('/api/invitations/7')).rejects.toMatchObject({
+      status: 410,
+    });
+    expect(requests()).toEqual([
+      'GET /api/user',
+      'GET /api/invitations/7',
+      'GET /api/invitations/7',
+    ]);
+  });
+
+  it('refuses `client.raw` to any other address than the identity request', async () => {
+    await expect(
+      useSanctumClient().raw('/api/invitations/7', {
+        ignoreResponseError: true,
+      }),
+    ).rejects.toThrow('No route for GET /api/invitations/7');
+
+    expect(resetApi()).toEqual(['GET /api/invitations/7']);
+  });
+
+  it('refuses a route key no request can match', () => {
+    for (const key of ['get /api/user', 'GET /api/user/', 'GET', 'GET  /api']) {
+      expect(() => api({ [key]: () => ({}) }), key).toThrow(
+        `Route "${key}" never matches`,
+      );
+    }
+  });
+
+  it('takes the address as the app passes it, a query included', async () => {
+    api({
+      'GET /': () => 'home',
+      'GET /api/audits?page=2': () => 'page 2',
+    });
+
+    await expect(useSanctumClient()('/')).resolves.toBe('home');
+    await expect(useSanctumClient()('/api/audits?page=2')).resolves.toBe(
+      'page 2',
+    );
+  });
+
+  it("loads the identity through `client.raw`, as the auth layer's plugin does", async () => {
+    const user = useSanctumUser();
+    user.value = null;
+    api({ 'GET /api/user': () => ({ data: { id: 1 } }) });
+
+    try {
+      await loadIdentity();
+
+      expect(user.value).toEqual({ data: { id: 1 } });
+      expect(requests()).toEqual(['GET /api/user']);
+    } finally {
+      user.value = null;
+    }
   });
 });

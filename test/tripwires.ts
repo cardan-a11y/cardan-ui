@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -30,10 +30,9 @@ export interface Tripwire {
 
 type Manifest = { version: string; dependencies?: Record<string, string> };
 
-function manifest(dir: string, pkg: string): Manifest {
-  return JSON.parse(
-    readFileSync(resolve(dir, 'node_modules', pkg, 'package.json'), 'utf8'),
-  );
+function manifest(dir: string, pkg: string): Manifest | undefined {
+  const path = resolve(dir, 'node_modules', pkg, 'package.json');
+  return existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : undefined;
 }
 
 /** What the entry finds, and the message when it fails; exported for its test */
@@ -41,17 +40,28 @@ export function readTripwire(
   root: string,
   entry: Tripwire,
 ): { found: string; expected: string; message: string } {
-  const version = entry.parent
-    ? `${manifest(root, entry.parent).dependencies?.[entry.package]} in ${entry.parent}`
-    : manifest(root, entry.package).version;
-  const found = entry.parent
-    ? manifest(root, entry.parent).dependencies?.[entry.package]
-    : version.split('.').slice(0, 2).join('.');
+  let found: string | undefined;
+  let now: string;
+  if (entry.parent) {
+    const parent = manifest(root, entry.parent);
+    found = parent?.dependencies?.[entry.package];
+    now = !parent
+      ? `${entry.parent} is not installed`
+      : found
+        ? `${entry.package} is now ${found} in ${entry.parent}`
+        : `${entry.package} is no longer a dependency of ${entry.parent}`;
+  } else {
+    const version = manifest(root, entry.package)?.version;
+    found = version?.split('.').slice(0, 2).join('.');
+    now = version
+      ? `${entry.package} is now ${version}`
+      : `${entry.package} is not installed`;
+  }
 
   return {
-    found: String(found),
+    found: found ?? 'nothing',
     expected: entry.checked,
-    message: `${entry.package} is now ${version}: re-check ${entry.where} (${entry.check}), then remove the workaround or update this entry.`,
+    message: `${now}: re-check ${entry.where} (${entry.check}), then remove the workaround or update this entry.`,
   };
 }
 
