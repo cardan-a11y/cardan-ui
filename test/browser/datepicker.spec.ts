@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { gotoHydrated } from './helpers';
 
 test('DatePicker: Enter opens the calendar, Escape closes it with focus on the field', async ({
@@ -107,3 +107,85 @@ test('DatePicker in a Dialog: Escape closes the calendar first, then the dialog'
   await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();
 });
+
+function coveredCorners(calendar: Locator) {
+  return calendar.evaluate((el) => {
+    const { left, right, top, bottom } = el.getBoundingClientRect();
+    return [
+      [left + 2, top + 2],
+      [right - 2, top + 2],
+      [left + 2, bottom - 2],
+      [right - 2, bottom - 2],
+    ].filter(([x, y]) => !el.contains(document.elementFromPoint(x!, y!)));
+  });
+}
+
+async function againstField(calendar: Locator, combobox: Locator) {
+  return calendar.evaluate((el, field) => {
+    const cal = el.getBoundingClientRect();
+    const { top, bottom } = field!.getBoundingClientRect();
+    const gap = cal.top >= bottom ? cal.top - bottom : top - cal.bottom;
+    return gap >= 0 && gap < 16;
+  }, await combobox.elementHandle());
+}
+
+async function openCalendar(page: Page, combobox: Locator) {
+  await combobox.focus();
+  await page.keyboard.press('Enter');
+  const calendar = page.locator(
+    `#${await combobox.getAttribute('aria-controls')}`,
+  );
+  await expect(calendar).toBeVisible();
+  return calendar;
+}
+
+const places = {
+  'on a page': {
+    url: '/form',
+    name: 'DatePicker',
+    setup: async () => {},
+  },
+  'in a Popover': {
+    url: '/tooltip',
+    name: 'From',
+    setup: (page: Page) =>
+      page.getByRole('button', { name: 'Filters' }).click(),
+  },
+};
+
+for (const [where, { url, name, setup }] of Object.entries(places)) {
+  test(`DatePicker ${where}: the calendar shows whole and stays against its field when the page scrolls`, async ({
+    page,
+  }) => {
+    await gotoHydrated(page, url);
+    await setup(page);
+    const combobox = page.getByRole('combobox', { name });
+    const calendar = await openCalendar(page, combobox);
+    await expect.poll(() => coveredCorners(calendar)).toEqual([]);
+    await expect.poll(() => againstField(calendar, combobox)).toBe(true);
+
+    const scrollY = await page.evaluate(() => window.scrollY);
+    await page.mouse.wheel(0, 120);
+    await page.waitForFunction((y) => window.scrollY !== y, scrollY);
+    await expect(calendar).toBeVisible();
+    await expect.poll(() => againstField(calendar, combobox)).toBe(true);
+  });
+}
+
+for (const position of ['left', 'center', 'right', 'top', 'bottom']) {
+  test(`DatePicker in a Dialog (${position}): the calendar shows whole, against its field`, async ({
+    page,
+  }) => {
+    await gotoHydrated(page, '/dialog');
+    await page
+      .getByRole('button', { name: `Open dialog ${position}` })
+      .click();
+    const combobox = page
+      .getByRole('dialog', { name: 'Dialog title' })
+      .getByRole('combobox', { name: 'DatePicker' });
+
+    const calendar = await openCalendar(page, combobox);
+    await expect.poll(() => coveredCorners(calendar)).toEqual([]);
+    await expect.poll(() => againstField(calendar, combobox)).toBe(true);
+  });
+}

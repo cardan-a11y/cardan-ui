@@ -256,7 +256,7 @@ const emit = defineEmits<{
 
   &:popover-open {
     opacity: 1;
-    translate: 0 0;
+    translate: none;
     transition-duration: var(--duration-sm);
 
     @starting-style {

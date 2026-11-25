@@ -268,6 +268,7 @@ const computedAriaLabels = computed(() => {
       :formats="formats"
       :input-attrs="libraryIconAndClearAttrs"
       :menu-id="menuId"
+      :floating="{ strategy: 'fixed' }"
       :disabled="disabled"
       :month-change-on-scroll="monthChangeOnScroll"
       :action-row="{
