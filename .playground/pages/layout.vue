@@ -166,6 +166,17 @@ const orderExample = htmlFence(`<SidebarLayout sticky side-label="Your order">
         over, with <code>--app-sidebar-display: none</code>.
       </p>
 
+      <p>
+        The navigation keeps room at its inline end for the scrollbar. On macOS
+        and on phones the scrollbar is drawn over the content instead of beside
+        it, so without that room it would cover the end of the links while the
+        reader scrolls. The room is <code>--app-sidebar-scrollbar-room</code>,
+        0.75rem by default, and it is a minimum: an app whose
+        <code>--app-sidebar-padding-inline</code> is at least as wide already
+        has it and sees no change. The collapsed rail hides its scrollbar, so it
+        keeps its own padding and its icons stay centred.
+      </p>
+
       <div class="sidebar-demo">
         <AppSidebar id="demo-sidebar" label="Demo sidebar" collapsible>
           <template #header>
