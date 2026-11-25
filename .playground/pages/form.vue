@@ -375,101 +375,6 @@ async function handleSubmit(formData: FormData) {
         <div class="card-cols">
           <section>
             <div class="title-wrapper">
-              <h3>MultiSelect</h3>
-
-              <Popover
-                icon="material-symbols:settings-rounded"
-                :max-width="480"
-              >
-                <div class="popover-settings-content">
-                  <h4>Props</h4>
-
-                  <div class="props-wrapper">
-                    <Select
-                      v-model="multiselectMode"
-                      :options="multiselectModes"
-                      label="mode"
-                      size="sm"
-                      @update:model-value="multiSelection = undefined"
-                    />
-
-                    <Select
-                      v-model="inputSize"
-                      :options="inputSizes"
-                      label="size"
-                      size="sm"
-                    />
-
-                    <Switch v-model="showOptionIcons" label="showOptionIcons" />
-
-                    <code
-                      >{{`<MultiSelect
-                        mode="${multiselectMode}"
-                        size="${inputSize}"
-                        show-option-icons="${showOptionIcons}"
-                      />`}}</code
-                    >
-                  </div>
-                </div>
-              </Popover>
-            </div>
-
-            <p>
-              Cardan UI uses
-              <Button
-                to="https://vueform.com/reference/multiselect-element"
-                label="@vueform/multiselect"
-                variant="link"
-                target="_blank"
-              />
-            </p>
-
-            <MultiSelect
-              v-model="multiSelection"
-              :required="required"
-              searchable
-              create-option
-              native-support
-              name="multiselect"
-              value-key="id"
-              label-key="name"
-              label="MultiSelect"
-              placeholder="Make a selection"
-              :mode="multiselectMode"
-              :options="multiSelectOptions"
-              :show-option-icons="showOptionIcons"
-              :size="inputSize"
-              :disabled="disabled"
-              class="demo-multiselect"
-            />
-
-            <p>
-              The list of options is fixed to the field and, in browsers with
-              the Popover API, shown in the top layer. A container that scrolls
-              or hides its overflow, such as a Popover or a Dialog, therefore
-              does not cut it off, and the list follows the field when the page
-              or the container scrolls. The MultiSelect in the popover below
-              shows this, as in a filter panel.
-            </p>
-
-            <Popover label="Filters" :max-width="320">
-              <div class="popover-settings-content">
-                <MultiSelect
-                  v-model="filterSelection"
-                  name="filter-multiselect"
-                  value-key="id"
-                  label-key="name"
-                  label="MultiSelect in a popover"
-                  placeholder="Filter by option"
-                  :options="multiSelectOptions"
-                  :size="inputSize"
-                />
-              </div>
-            </Popover>
-          </section>
-
-          <section>
-            <div class="title-wrapper">
               <h3>DatePicker</h3>
             </div>
 
@@ -517,33 +422,36 @@ async function handleSubmit(formData: FormData) {
       </template>
     </Card>
 
-    <Card>
-      <h2>File Input</h2>
-      <DemoFileForm :disabled="disabled" :required="required" />
-    </Card>
+    <div class="card-cols">
+      <Card>
+        <h2>File Input</h2>
+        <DemoFileForm :disabled="disabled" :required="required" />
+      </Card>
 
-    <Card>
-      <h2>File Input with a circle</h2>
-      <FileInput
-        v-model="avatar"
-        shape="circle"
-        name="avatar"
-        accept="image/*"
-        :label="$t('general.avatar')"
-        :disabled="disabled"
-        :required="required"
-        class="demo-avatar-input"
-      />
-    </Card>
+      <Card>
+        <h2>File Input with a circle</h2>
+        <FileInput
+          v-model="avatar"
+          shape="circle"
+          name="avatar"
+          accept="image/*"
+          :label="$t('general.avatar')"
+          :disabled="disabled"
+          :required="required"
+          class="demo-avatar-input"
+        />
+      </Card>
+    </div>
 
-    <Card>
-      <DemoDocumentUpload :disabled="disabled" />
-    </Card>
+    <div class="card-cols">
+      <Card>
+        <DemoDocumentUpload :disabled="disabled" />
+      </Card>
 
-    <Card>
-      <DemoDocumentForm :disabled="disabled" />
-    </Card>
-
+      <Card>
+        <DemoDocumentForm :disabled="disabled" />
+      </Card>
+    </div>
     <Card class="demo-error-messages">
       <h2>ErrorMessage</h2>
 
