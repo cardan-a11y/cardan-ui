@@ -16,7 +16,11 @@ users of the code, not how the work went. Name the `MIGRATION.md` section or
 version when there is one. In a project whose change needs a Cardan UI
 release not yet on `main`, the first line above the summary is
 `Merge after Cardan UI <version> is on main.`; in a Cardan UI release, a
-bullet lists the project PRs that wait for it.
+bullet lists the project PRs that wait for it. The summary's last line,
+`Notion: <links>`, names the Notion issues the PR closes or advances, from
+this session and from the `Notion:` lines of its commits
+(`git log origin/<base>..`), for whoever marks them live; leave it out when
+there are none.
 
 ## Verification
 
