@@ -64,3 +64,37 @@ test('SpinButton shows its range error while a number is typed, and hides it in 
   await expect(error).toBeHidden();
   await expect(field).not.toHaveAttribute('aria-invalid');
 });
+
+test('FileInput in document mode with a name: the form posts the file, also after a rejected one, and a submit without one is held back', async ({
+  page,
+}) => {
+  await gotoHydrated(page, '/form');
+  const demo = page.locator('.demo-document-form');
+  const input = demo.getByLabel('Upload file');
+  const submit = demo.getByRole('button', { name: 'Upload', exact: true });
+
+  await submit.click();
+  await expect(input).toBeFocused();
+  await expect(input).toHaveAttribute('aria-invalid', 'true');
+  await expect(input).toHaveAccessibleDescription(/Upload file is missing/);
+
+  await input.setInputFiles({
+    name: 'essay.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from('%PDF-1.4'),
+  });
+  await expect(input).not.toHaveAttribute('aria-invalid');
+  await expect(demo.getByText('essay.pdf', { exact: true })).toBeVisible();
+
+  await submit.click();
+  await expect(demo.locator('pre code')).toHaveText(/^document: essay\.pdf/);
+
+  await input.setInputFiles({
+    name: 'photo.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('png'),
+  });
+  await expect(input).toHaveAttribute('aria-invalid', 'true');
+  await submit.click();
+  await expect(demo.locator('pre code')).toHaveText(/^document: essay\.pdf/);
+});

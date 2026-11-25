@@ -540,6 +540,10 @@ async function handleSubmit(formData: FormData) {
       <DemoDocumentUpload :disabled="disabled" />
     </Card>
 
+    <Card>
+      <DemoDocumentForm :disabled="disabled" />
+    </Card>
+
     <Card class="demo-error-messages">
       <h2>ErrorMessage</h2>
 

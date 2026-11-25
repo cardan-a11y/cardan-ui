@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { defineComponent, h, nextTick } from 'vue';
+import { defineComponent, h, nextTick, ref } from 'vue';
+import type { DOMWrapper } from '@vue/test-utils';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { FileInput } from '#components';
 import {
@@ -172,6 +173,150 @@ describe('FileInput in document mode', () => {
     expect(input.hasAttribute('aria-invalid')).toBe(false);
     expect(description(input)).toBe('PDF (max. 5 MB)');
     await expectNoViolations();
+  });
+});
+
+describe('FileInput in document mode in a form', () => {
+  /**
+   * Chooses a file through the input's own file list, which FormData reads;
+   * happy-dom's DataTransfer copies the file, so the tests compare names
+   */
+  async function pick(input: HTMLInputElement, file: File) {
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    input.files = transfer.files;
+    input.dispatchEvent(new Event('change'));
+    await nextTick();
+    await nextTick();
+  }
+
+  /** The file a submit of the form posts under `name`, `undefined` for none */
+  function posted(form: HTMLFormElement, name: string) {
+    const file = new FormData(form).get(name) as File | null;
+    return file?.name ? file : undefined;
+  }
+
+  async function mountDocument(props: Record<string, unknown> = {}) {
+    const value = ref<File>();
+    const select = vi.fn();
+    const updates = vi.fn();
+    const wrapper = await mountInForm(() => [
+      h(FileInput, {
+        label: 'CV',
+        mode: 'document',
+        accept: '.pdf',
+        modelValue: value.value,
+        'onUpdate:modelValue': (file?: File) => {
+          updates(file);
+          value.value = file;
+        },
+        onSelect: select,
+        ...props,
+      }),
+    ]);
+    return {
+      wrapper,
+      value,
+      select,
+      updates,
+      form: wrapper.get('form').element as HTMLFormElement,
+      input: wrapper.get('input').element as HTMLInputElement,
+    };
+  }
+
+  /** The button named Delete, the file row's */
+  const deleteButton = (wrapper: {
+    findAll: (s: 'button') => DOMWrapper<HTMLButtonElement>[];
+  }) =>
+    wrapper
+      .findAll('button')
+      .find((button) => accessibleName(button) === 'Delete');
+
+  const pdf = (name = 'cv.pdf') =>
+    new File(['x'], name, { type: 'application/pdf' });
+  const png = () => new File(['x'], 'photo.png', { type: 'image/png' });
+
+  it('with a name, keeps a chosen file as its value and in what the form posts', async () => {
+    const { wrapper, value, select, form, input } = await mountDocument({
+      name: 'cv',
+    });
+
+    await pick(input, pdf());
+    expect(select).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'cv.pdf' }),
+    );
+    expect(value.value?.name).toBe('cv.pdf');
+    expect(posted(form, 'cv')?.name).toBe('cv.pdf');
+    expect(input.hasAttribute('aria-invalid')).toBe(false);
+    expect(wrapper.text()).toContain('cv.pdf');
+  });
+
+  it('with a name, posts nothing after a rejected file with none before', async () => {
+    const { value, form, input } = await mountDocument({ name: 'cv' });
+
+    await pick(input, png());
+    expect(posted(form, 'cv')).toBeUndefined();
+    expect(value.value).toBeUndefined();
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('with a name, keeps the file before as its value and in the post after a rejected one', async () => {
+    const { value, select, form, input } = await mountDocument({ name: 'cv' });
+
+    await pick(input, pdf());
+    await pick(input, png());
+    expect(value.value?.name).toBe('cv.pdf');
+    expect(posted(form, 'cv')?.name).toBe('cv.pdf');
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(select).toHaveBeenCalledTimes(1);
+  });
+
+  it('with a name, empties the value and the post with its delete button, focus back on the field', async () => {
+    const { wrapper, value, form, input } = await mountDocument({
+      name: 'cv',
+    });
+
+    await pick(input, pdf());
+    await deleteButton(wrapper)!.trigger('click');
+    expect(value.value).toBeUndefined();
+    expect(posted(form, 'cv')).toBeUndefined();
+    expectFocused(input);
+  });
+
+  it('with a name and required, holds back a submit without a file and says it is missing', async () => {
+    const { wrapper, form, input } = await mountDocument({
+      name: 'cv',
+      required: true,
+    });
+    expect(input.required).toBe(true);
+    expect(form.checkValidity()).toBe(false);
+
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(description(input)).toBe('PDF (max. 5 MB) CV is missing');
+    expectFocused(input);
+
+    await pick(input, pdf());
+    expect(form.checkValidity()).toBe(true);
+    expect(input.hasAttribute('aria-invalid')).toBe(false);
+  });
+
+  it('without a name, hands the file to select and is empty again, with no value, and required only shows the chip', async () => {
+    const { wrapper, select, updates, form, input } = await mountDocument({
+      required: true,
+    });
+    expect(input.required).toBe(false);
+
+    await pick(input, pdf());
+    expect(select).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'cv.pdf' }),
+    );
+    expect(updates).not.toHaveBeenCalled();
+    expect(input.files).toHaveLength(0);
+    expect(wrapper.text()).not.toContain('cv.pdf');
+    expect(deleteButton(wrapper)).toBeUndefined();
+    expect(form.checkValidity()).toBe(true);
   });
 });
 
