@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -9,7 +9,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
  * The review gate of the cardan Claude Code plugin
  * (plugins/cardan/hooks/cardan-review.mjs) lets through a push that sends
  * only commits already on origin/main or origin/develop, also with a
- * redirection after it, and blocks one that sends a new commit.
+ * redirection after it, and blocks one that sends a new commit. A review the
+ * reviewer names for a worktree of the session's repository counts, also one
+ * under `.claude/worktrees/`.
  */
 const HOOK = resolve('plugins/cardan/hooks/cardan-review.mjs');
 
@@ -27,12 +29,17 @@ function git(...args: string[]) {
   execFileSync('git', args, { cwd: repo, env, stdio: 'ignore' });
 }
 
-/** The gate's exit code for this command: 0 lets it through, 2 blocks it */
-function gate(command: string) {
-  return spawnSync('node', [HOOK, 'gate'], {
-    input: JSON.stringify({ tool_input: { command }, cwd: repo }),
+/** The hook's exit code for this step and input */
+function hook(step: string, input: object) {
+  return spawnSync('node', [HOOK, step], {
+    input: JSON.stringify(input),
     env: { ...env, CLAUDE_PROJECT_DIR: repo },
   }).status;
+}
+
+/** The gate's exit code for this command: 0 lets it through, 2 blocks it */
+function gate(command: string) {
+  return hook('gate', { tool_input: { command }, cwd: repo });
 }
 
 // A fresh clone per case, level with its origin
@@ -66,6 +73,23 @@ describe('cardan-review gate', () => {
     'git push origin main < /dev/null',
     'git push origin main 2>&-',
   ])('lets through a push of commits on origin/main: %s', (command) => {
+    expect(gate(command)).toBe(0);
+  });
+
+  it('lets through a commit in a worktree under .claude/worktrees/ that a reviewer named', () => {
+    const worktree = join(repo, '.claude', 'worktrees', 'fix');
+    git('worktree', 'add', '-q', '-b', 'fix', worktree);
+    writeFileSync(join(worktree, 'app.ts'), 'export const changed = true;\n');
+    const command = `cd ${worktree} && git commit -qam Change`;
+    expect(gate(command)).toBe(2);
+
+    // The session started in the main checkout, as EnterWorktree leaves it
+    const reviewer = { agent_type: 'cardan:cardan-reviewer', cwd: repo };
+    hook('start', reviewer);
+    hook('mark', {
+      ...reviewer,
+      last_assistant_message: `0 important\n\nReviewed repository: ${realpathSync(worktree)}`,
+    });
     expect(gate(command)).toBe(0);
   });
 
