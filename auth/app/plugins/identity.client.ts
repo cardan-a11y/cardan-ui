@@ -29,9 +29,8 @@ export async function loadIdentity(): Promise<void> {
   }
 }
 
-// In place of nuxt-auth-sanctum's initial request, which would put one
-// visitor's profile in a cached page. Runs after the module's plugin, as
-// module plugins come first; test/auth/identity.test.ts fails at start-up if not.
+// In place of nuxt-auth-sanctum's initial request, which would cache one visitor's profile in a
+// page; after the module's plugin, as module plugins come first (test/auth/identity.test.ts).
 export default defineNuxtPlugin({
   name: 'cardan-auth:identity',
   setup() {

@@ -93,8 +93,8 @@ export default defineNuxtConfig({
 
   hooks: {
     'prepare:types'({ tsConfig, references }) {
-      // The generated tsconfig excludes the consumer's `node_modules`, where the
-      // layer lives (the projects' typecheck fails without it); harmless after
+      // Nuxt 4.6's generated tsconfig excludes the project's `node_modules`, where the layer
+      // lives, and the projects' typecheck fails; can go once it passes without this line.
       references.push({ path: globalTypes });
 
       // Without it a project's typecheck reads the layer's own vue-router unless

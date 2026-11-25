@@ -1,8 +1,8 @@
 import type { RouteLocationNormalized } from 'vue-router';
 import { defineNuxtRouteMiddleware } from '#imports';
 
-// A newer navigation can start before an older one ends. By the location first
-// asked for: vue-router runs no `afterEach` for one a guard redirects.
+// Per navigation, by the object first asked for (`redirectedFrom` after a redirect; not `fullPath`,
+// which two can share): error-origin.test.ts, "ends a navigation that middleware redirected", pins it.
 type Navigation =
   | RouteLocationNormalized
   | NonNullable<RouteLocationNormalized['redirectedFrom']>;
