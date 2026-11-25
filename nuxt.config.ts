@@ -1,3 +1,4 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -105,13 +106,20 @@ export default defineNuxtConfig({
       )?.[0];
       if (paths && project) paths['vue-router'] = [project];
 
-      // test/browser types a project's Page with the project's Playwright: the
-      // layer's own copy of another version is another type (TS2345)
-      const playwright = packageDir(
-        useNuxt().options.rootDir,
-        '@playwright/test',
-      );
-      if (paths && playwright) paths['@playwright/test'] = [playwright];
+      // test/browser with the project's Playwright (TS2345 on the layer's copy); types only, as Playwright's
+      // loader follows `paths` to CommonJS `main` (test/projectTypes.test.ts): a plain mapping once it stops
+      const nuxt = useNuxt();
+      const playwright = packageDir(nuxt.options.rootDir, '@playwright/test');
+      if (paths && playwright) {
+        const types = join(nuxt.options.buildDir, 'cardan-ui/playwright');
+        const target = JSON.stringify(playwright);
+        mkdirSync(types, { recursive: true });
+        writeFileSync(
+          join(types, 'index.d.ts'),
+          `export * from ${target};\nexport { default } from ${target};\n`,
+        );
+        paths['@playwright/test'] = [types];
+      }
     },
   },
 
