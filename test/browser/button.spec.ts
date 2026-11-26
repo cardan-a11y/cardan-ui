@@ -1,6 +1,6 @@
 // A browser test: a NuxtLink in happy-dom does not navigate on a click at all.
 import { expect, test } from '@playwright/test';
-import { gotoHydrated } from './helpers';
+import { focusRingContrast, gotoHydrated } from './helpers';
 
 for (const name of ['Loading link', 'Unavailable link']) {
   test(`${name}: not followed on Enter or a click`, async ({ page }) => {
@@ -111,3 +111,23 @@ test('an aria-disabled submit button is reached with Tab and says why on a press
   await send.click();
   await expect(status).toHaveText('Sent.');
 });
+
+for (const colorScheme of ['light', 'dark'] as const) {
+  test.describe(`${colorScheme} mode`, () => {
+    test.use({ colorScheme });
+
+    for (const name of ['Unavailable button', 'Send']) {
+      test(`${name}: an unavailable button's focus ring keeps 3:1`, async ({
+        page,
+      }) => {
+        await gotoHydrated(page, '/buttons');
+        const button = page.getByRole('button', { name, exact: true });
+        await expect(button).toHaveAttribute('aria-disabled', 'true');
+        await button.focus();
+        await expect(button).toBeFocused();
+
+        expect(await focusRingContrast(button)).toBeGreaterThanOrEqual(3);
+      });
+    }
+  });
+}
