@@ -792,6 +792,8 @@ defineExpose({
       flex: 1;
       max-width: none;
       padding: 0.5rem 0.75rem 0.5rem 0.5rem;
+      margin-block-start: 0.125em;
+      margin-block-end: 0;
       font-size: inherit;
       overflow-wrap: anywhere;
       cursor: pointer;
