@@ -1,18 +1,14 @@
 [
   {
-    "folder": "cardan-academy-nuxt",
-    "name": "academy"
+    "folder": "cardan-academy-nuxt"
   },
   {
-    "folder": "cardan-auditor-nuxt",
-    "name": "auditor"
+    "folder": "cardan-auditor-nuxt"
   },
   {
-    "folder": "cardan-cms-nuxt",
-    "name": "cms"
+    "folder": "cardan-cms-nuxt"
   },
   {
-    "folder": "cardan-support-nuxt",
-    "name": "support"
+    "folder": "cardan-support-nuxt"
   }
 ]
