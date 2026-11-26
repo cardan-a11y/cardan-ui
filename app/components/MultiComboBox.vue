@@ -41,6 +41,12 @@ import type { StyleValue } from 'vue';
  * creates the record, adds it to `options` and its value to `v-model`, or
  * shows its failure with `custom-error`. Focus moves to the field, whose
  * text stays, so the new option shows ticked.
+ *
+ * An option whose `disabled-key` field is true is an `aria-disabled`
+ * checkbox, as ComboBox's disabled option: Tab, the arrow keys and a search
+ * reach it, so a screen reader reads it as unavailable, but a click or Space
+ * does not tick or untick it, nor does the clear button. Not a native
+ * disabled checkbox, which Tab skips.
  */
 
 defineOptions({ inheritAttrs: false });
@@ -71,6 +77,7 @@ const {
   instruction = undefined,
   customError = undefined,
   createText = undefined,
+  disabledKey = 'disabled',
   size = 'md',
   canClear = true,
   id = useId(),
@@ -88,6 +95,8 @@ const {
   optionsKey?: string | number;
   valueKey?: string;
   labelKey?: string;
+  /** The field of an option object that disables it */
+  disabledKey?: string;
   id?: string;
   /** Of the hidden inputs, one per value */
   name?: string;
@@ -133,6 +142,7 @@ const { status, say } = useComboBoxStatus();
 const {
   valueOf,
   labelOf,
+  isDisabled,
   isLoader,
   allOptions,
   hasWholeList,
@@ -151,6 +161,7 @@ const {
     optionsKey: () => optionsKey,
     valueKey: () => valueKey,
     labelKey: () => labelKey,
+    disabledKey: () => disabledKey,
     noOptionsText: () => noOptionsText,
     disabled: () => disabled,
     loading: () => loading,
@@ -300,8 +311,13 @@ function toggle(option: T, tick: boolean) {
   }
 }
 
+/** The ticked options a clear keeps: a disabled one is never unticked */
+const keptOnClear = computed(() => selectedOptions.value.filter(isDisabled));
+
 function clear() {
-  if (count.value) setValues([], []);
+  if (count.value > keptOnClear.value.length) {
+    setValues(keptOnClear.value.map(valueOf), keptOnClear.value);
+  }
 
   text.value = '';
   endEdit();
@@ -626,7 +642,11 @@ defineExpose({
           />
 
           <button
-            v-if="canClear && !disabled && (count > 0 || text)"
+            v-if="
+              canClear &&
+              !disabled &&
+              (count > keptOnClear.length || (isEdited && text))
+            "
             type="button"
             class="combobox-button combobox-clear"
             :aria-label="t('combobox.clear', { label })"
@@ -690,12 +710,16 @@ defineExpose({
             <li
               v-for="(option, index) in shown"
               :key="String(valueOf(option))"
-              class="multicombobox-option"
+              :class="[
+                'multicombobox-option',
+                isDisabled(option) && 'is-disabled',
+              ]"
             >
               <Checkbox
                 :id="checkboxId(index)"
                 :model-value="isTicked(option)"
                 :label="labelOf(option)"
+                :aria-disabled="isDisabled(option)"
                 @update:model-value="toggle(option, !!$event)"
               />
             </li>
@@ -741,6 +765,16 @@ defineExpose({
     &:has(:focus-visible) {
       outline: 2px solid var(--focus-color);
       outline-offset: -2px;
+    }
+
+    &.is-disabled {
+      &:hover {
+        background-color: transparent;
+      }
+
+      label {
+        cursor: not-allowed;
+      }
     }
 
     .checkbox-wrapper {

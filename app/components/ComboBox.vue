@@ -25,7 +25,8 @@ import type { StyleValue } from 'vue';
  *   `false`; a status element beside the field tells a screen reader.
  * - The first arrow key highlights the selected option, as a native select.
  * - Focus leaving the field and its buttons closes the list, as a press
- *   outside does. Tab and Shift + Tab pick a highlighted option first.
+ *   outside does. Tab and Shift + Tab pick a highlighted option first, but
+ *   only an existing, enabled one: never the create option.
  * - Enter with the popup open never submits; Escape then only closes it and
  *   puts the label back, and is stopped there, so a Dialog stays open.
  *   Escape with the popup closed does not empty the field.
@@ -58,6 +59,22 @@ import type { StyleValue } from 'vue';
  * loads and does not wrap. The label cannot come from such a list, so a
  * value needs `v-model:selected`, which a value outside the loaded pages
  * keeps.
+ *
+ * With `create-option`, the last option of the list offers to create the
+ * typed text while no label is that text (ignoring case and the spaces
+ * around it, not diacritics), once the whole list is there, so not with
+ * `server-search`. It is never a value and is never highlighted by itself:
+ * an arrow key and Enter, or a click, emit `create` with the trimmed text
+ * and close the list, the text and the value staying as they were. The
+ * parent creates the record, adds it to `options` and sets the value, or
+ * shows its failure with `custom-error`. The status says that nothing
+ * matched and that the option is there.
+ *
+ * An option whose `disabled-key` field is true has `aria-disabled`, shows
+ * dimmed and stays in the list (APG listbox): a search finds it and the
+ * arrow keys reach it, so a screen reader reads it as unavailable, but Enter
+ * and a click leave the list open and the value as it was. A value whose
+ * option is disabled keeps its label and checkmark.
  */
 
 defineOptions({ inheritAttrs: false });
@@ -83,6 +100,8 @@ const {
   noOptionsText = undefined,
   instruction = undefined,
   customError = undefined,
+  createText = undefined,
+  disabledKey = 'disabled',
   size = 'md',
   canClear = true,
   id = useId(),
@@ -90,6 +109,7 @@ const {
   disabled,
   loading,
   serverSearch,
+  createOption,
   showInvalid,
 } = defineProps<{
   /** Names the field, the listbox and the open button, and the clear button: "Clear <label>" */
@@ -102,6 +122,8 @@ const {
   serverSearch?: boolean;
   valueKey?: string;
   labelKey?: string;
+  /** The field of an option object that disables it */
+  disabledKey?: string;
   id?: string;
   /** Of the hidden input that holds the option's value */
   name?: string;
@@ -115,6 +137,10 @@ const {
   loading?: boolean;
   /** Without it the field has no clear button and emptying it puts the label back */
   canClear?: boolean;
+  /** Offers to create the typed text when no label is that text: emits `create` */
+  createOption?: boolean;
+  /** The create option's text for the typed text; "Create “…”" by default */
+  createText?: (text: string) => string;
   hideLabel?: boolean;
   instruction?: string;
   /** Shows the error now; a Form shows it after a failed submit */
@@ -122,6 +148,11 @@ const {
   /** An error the browser cannot find, such as the server's: shown until the value changes */
   customError?: string;
   size?: InputSize;
+}>();
+
+const emit = defineEmits<{
+  /** The create option was picked, with the trimmed text */
+  create: [text: string];
 }>();
 
 const { attrs, controlAttrs } = useControlAttrs();
@@ -143,6 +174,7 @@ const { status, say } = useComboBoxStatus();
 const {
   valueOf,
   labelOf,
+  isDisabled,
   isLoader,
   isServerSearch,
   allOptions,
@@ -151,6 +183,7 @@ const {
   shown,
   isBusy,
   message,
+  createLabel,
   touch,
   loadForLabel,
   loadMore,
@@ -165,9 +198,12 @@ const {
     serverSearch: () => serverSearch,
     valueKey: () => valueKey,
     labelKey: () => labelKey,
+    disabledKey: () => disabledKey,
     noOptionsText: () => noOptionsText,
     disabled: () => disabled,
     loading: () => loading,
+    createOption: () => createOption,
+    createText: () => createText,
   },
   {
     query: () => query.value,
@@ -256,6 +292,11 @@ if (import.meta.dev) {
         `[ComboBox] "${label}" has a value and server-search, but no v-model:selected with its option: it cannot show the label.`,
       );
     }
+    if (createOption && isServerSearch.value) {
+      console.warn(
+        `[ComboBox] "${label}" has create-option and server-search: the create option needs the whole list, so it never shows.`,
+      );
+    }
   });
 }
 
@@ -264,11 +305,15 @@ onMounted(() => {
   giveSelected();
 });
 
-const hasList = computed(() => isOpen.value && shown.value.length > 0);
+const createIndex = computed(() =>
+  createLabel.value ? shown.value.length : -1,
+);
+const itemCount = computed(
+  () => shown.value.length + (createLabel.value ? 1 : 0),
+);
+const hasList = computed(() => isOpen.value && itemCount.value > 0);
 const activeIndex = computed(() =>
-  hasList.value && highlighted.value < shown.value.length
-    ? highlighted.value
-    : -1,
+  hasList.value && highlighted.value < itemCount.value ? highlighted.value : -1,
 );
 
 const listboxId = computed(() => `${id}-listbox`);
@@ -287,7 +332,7 @@ function close() {
 }
 
 function move(step: 1 | -1) {
-  const count = shown.value.length;
+  const count = itemCount.value;
   if (!count) return;
 
   if (activeIndex.value === -1) {
@@ -300,7 +345,7 @@ function move(step: 1 | -1) {
     highlighted.value = atValue !== -1 ? atValue : step === 1 ? 0 : count - 1;
   } else if (
     step === 1 &&
-    activeIndex.value === count - 1 &&
+    activeIndex.value === shown.value.length - 1 &&
     listing.value?.more
   ) {
     void loadMore();
@@ -373,6 +418,18 @@ function clear() {
   endEdit();
   close();
   inputRef.value?.focus();
+}
+
+function create() {
+  const typed = query.value;
+
+  endEdit();
+  close();
+  emit('create', typed);
+}
+
+function pickUnlessDisabled(option: T) {
+  if (!isDisabled(option)) pick(option);
 }
 
 function settle() {
@@ -463,7 +520,9 @@ function onKeydown(event: KeyboardEvent) {
       event.preventDefault();
 
       const option = shown.value[activeIndex.value];
-      if (option !== undefined) pick(option);
+      if (createLabel.value && activeIndex.value === createIndex.value) {
+        create();
+      } else if (option !== undefined) pickUnlessDisabled(option);
       else close();
       break;
     }
@@ -478,7 +537,7 @@ function onKeydown(event: KeyboardEvent) {
       break;
     case 'Tab': {
       const option = shown.value[activeIndex.value];
-      if (option !== undefined) pick(option);
+      if (option !== undefined && !isDisabled(option)) pick(option);
       else close();
       break;
     }
@@ -700,9 +759,12 @@ defineExpose({
         @mousedown.prevent
       >
         <template v-if="isOpen">
+          <p v-if="!shown.length" class="combobox-message">{{ message }}</p>
+
           <!-- tabindex: a scrolling element is in the Tab order by itself -->
+
           <ul
-            v-if="shown.length"
+            v-if="itemCount"
             :id="listboxId"
             role="listbox"
             class="combobox-list"
@@ -719,11 +781,13 @@ defineExpose({
               :class="[
                 'combobox-option',
                 index === activeIndex && 'is-highlighted',
+                isDisabled(option) && 'is-disabled',
               ]"
               :aria-selected="hasValue && valueOf(option) === model"
+              :aria-disabled="isDisabled(option) || undefined"
               :aria-setsize="listing?.more ? -1 : undefined"
               :aria-posinset="listing?.more ? index + 1 : undefined"
-              @click="pick(option)"
+              @click="pickUnlessDisabled(option)"
             >
               <span>{{ labelOf(option) }}</span>
 
@@ -732,9 +796,23 @@ defineExpose({
                 name="material-symbols:check-rounded"
               />
             </li>
-          </ul>
 
-          <p v-else class="combobox-message">{{ message }}</p>
+            <li
+              v-if="createLabel"
+              :id="optionId(createIndex)"
+              role="option"
+              :class="[
+                'combobox-option',
+                'combobox-create',
+                createIndex === activeIndex && 'is-highlighted',
+              ]"
+              aria-selected="false"
+              @click="create"
+            >
+              <Icon name="material-symbols:add-rounded" />
+              <span>{{ createLabel }}</span>
+            </li>
+          </ul>
         </template>
       </div>
 
@@ -771,6 +849,25 @@ defineExpose({
       outline: 2px solid var(--focus-color);
       outline-offset: -2px;
     }
+
+    /* As the layer's other disabled controls; exempt from contrast (1.4.3) */
+    &.is-disabled {
+      cursor: not-allowed;
+
+      > * {
+        opacity: 0.35;
+      }
+
+      &:hover {
+        background-color: transparent;
+      }
+    }
+  }
+
+  .combobox-create {
+    justify-content: start;
+    color: var(--color-accent-text);
+    font-weight: var(--font-weight-medium);
   }
 }
 

@@ -114,6 +114,41 @@ const amounts = [0, 1, 2, 5, 10];
 
 const deleted = ref<number | null>(99);
 
+// Create
+const clientOptions = ref<Client[]>([...clients]);
+const createdClient = ref<number | null>(null);
+const isCreating = ref(false);
+const createError = ref<string>();
+
+async function handleCreate(name: string) {
+  createError.value = undefined;
+  isCreating.value = true;
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  isCreating.value = false;
+
+  if (name.toLowerCase().includes('fail')) {
+    createError.value = `“${name}” could not be created. Try another name.`;
+    return;
+  }
+
+  const created = { id: clientOptions.value.length + 1, name };
+  clientOptions.value = [...clientOptions.value, created];
+  createdClient.value = created.id;
+}
+
+// Disabled options
+const crust = ref<string | null>('stuffed');
+const crusts = [
+  { value: 'thin', label: 'Thin' },
+  { value: 'classic', label: 'Classic' },
+  { value: 'stuffed', label: 'Stuffed crust (sold out today)', disabled: true },
+  {
+    value: 'gluten-free',
+    label: 'Gluten-free (sold out today)',
+    disabled: true,
+  },
+];
+
 // Props
 const size = ref<InputSize>('md');
 const sizes = [
@@ -462,6 +497,94 @@ const filterClient = ref<number | null>(null);
           <p class="fs-sm">
             Values: <code>{{ JSON.stringify([sample, amount, deleted]) }}</code>
           </p>
+        </div>
+      </Card>
+
+      <Card>
+        <h2>Creating an option</h2>
+
+        <p class="c-grey-text">
+          With <code>create-option</code>, the last option of the list offers to
+          create what you typed, while no label is that text. Case and the
+          spaces around it count as the same, diacritics do not: “acme” is
+          “Acme”, but “Oce” is not “Océ”, and the server refuses a name it
+          counts as the same. <code>create-text</code> is a function that gives
+          the option its text, for a wording of the project's own, such as
+          “Create client “Acme””.
+        </p>
+
+        <p class="c-grey-text">
+          The option is never highlighted by itself, also when it is the only
+          one: an arrow key and Enter create, so a typo followed by Enter
+          creates nothing. Tab never creates either: leaving the field would
+          make a record. Picking it emits <code>create</code> with the text and
+          closes the list; the text and the value stay as they were. The page
+          creates the record, adds it to the options and sets the value, which
+          shows its label, and meanwhile sets <code>loading</code>. A failure
+          shows in the field through <code>custom-error</code>, with the text
+          still there to correct. Type a name with “fail” in it to see one. The
+          option needs the whole list, so it does not combine with
+          <code>server-search</code>.
+        </p>
+
+        <div class="demo-box">
+          <ComboBox
+            v-model="createdClient"
+            :options="clientOptions"
+            value-key="id"
+            label-key="name"
+            label="Client"
+            create-option
+            :create-text="(text: string) => `Create client “${text}”`"
+            :loading="isCreating"
+            :custom-error="createError"
+            @create="handleCreate"
+          />
+
+          <p class="fs-sm">
+            Value: <code>{{ JSON.stringify(createdClient) }}</code>
+          </p>
+        </div>
+
+        <code
+          >{{ `<ComboBox
+            v-model="client"
+            :options="clients"
+            value-key="id"
+            label-key="name"
+            :label="t('clients.heading')"
+            create-option
+            :create-text="(text) => t('clients.create', { text })"
+            :loading="isCreating"
+            :custom-error="createError"
+            @create="createClient"
+          />` }}</code
+        >
+      </Card>
+
+      <Card>
+        <h2>Disabled options</h2>
+
+        <p class="c-grey-text">
+          An option object whose <code>disabled</code> field is true, or the
+          field that <code>disabled-key</code> names, cannot be picked. It stays
+          in the list, dimmed, and a search finds it. The arrow keys reach it,
+          so a screen reader reads it as unavailable: hiding it from the
+          keyboard would hide it from the people who cannot see it. Enter and a
+          click on it leave the list open and the value as it was, and Tab picks
+          nothing. Say why it is unavailable in its label or in the field's
+          instruction: an option has no description of its own.
+        </p>
+
+        <p class="c-grey-text">
+          A value whose option is disabled, set by the page or disabled after it
+          was picked, keeps its label and its checkmark, passes
+          <code>required</code> and goes with the form: ComboBox never changes a
+          value by itself.
+        </p>
+
+        <div class="demo-box">
+          <ComboBox v-model="crust" :options="crusts" label="Crust" />
         </div>
       </Card>
 

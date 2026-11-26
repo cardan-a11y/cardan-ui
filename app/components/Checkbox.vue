@@ -13,6 +13,7 @@ const {
   customError = undefined,
   showInvalid = false,
   required,
+  ariaDisabled,
 } = defineProps<{
   label?: string;
   title?: string;
@@ -20,6 +21,8 @@ const {
   value?: string | number;
   required?: boolean;
   disabled?: boolean;
+  /** Read and shown as unavailable, but focusable: a click or Space does not tick it */
+  ariaDisabled?: boolean;
   hideLabel?: boolean;
   showInvalid?: boolean;
   /** Under the box when it is required and not ticked; "Tick this box to continue" by default */
@@ -36,6 +39,10 @@ const { t } = useI18n();
 const computedErrorMessage = computed(
   () => errorMessage ?? t('form.checkbox-required'),
 );
+
+function onClick(event: MouseEvent) {
+  if (ariaDisabled) event.preventDefault();
+}
 
 const isTicked = computed(() =>
   Array.isArray(model.value)
@@ -56,7 +63,7 @@ const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   <div
     :class="[
       'checkbox-wrapper',
-      disabled && 'disabled',
+      (disabled || ariaDisabled) && 'disabled',
       showInvalid && 'show-invalid',
       customErrorActive && 'custom-error',
       `checkbox-variant--${variant}`,
@@ -70,9 +77,11 @@ const { customErrorActive, clearCustomError, errorShown } = useCustomError(
       :disabled="disabled"
       :required="required"
       :tabindex="tabindex"
+      :aria-disabled="ariaDisabled || undefined"
       :aria-describedby="errorShown ? `error-${id}` : undefined"
       :aria-invalid="errorShown || undefined"
       type="checkbox"
+      @click="onClick"
       @change="clearCustomError"
     />
 

@@ -641,3 +641,48 @@ describe('MultiComboBox: create option', () => {
     );
   });
 });
+
+describe('MultiComboBox: disabled options', () => {
+  const withDisabled = [
+    { value: 'cheese', label: 'Cheese' },
+    { value: 'ham', label: 'Ham', disabled: true },
+  ];
+
+  it('is an aria-disabled checkbox that the arrow keys reach and a click does not tick', async () => {
+    const { input, checkbox, emitted } = await mountMulti({
+      options: withDisabled,
+      modelValue: ['ham'],
+    });
+    input.element.focus();
+    await press('ArrowDown');
+    await nextTick();
+    await press('ArrowDown');
+
+    const ham = checkbox('Ham');
+    expectFocused(ham);
+    expect(ham.attributes('aria-disabled')).toBe('true');
+    expect(ham.element.disabled).toBe(false);
+
+    ham.element.click();
+    await nextTick();
+
+    expect(ham.element.checked).toBe(true);
+    expect(emitted).toEqual([]);
+    expect(input.element.value).toBe('Ham');
+  });
+
+  it('a clear keeps a ticked disabled option, and there is no clear button for that alone', async () => {
+    const { button, emitted } = await mountMulti({
+      options: withDisabled,
+      modelValue: ['ham', 'cheese'],
+    });
+
+    await button('Clear Toppings')!.trigger('click');
+
+    expect(emitted).toEqual([
+      'selected [{"value":"ham","label":"Ham","disabled":true}]',
+      'value ["ham"]',
+    ]);
+    expect(button('Clear Toppings')).toBeUndefined();
+  });
+});

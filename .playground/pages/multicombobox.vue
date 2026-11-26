@@ -86,6 +86,16 @@ async function handleCreate(name: string) {
   tagIds.value = [...tagIds.value, tag.id];
 }
 
+// Disabled options
+const columns = ref<string[]>(['key', 'status']);
+const columnOptions = [
+  { value: 'key', label: 'Key (always shown)', disabled: true },
+  { value: 'version', label: 'Version' },
+  { value: 'status', label: 'Status' },
+  { value: 'auditor', label: 'Auditor' },
+  { value: 'reviewer', label: 'Reviewer (not in this plan)', disabled: true },
+];
+
 // Props
 const propsValue = ref<string[]>(['on-hold']);
 const size = ref<InputSize>('md');
@@ -352,6 +362,33 @@ const dialogFindings = ref<number[]>([]);
             @create="createTag"
           />` }}</code
         >
+      </Card>
+
+      <Card>
+        <h2>Disabled options</h2>
+
+        <p class="c-grey-text">
+          An option object whose <code>disabled</code> field is true, or the
+          field that <code>disabled-key</code> names, is a checkbox that cannot
+          be ticked or unticked: a click and Space leave it as it is. It is not
+          a native disabled checkbox, which Tab would skip: Tab, the arrow keys
+          and a search reach it, so a screen reader reads it as unavailable, the
+          same choice as ComboBox makes. A ticked option that is disabled stays
+          ticked, also when the clear button unticks the rest. Say why in its
+          label or the field's instruction.
+        </p>
+
+        <div class="demo-box">
+          <MultiComboBox
+            v-model="columns"
+            :options="columnOptions"
+            label="Columns"
+          />
+
+          <p class="fs-sm">
+            Value: <code>{{ JSON.stringify(columns) }}</code>
+          </p>
+        </div>
       </Card>
 
       <Card>

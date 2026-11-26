@@ -37,6 +37,8 @@ export function useComboBoxOptions<T>(
     serverSearch?: () => boolean | undefined;
     valueKey: () => string;
     labelKey: () => string;
+    /** The field of an option object that disables it */
+    disabledKey?: () => string;
     noOptionsText: () => string | undefined;
     disabled: () => boolean | undefined;
     loading: () => boolean | undefined;
@@ -75,6 +77,10 @@ export function useComboBoxOptions<T>(
     return String(
       isRecord(option) ? (option[source.labelKey()] ?? '') : option,
     );
+  }
+
+  function isDisabled(option: T) {
+    return isRecord(option) && !!option[source.disabledKey?.() ?? 'disabled'];
   }
 
   const loaded = shallowRef<Listing<T>>();
@@ -399,6 +405,7 @@ export function useComboBoxOptions<T>(
   return {
     valueOf,
     labelOf,
+    isDisabled,
     isLoader,
     isServerSearch,
     allOptions,
