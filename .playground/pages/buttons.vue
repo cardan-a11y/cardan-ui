@@ -182,10 +182,10 @@ async function onSend() {
         />
         <CopyButton size="lg" text="Demo Text" />
       </div>
+    </Card>
 
-      <Spacer size="lg" />
-
-      <h3>Unavailable, but focusable</h3>
+    <Card>
+      <h2>Unavailable, but focusable</h2>
       <p>
         <code>disabled</code> takes a button out of the Tab order, so a
         keyboard or screen reader user may never find it, or learn why it does
@@ -214,10 +214,10 @@ async function onSend() {
         </div>
         <p role="status">{{ sent ? 'Sent.' : sendStatus }}</p>
       </Form>
+    </Card>
 
-      <Spacer size="lg" />
-
-      <h3>The current page, disabled</h3>
+    <Card>
+      <h2>The current page, disabled</h2>
       <p>
         A disabled link has no href, so it cannot be followed or reached with
         Tab. When it leads to the current page it keeps that look and
