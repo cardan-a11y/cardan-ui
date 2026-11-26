@@ -23,6 +23,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   }
 
   if ($i18n.locale.value !== resolved.locale) {
-    await $i18n.setLocale(resolved.locale as typeof $i18n.locale.value);
+    await switchLocale($i18n, resolved.locale);
   }
 });

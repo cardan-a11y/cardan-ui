@@ -1,9 +1,22 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { useNuxt } from 'nuxt/kit';
 import { bundledIcons } from './app/utils/icons.ts';
 
 const globalTypes = fileURLToPath(
   new URL('./app/types/index.ts', import.meta.url),
 );
+
+function packageDir(rootDir: string, name: string) {
+  try {
+    const require = createRequire(join(rootDir, 'package.json'));
+    return dirname(require.resolve(`${name}/package.json`));
+  } catch {
+    return undefined;
+  }
+}
 
 // VideoPlayer's thumbnails. Spread: a literal `image` key fails the typecheck
 // of a project without @nuxt/image (cardan-support-nuxt)
@@ -81,8 +94,8 @@ export default defineNuxtConfig({
 
   hooks: {
     'prepare:types'({ tsConfig, references }) {
-      // Nuxt 4.6's generated tsconfig excludes the consumer's `node_modules`,
-      // where the layer lives. Tripwire: test/tripwires.test.ts.
+      // Nuxt 4.6's generated tsconfig excludes the project's `node_modules`, where the layer
+      // lives, and the projects' typecheck fails; can go once it passes without this line.
       references.push({ path: globalTypes });
 
       // Without it a project's typecheck reads the layer's own vue-router unless
@@ -92,6 +105,21 @@ export default defineNuxtConfig({
         /^.*node_modules\/vue-router(?=\/|$)/,
       )?.[0];
       if (paths && project) paths['vue-router'] = [project];
+
+      // test/browser with the project's Playwright (TS2345 on the layer's copy); types only, as Playwright's
+      // loader follows `paths` to CommonJS `main` (test/projectTypes.test.ts): a plain mapping once it stops
+      const nuxt = useNuxt();
+      const playwright = packageDir(nuxt.options.rootDir, '@playwright/test');
+      if (paths && playwright) {
+        const types = join(nuxt.options.buildDir, 'cardan-ui/playwright');
+        const target = JSON.stringify(playwright);
+        mkdirSync(types, { recursive: true });
+        writeFileSync(
+          join(types, 'index.d.ts'),
+          `export * from ${target};\nexport { default } from ${target};\n`,
+        );
+        paths['@playwright/test'] = [types];
+      }
     },
   },
 
@@ -114,6 +142,8 @@ export default defineNuxtConfig({
     public: {
       // CookiesDialog's Google Tag Manager container: NUXT_PUBLIC_GTM_ID
       gtmId: '',
+      // i18n's `defaultDirection`, which the html-lang module copies here
+      cardanUi: { defaultDirection: 'ltr' },
     },
   },
 

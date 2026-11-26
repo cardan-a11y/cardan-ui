@@ -244,8 +244,9 @@ function sessionRoot(input) {
   }
 }
 
-// The session's repository and the Cardan ones (with a REVIEW.md) next to it: SubagentStart does
-// not say which the reviewer reviews, so `start` notes each and `mark` records the one it names.
+// The session's repository and the Cardan ones (with a REVIEW.md) next to it, with their worktrees:
+// SubagentStart does not say which the reviewer reviews, so `start` notes each and `mark` records
+// the one it names.
 function candidateRoots(input) {
   const session = sessionRoot(input);
   const roots = new Set(session ? [session] : []);
@@ -266,7 +267,30 @@ function candidateRoots(input) {
       // Not a git repository.
     }
   }
+
+  // Their worktrees too, wherever they are: EnterWorktree puts one in `.claude/worktrees/`
+  for (const root of [...roots]) {
+    for (const dir of worktrees(root)) {
+      if (!existsSync(join(dir, 'REVIEW.md'))) continue;
+      try {
+        roots.add(git(dir, 'rev-parse', '--show-toplevel'));
+      } catch {
+        // Its link to the repository is broken, e.g. after the repository moved.
+      }
+    }
+  }
   return [...roots];
+}
+
+function worktrees(root) {
+  try {
+    return git(root, 'worktree', 'list', '--porcelain')
+      .split('\n')
+      .filter((line) => line.startsWith('worktree '))
+      .map((line) => line.slice('worktree '.length));
+  } catch {
+    return [];
+  }
 }
 
 function start() {
@@ -335,7 +359,8 @@ function mark() {
   if (!started) {
     process.stderr.write(
       `cardan-review: the reviewer named ${named ?? 'no repository'}, which is not the session's ` +
-        'repository or a Cardan repository next to it, so the review was not recorded.\n',
+        'repository, a Cardan repository next to it or a worktree of one of them, so the review was ' +
+        'not recorded.\n',
     );
     return;
   }

@@ -94,11 +94,12 @@ async function highlightCode() {
 
 onMounted(highlightCode);
 watch(segments, highlightCode, { flush: 'post' });
+
+// v-html is safe: the renderer escapes raw HTML unless `trusted`
+/* eslint-disable vue/no-v-html */
 </script>
 
 <template>
-  <!-- Safe: the renderer escapes raw HTML unless `trusted` -->
-  <!-- eslint-disable vue/no-v-html -->
   <span
     v-if="inline"
     ref="root"

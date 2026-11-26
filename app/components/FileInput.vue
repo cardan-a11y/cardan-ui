@@ -25,9 +25,11 @@ const {
   label: string;
   /**
    * `image` keeps the file as the value, previews and compresses it and takes
-   * a paste. `document` checks a file against `accept`, hands it to `select`
-   * and is empty again: no preview, compression or paste, and `required` only
-   * shows the chip.
+   * a paste. `document` checks a file against `accept` and hands it to
+   * `select`, without preview, compression or paste. Without `name` it is
+   * empty again, for a parent that uploads the file (the same file can be
+   * chosen again) and `required` only shows the chip; with `name` the file
+   * also becomes the value and stays in the input a form post reads.
    */
   mode?: 'image' | 'document';
   /** `circle`: a pill led by a round preview, for an avatar */
@@ -81,15 +83,17 @@ const maxSizeLabel = computed(() => formatFileSize(maxFileSize * 1000));
 
 const formShowInvalid = inject(formShowInvalidKey, ref(false));
 
-const missingImage = computed(
+const keepsFile = computed(() => mode !== 'document' || !!name);
+
+const missingFile = computed(
   () =>
     required &&
-    mode !== 'document' &&
+    keepsFile.value &&
     !model.value &&
     (showInvalid || formShowInvalid.value),
 );
 
-const showError = computed(() => !validity.value || missingImage.value);
+const showError = computed(() => !validity.value || missingFile.value);
 
 const shownErrorMessage = computed(
   () => errorMessage.value || t('form.missing-value', { item: label }),
@@ -259,7 +263,7 @@ async function handleFile(file?: File) {
   await nextTick();
   validateFile(file);
 
-  if (mode === 'document') {
+  if (!keepsFile.value) {
     if (validity.value) emit('select', file);
     clearInput();
     return;
@@ -267,6 +271,12 @@ async function handleFile(file?: File) {
 
   if (!validity.value) {
     restoreInput();
+    return;
+  }
+
+  if (mode === 'document') {
+    emit('select', file);
+    model.value = file;
     return;
   }
 
@@ -327,7 +337,7 @@ function removeFile() {
         ref="fileInputRef"
         type="file"
         :name="name"
-        :required="required && mode !== 'document'"
+        :required="required && keepsFile"
         :autofocus="autofocus"
         :accept="
           acceptedExtensions.length

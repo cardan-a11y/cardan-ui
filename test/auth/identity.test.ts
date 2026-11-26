@@ -6,14 +6,21 @@ import { useNuxtApp, useRuntimeConfig, useSanctumAuth } from '#imports';
 import identityPlugin, {
   loadIdentity,
 } from '../../auth/app/plugins/identity.client';
+import identityServerPlugin from '../../auth/app/plugins/identity.server';
 import { signIn, useScenario } from './fortify';
 import { academy, auditor } from './scenarios';
 
 // The real Sanctum client, unless a test puts another in its place
-const clientOverride = vi.hoisted(() => ({ current: undefined as unknown }));
+const clientOverride = vi.hoisted(() => ({
+  current: undefined as unknown,
+  missing: false,
+}));
 mockNuxtImport(
   'useSanctumClient',
-  () => () => clientOverride.current ?? useNuxtApp().$sanctumClient,
+  () => () =>
+    clientOverride.missing
+      ? undefined
+      : (clientOverride.current ?? useNuxtApp().$sanctumClient),
 );
 
 /** The API behind the identity endpoint, for this test; counts its requests */
@@ -56,6 +63,47 @@ function hangingClient() {
   return { client, fetch };
 }
 
+/** A client whose answer starts, with a body that never ends until aborted */
+function stallingClient() {
+  const fetch = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('{"data":'));
+        init?.signal?.addEventListener('abort', () =>
+          controller.error(init.signal!.reason),
+        );
+      },
+    });
+    return Promise.resolve(
+      new Response(body, { headers: { 'content-type': 'application/json' } }),
+    );
+  });
+  const client = createFetch({ fetch }).create({
+    baseURL: 'https://api.example.com',
+    retry: false,
+  });
+  return { client, fetch };
+}
+
+/** `AbortSignal.timeout()` on the timers vitest fakes, which its own are not */
+function fakeTimeoutSignal() {
+  vi.useFakeTimers();
+  const timeout = vi
+    .spyOn(AbortSignal, 'timeout')
+    .mockImplementation((ms: number) => {
+      const controller = new AbortController();
+      setTimeout(
+        () => controller.abort(new DOMException('Timed out', 'TimeoutError')),
+        ms,
+      );
+      return controller.signal;
+    });
+  onTestFinished(() => {
+    timeout.mockRestore();
+    vi.useRealTimers();
+  });
+}
+
 async function settled(promise: Promise<unknown>) {
   let done = false;
   void promise.then(() => (done = true));
@@ -68,7 +116,7 @@ describe('identity load (Academy)', () => {
 
   const { user } = academy.sanctum.endpoints;
 
-  it('is under way from start-up, as $identityReady', async () => {
+  it("is under way from start-up, after nuxt-auth-sanctum's plugin, as $identityReady", async () => {
     const ready = useNuxtApp().$identityReady;
     expect(ready).toBeInstanceOf(Promise);
     await expect(ready).resolves.toBeUndefined();
@@ -124,10 +172,7 @@ describe('identity load (Academy)', () => {
     const { client, fetch } = hangingClient();
     clientOverride.current = client;
     onTestFinished(() => (clientOverride.current = undefined));
-    vi.useFakeTimers();
-    onTestFinished(() => {
-      vi.useRealTimers();
-    });
+    fakeTimeoutSignal();
 
     const ready = loadIdentity();
     await vi.advanceTimersByTimeAsync(9_999);
@@ -138,6 +183,22 @@ describe('identity load (Academy)', () => {
 
     await vi.advanceTimersByTimeAsync(60_000);
     expect(fetch).toHaveBeenCalledOnce();
+    expect(useSanctumAuth().user.value).toBeNull();
+  });
+
+  it('gives up after 10 seconds on an answer that stalls half way', async () => {
+    const { client, fetch } = stallingClient();
+    clientOverride.current = client;
+    onTestFinished(() => (clientOverride.current = undefined));
+    fakeTimeoutSignal();
+
+    const ready = loadIdentity();
+    await vi.advanceTimersByTimeAsync(9_999);
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(await settled(ready)).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(ready).resolves.toBeUndefined();
     expect(useSanctumAuth().user.value).toBeNull();
   });
 
@@ -153,6 +214,15 @@ describe('identity load (Academy)', () => {
     await loadIdentity();
 
     expect(useSanctumAuth().user.value).toBeNull();
+  });
+
+  it("fails loudly when it runs before nuxt-auth-sanctum's plugin", () => {
+    clientOverride.missing = true;
+    onTestFinished(() => {
+      clientOverride.missing = false;
+    });
+
+    expect(() => identityPlugin(useNuxtApp())).toThrow(/no Sanctum client/);
   });
 
   it('resolves when the client throws before the request', async () => {
@@ -212,6 +282,16 @@ describe('identity load (Auditor)', () => {
   });
 });
 
+describe('identity on the server', () => {
+  it('provides a resolved $identityReady, as there is no request to wait for', async () => {
+    const { provide } = identityServerPlugin(useNuxtApp()) as {
+      provide: { identityReady: Promise<void> };
+    };
+
+    expect(await settled(provide.identityReady)).toBe(true);
+  });
+});
+
 describe('Accept-Language', () => {
   useScenario(academy);
 
@@ -233,6 +313,29 @@ describe('Accept-Language', () => {
     await loadIdentity();
     await $i18n.setLocale('en');
     await loadIdentity();
+
+    expect(languages).toEqual(['nl', 'en']);
+  });
+
+  it('keeps the language a request sets itself, as for content in another language', async () => {
+    const languages: (string | null)[] = [];
+    identityApi('/api/v1/trainings', (event) => {
+      languages.push(
+        (event as unknown as { headers: Headers }).headers.get(
+          'accept-language',
+        ),
+      );
+      return json({ data: [] });
+    });
+    const { $i18n, $sanctumClient } = useNuxtApp();
+    const before = $i18n.locale.value;
+    onTestFinished(() => $i18n.setLocale(before));
+    await $i18n.setLocale('en');
+
+    await $sanctumClient('/api/v1/trainings', {
+      headers: { 'Accept-Language': 'nl' },
+    });
+    await $sanctumClient('/api/v1/trainings');
 
     expect(languages).toEqual(['nl', 'en']);
   });

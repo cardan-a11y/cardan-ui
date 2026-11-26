@@ -1,4 +1,5 @@
 import { vi, type Mock } from 'vitest';
+import { useRuntimeConfig } from '#imports';
 
 /**
  * The API fake for vitest: nuxt-auth-sanctum's client, answering only the
@@ -27,12 +28,19 @@ export type RequestOptions = {
   method?: string;
   body?: unknown;
   query?: Record<string, unknown>;
+  ignoreResponseError?: boolean;
 };
 
-/** Answers a request: the value is the response, a throw its failure */
+/**
+ * Answers a request: the value is the response, a throw its failure (with
+ * `status` and `data` as a fetch error has them, see test/fetch.ts)
+ */
 export type Handler = (options: RequestOptions) => unknown;
 
-/** Handlers by `'METHOD /path'` (`'GET /api/user'`), without a trailing slash */
+/**
+ * Handlers by `'METHOD /path'` (`'GET /api/user'`): the method in capitals and
+ * the address as the app passes it, without a trailing slash; any other key throws
+ */
 export type Routes = Record<string, Handler>;
 
 type Store = {
@@ -52,11 +60,31 @@ shared.cardanApi ??= {
 const store = shared.cardanApi;
 
 /**
- * The Sanctum client every request goes through. `client.raw` is the auth
- * layer's identity request: a guest's 401 unless a test answers it, a
- * response rather than its body.
+ * The Sanctum client every request goes through. `client.raw` answers the
+ * same routes with a response (`{ ok, status, _data }`), and the identity
+ * request as a guest's 401 while no route answers it.
  */
 export const client = store.client;
+
+/** The identity request's route, `sanctum.endpoints.user` */
+function identityRoute() {
+  const sanctum = useRuntimeConfig().public.sanctum as
+    { endpoints?: { user?: string | false } } | undefined;
+  return routeOf(sanctum?.endpoints?.user || '/api/user');
+}
+
+function checkRoute(key: string) {
+  const [method = '', path = ''] = key.split(' ');
+  const matches =
+    /^[A-Z]+$/.test(method) &&
+    /^\S+$/.test(path) &&
+    (path === '/' || !path.endsWith('/'));
+  if (!matches) {
+    throw new Error(
+      `Route "${key}" never matches: a method in capitals, a space and the address without a trailing slash, such as "GET /api/user"`,
+    );
+  }
+}
 
 /** `'GET /api/user'`: the method and the address without a trailing slash */
 export function routeOf(url: string, options: RequestOptions = {}): string {
@@ -66,29 +94,54 @@ export function routeOf(url: string, options: RequestOptions = {}): string {
 
 /** The API answers these routes, and only these, until the test ends */
 export function api(routes: Routes) {
-  client.mockImplementation(
+  Object.keys(routes).forEach(checkRoute);
+
+  const answer = async (url: string, options: RequestOptions = {}) => {
+    const route = routeOf(url, options);
+    const handler = routes[route];
+
+    if (!handler) {
+      store.unanswered.push(route);
+      throw new Error(`No route for ${route}`);
+    }
+
+    return await handler(options);
+  };
+
+  client.mockImplementation(answer);
+  client.raw.mockImplementation(
     async (url: string, options: RequestOptions = {}) => {
       const route = routeOf(url, options);
-      const handler = routes[route];
-
-      if (!handler) {
-        store.unanswered.push(route);
-        throw new Error(`No route for ${route}`);
+      if (!routes[route] && route === identityRoute()) {
+        return { ok: false, status: 401, _data: undefined };
       }
 
-      return await handler(options);
+      try {
+        return { ok: true, status: 200, _data: await answer(url, options) };
+      } catch (error) {
+        // As ofetch: a handler's HTTP error is a response with ignoreResponseError
+        const { status, data } = error as { status?: number; data?: unknown };
+        const response = routes[route] && status !== undefined;
+        if (!response || !options.ignoreResponseError) throw error;
+        return { ok: false, status, _data: data };
+      }
     },
   );
 }
 
 /**
- * The options of the requests sent to a route, in order; without a route,
- * every request sent so far as `'GET /api/user'`
+ * The options of the requests sent to a route, in order, by the client and
+ * `client.raw`; without a route, every request sent so far as `'GET /api/user'`
  */
 export function requests(route: string): RequestOptions[];
 export function requests(): string[];
 export function requests(route?: string): RequestOptions[] | string[] {
-  const calls = client.mock.calls as [string, RequestOptions | undefined][];
+  const calls = [client.mock, client.raw.mock]
+    .flatMap(({ calls, invocationCallOrder }) =>
+      calls.map((call, i) => [invocationCallOrder[i]!, call] as const),
+    )
+    .sort(([a], [b]) => a - b)
+    .map(([, call]) => call as [string, RequestOptions | undefined]);
   if (route === undefined) {
     return calls.map(([url, options]) => routeOf(url, options));
   }
@@ -103,8 +156,7 @@ export function requests(route?: string): RequestOptions[] | string[] {
  */
 export function resetApi(): string[] {
   client.mockReset();
-  api({});
   client.raw.mockReset();
-  client.raw.mockResolvedValue({ ok: false, status: 401, _data: undefined });
+  api({});
   return store.unanswered.splice(0);
 }

@@ -77,9 +77,10 @@ if (!configured) {
 
   config({
     markdownItConfig(mdit) {
-      // md-editor-v3 types it as markdown-it 14, the plugins as 15: same API.
-      // Can go once md-editor-v3 is on 15. Tripwire: test/tripwires.test.ts.
-      const md = mdit as unknown as MarkdownIt;
+      // md-editor-v3 types markdown-it 14, the plugins 15: same API. The
+      // typecheck fails once md-editor-v3 is on 15; then this line can go.
+      // @ts-expect-error -- markdown-it 14 is not assignable to 15
+      const md: MarkdownIt = mdit;
 
       md.use(swatchExtension);
       md.use(targetBlankExtension, {

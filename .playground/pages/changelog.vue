@@ -7,6 +7,88 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.6.1" date="2026-11-26">
+      <ul>
+        <li>
+          FileInput in document mode with a <code>name</code> keeps a valid
+          file as its value and in its input, so a Form's submit posts it and
+          <code>required</code> holds back a submit without one; a rejected
+          file leaves the one before. Without <code>name</code> nothing
+          changes.
+        </li>
+        <li>
+          Form's <code>&lt;form&gt;</code> has <code>method="dialog"</code>,
+          so a submit before hydration does nothing, where it posted the form
+          with GET and put what was typed in the address.
+        </li>
+        <li>
+          MarkdownPreview takes the attributes a page gives it, such as
+          <code>class</code> or <code>id</code>, also when it renders in the
+          browser: a comment beside its root made it drop them there. A test
+          keeps a comment out of the root of every component.
+        </li>
+        <li>
+          Popover returns focus to its trigger on close in Safari too, where
+          Escape after a mouse open left focus on the page.
+        </li>
+        <li>
+          DatePicker's calendar is no longer cut off in a Popover or a Dialog:
+          it is placed with a fixed strategy, and neither holds a transform
+          once open.
+        </li>
+        <li>
+          AppSidebar keeps room for an overlay scrollbar at the navigation's
+          inline end (<code>--app-sidebar-scrollbar-room</code>, 0.75rem).
+        </li>
+        <li>
+          ComboBox: <code>v-model:selected</code> becomes <code>null</code>
+          for a value the whole list has no option for (not with
+          <code>server-search</code>), and a click no longer leaves its
+          pointer state behind after focus returns or another window takes
+          focus.
+        </li>
+        <li>
+          Cardan Auth UI: a request that sets its own
+          <code>Accept-Language</code> keeps it; the identity request's 10
+          seconds also cover an answer that stalls half way; the theme from
+          the profile takes only <code>light</code>, <code>dark</code> and
+          <code>system</code>; a project's i18n hook that throws no longer
+          aborts a navigation; <code>$identityReady</code> is a resolved
+          promise on the server.
+        </li>
+        <li>
+          A project's typecheck types the layer's browser test helpers with
+          the project's own <code>@playwright/test</code>, so the two no
+          longer have to be on the same version.
+        </li>
+        <li>
+          The layer's workarounds use public APIs where its tripwires watched
+          private ones (the error page's way back, the html-lang plugin,
+          <code>expectNoViolations()</code>); the test harness is hardened
+          (<code>serve()</code>, <code>withApi()</code>, the vitest API fake,
+          which now answers <code>client.raw</code> only from the test's
+          routes) and adds <code>loadIdentity()</code> for a project's
+          start-up test.
+        </li>
+        <li>
+          <code>cardanVitestConfig()</code> inlines the wrapped libraries
+          (@vueform, @vuepic, md-editor-v3) by default, and the optimize-deps
+          module resolves its packages in development only.
+        </li>
+        <li>
+          The playground shows MultiSelect only where it is still used, and
+          runs on compatibility version 4, as the projects do.
+        </li>
+        <li>
+          The cardan Claude Code plugin: a workaround uses a dependency's public
+          API, and a tripwire entry is only for a third-party internal, no
+          longer for a wait on a Cardan UI release; Notion issues follow the
+          work up to production, with a sweep of recently merged pull
+          requests; the review hook counts a review of a worktree.
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.6.0" date="2026-11-24">
       <ul>
         <li>
@@ -505,7 +587,7 @@ useHead({ title: 'Changelog' });
               through a live region. Every day of its calendar is named with its
               weekday, and the headers carry the full weekday names (Auditor
               finding CAN-11.F48); the keyboard access of the calendar waits on
-              vue-datepicker#1283.
+              vue-datepicker#1283 (fixed in 2.6.0).
             </li>
             <li>
               FileInput: a paste into a text field, an editor or another

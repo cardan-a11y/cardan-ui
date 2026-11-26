@@ -130,7 +130,7 @@ declare module '#app' {
   interface NuxtApp {
     /**
      * Resolves once the identity request has answered, failed or timed out;
-     * never rejects. In the browser only.
+     * never rejects. On the server, which sends no request, it is resolved.
      */
     $identityReady: Promise<void>;
   }

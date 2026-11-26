@@ -61,7 +61,8 @@ export type Handler = (request: ApiRequest) => Answer | Promise<Answer>;
 /**
  * Handlers by `'METHOD /path'`: an exact path (`'GET /api/v1/profile'`) or one
  * with `:name` segments (`'GET /api/audits/:id/stats'`); a trailing slash in
- * the request does not count
+ * the request does not count. The method is in capitals and the path has no
+ * query: a key that could never match throws when it is added.
  */
 export type Routes = Record<string, Handler>;
 
@@ -100,6 +101,15 @@ const defaultIsApi = (url: URL) =>
 const trimSlash = (path: string) =>
   path.length > 1 ? path.replace(/\/$/, '') : path;
 
+/** Throws for a route key no request can match */
+export function checkRouteKey(key: string) {
+  if (!/^[A-Z]+ \/[^\s?#]*$/.test(key)) {
+    throw new Error(
+      `Route "${key}" never matches: a method in capitals, a space and a path without a query, such as "GET /api/audits/:id"`,
+    );
+  }
+}
+
 /** The route's `:name` values when the request matches it, else undefined */
 export function matchRoute(
   key: string,
@@ -133,7 +143,8 @@ function bodyOf(request: Request): unknown {
 }
 
 export class Api {
-  private routes: Routes;
+  /** In the order added: a later one wins among `:name` routes */
+  private routes = new Map<string, Handler>();
   private externals: {
     match: (request: Request) => boolean;
     handler: Handler;
@@ -141,19 +152,26 @@ export class Api {
 
   /** Every request to the API and every external one, in order */
   readonly requests: ApiRequest[] = [];
-  /** What went unanswered, as `'GET /api/nothing'`; fails the test */
+  /**
+   * What went unanswered, as `'GET /api/nothing'`, with the error when a
+   * handler threw; fails the test
+   */
   readonly unanswered: string[] = [];
 
   constructor(
     private page: Page,
     private options: ApiOptions = {},
   ) {
-    this.routes = { ...options.routes };
+    this.answer(options.routes ?? {});
   }
 
   /** The API answers these routes too, over the ones before */
   answer(routes: Routes) {
-    Object.assign(this.routes, routes);
+    for (const [key, handler] of Object.entries(routes)) {
+      checkRouteKey(key);
+      this.routes.delete(key);
+      this.routes.set(key, handler);
+    }
   }
 
   /** Answers a request to another origin, such as a navigation to a payment page */
@@ -230,40 +248,56 @@ export class Api {
     // An exact route first, then the last one added whose segments match
     const exact = `${request.method()} ${trimSlash(path)}`;
     const keys = [
-      ...(this.routes[exact] ? [exact] : []),
-      ...Object.keys(this.routes).reverse(),
+      ...(this.routes.has(exact) ? [exact] : []),
+      ...[...this.routes.keys()].reverse(),
     ];
     for (const key of keys) {
       const params = matchRoute(key, request.method(), path);
       if (!params) continue;
-      return this.fulfill(
-        route,
-        await this.routes[key]!(this.record(request, key, params)),
-      );
+      const entry = this.record(request, key, params);
+      let answer: Answer;
+      try {
+        answer = await this.routes.get(key)!(entry);
+      } catch (error) {
+        entry.answered = false;
+        const reason = `${key} threw ${String(error)}`;
+        return this.refuse(route, `${exact}: ${reason}`, reason);
+      }
+      return this.fulfill(route, answer);
     }
 
     const entry = this.record(request);
-    this.unanswered.push(entry.route);
+    return this.refuse(route, entry.route, `No route for ${entry.route}`);
+  }
+
+  /** Answers with `unansweredStatus`; the request goes in `unanswered` */
+  private refuse(route: Route, unanswered: string, body: string) {
+    this.unanswered.push(unanswered);
     return route.fulfill({
       status: this.options.unansweredStatus ?? 599,
       headers: this.options.headers,
-      body: `No route for ${entry.route}`,
+      body,
     });
   }
 
   private async handleExternal(route: Route) {
     const request = route.request();
+    const name = `${request.method()} ${request.url()}`;
     const external = this.externals.find(({ match }) => match(request));
     if (external) {
-      return this.fulfill(
-        route,
-        await external.handler(
-          this.record(request, `${request.method()} ${request.url()}`),
-        ),
-      );
+      const entry = this.record(request, name);
+      let answer: Answer;
+      try {
+        answer = await external.handler(entry);
+      } catch (error) {
+        entry.answered = false;
+        this.unanswered.push(`${name}: the handler threw ${String(error)}`);
+        return route.abort();
+      }
+      return this.fulfill(route, answer);
     }
     this.record(request);
-    this.unanswered.push(`${request.method()} ${request.url()}`);
+    this.unanswered.push(name);
     return route.abort();
   }
 }

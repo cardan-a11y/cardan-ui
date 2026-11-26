@@ -1,3 +1,4 @@
+import type { RouteLocationNormalized } from 'vue-router';
 import { describe, it, expect } from 'vitest';
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { useAuth, useRouter, useRuntimeConfig } from '#imports';
@@ -66,7 +67,7 @@ describe('useAuth: loginRedirectTarget', () => {
     const to = useRouter().resolve({
       path: '/mfa-setup',
       query: { redirect: '/courses/1' },
-    });
+    }) as RouteLocationNormalized;
     expect(useAuth().loginRedirectTarget(to)).toBe('/courses/1');
   });
 });

@@ -26,7 +26,8 @@
  * The build goes to `node_modules/.cache/<name>-browser` of the project
  * (its own build, output and Vite cache folders), so it runs next to
  * `pnpm dev`. The server gets SIGINT and SIGTERM, and its exit code is the
- * script's. `--build-only` on the command line stops after the build.
+ * script's: 128 + the signal's number after a signal, 1 after a failed build.
+ * `--build-only` on the command line stops after the build.
  *
  * Options:
  * - `root`: the project's root, a path or a file URL.
@@ -39,7 +40,7 @@
  *   ../cardan-ui; the layer builds with `production`.
  * - `env`: variables set on `process.env` before Nuxt reads the config, so
  *   an `.env` does not override them; an object or `({ origin, port }) =>`
- *   object. The server inherits them.
+ *   object, where a key set to `undefined` is left out. The server inherits them.
  * - `serverEnv`: variables for the server only, not the build; the same form.
  * - `dotenv`: `false` ignores `.env` altogether.
  * - `dedupe`: `true` resolves every package of the project's package.json
@@ -50,11 +51,12 @@
  *   folders; an object or `({ cache }) =>` object.
  * - `output`: the name of a variable that, when set, names an existing Nitro
  *   output to serve instead of building (`PLAYGROUND_OUTPUT`).
- * - `onExit`: called when the server exits or is stopped, to stop a process
- *   the project started first (the cms's Statamic stand-in).
+ * - `onExit`: called once when the script ends, however it ends, to stop a
+ *   process the project started first (the cms's Statamic stand-in).
  */
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import { constants } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -89,6 +91,14 @@ const pathOf = (path) =>
 const valueOf = (option, context) =>
   typeof option === 'function' ? option(context) : (option ?? {});
 
+const withoutUndefined = (env) =>
+  Object.fromEntries(
+    Object.entries(env).filter(([, value]) => value !== undefined),
+  );
+
+/** The exit code of a process a signal ended, as a shell reports it */
+const signalCode = (signal) => 128 + (constants.signals[signal] ?? 0);
+
 /** The options `loadNuxt()` gets; exported for its test */
 export function nuxtOptions(options, cache) {
   const root = pathOf(options.root);
@@ -118,9 +128,30 @@ export async function serve(options) {
   const port = String(process.env.PORT ?? options.port);
   const origin = `http://localhost:${port}`;
   const cache = join(root, `node_modules/.cache/${options.name}-browser`);
-  const onExit = options.onExit ?? (() => {});
+  let exited = false;
+  const onExit = () => {
+    if (exited) return;
+    exited = true;
+    options.onExit?.();
+  };
+  const exit = (code) => {
+    onExit();
+    process.exit(code);
+  };
 
-  Object.assign(process.env, valueOf(options.env, { origin, port }));
+  let server;
+  for (const signal of ['SIGINT', 'SIGTERM']) {
+    process.on(signal, () => {
+      if (!server) return exit(signalCode(signal));
+      onExit();
+      server.kill(signal);
+    });
+  }
+
+  Object.assign(
+    process.env,
+    withoutUndefined(valueOf(options.env, { origin, port })),
+  );
 
   async function build() {
     const { loadNuxt, buildNuxt, writeTypes } = await options.kit();
@@ -134,21 +165,23 @@ export async function serve(options) {
   }
 
   const existing = options.output && process.env[options.output];
-  const output = existing ? resolve(root, existing) : await build();
-
-  if (process.argv.includes('--build-only')) {
-    onExit();
-    process.exit(0);
+  let output;
+  try {
+    output = existing ? resolve(root, existing) : await build();
+  } catch (error) {
+    console.error(error);
+    exit(1);
   }
+
+  if (process.argv.includes('--build-only')) exit(0);
 
   const entry = join(output, 'server/index.mjs');
   if (!existsSync(entry)) {
     console.error(`No build at ${output}`);
-    onExit();
-    process.exit(1);
+    exit(1);
   }
 
-  const server = spawn(process.execPath, [entry], {
+  server = spawn(process.execPath, [entry], {
     stdio: 'inherit',
     env: {
       ...process.env,
@@ -156,15 +189,5 @@ export async function serve(options) {
       PORT: port,
     },
   });
-
-  for (const signal of ['SIGINT', 'SIGTERM']) {
-    process.on(signal, () => {
-      onExit();
-      server.kill(signal);
-    });
-  }
-  server.on('exit', (code) => {
-    onExit();
-    process.exit(code ?? 0);
-  });
+  server.on('exit', (code, signal) => exit(code ?? signalCode(signal)));
 }

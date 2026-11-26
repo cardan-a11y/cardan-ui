@@ -21,6 +21,8 @@ const popoverActions = [
     icon: 'material-symbols:delete-outline-rounded',
   },
 ];
+
+const filterFrom = ref();
 </script>
 
 <template>
@@ -226,7 +228,29 @@ const popoverActions = [
               </p>
             </template>
           </Popover>
+
+          <Popover
+            label="Filters"
+            icon="material-symbols:filter-list-rounded"
+            span="right"
+            button-variant="secondary"
+            :hide-label="false"
+          >
+            <template #content>
+              <div style="padding: 1rem 1.5rem">
+                <DatePicker v-model="filterFrom" label="From" />
+              </div>
+            </template>
+          </Popover>
         </div>
+
+        <p>
+          A Popover can hold a form field with a popup of its own, such as the
+          calendar of a DatePicker in a filter. The open Popover sets no
+          <code>translate</code>, so the calendar, which is placed with
+          <code>position: fixed</code>, can reach outside it instead of being
+          cut off by its edge.
+        </p>
 
         <div class="text-content">
           <h3>Accessibility requirements</h3>

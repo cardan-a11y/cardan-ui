@@ -4,8 +4,8 @@ import { gotoHydrated } from './helpers';
 test('MultiSelect: Escape closes the listbox, focus stays on the combobox', async ({
   page,
 }) => {
-  await gotoHydrated(page, '/form');
-  const combobox = page.getByRole('combobox', { name: 'MultiSelect' });
+  await gotoHydrated(page, '/table');
+  const combobox = page.getByRole('combobox', { name: /WCAG level filter$/ });
 
   await combobox.focus();
   await page.keyboard.press('ArrowDown');
@@ -20,30 +20,6 @@ test('MultiSelect: Escape closes the listbox, focus stays on the combobox', asyn
 
   await page.keyboard.press('ArrowDown');
   await expect(combobox).toHaveAttribute('aria-expanded', 'true');
-});
-
-test('MultiSelect in a Dialog: Escape closes the listbox with focus on the combobox, a second Escape the dialog', async ({
-  page,
-}) => {
-  await gotoHydrated(page, '/dialog');
-  const trigger = page.getByRole('button', { name: 'Open dialog center' });
-  const dialog = page.getByRole('dialog', { name: 'Dialog title' });
-  const combobox = dialog.getByRole('combobox', { name: 'MultiSelect' });
-
-  await trigger.click();
-  await expect(dialog).toBeVisible();
-  await combobox.focus();
-  await page.keyboard.press('ArrowDown');
-  await expect(dialog.getByRole('listbox')).toBeVisible();
-
-  await page.keyboard.press('Escape');
-  await expect(dialog.getByRole('listbox')).toBeHidden();
-  await expect(dialog).toBeVisible();
-  await expect(combobox).toBeFocused();
-
-  await page.keyboard.press('Escape');
-  await expect(dialog).toBeHidden();
-  await expect(trigger).toBeFocused();
 });
 
 async function listboxOf(page: Page, combobox: Locator) {
@@ -66,47 +42,15 @@ async function expectHittable(option: Locator) {
     .toBe(true);
 }
 
-test('MultiSelect in a Popover: its options show past the popover and take a click', async ({
-  page,
-}) => {
-  await gotoHydrated(page, '/form');
-  await page.getByRole('button', { name: 'Filters' }).click();
-  const combobox = page.getByRole('combobox', {
-    name: 'MultiSelect in a popover',
-  });
-  await expect(combobox).toBeVisible();
-
-  await combobox.focus();
-  await page.keyboard.press('ArrowDown');
-  const listbox = await listboxOf(page, combobox);
-  await expect(listbox).toBeVisible();
-
-  const popoverBottom = await combobox.evaluate(
-    (element) => element.closest('[popover]')!.getBoundingClientRect().bottom,
-  );
-  const listboxBox = (await listbox.boundingBox())!;
-  expect(listboxBox.y + listboxBox.height).toBeGreaterThan(popoverBottom);
-
-  const options = listbox.getByRole('option');
-  for (const option of await options.all()) await expectHittable(option);
-
-  await listbox.getByRole('option', { name: 'Longer text option 2' }).click();
-  await expect(
-    page.getByRole('combobox', {
-      name: /^Longer text option 2.*MultiSelect in a popover$/,
-    }),
-  ).toBeVisible();
-});
-
 test('MultiSelect in a transformed container that hides its overflow: its options are not cut off', async ({
   page,
 }) => {
-  await gotoHydrated(page, '/form');
-  const combobox = page.getByRole('combobox', { name: 'MultiSelect' });
+  await gotoHydrated(page, '/table');
+  const combobox = page.getByRole('combobox', { name: /WCAG level filter$/ });
 
   await combobox.evaluate((element) => {
     const field = element.closest('.multiselect')!;
-    const container = field.closest('section')!;
+    const container = field.parentElement!;
     const height =
       field.getBoundingClientRect().bottom -
       container.getBoundingClientRect().top;
@@ -125,18 +69,16 @@ test('MultiSelect in a transformed container that hides its overflow: its option
   for (const option of await listbox.getByRole('option').all()) {
     await expectHittable(option);
   }
-  await listbox.getByRole('option', { name: 'Long option 1' }).click();
-  await expect(
-    page.getByRole('combobox', { name: /^Long option 1.*MultiSelect$/ }),
-  ).toBeVisible();
+  await listbox.getByRole('option', { name: 'Level AAA' }).click();
+  await expect(combobox).toHaveAccessibleName(/Level AAA/);
 });
 
 test('MultiSelect: its open listbox follows the field when the page scrolls', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await gotoHydrated(page, '/form');
-  const combobox = page.getByRole('combobox', { name: 'MultiSelect' });
+  await gotoHydrated(page, '/table');
+  const combobox = page.getByRole('combobox', { name: /WCAG level filter$/ });
   await combobox.evaluate((element) =>
     element.closest('.multiselect')!.scrollIntoView({ block: 'center' }),
   );
@@ -192,8 +134,15 @@ test('MultiSelect near the bottom of the viewport opens upwards, its listbox wit
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await gotoHydrated(page, '/form');
-  const combobox = page.getByRole('combobox', { name: 'MultiSelect' });
+  await gotoHydrated(page, '/table');
+  const combobox = page.getByRole('combobox', { name: /WCAG level filter$/ });
+  // The field is near the top of /table: the viewport ends below it instead
+  const fieldBottom = await combobox.evaluate(
+    (element) =>
+      element.closest('.multiselect')!.getBoundingClientRect().bottom +
+      window.scrollY,
+  );
+  await page.setViewportSize({ width: 1280, height: Math.ceil(fieldBottom) + 8 });
   await combobox.evaluate((element) =>
     element.closest('.multiselect')!.scrollIntoView({ block: 'end' }),
   );

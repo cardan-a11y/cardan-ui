@@ -209,8 +209,8 @@ export function useMfa() {
     mfaError.value = null;
     loadingSolveMfaChallenge.value = true;
 
-    // Read before the request: on a 401, nuxt-auth-sanctum (3.1.5) navigates
-    // before this gets the answer. Tripwire: test/tripwires.test.ts.
+    // Read before the request: with `redirectIfUnauthenticated` on, the module
+    // navigates on a 401 before this gets the answer
     const route = useRoute();
     const redirect = loginRedirectTarget(route);
     const requestedRedirect = route.query.redirect;
@@ -222,7 +222,7 @@ export function useMfa() {
       });
     } catch (error) {
       if (isUnauthenticated(error)) {
-        // Not nuxt-auth-sanctum's own 401 handling (3.1.5): it gives no reason
+        // Not nuxt-auth-sanctum's own 401 handling: it gives no reason
         // and loses the redirect the sign-in was headed for
         resetMfa();
         createToast({

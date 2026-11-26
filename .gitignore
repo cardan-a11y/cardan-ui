@@ -29,3 +29,6 @@ logs
 
 # Playwright MCP output
 .playwright-mcp/
+
+# Claude Code worktrees (EnterWorktree)
+.claude/worktrees/

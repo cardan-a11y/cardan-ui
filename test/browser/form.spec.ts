@@ -64,3 +64,66 @@ test('SpinButton shows its range error while a number is typed, and hides it in 
   await expect(error).toBeHidden();
   await expect(field).not.toHaveAttribute('aria-invalid');
 });
+
+test('FileInput in document mode with a name: the form posts the file, also after a rejected one, and a submit without one is held back', async ({
+  page,
+}) => {
+  await gotoHydrated(page, '/form');
+  const demo = page.locator('.demo-document-form');
+  const input = demo.getByLabel('Upload file');
+  const submit = demo.getByRole('button', { name: 'Upload', exact: true });
+
+  await submit.click();
+  await expect(input).toBeFocused();
+  await expect(input).toHaveAttribute('aria-invalid', 'true');
+  await expect(input).toHaveAccessibleDescription(/Upload file is missing/);
+
+  await input.setInputFiles({
+    name: 'essay.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from('%PDF-1.4'),
+  });
+  await expect(input).not.toHaveAttribute('aria-invalid');
+  await expect(demo.getByText('essay.pdf', { exact: true })).toBeVisible();
+
+  await submit.click();
+  await expect(demo.locator('pre code')).toHaveText(/^document: essay\.pdf/);
+
+  await input.setInputFiles({
+    name: 'photo.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('png'),
+  });
+  await expect(input).toHaveAttribute('aria-invalid', 'true');
+  await submit.click();
+  await expect(demo.locator('pre code')).toHaveText(/^document: essay\.pdf/);
+});
+
+test.describe('before hydration, also of a lazily hydrated part', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('a submit does not post the form natively, so nothing typed ends up in the address', async ({
+    page,
+  }) => {
+    await page.goto('/form');
+    const requests: string[] = [];
+    page.on('request', (request) => requests.push(request.url()));
+    await page.getByRole('textbox', { name: 'Email address' }).fill('a@b.nl');
+
+    await page.getByRole('button', { name: 'Submit' }).first().click();
+    await page.waitForTimeout(500);
+
+    expect(page.url()).toMatch(/\/form$/);
+    expect(requests).toEqual([]);
+  });
+});
+
+test('a Form rendered after a client-side navigation takes its attributes: the form is a landmark named by its heading', async ({
+  page,
+}) => {
+  await gotoHydrated(page, '/');
+  await page.getByRole('link', { name: 'Form inputs' }).first().click();
+  await expect(page).toHaveURL(/\/form$/);
+
+  await expect(page.getByRole('form', { name: 'Form fields' })).toBeVisible();
+});

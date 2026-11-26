@@ -8,7 +8,10 @@
  * `--app-sidebar-display: none` and sizes it with `--app-sidebar-top`,
  * `--app-sidebar-padding-inline`, `--app-sidebar-padding-block`,
  * `--app-sidebar-width`, `--app-sidebar-collapsed-width` and
- * `--app-sidebar-border-color`.
+ * `--app-sidebar-border-color`. The navigation keeps at least
+ * `--app-sidebar-scrollbar-room` (0.75rem) at its inline end, where an overlay
+ * scrollbar (macOS, phones) would cover its links; a wider
+ * `--app-sidebar-padding-inline` holds it already.
  */
 const {
   id = 'app-sidebar',
@@ -112,6 +115,10 @@ if (import.meta.server && collapsible) {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  padding-inline-end: max(
+    var(--app-sidebar-padding-inline, 0px),
+    var(--app-sidebar-scrollbar-room, 0.75rem)
+  );
 }
 
 .app-sidebar-footer {
@@ -162,6 +169,8 @@ if (import.meta.server && collapsible) {
 
   .app-sidebar-content {
     scrollbar-width: none;
+    /* No scrollbar to make room for: the icons stay centred */
+    padding-inline-end: var(--app-sidebar-padding-inline, 0px);
 
     /* Not `display: none`: still the name of its link or button */
     .button-text {

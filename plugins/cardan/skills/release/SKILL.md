@@ -74,6 +74,9 @@ projects. See changelog for details.`, without details: the changelog says what 
    `cardan:pr-body` skill. Merge only when the user says so. After the
    merge, the next work starts on `release/<next patch version>`, cut from
    `main`.
+8. **Notion**: after the merge, the issues on the release PR's `Notion:`
+   line go live as the guidelines' "The Notion issue follows the work"
+   describes.
 
 ## Release a project
 
@@ -120,8 +123,9 @@ origin/main..origin/develop` lists one line per pull request merged into
    that the user wants to raise (set it on `develop` first, through its own
    PR), otherwise `Release <today>`. The description is a list with one
    bullet per merged PR, as `#<number> <title>`, in the order they were
-   merged, then a line that says what to check on production, and the
-   attribution line the session was given. Merge only when the user says
+   merged, then a line that says what to check on production, a `Notion:`
+   line with the issues on those PRs' `Notion:` lines, and the attribution
+   line the session was given. Merge only when the user says
    so, with a merge commit, never a squash: a squash makes `main` and
    `develop` diverge and the next release shows the old commits again.
 4. **Bring main back into develop** after the merge, and after every
@@ -137,6 +141,9 @@ origin/main..origin/develop` lists one line per pull request merged into
    check that `develop` already did it. Notes of older cardan-ui releases
    are removed from the file over time; find them with
    `git log -p MIGRATION.md` in cardan-ui.
+6. **Notion**: after the merge, the issues on the `Notion:` lines of the
+   merged PRs go live as the guidelines' "The Notion issue follows the
+   work" describes.
 
 ### Work for the release
 

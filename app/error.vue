@@ -6,8 +6,8 @@
  * own text: `createError({ status: 404, data: { text: t('audit.not-found') } })`.
  *
  * Head tags that differ between the error page and the pages go in `app.head`
- * or a plugin that reads `useError()`, not a layout's `useHead()`: Nuxt 4.6.4
- * keeps them while a page transition is pending. Tripwire: test/tripwires.test.ts.
+ * or a plugin that reads `useError()`, not a layout's `useHead()`: Nuxt keeps
+ * a layout's tags while a page transition is pending.
  */
 import type { NuxtError } from '#app';
 

@@ -93,16 +93,5 @@ export default defineNuxtConfig({
     port: 3003,
   },
 
-  // As in cardan-academy-nuxt and cardan-auditor-nuxt
-  future: {
-    compatibilityVersion: 5,
-  },
-
-  experimental: {
-    // compatibilityVersion 5 drops the server auto-imports that @nuxtjs/i18n
-    // and @nuxt/image still need. Tripwire: test/tripwires.test.ts.
-    nitroAutoImports: true,
-  },
-
   compatibilityDate: '2025-03-19',
 });

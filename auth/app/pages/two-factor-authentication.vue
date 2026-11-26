@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({
-  // Not `sanctum:guest`: nuxt-auth-sanctum (3.1.5) registers it only with
-  // `globalMiddleware` off. Tripwire: test/tripwires.test.ts.
+  // Not `sanctum:guest`: nuxt-auth-sanctum registers it only with
+  // `globalMiddleware` off
   sanctum: { guestOnly: true },
 });
 

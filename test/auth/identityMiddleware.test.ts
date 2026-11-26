@@ -1,3 +1,4 @@
+import type { RouteLocationNormalized } from 'vue-router';
 import { describe, it, expect, onTestFinished, vi } from 'vitest';
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { useRouter } from '#imports';
@@ -46,6 +47,8 @@ describe('identity middleware', () => {
   useScenario(academy);
 
   it('holds a navigation until the identity is known, so the next middleware decides on it', async () => {
+    // The mfa-setup guard decides: Sanctum's global middleware is off in the
+    // playground, and its place after this one is pinned in layerConfig.test.ts
     const answer = identityUnderWay();
 
     const navigation = useRouter().push('/forgot-password');
@@ -75,7 +78,9 @@ describe('identity middleware', () => {
 
   it('waits on its own, for a route without the flag', async () => {
     const answer = identityUnderWay();
-    const to = useRouter().resolve('/forgot-password');
+    const to = useRouter().resolve(
+      '/forgot-password',
+    ) as RouteLocationNormalized;
 
     const result = identityMiddleware(to, useRouter().currentRoute.value);
     expect(await settlesWithin(Promise.resolve(result))).toBe(false);

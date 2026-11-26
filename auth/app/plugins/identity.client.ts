@@ -12,7 +12,12 @@ export async function loadIdentity(): Promise<void> {
 
     const response = await useSanctumClient().raw<{ data: AuthUser }>(
       config.endpoints.user,
-      { ignoreResponseError: true, timeout: IDENTITY_TIMEOUT_MS },
+      {
+        ignoreResponseError: true,
+        // Not ofetch's `timeout` (1.x), whose timer stops at the headers: a
+        // body that stalls would keep `$identityReady` pending
+        signal: AbortSignal.timeout(IDENTITY_TIMEOUT_MS),
+      },
     );
 
     const data = response._data;
@@ -29,12 +34,16 @@ export async function loadIdentity(): Promise<void> {
   }
 }
 
-// In place of nuxt-auth-sanctum's initial request, which would put one
-// visitor's profile in a cached page. Tripwire: test/tripwires.test.ts.
+// In place of nuxt-auth-sanctum's initial request, which would cache one visitor's profile in a
+// page; after the module's plugin, as module plugins come first (test/auth/identity.test.ts).
 export default defineNuxtPlugin({
   name: 'cardan-auth:identity',
-  dependsOn: ['nuxt-auth-sanctum'],
   setup() {
+    if (!useSanctumClient()) {
+      throw new Error(
+        "[cardan-auth] The identity plugin ran before nuxt-auth-sanctum's: no Sanctum client.",
+      );
+    }
     return { provide: { identityReady: loadIdentity() } };
   },
 });

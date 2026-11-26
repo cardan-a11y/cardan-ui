@@ -300,7 +300,7 @@ html:has(.dialog[open]) {
   border-inline-end: 1px solid var(--color-dialog-border);
 
   &[open] {
-    animation: slideFadeInLeft var(--duration-md) forwards;
+    animation: slideFadeInLeft var(--duration-md);
   }
 
   &[closing] {
@@ -313,7 +313,7 @@ html:has(.dialog[open]) {
   border-inline-start: 1px solid var(--color-dialog-border);
 
   &[open] {
-    animation: slideFadeInRight var(--duration-md) forwards;
+    animation: slideFadeInRight var(--duration-md);
   }
 
   &[closing] {
@@ -331,7 +331,7 @@ html:has(.dialog[open]) {
   width: 100%;
 
   &[open] {
-    animation: slideInTop var(--duration-md) forwards;
+    animation: slideInTop var(--duration-md);
 
     &::backdrop {
       animation: fadeIn var(--duration-md) forwards;
@@ -360,7 +360,7 @@ html:has(.dialog[open]) {
   );
 
   &[open] {
-    animation: slideInBottom var(--duration-sm) forwards;
+    animation: slideInBottom var(--duration-sm);
 
     &::backdrop {
       animation: fadeIn var(--duration-sm) forwards;

@@ -65,6 +65,9 @@ const emit = defineEmits<{
   submit: [data: FormData, event?: Event];
   invalid: [event: Event];
 }>();
+
+// method="dialog": a submit before (lazy) hydration does nothing, rather than
+// put what was typed in the address; action="." gives iOS its Go key
 </script>
 
 <template>
@@ -76,6 +79,7 @@ const emit = defineEmits<{
       validity ? 'show-valid' : 'show-invalid',
     ]"
     novalidate
+    method="dialog"
     action="."
     @submit.prevent="handleSubmit"
   >

@@ -30,8 +30,8 @@ export function useLogoutDialog() {
 
   /** Signs out, then closes the dialog; throws when the API refuses. */
   async function handleLogout() {
-    // nuxt-auth-sanctum (3.1.5) throws on `logout()` without a session.
-    // Tripwire: test/tripwires.test.ts.
+    // `logout()` throws without a session. Its `sanctum:logout` hook closes the
+    // dialog before the redirect; the close below covers any other order.
     if (isAuthenticated.value) {
       const unhook = nuxtApp.hook('sanctum:logout', closeDialog);
       try {

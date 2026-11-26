@@ -9,7 +9,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import {
+import optimizeDeps, {
   LAYER_DEPENDENCIES,
   mergeInclude,
   projectDependencies,
@@ -77,6 +77,21 @@ describe('optimize-deps', () => {
     expect(await projectDependencies('.playground')).toEqual(
       LAYER_DEPENDENCIES,
     );
+  });
+
+  it.each([
+    ['development', true, ['diff', ...LAYER_DEPENDENCIES]],
+    ['a build, prepare or test run', false, ['diff']],
+  ])('adds them in development only: %s', async (_, dev, expected) => {
+    const options = {
+      dev,
+      rootDir: '.playground',
+      vite: { optimizeDeps: { include: ['diff'] } },
+    };
+
+    await optimizeDeps({}, { options } as never);
+
+    expect(options.vite.optimizeDeps.include).toEqual(expected);
   });
 
   it("keeps the project's own entries, and lists a package once", () => {

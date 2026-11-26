@@ -2,7 +2,6 @@ import { expect } from 'vitest';
 import axeCore from 'axe-core';
 import { axe } from 'vitest-axe';
 import * as matchers from 'vitest-axe/matchers';
-import type { AxeMatchers } from 'vitest-axe/matchers';
 
 // For a project that still writes `expect(…).toHaveNoViolations()` with a
 // type shim of its own; the layer's tests use expectNoViolations(). Goes once
@@ -17,15 +16,14 @@ export function checkA11y() {
   return axe(document.body, { rules: { region: { enabled: false } } });
 }
 
-/**
- * checkA11y() finds no violation. The matcher stays in this file: a
- * `declare module 'vitest'` here would type the checkout's vitest, not a
- * project's, so the call casts instead (vitest-axe 0.1 types an old vitest).
- * Tripwire: test/tripwires.test.ts.
- */
+/** checkA11y() finds no violation; a failure lists each with its elements. */
 export async function expectNoViolations(): Promise<void> {
-  const results = await checkA11y();
-  (expect(results) as unknown as AxeMatchers).toHaveNoViolations();
+  const { violations } = await checkA11y();
+  const found = violations.map(
+    ({ id, help, nodes }) =>
+      `${id}: ${help} (${nodes.map(({ target }) => target.join(' ')).join(', ')})`,
+  );
+  expect(found.join('\n'), 'axe violations').toBe('');
 }
 
 /** An element, or what `find()` or `get()` of @vue/test-utils returns */
@@ -43,6 +41,8 @@ interface AxeInternals {
   };
 }
 
+// axe-core's internals: `axe.run()`, its public API, reports rules, not a name
+// or role. The component tests calling these run on the real axe-core.
 function withAxe<T>(target: Target, compute: (node: unknown) => T): T {
   const element = elementOf(target);
   if (!element.isConnected) {

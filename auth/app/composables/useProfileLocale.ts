@@ -41,14 +41,14 @@ export function useProfileLocale() {
     applied.value = resolved.locale;
     if ($i18n.locale.value === resolved.locale) return;
 
-    const done = $i18n.setLocale(resolved.locale as typeof $i18n.locale.value);
+    const done = switchLocale($i18n, resolved.locale);
     const settle = () => {
       if (switchInProgress.get(nuxtApp) === done) {
         switchInProgress.delete(nuxtApp);
       }
     };
     switchInProgress.set(nuxtApp, done);
-    done.then(settle, settle);
+    void done.then(settle);
     await done;
   }
 

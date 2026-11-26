@@ -40,9 +40,12 @@ intent.
      renders but does not document as a hook, a `provide` of one of its
      injection keys, or a copy of its behaviour, with or without a comment.
      The layer's CLAUDE.md has such flaws fixed in the layer, never worked
-     around in a project. Not a finding when its comment calls it a stopgap,
-     names the layer release that removes it and has a tripwire entry (see
-     below).
+     around in a project. Not a finding when its comment calls it a stopgap
+     and names the layer release, or the Notion issue, that removes it.
+   - 🔴 Important: new code that reads a third-party dependency's private
+     field (`_name`, an internal key or plugin name) or relies on behaviour
+     it does not document, where a public API would do: name that API. A
+     project's stopgap for Cardan UI falls under the item above instead.
    - 🟡 Nit: a comment that is not one of the three kinds the Cardan
      guidelines allow (a workaround, a deliberate deviation from a standard,
      a public docblock), so one a name, a function, a constant or a test
@@ -50,9 +53,13 @@ intent.
      a docblock that explains how something works inside; commented-out
      code; a comment in or on the changed code that no longer matches it; a
      workaround comment that does not name what is wrong or missing and when
-     it can go; a workaround tied to a dependency's version or internals, or
-     to a Cardan UI release, without an entry in the repository's tripwire
-     test (`tripwires.test.ts` in its test folder).
+     it can go; a third-party private field or undocumented behaviour with
+     no public way, whose comment does not name the public ways tried, or
+     that has neither an entry in the repository's tripwire test
+     (`tripwires.test.ts` in its test folder) nor a test on the real
+     dependency that its comment names; a new tripwire entry for
+     anything else (a workaround on public APIs, a wait for a Cardan UI
+     release), which fails at every update for nothing.
    A project change that needs a Cardan UI release not yet on `main` (a
    removed workaround, a new prop or key) is not a finding: merging after
    that release is the standard order. Name the release it waits for in

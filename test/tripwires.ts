@@ -1,20 +1,20 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * The tripwire runner, for the layer's test/tripwires.test.ts and a project's:
+ * The tripwire runner, for a project's test/tripwires.test.ts:
  *
  * ```ts
  * import { tripwires } from '#layer-test/tripwires';
  * tripwires(resolve(__dirname, '..'), [ ...entries ]);
  * ```
  *
- * A workaround that holds for one major.minor of a dependency, or its
- * internals, or until a Cardan UI release: its entry fails once the installed
- * version leaves `checked`, or once the checkout reaches `release`; then remove
- * the workaround, or confirm it and update the entry. Its comment points to
- * the project's tripwire test.
+ * Only for a last resort: a workaround that reads a dependency's internals or
+ * relies on behaviour it does not document, because no public way exists. Its
+ * entry fails once the installed version leaves `checked`; then remove the
+ * workaround, or confirm it and update the entry. Its comment points to the
+ * project's tripwire test and names the public ways that were tried.
  */
 export interface Tripwire {
   /** What the workaround does, the name of its test */
@@ -28,79 +28,48 @@ export interface Tripwire {
   check: string;
 }
 
-/** A workaround until a Cardan UI release ("until 2.6.1 is on `main`") */
-export interface ReleaseTripwire {
-  name: string;
-  /** The full version of Cardan UI that makes the workaround needless */
-  release: string;
-  where: string;
-  check: string;
-}
-
 type Manifest = { version: string; dependencies?: Record<string, string> };
 
-function manifest(dir: string, pkg?: string): Manifest {
-  return JSON.parse(
-    readFileSync(
-      pkg
-        ? resolve(dir, 'node_modules', pkg, 'package.json')
-        : resolve(dir, 'package.json'),
-      'utf8',
-    ),
-  );
-}
-
-/** The checkout of Cardan UI this file is in */
-const layerRoot = resolve(__dirname, '..');
-
-/** -1, 0 or 1; versions as `2.6.0`, without a prerelease */
-export function compareVersions(a: string, b: string): number {
-  const pa = a.split('.').map(Number);
-  const pb = b.split('.').map(Number);
-  for (let i = 0; i < 3; i++) {
-    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
-    if (d) return Math.sign(d);
-  }
-  return 0;
+function manifest(dir: string, pkg: string): Manifest | undefined {
+  const path = resolve(dir, 'node_modules', pkg, 'package.json');
+  return existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : undefined;
 }
 
 /** What the entry finds, and the message when it fails; exported for its test */
 export function readTripwire(
   root: string,
-  entry: Tripwire | ReleaseTripwire,
-  layer = layerRoot,
+  entry: Tripwire,
 ): { found: string; expected: string; message: string } {
-  if ('release' in entry) {
-    const version = manifest(layer).version;
-    return {
-      found: compareVersions(version, entry.release) < 0 ? 'before' : 'reached',
-      expected: 'before',
-      message: `Cardan UI is now ${version}, which reaches ${entry.release}: re-check ${entry.where} (${entry.check}), then remove the workaround or update this entry.`,
-    };
+  let found: string | undefined;
+  let now: string;
+  if (entry.parent) {
+    const parent = manifest(root, entry.parent);
+    found = parent?.dependencies?.[entry.package];
+    now = !parent
+      ? `${entry.parent} is not installed`
+      : found
+        ? `${entry.package} is now ${found} in ${entry.parent}`
+        : `${entry.package} is no longer a dependency of ${entry.parent}`;
+  } else {
+    const version = manifest(root, entry.package)?.version;
+    found = version?.split('.').slice(0, 2).join('.');
+    now = version
+      ? `${entry.package} is now ${version}`
+      : `${entry.package} is not installed`;
   }
 
-  const version = entry.parent
-    ? `${manifest(root, entry.parent).dependencies?.[entry.package]} in ${entry.parent}`
-    : manifest(root, entry.package).version;
-  const found = entry.parent
-    ? manifest(root, entry.parent).dependencies?.[entry.package]
-    : version.split('.').slice(0, 2).join('.');
-
   return {
-    found: String(found),
+    found: found ?? 'nothing',
     expected: entry.checked,
-    message: `${entry.package} is now ${version}: re-check ${entry.where} (${entry.check}), then remove the workaround or update this entry.`,
+    message: `${now}: re-check ${entry.where} (${entry.check}), then remove the workaround or update this entry.`,
   };
 }
 
 /**
  * One test per entry. `root` is the project's root: its `node_modules` holds
- * the installed versions; a release entry reads the checkout's package.json.
+ * the installed versions.
  */
-export function tripwires(
-  root: string,
-  entries: (Tripwire | ReleaseTripwire)[],
-) {
+export function tripwires(root: string, entries: Tripwire[]) {
   describe('tripwires', () => {
     it.each(entries)('$name', (entry) => {
       const { found, expected, message } = readTripwire(root, entry);
