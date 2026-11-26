@@ -116,12 +116,17 @@ for (const colorScheme of ['light', 'dark'] as const) {
   test.describe(`${colorScheme} mode`, () => {
     test.use({ colorScheme });
 
-    for (const name of ['Unavailable button', 'Send']) {
-      test(`${name}: an unavailable button's focus ring keeps 3:1`, async ({
-        page,
-      }) => {
+    for (const [role, name] of [
+      ['button', 'Unavailable button'],
+      ['button', 'Send'],
+      ['button', 'Loading'],
+      ['link', 'Loading link'],
+    ] as const) {
+      test(`${name}: its focus ring keeps 3:1`, async ({ page }) => {
         await gotoHydrated(page, '/buttons');
-        const button = page.getByRole('button', { name, exact: true });
+        const button = page
+          .getByRole('main')
+          .getByRole(role, { name: new RegExp(`^(Loading )?${name}$`) });
         await expect(button).toHaveAttribute('aria-disabled', 'true');
         await button.focus();
         await expect(button).toBeFocused();

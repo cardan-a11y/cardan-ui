@@ -200,7 +200,7 @@ const emit = defineEmits<{
       hideLabel && 'button--icon-only',
       loading && 'button--loading',
       (loading || ariaDisabled) && 'disabled',
-      ariaDisabled && !loading && 'button--unavailable',
+      ariaDisabled && !loading && !disabled && 'button--unavailable',
     ]"
     :style="computedStyle"
     :title="disabled ? undefined : title"
@@ -738,12 +738,10 @@ const emit = defineEmits<{
   }
 }
 
-/*
- * Looks disabled but takes a press. Its resting colours are dimmed, also on an
- * active link, not the button itself, so its focus ring keeps its contrast
- */
-.button.button--unavailable {
-  pointer-events: auto;
+/* Dims its resting colours, also on an active link, not the button itself,
+   so its focus ring keeps its contrast */
+.button.button--unavailable,
+.button.button--loading {
   opacity: 1;
   color: color-mix(
     in srgb,
@@ -770,6 +768,11 @@ const emit = defineEmits<{
     color: GrayText;
     border-color: GrayText;
   }
+}
+
+/* Takes a press, which may say why nothing happens */
+.button.button--unavailable {
+  pointer-events: auto;
 }
 
 .button--icon-only {

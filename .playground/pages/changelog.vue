@@ -30,7 +30,13 @@ useHead({ title: 'Changelog' });
           <code>disabled</code> takes it out of the Tab order. A submit button
           does not submit its form and a link is not followed, but a press still
           emits <code>click</code>, so the page can say why; the attribute
-          alone, before, only told the screen reader.
+          alone, before, only told the screen reader. It dims its colours, not
+          the whole button, so its focus ring keeps its contrast.
+        </li>
+        <li>
+          A loading Button dims its colours instead of the whole button, so its
+          focus ring keeps its contrast; in Windows' high contrast mode it shows
+          in the system's grey.
         </li>
         <li>
           ComboBox scrolls the highlighted option fully into its list, where
