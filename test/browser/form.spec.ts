@@ -117,3 +117,13 @@ test.describe('before hydration, also of a lazily hydrated part', () => {
     expect(requests).toEqual([]);
   });
 });
+
+test('a Form rendered after a client-side navigation takes its attributes: the form is a landmark named by its heading', async ({
+  page,
+}) => {
+  await gotoHydrated(page, '/');
+  await page.getByRole('link', { name: 'Form inputs' }).first().click();
+  await expect(page).toHaveURL(/\/form$/);
+
+  await expect(page.getByRole('form', { name: 'Form fields' })).toBeVisible();
+});

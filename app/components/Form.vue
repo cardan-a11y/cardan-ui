@@ -65,12 +65,12 @@ const emit = defineEmits<{
   submit: [data: FormData, event?: Event];
   invalid: [event: Event];
 }>();
+
+// method="dialog": a submit before (lazy) hydration does nothing, rather than
+// put what was typed in the address; action="." gives iOS its Go key
 </script>
 
 <template>
-  <!-- method="dialog": a submit before hydration (or a lazy hydration) does
-       nothing, rather than put what was typed in the address. The action is
-       unused but gives iOS's keyboard its Go and Search key -->
   <form
     ref="form"
     :class="[

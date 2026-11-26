@@ -182,8 +182,12 @@ async function handleSubmit(formData: FormData) {
     </Card>
 
     <Card>
-      <h2>Form fields</h2>
-      <Form @submit="handleSubmit" @reset="raw = ''">
+      <h2 id="form-fields-heading">Form fields</h2>
+      <Form
+        aria-labelledby="form-fields-heading"
+        @submit="handleSubmit"
+        @reset="raw = ''"
+      >
         <Input
           :required="required"
           name="input"
