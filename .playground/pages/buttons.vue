@@ -63,9 +63,9 @@ async function onSend() {
         <Button variant="3d" label="3D" />
         <Button variant="link" label="Link" style="margin-inline-start:0.75rem" />
       </div>
+    </Card>
 
-      <Spacer size="xxl" />
-
+    <Card>
       <h2>Sizes</h2>
       <div class="flex-wrapper">
         <Button icon="material-symbols:accessibility-new-rounded" size="xl" label="Extra Large" />
@@ -74,9 +74,9 @@ async function onSend() {
         <Button icon="material-symbols:accessibility-new-rounded" size="sm" label="Small" />
         <Button icon="material-symbols:accessibility-new-rounded" size="xs" label="Extra Small" />
       </div>
+    </Card>
 
-      <Spacer size="xxl" />
-
+    <Card>
       <h2>Font sizes</h2>
       <div class="flex-wrapper" style="--gap: 1rem">
         <Button variant="link" font-size="lg" label="Large link" />
@@ -85,9 +85,9 @@ async function onSend() {
         <Button variant="link" font-size="xs" label="XS link" />
         <Button variant="link" font-size="xxs" label="XXS link" />
       </div>
+    </Card>
 
-      <Spacer size="xxl" />
-
+    <Card>
       <h2>Icon sizes</h2>
       <div class="flex-wrapper" style="--gap: 1rem">
         <Button icon="material-symbols:check-circle-rounded" icon-pos="end" icon-size="lg" label="Large icon" />
@@ -96,9 +96,9 @@ async function onSend() {
         <Button icon="material-symbols:check-circle-rounded" icon-pos="end" icon-size="xs" label="XS icon" />
         <Button icon="material-symbols:check-circle-rounded" icon-pos="end" icon-size="xxs" label="XXS icon" />
       </div>
+    </Card>
 
-      <Spacer size="xxl" />
-
+    <Card>
       <h2>Icons</h2>
       <div class="flex-wrapper">
         <Button
@@ -118,9 +118,9 @@ async function onSend() {
           label="Cardan.com"
         />
       </div>
+    </Card>
 
-      <Spacer size="xxl" />
-
+    <Card>
       <h2>Border radius</h2>
       <div class="flex-wrapper">
         <Button
@@ -162,9 +162,9 @@ async function onSend() {
           label="Download"
         />
       </div>
+    </Card>
 
-      <Spacer size="xxl" />
-
+    <Card>
       <h2>States</h2>
       <div class="flex-wrapper">
         <Button size="lg" loading label="Loading" />
