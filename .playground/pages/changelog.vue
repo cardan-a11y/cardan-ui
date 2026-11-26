@@ -7,6 +7,47 @@ useHead({ title: 'Changelog' });
     <h1>Changelog</h1>
     <p class="mbe-2">Release notes for new features and bug fixes.</p>
 
+    <ChangelogEntry v="2.6.2" date="2026-11-26">
+      <ul>
+        <li>
+          ComboBox selects several options with <code>multiple</code>: the same
+          field, with a popup that is a dialog of checkboxes, which focus moves
+          into to tick; <code>v-model</code> is an array of values and
+          <code>name</code> gives a hidden input per value. It replaces
+          MultiSelect's <code>multiple</code> and <code>tags</code> modes, so
+          MultiSelect has no use left.
+        </li>
+        <li>
+          ComboBox's <code>create-option</code> offers to create the typed text
+          when no option has it, and emits <code>create</code>; an option whose
+          <code>disabled-key</code> field is set is read and reached but never
+          picked. Checkbox has an <code>aria-disabled</code> prop for the same:
+          focusable, but a click or Space does not tick it.
+        </li>
+        <li>
+          ComboBox scrolls the highlighted option fully into its list, where
+          Chromium left it cut off by a fraction of a pixel at 400% zoom.
+        </li>
+        <li>
+          The README lists the packages a project installs for the components
+          it uses, such as <code>compressorjs</code> for FileInput: a
+          production build fails without them.
+        </li>
+        <li>
+          The layer's token test and contrast spec check only the template;
+          each project checks its own <code>main.css</code> in its own suite.
+        </li>
+        <li>
+          The playground shows ComboBox and ComboBox <code>multiple</code> side
+          by side on one page.
+        </li>
+        <li>
+          The cardan Claude Code plugin: the release skill also finds the
+          release's Notion issues by their Release field.
+        </li>
+      </ul>
+    </ChangelogEntry>
+
     <ChangelogEntry v="2.6.1" date="2026-11-26">
       <ul>
         <li>
