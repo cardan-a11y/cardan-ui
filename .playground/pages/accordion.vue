@@ -7,33 +7,31 @@ const isAccordionOpen = ref(false);
 
 <template>
   <div class="demo-page details">
+    <p class="demo-eyebrow">Layout</p>
     <h1>Accordion pattern</h1>
-
-    <blockquote>
-    <p class="fs-lg">
-      An accordion is a vertically stacked set of interactive headings that each
-      contain a title, content snippet, or thumbnail representing a section of
-      content. The headings function as controls that enable users to reveal or
-      hide their associated sections of content.
-    </p>
-
-    <p class="fs-sm mbe-2 c-grey-text">
-      Source:
+    <p class="demo-lead">
+      A heading that opens and closes the section of content below it.
+      <code>Accordion</code> follows the APG
       <Button
-        label="ARIA Design Patterns"
+        label="accordion"
         to="https://www.w3.org/WAI/ARIA/apg/patterns/accordion"
         variant="link"
         target="_blank"
       />
+      pattern, <code>AccordionDetails</code> is the native
+      <code>{{ `<details>` }}</code>.
     </p>
-    </blockquote>
 
-    <div class="details-demo-cols">
+    <section class="demo-section" aria-labelledby="accordion-details">
+      <h2 id="accordion-details">AccordionDetails</h2>
+      <p class="demo-hint">
+        The native <code>{{ `<details>` }}</code> and
+        <code>{{ `<summary>` }}</code> elements. Give several the same
+        <code>name</code> to open only one at a time, and set
+        <code>icon-pos="start"</code> to show the icon before the trigger text.
+      </p>
+
       <Card>
-        <h2>AccordionDetails</h2>
-
-        <p class="c-grey-text">This component uses the native <code>{{ `<details>` }}</code> and <code>{{ `<summary>` }}</code> elements.</p>
-
         <AccordionDetails :open="isAccordionDetailsOpen" name="demo-panels">
           <template #trigger>Accordion with HTML</template>
           <template #content>
@@ -82,15 +80,19 @@ const isAccordionOpen = ref(false);
             </p>
           </template>
         </AccordionDetails>
-
-        <p class="c-grey-text">Give multiple components the same <code>name</code> attribute to only open one at a time. Set <code>icon-pos="start"</code> to show the icon before the trigger text.</p>
       </Card>
+    </section>
+
+    <section class="demo-section" aria-labelledby="accordion-accordion">
+      <h2 id="accordion-accordion">Accordion</h2>
+      <p class="demo-hint">
+        Our own component, animated with CSS. Set <code>h-tag</code> to the
+        heading level the trigger has in the page, so the trigger is a heading
+        with a button in it, as the pattern asks. Set <code>open</code> to open
+        it from outside.
+      </p>
 
       <Card>
-        <h2>Accordion</h2>
-
-        <p class="c-grey-text">Custom accordion component that uses CSS for smooth animations.</p>
-
         <Accordion :open="isAccordionOpen" h-tag="h3">
           <template #trigger>Accordion with CSS</template>
 
@@ -142,12 +144,13 @@ const isAccordionOpen = ref(false);
             </p>
           </template>
         </Accordion>
-
-        <p class="c-grey-text">Set <code>h-tag</code> to the heading level the trigger has in the page, so the trigger is a heading with a button in it, as the pattern asks. Set <code>open</code> to open it from outside.</p>
       </Card>
+    </section>
+
+    <section class="demo-section" aria-labelledby="accordion-a11y">
+      <h2 id="accordion-a11y">Accessibility requirements</h2>
 
       <Card>
-        <h2>Accessibility Requirements</h2>
         <ul class="a11y-list">
           <li>The accordion trigger is a <code>button</code> element.</li>
           <li>
@@ -175,15 +178,27 @@ const isAccordionOpen = ref(false);
           </li>
         </ul>
       </Card>
-    </div>
+    </section>
   </div>
 </template>
 
 <style>
 .demo-page.details {
+  .card {
+    margin-block-end: 0;
+  }
+
+  .a11y-list {
+    margin-block: 0;
+  }
+
   .details-wrapper,
   .accordion-wrapper {
     margin-block-end: 1rem;
+
+    &:last-child {
+      margin-block-end: 0;
+    }
   }
 
   .details-panel,

@@ -136,3 +136,87 @@ s {
 .auth-page-content {
   min-height: calc(100svh - 10rem);
 }
+
+:where(.demo-eyebrow) {
+  margin-block: 0 0.5rem;
+  color: var(--color-accent-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+:where(.demo-lead) {
+  max-inline-size: 44rem;
+  margin-block: 0 2rem;
+  color: var(--color-grey-text);
+  font-size: var(--font-size-lg);
+}
+
+:where(.demo-hint) {
+  max-inline-size: 44rem;
+  margin-block: 0 1.5rem;
+  color: var(--color-grey-text);
+}
+
+:where(.demo-section) {
+  margin-block-start: 4rem;
+
+  > h2 {
+    margin-block: 0 0.5rem;
+  }
+
+  > h3 {
+    margin-block: 2rem 0.75rem;
+  }
+}
+
+/* --demo-column: the narrowest a column gets */
+:where(.demo-grid) {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(100%, var(--demo-column, 14rem)), 1fr)
+  );
+  gap: 1rem;
+}
+
+:where(.demo-tile) {
+  display: grid;
+  align-content: start;
+  gap: 0.25rem;
+  padding: 1.125rem;
+  border: 1px solid var(--card-border-color);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-card-bg);
+  font-size: var(--font-size-sm);
+
+  > strong {
+    font-size: var(--font-size-md);
+  }
+
+  > span {
+    color: var(--color-grey-text);
+  }
+}
+
+/* The brand's circle, one tone darker than its surface: --brand-circle-color,
+   --brand-circle-size and --brand-circle-top place it */
+:where(.brand-circle) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset-block-start: var(--brand-circle-top, 52%);
+    inset-inline-start: 50%;
+    inline-size: var(--brand-circle-size, 86%);
+    aspect-ratio: 1;
+    border-radius: var(--radius-full);
+    background-color: var(--brand-circle-color);
+    translate: -50% 0;
+  }
+}

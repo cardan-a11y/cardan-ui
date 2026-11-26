@@ -21,99 +21,107 @@ const longTrail: BreadcrumbItem[] = [
 
 <template>
   <div class="demo-page breadcrumbs-page">
+    <p class="demo-eyebrow">Layout</p>
     <h1>Breadcrumbs</h1>
+    <p class="demo-lead">
+      A trail of links to the parent pages of the current page, so a user sees
+      where the page sits in the site. It follows the APG
+      <Button
+        label="breadcrumb"
+        to="https://www.w3.org/WAI/ARIA/apg/patterns/breadcrumb"
+        variant="link"
+        target="_blank"
+      />
+      pattern.
+    </p>
 
-    <blockquote>
-      <p class="fs-md">
-        A breadcrumb trail consists of a list of links to the parent pages of
-        the current page in hierarchical order. It helps users find their place
-        within a website or web application.
+    <section class="demo-section" aria-labelledby="breadcrumbs-trail">
+      <h2 id="breadcrumbs-trail">Trail</h2>
+      <p class="demo-hint">
+        <code>items</code> is the trail in order, home included. The last item
+        is the current page and needs no <code>to</code>.
       </p>
 
-      <p class="fs-sm mbe-2 c-grey-text">
-        Source:
-        <Button
-          label="ARIA Design Patterns"
-          to="https://www.w3.org/WAI/ARIA/apg/patterns/breadcrumb"
-          variant="link"
-          target="_blank"
-        />
-      </p>
-    </blockquote>
+      <Card>
+        <Breadcrumbs :items="trail" />
 
-    <Card>
-      <h2>Trail</h2>
+        <code
+          >{{ `<Breadcrumbs
+            :items="[
+              { label: 'Home', to: '/' },
+              { label: 'Tabs', to: '/tabs' },
+              { label: 'Breadcrumbs' },
+            ]"
+          />` }}</code
+        >
+      </Card>
+    </section>
 
-      <Breadcrumbs :items="trail" />
-
-      <code
-        >{{ `<Breadcrumbs
-          :items="[
-            { label: 'Home', to: '/' },
-            { label: 'Tabs', to: '/tabs' },
-            { label: 'Breadcrumbs' },
-          ]"
-        />` }}</code
-      >
-    </Card>
-
-    <Card>
-      <h2>A long trail</h2>
-
-      <p class="fs-sm c-grey-text">
+    <section class="demo-section" aria-labelledby="breadcrumbs-long">
+      <h2 id="breadcrumbs-long">A long trail</h2>
+      <p class="demo-hint">
         The trail wraps where it runs out of room, and a long title breaks
         inside its own item. These items are Dutch on an English page, so each
         has a <code>lang</code>.
       </p>
 
-      <Breadcrumbs :items="longTrail" label="Breadcrumb, long trail" />
-    </Card>
+      <Card>
+        <Breadcrumbs :items="longTrail" label="Breadcrumb, long trail" />
+      </Card>
+    </section>
 
-    <Card>
-      <h2>Accessibility requirements</h2>
+    <section class="demo-section" aria-labelledby="breadcrumbs-a11y">
+      <h2 id="breadcrumbs-a11y">Accessibility requirements</h2>
 
-      <ul class="a11y-list">
-        <li>
-          The trail is a <code>nav</code> landmark with a name: "Breadcrumb" in
-          the page's language, or the <code>label</code> prop. Two trails on a
-          page need different names.
-        </li>
+      <Card>
+        <ul class="a11y-list">
+          <li>
+            The trail is a <code>nav</code> landmark with a name: "Breadcrumb"
+            in the page's language, or the <code>label</code> prop. Two trails
+            on a page need different names.
+          </li>
 
-        <li>
-          The links are in an ordered list, so a screen reader says how many
-          steps the trail has.
-        </li>
+          <li>
+            The links are in an ordered list, so a screen reader says how many
+            steps the trail has.
+          </li>
 
-        <li>
-          The last item is the current page: text with
-          <code>aria-current="page"</code>, not a link to the page you are on.
-        </li>
+          <li>
+            The last item is the current page: text with
+            <code>aria-current="page"</code>, not a link to the page you are on.
+          </li>
 
-        <li>
-          The slash between the items is decoration. It is CSS generated content
-          with an empty alternative text (<code>content: '/' / ''</code>), so a
-          screen reader does not read it.
-        </li>
+          <li>
+            The slash between the items is decoration. It is CSS generated
+            content with an empty alternative text
+            (<code>content: '/' / ''</code>), so a screen reader does not read
+            it.
+          </li>
 
-        <li>
-          An item in another language than the page has a
-          <code>lang</code>.
-        </li>
-      </ul>
-    </Card>
+          <li>
+            An item in another language than the page has a
+            <code>lang</code>.
+          </li>
+        </ul>
+      </Card>
+    </section>
   </div>
 </template>
 
 <style>
 .breadcrumbs-page {
-  .card + .card {
-    margin-block-start: 1.5rem;
+  .card {
+    margin-block-end: 0;
   }
 
   .card > code {
     display: block;
     margin-block-start: 1rem;
     overflow-wrap: anywhere;
+  }
+
+  .a11y-list {
+    margin-block: 0;
   }
 }
 </style>

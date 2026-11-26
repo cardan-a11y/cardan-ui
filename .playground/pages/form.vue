@@ -22,6 +22,32 @@ const avatar = ref<File>();
 
 const serverError = ref<string>();
 
+const wcagLevel = ref<string[]>([]);
+const wcagLevels = [
+  { value: 'A', label: 'Level A' },
+  { value: 'AA', label: 'Level AA' },
+  { value: 'AAA', label: 'Level AAA' },
+];
+
+const rules = [
+  {
+    title: 'Instruction and error',
+    text: 'A field points its control at its instruction with aria-describedby, and at its error only while the error shows: after a failed submit of its Form, or with show-invalid.',
+  },
+  {
+    title: 'error-message',
+    text: 'The text for a constraint the browser checks. Input adds to its pattern what the Laravel APIs refuse: a required value of only spaces and an e-mail domain without a dot.',
+  },
+  {
+    title: 'custom-error',
+    text: 'An error the browser cannot find, such as one from the server. It describes the field until its value changes and does not hold the form back.',
+  },
+  {
+    title: 'A whole number',
+    text: 'SpinButton is the alternative to Input type="number" for a whole number of zero or more, such as a quantity.',
+  },
+];
+
 const inputSize = ref<InputSize>('md');
 
 const choiceVariant = computed(() =>
@@ -126,6 +152,7 @@ async function handleSubmit(formData: FormData) {
 
 <template>
   <div class="demo-page form-page">
+    <p class="demo-eyebrow">Forms</p>
     <div class="section-topbar">
       <h1>Form inputs</h1>
 
@@ -175,14 +202,43 @@ async function handleSubmit(formData: FormData) {
         </div>
       </Popover>
     </div>
+    <p class="demo-lead">
+      The field components share one frame, FormField: a label with its required
+      chip, the control, the error text and the instruction. The settings button
+      next to the heading sets the variant and the size of the fields below, and
+      the props of the RangeInput.
+    </p>
 
-    <Card>
-      <h2>Search</h2>
-      <Search :size="inputSize" />
-    </Card>
+    <ul role="list" class="demo-grid">
+      <li v-for="rule in rules" :key="rule.title" class="demo-tile">
+        <strong>{{ rule.title }}</strong>
+        <span>{{ rule.text }}</span>
+      </li>
+    </ul>
 
-    <Card>
+    <section class="demo-section" aria-labelledby="form-search-heading">
+      <h2 id="form-search-heading">Search</h2>
+      <p class="demo-hint">
+        A Form with <code>role="search"</code> that emits <code>submit</code>
+        with the term and <code>reset</code> when it is cleared. Its label is
+        hidden by default (<code>hide-label</code>) and stays the accessible
+        name.
+      </p>
+
+      <Card>
+        <Search :size="inputSize" />
+      </Card>
+    </section>
+
+    <section class="demo-section" aria-labelledby="form-fields-heading">
       <h2 id="form-fields-heading">Form fields</h2>
+      <p class="demo-hint">
+        A Form checks its fields on submit and moves focus to the first one that
+        fails. The switches in the form make every field required, read-only or
+        disabled.
+      </p>
+
+      <Card>
       <Form
         aria-labelledby="form-fields-heading"
         @submit="handleSubmit"
@@ -390,16 +446,38 @@ async function handleSubmit(formData: FormData) {
         <hr class="demo-divider" />
         <pre><code>{{ raw }}</code></pre>
       </template>
-    </Card>
+      </Card>
+    </section>
+
+    <section class="demo-section" aria-labelledby="form-file-heading">
+      <h2 id="form-file-heading">File Input</h2>
+      <p class="demo-hint">
+        FileInput previews and compresses an image and keeps it as its value.
+        With <code>mode="document"</code> it checks a file against the
+        extensions in <code>accept</code> and hands it to the parent to upload
+        (<code>select</code>), uncompressed.
+      </p>
+
+      <ul class="form-notes">
+        <li>
+          Compression uses compressorjs, which a project that uses FileInput
+          installs itself.
+        </li>
+        <li><code>shape="circle"</code> is the avatar upload.</li>
+        <li>
+          In document mode with a <code>name</code>, the file also stays in the
+          input a form post reads, so <code>required</code> holds a submit back.
+        </li>
+      </ul>
 
     <div class="card-cols">
       <Card>
-        <h2>File Input</h2>
+        <h3>File Input in a form</h3>
         <DemoFileForm :disabled="disabled" :required="required" />
       </Card>
 
       <Card>
-        <h2>File Input with a circle</h2>
+        <h3>File Input with a circle</h3>
         <FileInput
           v-model="avatar"
           shape="circle"
@@ -412,8 +490,9 @@ async function handleSubmit(formData: FormData) {
         />
       </Card>
     </div>
+    </section>
 
-    <div class="card-cols">
+    <div class="card-cols form-documents">
       <Card>
         <DemoDocumentUpload :disabled="disabled" />
       </Card>
@@ -422,9 +501,18 @@ async function handleSubmit(formData: FormData) {
         <DemoDocumentForm :disabled="disabled" />
       </Card>
     </div>
-    <Card class="demo-error-messages">
-      <h2>ErrorMessage</h2>
 
+    <section class="demo-section" aria-labelledby="form-error-heading">
+      <h2 id="form-error-heading">ErrorMessage</h2>
+      <p class="demo-hint">
+        The error box of a form or a page. It shows what a failed request
+        answered, in either shape the Laravel APIs answer in; without a usable
+        answer it says that the browser was offline or that something went
+        wrong. <code>text</code> is the page's own text, shown before the API's
+        messages.
+      </p>
+
+      <Card class="demo-error-messages">
       <h3>Laravel validation (422)</h3>
       <ErrorMessage
         :data="{
@@ -453,7 +541,29 @@ async function handleSubmit(formData: FormData) {
 
       <h3>No answer: the browser was offline</h3>
       <ErrorMessage :data="{ offline: true }" />
-    </Card>
+      </Card>
+    </section>
+
+    <section class="demo-section" aria-labelledby="form-multiselect">
+      <h2 id="form-multiselect">MultiSelect</h2>
+      <p class="demo-hint">
+        Deprecated: it goes in the next minor. New work uses ComboBox, with
+        <code>multiple</code> for several values.
+      </p>
+
+      <Card>
+        <div class="demo-multiselect">
+          <MultiSelect
+            v-model="wcagLevel"
+            :options="wcagLevels"
+            label="WCAG level filter"
+            mode="tags"
+            placeholder="All levels"
+            show-option-icons
+          />
+        </div>
+      </Card>
+    </section>
   </div>
 </template>
 
@@ -463,12 +573,30 @@ async function handleSubmit(formData: FormData) {
     flex-basis: auto;
   }
 
+  .card {
+    margin-block-end: 0;
+
+    > h3:first-child {
+      margin-block-start: 0;
+    }
+
+    section {
+      padding-block: 1rem;
+    }
+  }
+
   .demo-error-messages [role='alert'] + h3 {
     margin-block-start: 1.5rem;
   }
 
-  section {
-    padding-block: 1rem;
+  .form-notes {
+    max-inline-size: 44rem;
+    margin-block: 0 1.5rem;
+    color: var(--color-grey-text);
+  }
+
+  .form-documents {
+    margin-block-start: 1.5rem;
   }
 
   .form-bottom-row {
@@ -478,7 +606,7 @@ async function handleSubmit(formData: FormData) {
 }
 
 .demo-multiselect {
-  min-width: 240px;
+  max-inline-size: 24rem;
 }
 
 .demo-avatar-input {

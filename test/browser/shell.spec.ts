@@ -30,7 +30,7 @@ test('MobileMenu: after a link in it, focus is at the top of the new page, not o
   await page.keyboard.press('Enter');
   await expect(menu).toBeVisible();
 
-  await menu.getByRole('link', { name: 'Colors' }).focus();
+  await menu.getByRole('link', { name: 'Colors', exact: true }).focus();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/colors$/);
   await expect(menu).toBeHidden();

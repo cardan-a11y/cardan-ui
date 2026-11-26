@@ -1,6 +1,56 @@
 <script setup lang="ts">
 useHead({ title: 'Buttons & Links' });
 
+const rules = [
+  {
+    title: 'Button or link',
+    text: 'A button does something here, a link goes somewhere. With to or href, Button renders a NuxtLink.',
+  },
+  {
+    title: 'One primary',
+    text: 'One primary button per view. Never two side by side: the rest is secondary, outline or a link.',
+  },
+  {
+    title: 'Verb first',
+    text: 'Start, Plan, Download, View. Two to four words that say what you get.',
+  },
+  {
+    title: 'Say where it goes',
+    text: 'No “Click here” or “Read more”. A link reads like the page it opens.',
+  },
+];
+
+const variants: { variant: ButtonVariant; use: string; onAccent?: boolean }[] =
+  [
+    { variant: 'primary', use: 'The main action. One per view.' },
+    { variant: 'secondary', use: 'The action next to the primary.' },
+    { variant: 'outline', use: 'A quieter action, such as Cancel.' },
+    { variant: 'ghost', use: 'Toolbars and rows of small actions.' },
+    { variant: 'black', use: 'In a card or on a tint.' },
+    { variant: 'white', use: 'On the accent or on green.', onAccent: true },
+    { variant: 'green', use: 'A positive confirmation.' },
+    { variant: 'danger', use: 'Destroys something: delete, remove.' },
+    { variant: '3d', use: 'Raised, for one standout action.' },
+    { variant: 'link', use: 'A next step or another page.' },
+  ];
+
+const colored: ButtonVariant[] = [
+  'ghost-green',
+  'ghost-red',
+  'outline-green',
+  'outline-red',
+];
+
+const sizes: { size: ButtonSize; label: string }[] = [
+  { size: 'xl', label: 'Extra Large' },
+  { size: 'lg', label: 'Large' },
+  { size: 'md', label: 'Medium' },
+  { size: 'sm', label: 'Small' },
+  { size: 'xs', label: 'Extra Small' },
+];
+
+const fontSizes: FontSize[] = ['lg', 'md', 'sm', 'xs', 'xxs'];
+
 const agreed = ref(false);
 const message = ref('');
 const sendStatus = ref('');
@@ -17,112 +67,151 @@ async function onSend() {
 </script>
 
 <template>
-  <div class="demo-page">
+  <div class="demo-page buttons-page">
+    <p class="demo-eyebrow">Actions</p>
     <h1>Buttons & Links</h1>
+    <p class="demo-lead">
+      A button says what happens. The patterns are the APG
+      <Button
+        label="button"
+        to="https://www.w3.org/WAI/ARIA/apg/patterns/button"
+        variant="link"
+        target="_blank"
+      />
+      and
+      <Button
+        label="link"
+        to="https://www.w3.org/WAI/ARIA/apg/patterns/link"
+        variant="link"
+        target="_blank"
+      />.
+    </p>
 
-    <blockquote>
-      <p class="fs-md">
-        A
-        <Button
-          label="button"
-          to="https://www.w3.org/WAI/ARIA/apg/patterns/button"
-          variant="link"
-          target="_blank"
-        />
-        is a widget that enables users to trigger an action or event, such as
-        submitting a form, opening a dialog, canceling an action, or performing
-        a delete operation.
+    <ul role="list" class="demo-grid">
+      <li v-for="rule in rules" :key="rule.title" class="demo-tile">
+        <strong>{{ rule.title }}</strong>
+        <span>{{ rule.text }}</span>
+      </li>
+    </ul>
 
-      <span class="spacer" style="min-height:16px" />
-
-        A
-        <Button
-          label="link"
-          to="https://www.w3.org/WAI/ARIA/apg/patterns/link"
-          variant="link"
-          target="_blank"
-        />
-        provides an interactive reference to a resource. The target resource can
-        be either external or local, i.e., either outside or within the current
-        page or application.
+    <section class="demo-section" aria-labelledby="buttons-variants">
+      <h2 id="buttons-variants">Variants</h2>
+      <p class="demo-hint">
+        Pick by what the action means, not by its look.
+        <code>variant="primary"</code> is not the default: a plain
+        <code>{{ `<Button>` }}</code> is <code>secondary</code>.
       </p>
-    </blockquote>
 
-    <p class="mbs-2 mbe-2">Note: when you set the <code>to</code> or <code>href</code> prop, the <code>{{`<Button>`}}</code> component will be rendered as a <code>{{`<NuxtLink>`}}</code> component.</p>
+      <ul role="list" class="demo-grid buttons-variants">
+        <li
+          v-for="item in variants"
+          :key="item.variant"
+          :class="['demo-tile', item.onAccent && 'buttons-on-accent']"
+        >
+          <div class="buttons-sample">
+            <Button :variant="item.variant" :label="item.variant" />
+          </div>
+          <span>{{ item.use }}</span>
+        </li>
+      </ul>
 
-    <Card>
-      <h2>Variants</h2>
-      <div class="flex-wrapper">
-        <Button variant="primary" label="Primary" />
-        <Button variant="secondary" label="Secondary" />
-        <Button variant="outline" label="Outline" />
-        <Button variant="ghost" label="Ghost" />
-        <Button variant="danger" label="Danger" />
-        <Button variant="green" label="Green" />
-        <Button variant="black" label="Black" />
-        <Button variant="3d" label="3D" />
-        <Button variant="link" label="Link" style="margin-inline-start:0.75rem" />
-      </div>
-    </Card>
-
-    <Card>
-      <h2>Sizes</h2>
-      <div class="flex-wrapper">
-        <Button icon="material-symbols:accessibility-new-rounded" size="xl" label="Extra Large" />
-        <Button icon="material-symbols:accessibility-new-rounded" size="lg" label="Large" />
-        <Button icon="material-symbols:accessibility-new-rounded" size="md" label="Medium" />
-        <Button icon="material-symbols:accessibility-new-rounded" size="sm" label="Small" />
-        <Button icon="material-symbols:accessibility-new-rounded" size="xs" label="Extra Small" />
-      </div>
-    </Card>
-
-    <Card>
-      <h2>Font sizes</h2>
-      <div class="flex-wrapper" style="--gap: 1rem">
-        <Button variant="link" font-size="lg" label="Large link" />
-        <Button variant="link" font-size="md" label="Medium link" />
-        <Button variant="link" font-size="sm" label="Small link" />
-        <Button variant="link" font-size="xs" label="XS link" />
-        <Button variant="link" font-size="xxs" label="XXS link" />
-      </div>
-    </Card>
-
-    <Card>
-      <h2>Icon sizes</h2>
-      <div class="flex-wrapper" style="--gap: 1rem">
-        <Button icon="material-symbols:check-circle-rounded" icon-pos="end" icon-size="lg" label="Large icon" />
-        <Button icon="material-symbols:check-circle-rounded" icon-pos="end" icon-size="md" label="Medium icon" />
-        <Button icon="material-symbols:check-circle-rounded" icon-pos="end" icon-size="sm" label="Small icon" />
-        <Button icon="material-symbols:check-circle-rounded" icon-pos="end" icon-size="xs" label="XS icon" />
-        <Button icon="material-symbols:check-circle-rounded" icon-pos="end" icon-size="xxs" label="XXS icon" />
-      </div>
-    </Card>
-
-    <Card>
-      <h2>Icons</h2>
+      <h3>With a meaning</h3>
       <div class="flex-wrapper">
         <Button
-          icon="material-symbols:download-rounded"
-          icon-size="xl"
-          label="Download"
-          variant="primary"
-          hide-label
-        />
-        <Button icon="material-symbols:chevron-left-rounded" label="Previous" />
-        <Button icon="material-symbols:chevron-right-rounded" icon-pos="end" label="Next" />
-        <Button variant="ghost" icon="material-symbols:arrow-left-alt-rounded" label="Back" />
-        <Button
-          variant="link"
-          to="https://www.cardan.com"
-          target="_blank"
-          label="Cardan.com"
+          v-for="variant in colored"
+          :key="variant"
+          :variant="variant"
+          :label="variant"
         />
       </div>
-    </Card>
+    </section>
 
-    <Card>
-      <h2>Border radius</h2>
-      <div class="flex-wrapper">
+    <section class="demo-section" aria-labelledby="buttons-sizes">
+      <h2 id="buttons-sizes">Sizes</h2>
+      <p class="demo-hint">
+        <code>size</code> sets the height and padding, <code>font-size</code>
+        and <code>icon-size</code> only the text and the icon.
+      </p>
+
+      <Card>
+        <h3>size</h3>
+        <div class="flex-wrapper">
+          <Button
+            v-for="item in sizes"
+            :key="item.size"
+            icon="material-symbols:accessibility-new-rounded"
+            :size="item.size"
+            :label="item.label"
+          />
+        </div>
+
+        <h3>font-size</h3>
+        <div class="flex-wrapper" style="--gap: 1rem">
+          <Button
+            v-for="size in fontSizes"
+            :key="size"
+            variant="link"
+            :font-size="size"
+            :label="`${size} link`"
+          />
+        </div>
+
+        <h3>icon-size</h3>
+        <div class="flex-wrapper" style="--gap: 1rem">
+          <Button
+            v-for="size in fontSizes"
+            :key="size"
+            icon="material-symbols:check-circle-rounded"
+            icon-pos="end"
+            :icon-size="size"
+            :label="`${size} icon`"
+          />
+        </div>
+      </Card>
+    </section>
+
+    <section class="demo-section" aria-labelledby="buttons-icons">
+      <h2 id="buttons-icons">Icons and shape</h2>
+      <p class="demo-hint">
+        An icon supports the label, never replaces it: with
+        <code>hide-label</code> the label stays the accessible name. A link to
+        another site gets its icon by itself.
+      </p>
+
+      <Card>
+        <h3>icon, icon-pos, hide-label</h3>
+        <div class="flex-wrapper">
+          <Button
+            icon="material-symbols:download-rounded"
+            icon-size="xl"
+            label="Download"
+            variant="primary"
+            hide-label
+          />
+          <Button
+            icon="material-symbols:chevron-left-rounded"
+            label="Previous"
+          />
+          <Button
+            icon="material-symbols:chevron-right-rounded"
+            icon-pos="end"
+            label="Next"
+          />
+          <Button
+            variant="ghost"
+            icon="material-symbols:arrow-left-alt-rounded"
+            label="Back"
+          />
+          <Button
+            variant="link"
+            to="https://www.cardan.com"
+            target="_blank"
+            label="Cardan.com"
+          />
+        </div>
+
+        <h3>radius</h3>
+        <div class="flex-wrapper">
         <Button
           radius="full"
           size="xl"
@@ -161,12 +250,19 @@ async function onSend() {
           hide-label
           label="Download"
         />
-      </div>
-    </Card>
+        </div>
+      </Card>
+    </section>
 
-    <Card>
-      <h2>States</h2>
-      <div class="flex-wrapper">
+    <section class="demo-section" aria-labelledby="buttons-states">
+      <h2 id="buttons-states">States</h2>
+      <p class="demo-hint">
+        <code>loading</code> and <code>aria-disabled</code> keep the button in
+        the Tab order; <code>disabled</code> takes it out.
+      </p>
+
+      <Card>
+        <div class="flex-wrapper">
         <Button size="lg" loading label="Loading" />
         <Button size="lg" loading label="Loading link" to="/" />
         <Button size="lg" disabled label="Disabled button" />
@@ -181,21 +277,28 @@ async function onSend() {
           icon="material-symbols:open-in-new-rounded"
         />
         <CopyButton size="lg" text="Demo Text" />
-      </div>
-    </Card>
+        </div>
+      </Card>
+    </section>
 
-    <Card>
-      <h2>Unavailable, but focusable</h2>
-      <p>
-        <code>disabled</code> takes a button out of the Tab order, so a
-        keyboard or screen reader user may never find it, or learn why it does
-        nothing. <code>aria-disabled</code> keeps it focusable and says it is
-        unavailable: a submit button does not submit, also not on Enter in a
-        field of its form, and an unavailable link keeps its href but is not
-        followed. A click, Enter or Space still emits <code>click</code>, so
-        a press can say why nothing happens. Say why in its description
-        (<code>aria-describedby</code>) or in text next to it.
+    <section class="demo-section" aria-labelledby="buttons-unavailable">
+      <h2 id="buttons-unavailable">Unavailable, but focusable</h2>
+      <p class="demo-hint">
+        Prefer <code>aria-disabled</code>: a keyboard or screen reader user
+        still finds the button and learns why it does nothing. Say why in its
+        description (<code>aria-describedby</code>) or in text next to it.
       </p>
+
+      <Card>
+        <ul class="buttons-notes">
+          <li>A submit button does not submit, also not on Enter in a field.</li>
+          <li>An unavailable link keeps its href, but is not followed.</li>
+          <li>
+            A click, Enter or Space still emits <code>click</code>, so a press
+            can say why nothing happens.
+          </li>
+        </ul>
+
       <Form @submit="sent = true">
         <Input v-model="message" label="Message" />
         <Checkbox v-model="agreed" label="I agree to the terms" />
@@ -215,15 +318,18 @@ async function onSend() {
         <p role="status">{{ sent ? 'Sent.' : sendStatus }}</p>
       </Form>
     </Card>
+    </section>
 
-    <Card>
-      <h2>The current page, disabled</h2>
-      <p>
-        A disabled link has no href, so it cannot be followed or reached with
-        Tab. When it leads to the current page it keeps that look and
-        <code>aria-current="page"</code>, as an enabled one has them.
+    <section class="demo-section" aria-labelledby="buttons-current">
+      <h2 id="buttons-current">The current page, disabled</h2>
+      <p class="demo-hint">
+        A disabled link has no href: it cannot be followed or reached with Tab.
+        One to the current page keeps that look and
+        <code>aria-current="page"</code>.
       </p>
-      <div class="flex-wrapper">
+
+      <Card>
+        <div class="flex-wrapper">
         <Button
           variant="sidebar"
           to="/buttons"
@@ -237,8 +343,54 @@ async function onSend() {
           label="Buttons & Links"
           disabled
         />
-      </div>
-    </Card>
+        </div>
+      </Card>
+    </section>
   </div>
 </template>
 
+<style>
+.buttons-page {
+  .card {
+    margin-block-end: 0;
+
+    h3 {
+      margin-block: 2rem 0.75rem;
+      font-size: var(--font-size-md);
+
+      &:first-child {
+        margin-block-start: 0;
+      }
+    }
+  }
+
+  .buttons-variants {
+    --demo-column: 11rem;
+
+    .demo-tile {
+      gap: 0.75rem;
+    }
+
+    .buttons-sample {
+      display: grid;
+      place-items: center;
+      min-block-size: 5rem;
+      margin: -1.125rem -1.125rem 0;
+      padding: 1rem;
+      border-block-end: 1px solid var(--card-border-color);
+      border-start-start-radius: inherit;
+      border-start-end-radius: inherit;
+      background-color: var(--color-bg);
+      font-size: var(--font-size-md);
+    }
+
+    .buttons-on-accent .buttons-sample {
+      background-color: var(--color-accent);
+    }
+  }
+
+  .buttons-notes {
+    margin-block: 0 1.5rem;
+  }
+}
+</style>

@@ -13,53 +13,74 @@ const skeletonAnimations = [
     label: 'pulse',
   },
 ];
+
+const rules = [
+  {
+    title: 'Decorative',
+    text: 'A Skeleton is hidden from assistive technology: it says nothing by itself.',
+  },
+  {
+    title: 'Say it is loading',
+    text: 'The element it stands in for carries aria-busy="true".',
+  },
+  {
+    title: 'In a table',
+    text: 'Table renders its own placeholder rows with the skeleton prop.',
+  },
+];
 </script>
 
 <template>
   <div class="demo-page skeleton-page">
+    <p class="demo-eyebrow">Feedback</p>
     <h1>Skeleton screens</h1>
+    <p class="demo-lead">
+      A placeholder in the shape of the content while a page loads, which makes
+      the wait feel shorter. Background: Nielsen Norman Group on
+      <Button
+        to="https://www.nngroup.com/articles/skeleton-screens"
+        label="skeleton screens"
+        variant="link"
+        target="_blank"
+      />.
+    </p>
 
-    <blockquote>
-      <p class="fs-md">
-        A skeleton screen is used as a placeholder while users wait for a page
-        to load. This progress indicator is used for full page loads and reduces
-        the perception of a long loading time by providing clues for how the
-        page will ultimately look.
-      </p>
+    <ul role="list" class="demo-grid">
+      <li v-for="rule in rules" :key="rule.title" class="demo-tile">
+        <strong>{{ rule.title }}</strong>
+        <span>{{ rule.text }}</span>
+      </li>
+    </ul>
 
-      <p class="mbe-2 fs-sm c-grey-text">
-        Source:
-        <NuxtLink
-          to="https://www.nngroup.com/articles/skeleton-screens"
-          target="_blank"
-          >Nielsen Norman Group</NuxtLink
-        >
-      </p>
-    </blockquote>
+    <section class="demo-section" aria-labelledby="skeleton-lines">
+      <div class="section-topbar">
+        <h2 id="skeleton-lines">Skeleton</h2>
 
-    <div class="card-cols">
-      <Card>
-        <div class="section-topbar">
-          <h2>Skeleton</h2>
+        <Popover icon="material-symbols:settings-rounded" :max-width="480">
+          <div class="popover-settings-content">
+            <h2>Props</h2>
 
-          <Popover icon="material-symbols:settings-rounded" :max-width="480">
-            <div class="popover-settings-content">
-              <h2>Props</h2>
+            <div class="props-wrapper">
+              <Select
+                v-model="skeletonAnimation"
+                :options="skeletonAnimations"
+                label="animation"
+                size="sm"
+              />
 
-              <div class="props-wrapper">
-                <Select
-                  v-model="skeletonAnimation"
-                  :options="skeletonAnimations"
-                  label="animation"
-                  size="sm"
-                />
-
-                <code>{{`<Skeleton animation="${skeletonAnimation}" />`}}</code>
-              </div>
+              <code>{{`<Skeleton animation="${skeletonAnimation}" />`}}</code>
             </div>
-          </Popover>
-        </div>
+          </div>
+        </Popover>
+      </div>
+      <p class="demo-hint">
+        <code>size</code> sets the height and <code>width</code> takes any CSS
+        width, <code>100%</code> by default. <code>animation</code> is
+        <code>shimmer</code> (the default) or <code>pulse</code>, and changes
+        every skeleton on this page.
+      </p>
 
+      <Card>
         <div class="skeleton-wrapper">
           <div class="flex-wrapper">
             <Skeleton :animation="skeletonAnimation" size="md" width="30%" />
@@ -84,10 +105,16 @@ const skeletonAnimations = [
           <Skeleton :animation="skeletonAnimation" size="xs" width="50%" />
         </div>
       </Card>
+    </section>
+
+    <section class="demo-section" aria-labelledby="skeleton-circle">
+      <h2 id="skeleton-circle">Circle variant</h2>
+      <p class="demo-hint">
+        <code>variant="circle"</code> makes a circle as wide and as high as its
+        <code>size</code>, alone or next to lines.
+      </p>
 
       <Card>
-        <h2>Circle variant</h2>
-
         <div class="circle-skeleton-wrapper">
           <div class="flex-wrapper">
             <Skeleton
@@ -167,18 +194,18 @@ const skeletonAnimations = [
           </div>
         </div>
       </Card>
-    </div>
+    </section>
   </div>
 </template>
 
 <style>
 .demo-page.skeleton-page {
-  .card-cols > :first-child {
-    flex-grow: 9;
-  }
-
   .section-topbar {
-    margin-block-end: 2.5rem;
+    margin-block-end: 0.5rem;
+
+    > h2 {
+      margin-block: 0;
+    }
   }
 
   .popover-content {
@@ -186,15 +213,19 @@ const skeletonAnimations = [
       margin-block-end: 1rem;
     }
   }
-}
 
-.skeleton-wrapper {
-  display: grid;
-  gap: 0.25rem;
-}
+  .card {
+    margin-block-end: 0;
+  }
 
-.circle-skeleton-wrapper {
-  display: grid;
-  gap: 2rem;
+  .skeleton-wrapper {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .circle-skeleton-wrapper {
+    display: grid;
+    gap: 2rem;
+  }
 }
 </style>

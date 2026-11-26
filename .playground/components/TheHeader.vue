@@ -16,7 +16,7 @@ watch(
   <AppHeader class="the-header">
     <template #start>
       <MobileMenu ref="mobileMenu" class="left-menu" position="inline-start">
-        <MenuList :list="navList" button-variant="sidebar" label="Menu" />
+        <PlaygroundNav label="Menu" />
       </MobileMenu>
 
       <NuxtLink to="/" class="home-link">

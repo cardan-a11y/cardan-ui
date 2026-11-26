@@ -10,12 +10,7 @@ const isAuthSubpage = computed(() => isAuthPage(route.path));
 
     <div class="app-layout">
       <AppSidebar>
-        <MenuList
-          :list="navList"
-          button-size="md"
-          button-variant="sidebar"
-          aria-label="Components"
-        />
+        <PlaygroundNav />
       </AppSidebar>
 
       <main id="main" tabindex="-1">

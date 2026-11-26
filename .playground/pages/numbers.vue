@@ -51,132 +51,188 @@ const examples: {
     format: (l) => formatCurrency(1234.5, l, { currency: 'USD' }),
   },
 ];
+
+const rules = [
+  {
+    title: 'In a component',
+    text: 'useNumber() returns the three functions without the locale argument. Each call reads the i18n locale, so a template or computed follows a change of language.',
+  },
+  {
+    title: 'Outside a component',
+    text: 'The pure functions in app/utils/number.ts take the locale as an argument, so they work in a test or on the server.',
+  },
+  {
+    title: 'Two locales',
+    text: 'en formats as British English (en-GB), nl as Dutch in the Netherlands (nl-NL). Any other locale goes to Intl.NumberFormat as it is.',
+  },
+  {
+    title: 'Never by hand',
+    text: 'toLocaleString() without a locale, or a percentage built by hand, is wrong for some visitors.',
+  },
+];
 </script>
 
 <template>
   <div class="demo-page numbers-page">
+    <p class="demo-eyebrow">Data</p>
     <h1>Numbers &amp; Prices</h1>
+    <p class="demo-lead">
+      Numbers, percentages and prices follow the language of the app, not of
+      the browser: a Dutch page shows "1.234,5" and "€ 12,50", an English one
+      "1,234.5" and "€12.50". Every number a reader sees goes through one of
+      three functions.
+    </p>
 
-    <div class="demo-description">
-      <p class="mbe-1">
-        Numbers, percentages and prices follow the language of the app, not the
-        language of the browser. A Dutch page shows "1.234,5" and "€ 12,50" even
-        in an English browser, and an English page shows "1,234.5" and "€12.50".
-        Calling <code>toLocaleString()</code> without a locale, or building a
-        percentage by hand, gets this wrong for some visitors, so every number a
-        reader sees goes through one of the three functions on this page.
+    <ul role="list" class="demo-grid numbers-rules">
+      <li v-for="rule in rules" :key="rule.title" class="demo-tile">
+        <strong>{{ rule.title }}</strong>
+        <span>{{ rule.text }}</span>
+      </li>
+    </ul>
+
+    <section class="demo-section" aria-labelledby="numbers-functions">
+      <h2 id="numbers-functions">The three functions</h2>
+      <p class="demo-hint">
+        With <code>useNumber()</code> the locale argument falls away:
+        <code>formatNumber(value, options?)</code>.
       </p>
 
-      <p class="mbe-1">
-        The pure functions <code>formatNumber(value, locale, options?)</code>,
-        <code>formatPercent(fraction, locale, options?)</code> and
-        <code>formatCurrency(amount, locale, options?)</code> live in
-        <code>app/utils/number.ts</code> and take the locale as an argument, so
-        they also work outside a component, in a test or on the server. The
-        composable <code>useNumber()</code> returns the same three functions
-        without the locale argument: they read the current i18n locale on every
-        call, so a template or a computed that uses them updates when the
-        language changes. In a component, use the composable.
+      <Card>
+        <h3><code>formatNumber(value, locale, options?)</code></h3>
+        <ul>
+          <li>Groups thousands and shows up to three decimals.</li>
+          <li>
+            <code>{ decimals: 1 }</code> always shows exactly one decimal, as a
+            grade does.
+          </li>
+          <li>
+            Any other <code>Intl.NumberFormat</code> option for the digits,
+            such as <code>maximumFractionDigits</code>, is passed on.
+          </li>
+        </ul>
+
+        <h3><code>formatPercent(fraction, locale, options?)</code></h3>
+        <ul>
+          <li>
+            Takes a fraction, as <code>Intl.NumberFormat</code> does:
+            <code>0.21</code> is "21%".
+          </li>
+          <li>
+            Divide a whole percentage by 100 and a value per mille by 1000 at
+            the call.
+          </li>
+          <li>Whole percentages, unless <code>decimals</code> says otherwise.</li>
+        </ul>
+
+        <h3><code>formatCurrency(amount, locale, options?)</code></h3>
+        <ul>
+          <li>
+            Euros, unless <code>currency</code> names another ISO 4217 code.
+          </li>
+          <li>
+            A whole amount has no decimals, any other amount has two.
+            <code>decimals: 0</code> always rounds to a whole amount, as
+            PricingCard does.
+          </li>
+          <li>
+            With <code>cents: true</code> the amount is in cents, as the
+            Academy's API returns prices.
+          </li>
+          <li>
+            In Dutch a no-break space follows the euro sign, so "€ 495" never
+            breaks over two lines. A test that compares a Dutch price writes
+            that character as <code>\u00a0</code>.
+          </li>
+        </ul>
+      </Card>
+    </section>
+
+    <section class="demo-section" aria-labelledby="numbers-both">
+      <h2 id="numbers-both">Both languages</h2>
+      <p class="demo-hint">
+        Each row is a call as a component writes it with
+        <code>useNumber()</code>, and what it returns in English and in Dutch,
+        whichever language the playground is in.
       </p>
 
-      <p class="mbe-1">
-        The i18n locale is mapped to a formatting locale in one place:
-        <code>en</code> formats as British English (<code>en-GB</code>) and
-        <code>nl</code> as Dutch in the Netherlands (<code>nl-NL</code>). Any
-        other locale is passed to <code>Intl.NumberFormat</code> as it is.
-      </p>
+      <Card>
+        <Table aria-label="Formatted numbers in English and Dutch">
+          <thead>
+            <tr>
+              <th scope="col">Call</th>
+              <th scope="col">English (<code>en</code>)</th>
+              <th scope="col">Dutch (<code>nl</code>)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="example in examples" :key="example.call">
+              <th scope="row">
+                <code>{{ example.call }}</code>
+              </th>
+              <td lang="en">{{ example.format('en') }}</td>
+              <td lang="nl">{{ example.format('nl') }}</td>
+            </tr>
+          </tbody>
+        </Table>
+      </Card>
+    </section>
 
-      <ul class="mbe-1">
-        <li>
-          <code>formatNumber</code> groups thousands and shows up to three
-          decimals. <code>{ decimals: 1 }</code> always shows exactly one
-          decimal, as a grade does; any other
-          <code>Intl.NumberFormat</code> option for the digits, such as
-          <code>maximumFractionDigits</code>, is passed on.
-        </li>
-        <li>
-          <code>formatPercent</code> takes a fraction, as
-          <code>Intl.NumberFormat</code> does: <code>0.21</code> is "21%". A
-          value that is already a whole percentage is divided by 100 at the
-          call, and a value per mille by 1000. It shows whole percentages unless
-          <code>decimals</code> says otherwise.
-        </li>
-        <li>
-          <code>formatCurrency</code> formats euros unless
-          <code>currency</code> names another ISO 4217 code. A whole amount has
-          no decimals and any other amount has two;
-          <code>decimals: 0</code> always rounds to a whole amount, as the
-          pricing pages do. With <code>cents: true</code> the amount is in
-          cents, as the Academy's API returns prices. In Dutch a no-break space
-          follows the euro sign, so "€ 495" never breaks over two lines; a test
-          comparing a Dutch price writes that character as <code>\u00a0</code>.
-        </li>
-      </ul>
-    </div>
-
-    <Card class="mbe-2">
-      <h2 class="mbe-1">Both languages</h2>
-
-      <p class="mbe-1">
-        Each row shows a call as a component writes it with
-        <code>useNumber()</code>. The columns show what it returns in English
-        and in Dutch, whichever language the playground is in: the page calls
-        the pure function with each locale.
-      </p>
-
-      <Table aria-label="Formatted numbers in English and Dutch">
-        <thead>
-          <tr>
-            <th scope="col">Call</th>
-            <th scope="col">English (<code>en</code>)</th>
-            <th scope="col">Dutch (<code>nl</code>)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="example in examples" :key="example.call">
-            <th scope="row">
-              <code>{{ example.call }}</code>
-            </th>
-            <td lang="en">{{ example.format('en') }}</td>
-            <td lang="nl">{{ example.format('nl') }}</td>
-          </tr>
-        </tbody>
-      </Table>
-    </Card>
-
-    <Card>
-      <h2 class="mbe-1">In the app's language</h2>
-
-      <p class="mbe-1">
+    <section class="demo-section" aria-labelledby="numbers-live">
+      <h2 id="numbers-live">In the app's language</h2>
+      <p class="demo-hint">
         These follow the language chosen in the user menu, now
         <code>{{ locale }}</code
         >. Change the language or the number to see them update.
       </p>
 
-      <Input
-        v-model.number="value"
-        type="number"
-        step="any"
-        label="Number"
-        class="mbe-1"
-      />
+      <Card>
+        <Input
+          v-model.number="value"
+          type="number"
+          step="any"
+          label="Number"
+          class="mbe-1"
+        />
 
-      <dl class="numbers-live">
-        <dt><code>formatNumber(value)</code></dt>
-        <dd>{{ number(value || 0) }}</dd>
-        <dt><code>formatPercent(value / 100, { decimals: 1 })</code></dt>
-        <dd>{{ percent((value || 0) / 100, { decimals: 1 }) }}</dd>
-        <dt><code>formatCurrency(value)</code></dt>
-        <dd>{{ currency(value || 0) }}</dd>
-        <dt><code>formatCurrency(value, { cents: true })</code></dt>
-        <dd>{{ currency(value || 0, { cents: true }) }}</dd>
-      </dl>
-    </Card>
+        <dl class="numbers-live">
+          <dt><code>formatNumber(value)</code></dt>
+          <dd>{{ number(value || 0) }}</dd>
+          <dt><code>formatPercent(value / 100, { decimals: 1 })</code></dt>
+          <dd>{{ percent((value || 0) / 100, { decimals: 1 }) }}</dd>
+          <dt><code>formatCurrency(value)</code></dt>
+          <dd>{{ currency(value || 0) }}</dd>
+          <dt><code>formatCurrency(value, { cents: true })</code></dt>
+          <dd>{{ currency(value || 0, { cents: true }) }}</dd>
+        </dl>
+      </Card>
+    </section>
   </div>
 </template>
 
 <style>
-.numbers-page {
+.demo-page.numbers-page {
+  .numbers-rules {
+    --demo-column: 16rem;
+  }
+
+  .card {
+    margin-block-end: 0;
+
+    h3 {
+      margin-block: 1.5rem 0.5rem;
+      font-size: var(--font-size-md);
+
+      &:first-child {
+        margin-block-start: 0;
+      }
+    }
+
+    ul {
+      margin-block: 0;
+    }
+  }
+
+  h3 code,
   th code,
   dt code {
     overflow-wrap: anywhere;
