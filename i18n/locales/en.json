@@ -34,6 +34,7 @@
     "no-results": "No options match your search",
     "results": "{count} option | {count} options",
     "search-failed": "The search failed. Change the text to search again.",
+    "selected": "{count} selected",
     "unknown-option": "Unknown option"
   },
   "cookies": {
@@ -231,9 +232,6 @@
   },
   "meter": {
     "value-of-max": "{value} of {max}"
-  },
-  "multicombobox": {
-    "selected": "{count} selected"
   },
   "multiselect": {
     "items-selected": "{count} items selected"

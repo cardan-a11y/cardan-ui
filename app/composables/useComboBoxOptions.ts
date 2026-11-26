@@ -16,7 +16,7 @@ function foldCaseAndDiacritics(text: string) {
 }
 
 /**
- * The options of ComboBox and MultiComboBox: an array, or a function asked
+ * The options of ComboBox: an array, or a function asked
  * when the field is first touched (or at once when `needsList`) and again
  * only after a failure or an empty answer, a new `optionsKey` or
  * `refreshOptions()`. With `serverSearch` the function searches after a

@@ -1,7 +1,7 @@
 import type { Ref } from 'vue';
 
 /**
- * The popup of ComboBox and MultiComboBox, in the top layer while `isOpen`.
+ * The popup of ComboBox, in the top layer while `isOpen`.
  * CSS anchor positioning places it; the one thing measured is for the
  * phone's keyboard, which iOS leaves out of the viewport CSS knows:
  * `keyboardInsets` keeps the popup out from under it, and a field it still

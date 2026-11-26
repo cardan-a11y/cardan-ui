@@ -61,13 +61,13 @@ declare global {
     [key: string]: unknown;
   };
 
-  /** The value of a ComboBox option, or of one in a MultiComboBox */
+  /** The value of a ComboBox option */
   type ComboBoxValue = string | number | boolean;
 
-  /** What the options function of ComboBox and MultiComboBox answers: a list, or one page of it */
+  /** What the options function of ComboBox answers: a list, or one page of it */
   type ComboBoxAnswer<T> = T[] | { options: T[]; more?: boolean };
 
-  /** The options function of ComboBox and MultiComboBox */
+  /** The options function of ComboBox */
   type ComboBoxLoader<T> = (
     query: string,
     context: { signal: AbortSignal; page: number },

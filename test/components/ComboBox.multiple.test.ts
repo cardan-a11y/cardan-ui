@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { h, nextTick } from 'vue';
 import { flushPromises } from '@vue/test-utils';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
-import { MultiComboBox } from '#components';
+import { ComboBox } from '#components';
 import {
   accessibleName,
   description,
@@ -14,10 +14,10 @@ import { addToPage, leave, press } from '../dom';
 import { mountInForm } from '../form';
 
 /**
- * MultiComboBox as its docblock describes it: a combobox with a dialog popup
+ * ComboBox with `multiple` as its docblock describes it: a combobox with a dialog popup
  * (ARIA 1.2, as APG's "Date Picker Combobox") whose options are checkboxes,
  * with focus moving into the dialog. Focus order and Tab, the top layer and
- * a Dialog around it are in test/browser/multicombobox.spec.ts.
+ * a Dialog around it are in test/browser/combobox-multiple.spec.ts.
  */
 const options = [
   { value: 'cheese', label: 'Cheese' },
@@ -29,9 +29,10 @@ async function mountMulti(props: Record<string, unknown> = {}) {
   const emitted: string[] = [];
   const mounted: { setProps?: (props: Record<string, unknown>) => unknown } =
     {};
-  const wrapper = await mountSuspended(MultiComboBox, {
+  const wrapper = await mountSuspended(ComboBox, {
     props: {
       label: 'Toppings',
+      multiple: true,
       options,
       modelValue: [],
       'onUpdate:modelValue': (value: unknown) => {
@@ -94,7 +95,7 @@ async function leaveField(input: Mounted['input']) {
 
 const pause = (ms = 10) => new Promise((resolve) => setTimeout(resolve, ms));
 
-describe('MultiComboBox: roles, states and properties', () => {
+describe('ComboBox multiple: roles, states and properties', () => {
   it('is a text field with the combobox role and a dialog popup, named by its label, with no accessibility violations', async () => {
     const { input } = await mountMulti();
 
@@ -156,7 +157,7 @@ describe('MultiComboBox: roles, states and properties', () => {
   });
 });
 
-describe('MultiComboBox: keyboard support', () => {
+describe('ComboBox multiple: keyboard support', () => {
   it('Down Arrow opens the dialog and moves focus to the first checkbox, Up Arrow to the last', async () => {
     const { input, checkbox } = await mountMulti();
     input.element.focus();
@@ -297,7 +298,7 @@ describe('MultiComboBox: keyboard support', () => {
   });
 });
 
-describe('MultiComboBox: the pointer', () => {
+describe('ComboBox multiple: the pointer', () => {
   it('a click in the field opens the dialog, and a click while open closes it', async () => {
     const { input } = await mountMulti();
 
@@ -342,7 +343,7 @@ describe('MultiComboBox: the pointer', () => {
   });
 });
 
-describe('MultiComboBox: the selection', () => {
+describe('ComboBox multiple: the selection', () => {
   it('puts the selection back when focus leaves the field and the dialog, and keeps it open while focus moves inside', async () => {
     const { input, checkbox } = await mountMulti({ modelValue: ['ham'] });
     await type(input, 'che');
@@ -426,7 +427,7 @@ describe('MultiComboBox: the selection', () => {
   });
 });
 
-describe('MultiComboBox: the field', () => {
+describe('ComboBox multiple: the field', () => {
   it('is described by its instruction, and by its custom error until a tick', async () => {
     const { input, checkbox } = await mountMulti({
       instruction: 'Two at most.',
@@ -451,14 +452,15 @@ describe('MultiComboBox: the field', () => {
   });
 });
 
-describe('MultiComboBox: in a form', () => {
+describe('ComboBox multiple: in a form', () => {
   async function mountForm(props: Record<string, unknown> = {}) {
     const submitted: [string, FormDataEntryValue][][] = [];
     const model = { value: (props.modelValue ?? []) as unknown };
     const wrapper = await mountInForm(
       () => [
-        h(MultiComboBox, {
+        h(ComboBox, {
           label: 'Toppings',
+          multiple: true,
           name: 'toppings',
           options,
           ...props,
@@ -525,7 +527,7 @@ describe('MultiComboBox: in a form', () => {
   });
 });
 
-describe('MultiComboBox: options from a function', () => {
+describe('ComboBox multiple: options from a function', () => {
   function loader() {
     const calls: string[] = [];
     const load = vi.fn(async (query: string) => {
@@ -578,7 +580,7 @@ describe('MultiComboBox: options from a function', () => {
   });
 });
 
-describe('MultiComboBox: create option', () => {
+describe('ComboBox multiple: create option', () => {
   it('offers to create the typed text only while no label is that text, ignoring case and spaces but not diacritics', async () => {
     const { input, button } = await mountMulti({ createOption: true });
 
@@ -599,7 +601,7 @@ describe('MultiComboBox: create option', () => {
 
     const spaces = await mountMulti({ createOption: true });
     await type(spaces.input, '   ');
-    expect(spaces.wrapper.find('.multicombobox-create').exists()).toBe(false);
+    expect(spaces.wrapper.find('.combobox-create').exists()).toBe(false);
 
     const loading = await mountMulti({ createOption: true, loading: true });
     await type(loading.input, 'bacon');
@@ -653,7 +655,7 @@ describe('MultiComboBox: create option', () => {
   });
 });
 
-describe('MultiComboBox: disabled options', () => {
+describe('ComboBox multiple: disabled options', () => {
   const withDisabled = [
     { value: 'cheese', label: 'Cheese' },
     { value: 'ham', label: 'Ham', disabled: true },
@@ -695,5 +697,57 @@ describe('MultiComboBox: disabled options', () => {
       'value ["ham"]',
     ]);
     expect(button('Clear Toppings')).toBeUndefined();
+  });
+});
+
+describe('ComboBox multiple: warnings in development', () => {
+  function warnings() {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    return {
+      said: () =>
+        warn.mock.calls
+          .map(([text]) => String(text))
+          .filter((text) => text.startsWith('[ComboBox]')),
+      restore: () => warn.mockRestore(),
+    };
+  }
+
+  it('warns when multiple changes after the field was created, and keeps the mode', async () => {
+    const warn = warnings();
+    const { wrapper, dialog } = await mountMulti();
+
+    await wrapper.setProps({ multiple: false } as never);
+
+    expect(warn.said()).toEqual([
+      expect.stringContaining('multiple changed after the field was created'),
+    ]);
+    expect(wrapper.find('input').attributes('aria-haspopup')).toBe('dialog');
+    expect(dialog().exists()).toBe(true);
+    warn.restore();
+  });
+
+  it('warns for a value that is not an array with multiple, and for an array without it', async () => {
+    const warn = warnings();
+    await mountMulti({ modelValue: 'ham' });
+    await mountMulti({ multiple: false, modelValue: ['ham'] });
+
+    expect(warn.said()).toEqual([
+      expect.stringContaining('its value is not an array'),
+      expect.stringContaining('has an array as its value: add multiple'),
+    ]);
+    warn.restore();
+  });
+
+  it('warns for server-search, which multiple ignores, and not for null or [] while loading', async () => {
+    const warn = warnings();
+    await mountMulti({ modelValue: null });
+    await mountMulti({ modelValue: undefined });
+    await mountMulti({ options: () => options, serverSearch: true });
+
+    expect(warn.said()).toEqual([
+      expect.stringContaining('multiple and server-search'),
+    ]);
+    warn.restore();
   });
 });

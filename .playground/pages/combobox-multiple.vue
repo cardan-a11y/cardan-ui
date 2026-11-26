@@ -1,5 +1,5 @@
 <script setup lang="ts">
-useHead({ title: 'MultiComboBox' });
+useHead({ title: 'ComboBox multiple' });
 
 interface Finding {
   id: number;
@@ -117,20 +117,26 @@ const dialogFindings = ref<number[]>([]);
 </script>
 
 <template>
-  <div class="demo-page multicombobox-page">
-    <h1>MultiComboBox</h1>
+  <div class="demo-page combobox-multiple-page">
+    <h1>ComboBox multiple</h1>
 
     <p class="mbe-2 fs-lg">
-      MultiComboBox selects several options: the text field of ComboBox, with a
-      list of checkboxes under it. Typing shortens the list, and every option
-      you tick is part of the value. It replaces the multiple and tags modes of
-      MultiSelect, which is deprecated and removed in a next minor.
+      With <code>multiple</code>, <NuxtLink to="/combobox">ComboBox</NuxtLink>
+      selects several options: the same text field, with a list of checkboxes
+      under it. Typing shortens the list, and every option you tick is part of
+      the value. It replaces the multiple and tags modes of MultiSelect, which
+      is deprecated and removed in a next minor. <code>multiple</code> is read
+      once, when the field is created: it decides the type of the value, so a
+      field does not change from one mode to the other. In development a
+      warning says so when it changes anyway, and when the value is not what
+      the mode expects: an array without <code>multiple</code>, or a value that
+      is not an array with it.
     </p>
 
     <p class="mbe-2">
       No pattern of the ARIA Authoring Practices Guide describes several values
       in one combobox: how an option is ticked while focus stays in the text
-      field, and how a screen reader tells. So MultiComboBox does not invent
+      field, and how a screen reader tells. So ComboBox does not invent
       one. Its popup is a dialog, the second kind of popup that ARIA 1.2 allows
       a combobox, as in the guide's example “Date Picker Combobox”, and every
       option in it is a real checkbox, which every browser and every screen
@@ -159,7 +165,12 @@ const dialogFindings = ref<number[]>([]);
         </p>
 
         <div class="demo-box">
-          <MultiComboBox v-model="status" :options="statuses" label="Status" />
+          <ComboBox
+            v-model="status"
+            multiple
+            :options="statuses"
+            label="Status"
+          />
 
           <p class="fs-sm">
             Value: <code>{{ JSON.stringify(status) }}</code>
@@ -167,8 +178,9 @@ const dialogFindings = ref<number[]>([]);
         </div>
 
         <code
-          >{{ `<MultiComboBox
+          >{{ `<ComboBox
             v-model="status"
+            multiple
             :options="statuses"
             label="Status"
           />` }}</code
@@ -248,8 +260,9 @@ const dialogFindings = ref<number[]>([]);
 
         <div class="demo-box">
           <Form @submit="handleSubmit">
-            <MultiComboBox
+            <ComboBox
               v-model="formStatuses"
+              multiple
               :options="statuses"
               name="status"
               label="Statuses to show"
@@ -267,8 +280,9 @@ const dialogFindings = ref<number[]>([]);
         </div>
 
         <code
-          >{{ `<MultiComboBox
+          >{{ `<ComboBox
             v-model="statuses"
+            multiple
             :options="statusOptions"
             name="status"
             label="Statuses to show"
@@ -285,13 +299,15 @@ const dialogFindings = ref<number[]>([]);
           when the field is first touched, or at once when a value has no option
           to show its label. <code>v-model:selected</code> holds the ticked
           options themselves, so a field shows its labels without its list.
-          MultiComboBox has no search on the server: a list too long to load
-          whole needs a page of its own, not a field.
+          With <code>multiple</code> there is no search on the server:
+          <code>server-search</code> is ignored, with a warning in development.
+          A list too long to load whole needs a page of its own, not a field.
         </p>
 
         <div class="demo-box">
-          <MultiComboBox
+          <ComboBox
             v-model="findingIds"
+            multiple
             :options="loadFindings"
             value-key="id"
             label-key="title"
@@ -330,8 +346,9 @@ const dialogFindings = ref<number[]>([]);
         </p>
 
         <div class="demo-box">
-          <MultiComboBox
+          <ComboBox
             v-model="tagIds"
+            multiple
             :options="tags"
             value-key="id"
             label-key="name"
@@ -349,8 +366,9 @@ const dialogFindings = ref<number[]>([]);
         </div>
 
         <code
-          >{{ `<MultiComboBox
+          >{{ `<ComboBox
             v-model="tagIds"
+            multiple
             :options="tags"
             value-key="id"
             label-key="name"
@@ -373,14 +391,15 @@ const dialogFindings = ref<number[]>([]);
           be ticked or unticked: a click and Space leave it as it is. It is not
           a native disabled checkbox, which Tab would skip: Tab, the arrow keys
           and a search reach it, so a screen reader reads it as unavailable, the
-          same choice as ComboBox makes. A ticked option that is disabled stays
+          same choice as a single ComboBox makes. A ticked option that is disabled stays
           ticked, also when the clear button unticks the rest. Say why in its
           label or the field's instruction.
         </p>
 
         <div class="demo-box">
-          <MultiComboBox
+          <ComboBox
             v-model="columns"
+            multiple
             :options="columnOptions"
             label="Columns"
           />
@@ -395,20 +414,22 @@ const dialogFindings = ref<number[]>([]);
         <h2>Props</h2>
 
         <p class="c-grey-text">
-          MultiComboBox renders through FormField, like every field, and takes
-          the props of ComboBox: <code>label</code>, <code>hide-label</code>,
+          With <code>multiple</code>, ComboBox takes the same props as without
+          it, but for <code>server-search</code>: <code>label</code>, <code>hide-label</code>,
           <code>instruction</code>, <code>required</code>,
           <code>disabled</code>, <code>size</code>, <code>placeholder</code>,
           <code>show-invalid</code>, <code>custom-error</code>,
           <code>can-clear</code>, <code>loading</code> and
           <code>no-options-text</code>. An attribute goes to the text field, and
           <code>class</code> and <code>style</code> go to the wrapper, which has
-          the class <code>has-value</code> while an option is ticked.
+          the classes <code>is-multiple</code> and, while an option is ticked,
+          <code>has-value</code>.
         </p>
 
         <div class="demo-box">
-          <MultiComboBox
+          <ComboBox
             v-model="propsValue"
+            multiple
             :options="statuses"
             :size="size"
             :required="required"
@@ -439,7 +460,7 @@ const dialogFindings = ref<number[]>([]);
         <h2>In a Dialog, and the place of the list</h2>
 
         <p class="c-grey-text">
-          The list is in the top layer and placed as ComboBox's: below the
+          The list is in the top layer and placed as without <code>multiple</code>: below the
           field, above it when it does not fit below, shortened to the room it
           has when it fits on neither side. The checkbox is at the start of each
           option and a long label wraps, so at 400% zoom the list scrolls down
@@ -458,8 +479,9 @@ const dialogFindings = ref<number[]>([]);
 
         <Dialog ref="dialog" label="Connect findings">
           <div class="dialog-findings">
-            <MultiComboBox
+            <ComboBox
               v-model="dialogFindings"
+              multiple
               :options="findings"
               value-key="id"
               label-key="title"
@@ -475,7 +497,7 @@ const dialogFindings = ref<number[]>([]);
 </template>
 
 <style>
-.demo-page.multicombobox-page {
+.demo-page.combobox-multiple-page {
   .card {
     display: grid;
     align-content: start;

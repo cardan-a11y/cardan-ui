@@ -180,7 +180,9 @@ const filterClient = ref<number | null>(null);
       follows the combobox pattern of the ARIA Authoring Practices Guide, in the
       form of its example “Editable Combobox With List Autocomplete”, and has no
       library under it. It replaces MultiSelect, which stays in this version and
-      is removed in the next minor.
+      is removed in the next minor. With <code>multiple</code> it selects
+      several options, as checkboxes in its popup: see
+      <NuxtLink to="/combobox-multiple">ComboBox multiple</NuxtLink>.
     </p>
 
     <div class="card-cols">

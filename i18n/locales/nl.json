@@ -34,6 +34,7 @@
     "no-results": "Geen opties gevonden voor je zoekopdracht",
     "results": "{count} optie | {count} opties",
     "search-failed": "Het zoeken is mislukt. Pas de tekst aan om opnieuw te zoeken.",
+    "selected": "{count} geselecteerd",
     "unknown-option": "Onbekende optie"
   },
   "cookies": {
@@ -231,9 +232,6 @@
   },
   "meter": {
     "value-of-max": "{value} van {max}"
-  },
-  "multicombobox": {
-    "selected": "{count} geselecteerd"
   },
   "multiselect": {
     "items-selected": "{count} items geselecteerd"

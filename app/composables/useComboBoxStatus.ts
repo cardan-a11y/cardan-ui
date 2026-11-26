@@ -1,5 +1,5 @@
 /**
- * The status element of ComboBox and MultiComboBox: `say()` puts a text in
+ * The status element of ComboBox: `say()` puts a text in
  * it, after `delay`, and takes it out again after 3 seconds, so the same
  * text said twice is read twice.
  */

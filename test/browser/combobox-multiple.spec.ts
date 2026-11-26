@@ -2,14 +2,14 @@ import { expect, test, type Page } from '@playwright/test';
 import { contrastRatio, gotoHydrated, runAxe, tabKey } from './helpers';
 
 /**
- * What happy-dom cannot show of MultiComboBox: focus moving into the dialog
+ * What happy-dom cannot show of ComboBox with `multiple`: focus moving into the dialog
  * and back, Tab through the checkboxes and out, Escape inside a Dialog, the
  * pointer, the place of the list at 400% zoom, and the three findings of the
  * Auditor's report its first version closes (F36 name and description, F7
  * not by colour alone, F13 reflow).
  */
 test.beforeEach(async ({ page }) => {
-  await gotoHydrated(page, '/multicombobox');
+  await gotoHydrated(page, '/combobox-multiple');
 });
 
 const statuses = (page: Page) =>
@@ -18,10 +18,10 @@ const findings = (page: Page) =>
   page.getByRole('combobox', { name: 'Default findings' }).first();
 
 function popupOf(page: Page) {
-  return page.locator('.multicombobox-popup:popover-open');
+  return page.locator('.combobox.is-multiple .combobox-popup:popover-open');
 }
 
-test('MultiComboBox: Down Arrow moves focus into the dialog, Space ticks, Escape returns to the field', async ({
+test('ComboBox multiple: Down Arrow moves focus into the dialog, Space ticks, Escape returns to the field', async ({
   page,
 }) => {
   const combobox = statuses(page);
@@ -45,7 +45,7 @@ test('MultiComboBox: Down Arrow moves focus into the dialog, Space ticks, Escape
   await expect(combobox).toHaveValue('In progress');
 });
 
-test('MultiComboBox: Tab goes through the checkboxes of the open dialog, and past the last one leaves and closes it', async ({
+test('ComboBox multiple: Tab goes through the checkboxes of the open dialog, and past the last one leaves and closes it', async ({
   page,
 }) => {
   const combobox = statuses(page);
@@ -65,7 +65,7 @@ test('MultiComboBox: Tab goes through the checkboxes of the open dialog, and pas
   await expect(combobox).toHaveAttribute('aria-expanded', 'false');
 });
 
-test('MultiComboBox: Enter on a checkbox and in the field does not submit while the dialog is open', async ({
+test('ComboBox multiple: Enter on a checkbox and in the field does not submit while the dialog is open', async ({
   page,
 }) => {
   const combobox = statuses(page);
@@ -86,7 +86,7 @@ test('MultiComboBox: Enter on a checkbox and in the field does not submit while 
   await expect(page.getByText('Submitted: ["todo"]')).toBeVisible();
 });
 
-test('MultiComboBox: a click on an option ticks it, keeps the dialog open and focus in the field', async ({
+test('ComboBox multiple: a click on an option ticks it, keeps the dialog open and focus in the field', async ({
   page,
 }) => {
   const combobox = statuses(page);
@@ -109,7 +109,7 @@ test('MultiComboBox: a click on an option ticks it, keeps the dialog open and fo
   await expect(combobox).toHaveValue('2 selected');
 });
 
-test('MultiComboBox: a click on a label keeps the search and its caret, so typing goes on', async ({
+test('ComboBox multiple: a click on a label keeps the search and its caret, so typing goes on', async ({
   page,
 }) => {
   const combobox = statuses(page);
@@ -123,7 +123,7 @@ test('MultiComboBox: a click on a label keeps the search and its caret, so typin
   await expect(page.getByRole('checkbox', { name: 'On hold' })).toBeChecked();
 });
 
-test('MultiComboBox in a Dialog: Escape in the list closes only the list, a second Escape the dialog', async ({
+test('ComboBox multiple in a Dialog: Escape in the list closes only the list, a second Escape the dialog', async ({
   page,
 }) => {
   const trigger = page.getByRole('button', { name: 'Open dialog' });
@@ -145,7 +145,7 @@ test('MultiComboBox in a Dialog: Escape in the list closes only the list, a seco
   await expect(trigger).toBeFocused();
 });
 
-test('MultiComboBox (F36): the field and the dialog are named by the label alone, the instruction describes the field', async ({
+test('ComboBox multiple (F36): the field and the dialog are named by the label alone, the instruction describes the field', async ({
   page,
 }) => {
   const combobox = findings(page);
@@ -163,7 +163,7 @@ test('MultiComboBox (F36): the field and the dialog are named by the label alone
   ).toBeVisible();
 });
 
-test('MultiComboBox (F13) at 320 by 256 (400% zoom): the list stays in the viewport and scrolls down, never sideways', async ({
+test('ComboBox multiple (F13) at 320 by 256 (400% zoom): the list stays in the viewport and scrolls down, never sideways', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 256 });
@@ -216,7 +216,7 @@ for (const mode of [
   test.describe(`${mode.name} mode`, () => {
     test.use({ colorScheme: mode.colorScheme });
 
-    test('MultiComboBox (F7): a ticked option shows its checkmark, the focus outline reaches 3:1, axe passes with the dialog open', async ({
+    test('ComboBox multiple (F7): a ticked option shows its checkmark, the focus outline reaches 3:1, axe passes with the dialog open', async ({
       page,
     }) => {
       const combobox = statuses(page);
@@ -234,7 +234,7 @@ for (const mode of [
           ctx.fillRect(0, 0, 1, 1);
           return Array.from(ctx.getImageData(0, 0, 1, 1).data.slice(0, 3));
         };
-        const row = popup.querySelector('.multicombobox-option')!;
+        const row = popup.querySelector('.combobox-check')!;
         const box = row.querySelector('input')!;
 
         return {
