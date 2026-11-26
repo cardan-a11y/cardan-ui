@@ -1,5 +1,19 @@
 <script setup lang="ts">
 useHead({ title: 'Buttons & Links' });
+
+const agreed = ref(false);
+const message = ref('');
+const sendStatus = ref('');
+const sent = ref(false);
+
+// A press while unavailable says why; emptied first, so a second press is
+// read out again
+async function onSend() {
+  if (agreed.value) return;
+  sendStatus.value = '';
+  await nextTick();
+  sendStatus.value = 'Not sent: tick “I agree to the terms” first.';
+}
 </script>
 
 <template>
@@ -49,9 +63,9 @@ useHead({ title: 'Buttons & Links' });
         <Button variant="3d" label="3D" />
         <Button variant="link" label="Link" style="margin-inline-start:0.75rem" />
       </div>
+    </Card>
 
-      <Spacer size="xxl" />
-
+    <Card>
       <h2>Sizes</h2>
       <div class="flex-wrapper">
         <Button icon="material-symbols:accessibility-new-rounded" size="xl" label="Extra Large" />
@@ -60,9 +74,9 @@ useHead({ title: 'Buttons & Links' });
         <Button icon="material-symbols:accessibility-new-rounded" size="sm" label="Small" />
         <Button icon="material-symbols:accessibility-new-rounded" size="xs" label="Extra Small" />
       </div>
+    </Card>
 
-      <Spacer size="xxl" />
-
+    <Card>
       <h2>Font sizes</h2>
       <div class="flex-wrapper" style="--gap: 1rem">
         <Button variant="link" font-size="lg" label="Large link" />
@@ -71,9 +85,9 @@ useHead({ title: 'Buttons & Links' });
         <Button variant="link" font-size="xs" label="XS link" />
         <Button variant="link" font-size="xxs" label="XXS link" />
       </div>
+    </Card>
 
-      <Spacer size="xxl" />
-
+    <Card>
       <h2>Icon sizes</h2>
       <div class="flex-wrapper" style="--gap: 1rem">
         <Button icon="material-symbols:check-circle-rounded" icon-pos="end" icon-size="lg" label="Large icon" />
@@ -82,9 +96,9 @@ useHead({ title: 'Buttons & Links' });
         <Button icon="material-symbols:check-circle-rounded" icon-pos="end" icon-size="xs" label="XS icon" />
         <Button icon="material-symbols:check-circle-rounded" icon-pos="end" icon-size="xxs" label="XXS icon" />
       </div>
+    </Card>
 
-      <Spacer size="xxl" />
-
+    <Card>
       <h2>Icons</h2>
       <div class="flex-wrapper">
         <Button
@@ -104,9 +118,9 @@ useHead({ title: 'Buttons & Links' });
           label="Cardan.com"
         />
       </div>
+    </Card>
 
-      <Spacer size="xxl" />
-
+    <Card>
       <h2>Border radius</h2>
       <div class="flex-wrapper">
         <Button
@@ -148,14 +162,16 @@ useHead({ title: 'Buttons & Links' });
           label="Download"
         />
       </div>
+    </Card>
 
-      <Spacer size="xxl" />
-
+    <Card>
       <h2>States</h2>
       <div class="flex-wrapper">
         <Button size="lg" loading label="Loading" />
         <Button size="lg" loading label="Loading link" to="/" />
         <Button size="lg" disabled label="Disabled button" />
+        <Button size="lg" aria-disabled label="Unavailable button" />
+        <Button size="lg" aria-disabled label="Unavailable link" to="/" />
         <Button
           size="lg"
           disabled
@@ -166,10 +182,42 @@ useHead({ title: 'Buttons & Links' });
         />
         <CopyButton size="lg" text="Demo Text" />
       </div>
+    </Card>
 
-      <Spacer size="lg" />
+    <Card>
+      <h2>Unavailable, but focusable</h2>
+      <p>
+        <code>disabled</code> takes a button out of the Tab order, so a
+        keyboard or screen reader user may never find it, or learn why it does
+        nothing. <code>aria-disabled</code> keeps it focusable and says it is
+        unavailable: a submit button does not submit, also not on Enter in a
+        field of its form, and an unavailable link keeps its href but is not
+        followed. A click, Enter or Space still emits <code>click</code>, so
+        a press can say why nothing happens. Say why in its description
+        (<code>aria-describedby</code>) or in text next to it.
+      </p>
+      <Form @submit="sent = true">
+        <Input v-model="message" label="Message" />
+        <Checkbox v-model="agreed" label="I agree to the terms" />
+        <div class="flex-wrapper">
+          <Button
+            type="submit"
+            variant="primary"
+            label="Send"
+            :aria-disabled="!agreed"
+            aria-describedby="send-reason"
+            @click="onSend"
+          />
+          <p id="send-reason">
+            {{ agreed ? '' : 'Tick “I agree to the terms” to send.' }}
+          </p>
+        </div>
+        <p role="status">{{ sent ? 'Sent.' : sendStatus }}</p>
+      </Form>
+    </Card>
 
-      <h3>The current page, disabled</h3>
+    <Card>
+      <h2>The current page, disabled</h2>
       <p>
         A disabled link has no href, so it cannot be followed or reached with
         Tab. When it leads to the current page it keeps that look and

@@ -88,6 +88,23 @@ describe('Checkbox', () => {
     expect(description(checkbox)).toBe('');
     expect(checkbox.attributes('aria-invalid')).toBeUndefined();
   });
+
+  it('with aria-disabled is read as unavailable and stays focusable, and a click does not tick it', async () => {
+    const wrapper = await mountSuspended(Checkbox, {
+      props: { label: 'Archived', modelValue: false, ariaDisabled: true },
+      attachTo: document.body,
+    });
+    const checkbox = wrapper.get<HTMLInputElement>('input');
+
+    expect(checkbox.attributes('aria-disabled')).toBe('true');
+    expect(checkbox.element.disabled).toBe(false);
+
+    checkbox.element.click();
+    await nextTick();
+
+    expect(checkbox.element.checked).toBe(false);
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+  });
 });
 
 describe('CheckboxGroup', () => {

@@ -11,6 +11,7 @@ import {
   expectNoViolations,
   roleOf,
 } from '../a11y';
+import { clickBackdrop } from '../dom';
 import { fetchError } from '../fetch';
 
 /**
@@ -167,8 +168,7 @@ describe('useConfirm: the action travels with the request', () => {
     await expect(closed).resolves.toBe(false);
 
     const { result: outside } = await ask('Delete apple');
-    // A click on the backdrop has the dialog itself as its target
-    dialog().click();
+    clickBackdrop(dialog());
     await expect(outside).resolves.toBe(false);
 
     const { result: escaped } = await ask('Delete apple');

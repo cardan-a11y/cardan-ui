@@ -1,7 +1,6 @@
 {
   "name": "@cardan/auth-ui",
   "type": "module",
-  "version": "2.0.0",
   "main": "./nuxt.config.ts",
   "repository": {
     "type": "git",

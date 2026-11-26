@@ -282,6 +282,8 @@ function makeToast() {
           Maxime odio nam a placeat qui illo iure cupiditate et.
         </p>
 
+        <Input label="Name" />
+
         <Popover>
           <template #default>
             Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae

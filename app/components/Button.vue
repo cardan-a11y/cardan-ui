@@ -18,6 +18,7 @@ const {
   hideExternalIcon = false,
   loading = false,
   disabled = false,
+  ariaDisabled = false,
   external = false,
   iconPos = 'start',
   variant = 'secondary',
@@ -39,6 +40,16 @@ const {
   radius?: BorderRadius;
   hideLabel?: boolean;
   disabled?: boolean;
+  /**
+   * Read and shown as unavailable, but focusable, where `disabled` takes it out
+   * of the Tab order: a submit button does not submit and a link keeps its href
+   * but is not followed (not on a middle-click either; the context menu still
+   * opens it), yet a click, Enter or Space still emits `click`, so a
+   * press can say why nothing happens. For a button the user should find and
+   * learn why it is unavailable, such as a form's submit button; the reason
+   * goes in its description (`aria-describedby`) or text next to it
+   */
+  ariaDisabled?: boolean;
   loading?: boolean;
   download?: boolean;
   external?: boolean;
@@ -89,8 +100,15 @@ function handleClick(event: Event) {
     event.preventDefault();
     return;
   }
+  // No submit or navigation, but the press is still the parent's to answer
+  if (ariaDisabled) event.preventDefault();
 
   emit('click');
+}
+
+// A middle-click would open an unavailable link in a new tab
+function handleAuxClick(event: MouseEvent) {
+  if (ariaDisabled || loading) event.preventDefault();
 }
 const buttonRef = useTemplateRef<HTMLButtonElement | ComponentPublicInstance>(
   'button',
@@ -115,7 +133,7 @@ const emit = defineEmits<{
     ref="button"
     :to="disabled ? undefined : to || href"
     :role="disabled ? 'link' : undefined"
-    :aria-disabled="disabled || loading || undefined"
+    :aria-disabled="disabled || loading || ariaDisabled || undefined"
     v-bind="isDisabledCurrent ? { 'aria-current': 'page' } : {}"
     :aria-busy="loading || undefined"
     :target="target"
@@ -129,12 +147,14 @@ const emit = defineEmits<{
       `icon-position--${iconPos}`,
       hideLabel && 'button--icon-only',
       loading && 'button--loading',
-      (loading || disabled) && 'disabled',
+      (loading || disabled || ariaDisabled) && 'disabled',
+      ariaDisabled && !loading && !disabled && 'button--unavailable',
       isDisabledActive && 'router-link-active',
       isDisabledCurrent && 'router-link-exact-active',
     ]"
     :style="computedStyle"
     @click.capture="handleClick"
+    @auxclick.capture="handleAuxClick"
   >
     <template v-if="loading">
       <Icon name="svg-spinners:90-ring-with-bg" />
@@ -169,7 +189,7 @@ const emit = defineEmits<{
     ref="button"
     :type="type"
     :disabled="disabled"
-    :aria-disabled="loading || undefined"
+    :aria-disabled="loading || ariaDisabled || undefined"
     :aria-busy="loading || undefined"
     :aria-label="ariaLabel"
     :class="[
@@ -179,7 +199,8 @@ const emit = defineEmits<{
       `icon-position--${iconPos}`,
       hideLabel && 'button--icon-only',
       loading && 'button--loading',
-      loading && 'disabled',
+      (loading || ariaDisabled) && 'disabled',
+      ariaDisabled && !loading && !disabled && 'button--unavailable',
     ]"
     :style="computedStyle"
     :title="disabled ? undefined : title"
@@ -217,7 +238,9 @@ const emit = defineEmits<{
   gap: 0.5em;
   font-weight: var(--font-weight-medium);
   font-size: var(--button-font-size, var(--font-size-sm));
-  border: 1px solid transparent;
+  color: var(--button-text-color);
+  background-color: var(--button-bg-color, transparent);
+  border: 1px solid var(--button-border-color, transparent);
   transition-property: color, border-color, background-color, opacity;
   transition-duration: var(--duration-sm);
   text-decoration: none;
@@ -335,8 +358,8 @@ const emit = defineEmits<{
 
 .button-variant--primary {
   --focus-color: var(--color-accent-text);
-  color: var(--color-on-accent);
-  background-color: var(--color-accent);
+  --button-text-color: var(--color-on-accent);
+  --button-bg-color: var(--color-accent);
 
   &:not(:disabled, .disabled):hover {
     background-color: var(--color-accent-hover);
@@ -344,8 +367,8 @@ const emit = defineEmits<{
 }
 
 .button-variant--danger {
-  color: var(--color-red-text);
-  background-color: var(--color-red-bg);
+  --button-text-color: var(--color-red-text);
+  --button-bg-color: var(--color-red-bg);
 
   &:not(:disabled, .disabled):hover {
     border-color: var(--color-red-graphic);
@@ -353,8 +376,8 @@ const emit = defineEmits<{
 }
 
 .button-variant--green {
-  color: var(--color-white);
-  background-color: var(--color-green);
+  --button-text-color: var(--color-white);
+  --button-bg-color: var(--color-green);
 
   &:not(:disabled, .disabled):hover {
     background-color: color-mix(
@@ -366,8 +389,8 @@ const emit = defineEmits<{
 }
 
 .button-variant--black {
-  color: var(--color-white);
-  background-color: var(--color-text);
+  --button-text-color: var(--color-white);
+  --button-bg-color: var(--color-text);
 
   &:not(:disabled, .disabled):hover {
     background-color: var(--color-grey-text);
@@ -378,8 +401,8 @@ const emit = defineEmits<{
   --button-shadow-offset: 4px 4px 0 0 var(--color-accent-graphic);
   --button-shadow-offset-hover: 6px 6px 0 0 var(--color-accent-graphic);
 
-  color: var(--color-white);
-  background-color: var(--color-text);
+  --button-text-color: var(--color-white);
+  --button-bg-color: var(--color-text);
   transition-property: background-color, box-shadow;
   box-shadow: var(--button-shadow-offset);
 
@@ -403,8 +426,8 @@ const emit = defineEmits<{
 }
 
 .button-variant--white {
-  color: var(--color-text);
-  background-color: var(--color-white);
+  --button-text-color: var(--color-text);
+  --button-bg-color: var(--color-white);
 
   .icon svg {
     width: 1.25em;
@@ -418,8 +441,8 @@ const emit = defineEmits<{
 }
 
 .button-variant--secondary {
-  color: var(--color-text);
-  background-color: var(--color-grey-light);
+  --button-text-color: var(--color-text);
+  --button-bg-color: var(--color-grey-light);
 
   &:not(:disabled, .disabled):hover {
     background-color: color-mix(
@@ -431,8 +454,8 @@ const emit = defineEmits<{
 }
 
 .button-variant--ghost {
-  color: var(--color-text);
-  background-color: transparent;
+  --button-text-color: var(--color-text);
+  --button-bg-color: transparent;
 
   &:not(:disabled, .disabled):hover {
     background-color: var(--color-ghost-hover-bg, var(--color-grey-bg));
@@ -446,8 +469,8 @@ const emit = defineEmits<{
 
 .button-variant--ghost-green {
   padding-inline: 0;
-  color: var(--color-green-text);
-  background-color: transparent;
+  --button-text-color: var(--color-green-text);
+  --button-bg-color: transparent;
   text-underline-offset: 0.25em;
 
   &:not(:disabled, .disabled):hover {
@@ -460,8 +483,8 @@ const emit = defineEmits<{
 }
 
 .button-variant--ghost-red {
-  color: var(--color-red-text);
-  background-color: transparent;
+  --button-text-color: var(--color-red-text);
+  --button-bg-color: transparent;
 
   &:not(:disabled, .disabled):hover {
     background-color: var(--color-red-bg);
@@ -473,8 +496,8 @@ const emit = defineEmits<{
 }
 
 .button-variant--tab {
-  color: var(--color-text);
-  background-color: transparent;
+  --button-text-color: var(--color-text);
+  --button-bg-color: transparent;
   border-radius: var(--radius-md) var(--radius-md) 0 0;
   padding-block: 0.5rem 0.65rem;
 
@@ -492,9 +515,9 @@ const emit = defineEmits<{
 }
 
 .button-variant--outline {
-  color: var(--color-text);
-  background-color: var(--color-input-bg);
-  border-color: var(--color-grey-light);
+  --button-text-color: var(--color-text);
+  --button-bg-color: var(--color-input-bg);
+  --button-border-color: var(--color-grey-light);
 
   &:not(:disabled, .disabled):hover {
     background-color: var(--color-grey-bg);
@@ -507,9 +530,9 @@ const emit = defineEmits<{
 }
 
 .button-variant--outline-green {
-  color: var(--color-green-text);
-  background-color: transparent;
-  border-color: var(--color-green-graphic);
+  --button-text-color: var(--color-green-text);
+  --button-bg-color: transparent;
+  --button-border-color: var(--color-green-graphic);
 
   &:not(:disabled, .disabled):hover {
     background-color: var(--color-green-bg);
@@ -517,9 +540,9 @@ const emit = defineEmits<{
 }
 
 .button-variant--outline-red {
-  color: var(--color-red-text);
-  background-color: transparent;
-  border-color: var(--color-red-graphic);
+  --button-text-color: var(--color-red-text);
+  --button-bg-color: transparent;
+  --button-border-color: var(--color-red-graphic);
 
   &:not(:disabled, .disabled):hover {
     background-color: var(--color-red-bg);
@@ -537,7 +560,7 @@ const emit = defineEmits<{
   align-items: center;
   text-decoration: underline;
   text-underline-offset: 0.25em;
-  background-color: transparent;
+  --button-bg-color: transparent;
   padding-inline: 0;
 
   &:has(.external-link) {
@@ -564,9 +587,9 @@ const emit = defineEmits<{
 .button-variant--menu {
   width: 100%;
   font-weight: var(--font-weight-medium);
-  color: var(--color-text);
+  --button-text-color: var(--color-text);
   justify-content: space-between;
-  background-color: transparent;
+  --button-bg-color: transparent;
   white-space: nowrap;
   gap: 1.5rem;
 
@@ -613,7 +636,7 @@ const emit = defineEmits<{
   padding-inline: 0;
   font-weight: var(--font-weight-medium);
   justify-content: start;
-  background-color: transparent;
+  --button-bg-color: transparent;
   transition-duration: 0s;
 
   .iconify {
@@ -642,9 +665,9 @@ const emit = defineEmits<{
   max-width: max-content;
   padding-inline: 0;
   font-weight: var(--font-weight-medium);
-  color: var(--button-color);
+  --button-text-color: var(--button-color);
   justify-content: start;
-  background-color: transparent;
+  --button-bg-color: transparent;
   transition-duration: 0s;
 
   .iconify {
@@ -713,6 +736,43 @@ const emit = defineEmits<{
       }
     }
   }
+}
+
+/* Dims its resting colours, also on an active link, not the button itself,
+   so its focus ring keeps its contrast */
+.button.button--unavailable,
+.button.button--loading {
+  opacity: 1;
+  color: color-mix(
+    in srgb,
+    var(--button-text-color, currentColor) 60%,
+    transparent
+  );
+  background-color: color-mix(
+    in srgb,
+    var(--button-bg-color, transparent) 35%,
+    transparent
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--button-border-color, transparent) 35%,
+    transparent
+  );
+  box-shadow: none;
+
+  .iconify {
+    color: inherit;
+  }
+
+  @media (forced-colors: active) {
+    color: GrayText;
+    border-color: GrayText;
+  }
+}
+
+/* Takes a press, which may say why nothing happens */
+.button.button--unavailable {
+  pointer-events: auto;
 }
 
 .button--icon-only {

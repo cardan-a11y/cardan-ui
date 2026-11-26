@@ -1,10 +1,11 @@
-<script setup lang="ts" generic="T">
-import type { StyleValue } from 'vue';
+<script setup lang="ts" generic="T, M extends boolean = false">
+import type { Ref, StyleValue } from 'vue';
 
 /**
- * A searchable single select: the APG combobox with a listbox popup, as in
- * its example "Editable Combobox With List Autocomplete". Typing shortens the
- * list and one option is picked as the value. Where it leaves the pattern:
+ * A searchable select: the APG combobox with a listbox popup, as in its
+ * example "Editable Combobox With List Autocomplete". Typing shortens the
+ * list and one option is picked as the value. With `multiple` it selects
+ * several (below). Where it leaves the pattern:
  * - The value is always one of the options, never the typed text. When focus
  *   leaves, or before its Form checks a submit, the field shows the selected
  *   option's label again; a field the user emptied clears the value (the
@@ -25,7 +26,8 @@ import type { StyleValue } from 'vue';
  *   `false`; a status element beside the field tells a screen reader.
  * - The first arrow key highlights the selected option, as a native select.
  * - Focus leaving the field and its buttons closes the list, as a press
- *   outside does. Tab and Shift + Tab pick a highlighted option first.
+ *   outside does. Tab and Shift + Tab pick a highlighted option first, but
+ *   only an existing, enabled one: never the create option.
  * - Enter with the popup open never submits; Escape then only closes it and
  *   puts the label back, and is stopped there, so a Dialog stays open.
  *   Escape with the popup closed does not empty the field.
@@ -58,33 +60,74 @@ import type { StyleValue } from 'vue';
  * loads and does not wrap. The label cannot come from such a list, so a
  * value needs `v-model:selected`, which a value outside the loaded pages
  * keeps.
+ *
+ * With `create-option`, the last option of the list offers to create the
+ * typed text while no label is that text (ignoring case and the spaces
+ * around it, not diacritics), once the whole list is there, so not with
+ * `server-search`. It is never a value and is never highlighted by itself:
+ * an arrow key and Enter, or a click, emit `create` with the trimmed text
+ * and close the list, the text and the value staying as they were. The
+ * parent creates the record, adds it to `options` and sets the value, or
+ * shows its failure with `custom-error`. The status says that nothing
+ * matched and that the option is there.
+ *
+ * An option whose `disabled-key` field is true has `aria-disabled`, shows
+ * dimmed and stays in the list (APG listbox): a search finds it and the
+ * arrow keys reach it, so a screen reader reads it as unavailable, but Enter
+ * and a click leave the list open and the value as it was. A value whose
+ * option is disabled keeps its label and checkmark.
+ *
+ * With `multiple` it selects several options, and the wrapper has the class
+ * `is-multiple`. No pattern describes several values in one listbox
+ * combobox, so the popup is the dialog that ARIA 1.2 allows a combobox (as
+ * APG's "Date Picker Combobox"), and every option in it is a checkbox, which
+ * every browser and screen reader knows. `multiple` is read once, when the
+ * field is created. Where it differs from the above:
+ * - Focus moves into the dialog: Down Arrow in the field goes to the first
+ *   checkbox, Up Arrow to the last; in the dialog the arrow keys, Home and End
+ *   move between them, and Up Arrow on the first returns to the field. So the
+ *   field has no `aria-activedescendant` and no `aria-autocomplete`.
+ * - The checkboxes are ordinary Tab stops, while the dialog is open. Space
+ *   ticks one and the dialog stays open, as on a click, which keeps focus
+ *   where it was, so a pointer user goes on typing.
+ * - The closed field shows the selection as its value, never its name: the
+ *   label of one option, or "3 selected". Focus selects it and typing
+ *   replaces it with the search; when focus leaves the field and the dialog,
+ *   the selection is back. The dialog says the number above the list, so it
+ *   stays in sight while the list is filtered.
+ * - Escape in the field or the dialog closes it, puts the selection back and
+ *   focuses the field, and is stopped there, so a Dialog around it stays
+ *   open. Enter in the field does the same, without being stopped; while it
+ *   is open, Enter in the field or on a checkbox never submits.
+ * - `v-model` is an array of values, `[]` after a clear; `v-model:selected`
+ *   the array of their options, so a field shows its labels without its
+ *   list. `name` goes to a hidden input per value, since the checkboxes are
+ *   only there while the dialog is open. `required` asks for one at least.
+ * - Not `server-search`: a list too long to load whole needs a page of its
+ *   own.
+ * - `create-option` is a button after the list. It emits `create` and
+ *   nothing more: the parent creates the record, adds it to `options` and
+ *   its value to `v-model`. Focus moves to the field, whose text stays, so
+ *   the new option shows ticked.
+ * - A disabled option is an `aria-disabled` checkbox: Tab, the arrow keys
+ *   and a search reach it, but a click or Space does not tick or untick it,
+ *   nor does the clear button. Not a native disabled checkbox, which Tab
+ *   skips.
  */
 
 defineOptions({ inheritAttrs: false });
 
-type Value = string | number | boolean;
-type Answer = T[] | { options: T[]; more?: boolean };
-type Loader = (
-  query: string,
-  context: { signal: AbortSignal; page: number },
-) => Answer | Promise<Answer>;
-
-interface Listing {
-  query: string;
-  options: T[];
-  more: boolean;
-  page: number;
-}
-
-const SEARCH_PAUSE_MS = 300;
-
 const { t } = useI18n();
 
-/** The selected option's value (`value-key`); `null` after a clear */
+/** The selected option's value (`value-key`), `null` after a clear; with `multiple` an array of them, `[]` after a clear */
 // The default keeps Vue from casting an absent value to `false`, which is a value here
-const model = defineModel<Value | null | undefined>({ default: undefined });
-/** The selected option itself: written on a pick, read to show the label */
-const selected = defineModel<T | null>('selected');
+const model = defineModel<
+  M extends true
+    ? ComboBoxValue[] | null | undefined
+    : ComboBoxValue | null | undefined
+>({ default: undefined as never });
+/** The selected option itself, or with `multiple` the array of them: written on a pick, read to show the label */
+const selected = defineModel<(M extends true ? T[] : T) | null>('selected');
 
 const {
   label,
@@ -97,31 +140,42 @@ const {
   noOptionsText = undefined,
   instruction = undefined,
   customError = undefined,
+  createText = undefined,
+  disabledKey = 'disabled',
   size = 'md',
   canClear = true,
   id = useId(),
+  multiple,
   required,
   disabled,
   loading,
   serverSearch,
+  createOption,
   showInvalid,
 } = defineProps<{
-  /** Names the field, the listbox and the open button, and the clear button: "Clear <label>" */
+  /** Names the field, the popup and the open button, and the clear button: "Clear <label>" */
   label: string;
   /** Objects, strings or numbers; or a function that answers them, asked on first touch */
-  options: T[] | Loader;
+  options: T[] | ComboBoxLoader<T>;
   /** A new key asks the options function again */
   optionsKey?: string | number;
-  /** The options function searches, and may answer in pages; a value then needs `v-model:selected` */
+  /** Selects several: `v-model` is an array, the popup a dialog of checkboxes. Read once */
+  // A Boolean prop at runtime (`& boolean`), so absent is `false`; the rule sees only `M`
+  // eslint-disable-next-line vue/require-default-prop
+  multiple?: M & boolean;
+  /** The options function searches, and may answer in pages; a value then needs `v-model:selected`. Not with `multiple` */
   serverSearch?: boolean;
   valueKey?: string;
   labelKey?: string;
+  /** The field of an option object that disables it */
+  disabledKey?: string;
   id?: string;
-  /** Of the hidden input that holds the option's value */
+  /** Of the hidden input that holds the option's value; with `multiple` one per value */
   name?: string;
   placeholder?: string;
   /** The text of an empty list */
   noOptionsText?: string;
+  /** With `multiple`, at least one option */
   required?: boolean;
   disabled?: boolean;
   autofocus?: boolean;
@@ -129,6 +183,10 @@ const {
   loading?: boolean;
   /** Without it the field has no clear button and emptying it puts the label back */
   canClear?: boolean;
+  /** Offers to create the typed text when no label is that text: emits `create` */
+  createOption?: boolean;
+  /** The create option's text for the typed text; "Create “…”" by default */
+  createText?: (text: string) => string;
   hideLabel?: boolean;
   instruction?: string;
   /** Shows the error now; a Form shows it after a failed submit */
@@ -138,6 +196,13 @@ const {
   size?: InputSize;
 }>();
 
+const emit = defineEmits<{
+  /** The create option was picked, with the trimmed text */
+  create: [text: string];
+}>();
+
+const isMultiple = !!multiple;
+
 const { attrs, controlAttrs } = useControlAttrs();
 
 const rootRef = useTemplateRef<HTMLElement>('root');
@@ -145,818 +210,179 @@ const controlRef = useTemplateRef<HTMLElement>('control');
 const inputRef = useTemplateRef<HTMLInputElement>('input');
 const popupRef = useTemplateRef<HTMLElement>('popup');
 
-function isRecord(option: unknown): option is Record<string, unknown> {
-  return typeof option === 'object' && option !== null;
-}
-
-function valueOf(option: T) {
-  return (isRecord(option) ? option[valueKey] : option) as Value;
-}
-
-function labelOf(option: T) {
-  return String(isRecord(option) ? (option[labelKey] ?? '') : option);
-}
-
-function foldCaseAndDiacritics(text: string) {
-  return text
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase();
-}
-
-const loaded = shallowRef<Listing>();
-const loadState = ref<'idle' | 'loading' | 'loaded' | 'failed'>('idle');
-const found = shallowRef<Listing>();
-const searchState = ref<'idle' | 'loading' | 'failed'>('idle');
-const isLoadingMore = ref(false);
-
-let request: AbortController | undefined;
-let searchRequest: AbortController | undefined;
-let moreRequest: AbortController | undefined;
-let searchTimer: ReturnType<typeof setTimeout> | undefined;
-
-const isLoader = computed(() => typeof options === 'function');
-const isServerSearch = computed(() => !!serverSearch && isLoader.value);
-const allOptions = computed(() =>
-  Array.isArray(options) ? options : (loaded.value?.options ?? []),
-);
-const hasWholeList = computed(
-  () =>
-    !loading &&
-    (isLoader.value
-      ? loadState.value === 'loaded' && !isServerSearch.value
-      : true),
-);
-
-async function ask(
-  query: string,
-  page: number,
-  signal: AbortSignal,
-): Promise<Listing> {
-  const answer = await (options as Loader)(query, { signal, page });
-  const isList = Array.isArray(answer);
-
-  return {
-    query,
-    page,
-    options: isList ? answer : answer.options,
-    more: !isList && !!answer.more && isServerSearch.value,
-  };
-}
-
-async function load() {
-  if (!isLoader.value || loadState.value === 'loading') return;
-
-  const controller = new AbortController();
-  request = controller;
-  loadState.value = 'loading';
-
-  try {
-    const listing = await ask('', 1, controller.signal);
-    if (request !== controller) return;
-
-    loaded.value = listing;
-    loadState.value = 'loaded';
-  } catch {
-    if (request !== controller) return;
-
-    loadState.value = 'failed';
-  }
-
-  highlighted.value = -1;
-}
-
-function touch() {
-  if (disabled || !isLoader.value || loadState.value === 'loading') return;
-
-  if (loadState.value !== 'loaded' || !loaded.value?.options.length) {
-    void load();
-  }
-}
-
-function stopLoadingMore() {
-  moreRequest?.abort();
-  moreRequest = undefined;
-  isLoadingMore.value = false;
-}
-
-function forgetSearch() {
-  clearTimeout(searchTimer);
-  searchRequest?.abort();
-  searchRequest = undefined;
-  stopLoadingMore();
-  found.value = undefined;
-  searchState.value = 'idle';
-}
-
-function searchSoon() {
-  const query = text.value.trim();
-
-  forgetSearchRequest();
-  if (!query) {
-    found.value = undefined;
-    searchState.value = 'idle';
-    return;
-  }
-
-  searchState.value = 'loading';
-  searchTimer = setTimeout(() => void search(query), SEARCH_PAUSE_MS);
-}
-
-function forgetSearchRequest() {
-  clearTimeout(searchTimer);
-  searchRequest?.abort();
-  searchRequest = undefined;
-  stopLoadingMore();
-}
-
-async function search(query: string) {
-  const controller = new AbortController();
-  searchRequest = controller;
-
-  try {
-    const listing = await ask(query, 1, controller.signal);
-    if (searchRequest !== controller) return;
-
-    stopLoadingMore();
-    found.value = listing;
-    searchState.value = 'idle';
-  } catch {
-    if (searchRequest !== controller) return;
-
-    stopLoadingMore();
-    found.value = { query, page: 1, options: [], more: false };
-    searchState.value = 'failed';
-  }
-
-  highlighted.value = -1;
-  if (isOpen.value) sayResults(0);
-}
-
-async function loadMore() {
-  const current = listing.value;
-  if (
-    !current?.more ||
-    isLoadingMore.value ||
-    searchState.value === 'loading'
-  ) {
-    return;
-  }
-
-  const controller = new AbortController();
-  moreRequest = controller;
-  isLoadingMore.value = true;
-
-  try {
-    const next = await ask(current.query, current.page + 1, controller.signal);
-    if (moreRequest !== controller) return;
-
-    const longer = {
-      ...next,
-      options: [...current.options, ...next.options],
-      more: next.more && next.options.length > 0,
-    };
-    if (current === found.value) found.value = longer;
-    else if (current === loaded.value) loaded.value = longer;
-
-    if (isOpen.value) say(() => t('combobox.more-loaded'));
-  } catch {
-    if (moreRequest !== controller) return;
-
-    if (isOpen.value) say(() => t('combobox.more-failed'));
-  }
-
-  isLoadingMore.value = false;
-}
-
-function forgetOptions() {
-  request?.abort();
-  request = undefined;
-  forgetSearch();
-  loaded.value = undefined;
-  loadState.value = 'idle';
-}
-
-/** Asks the options function again, now */
-async function refreshOptions() {
-  forgetOptions();
-  resumeSearch();
-  await load();
-}
-
-function resumeSearch() {
-  if (isServerSearch.value && query.value) searchSoon();
-}
-
-const hasValue = computed(
-  () => model.value !== null && model.value !== undefined,
-);
-
-const selectedOption = computed(() => {
-  if (!hasValue.value) return undefined;
-
-  const given = selected.value;
-  if (given !== null && given !== undefined && valueOf(given) === model.value) {
-    return given;
-  }
-
-  return allOptions.value.find((option) => valueOf(option) === model.value);
-});
-
-const valueLabel = computed(() => {
-  if (!hasValue.value) return '';
-  if (selectedOption.value !== undefined) return labelOf(selectedOption.value);
-
-  return hasWholeList.value ? t('combobox.unknown-option') : '';
-});
-
-const needsList = computed(
-  () =>
-    hasValue.value &&
-    selectedOption.value === undefined &&
-    isLoader.value &&
-    !isServerSearch.value,
-);
-
-const text = ref(valueLabel.value);
+const text = ref('');
 const isEdited = ref(false);
-
-function endEdit() {
-  isEdited.value = false;
-  forgetSearch();
-}
-
-watch(valueLabel, (newLabel) => {
-  if (!isEdited.value) text.value = newLabel;
-});
-
-function loadForLabel() {
-  if (needsList.value && loadState.value === 'idle') void load();
-}
-
-function reloadOptions() {
-  forgetOptions();
-  resumeSearch();
-
-  if (isOpen.value) void load();
-  else loadForLabel();
-}
-
-watch(() => optionsKey, reloadOptions);
-watch(isLoader, reloadOptions);
-watch(isServerSearch, reloadOptions);
-watch(needsList, loadForLabel);
-
-watch(selectedOption, giveSelected);
-
-function giveSelected() {
-  const option = selectedOption.value;
-  if (option !== undefined && option !== selected.value) {
-    selected.value = option;
-  }
-}
-
-watch([hasValue, hasWholeList, selectedOption], dropSelectedOfAnotherValue);
-
-function dropSelectedOfAnotherValue() {
-  const isUnknown = hasWholeList.value && selectedOption.value === undefined;
-
-  if (
-    (!hasValue.value || isUnknown) &&
-    selected.value !== null &&
-    selected.value !== undefined
-  ) {
-    selected.value = null;
-  }
-}
-
-if (import.meta.dev) {
-  watchEffect(() => {
-    if (
-      isServerSearch.value &&
-      hasValue.value &&
-      selectedOption.value === undefined
-    ) {
-      console.warn(
-        `[ComboBox] "${label}" has a value and server-search, but no v-model:selected with its option: it cannot show the label.`,
-      );
-    }
-  });
-}
-
-onMounted(() => {
-  loadForLabel();
-  giveSelected();
-});
-
 const isOpen = ref(false);
-const highlighted = ref(-1);
 
 const query = computed(() => (isEdited.value ? text.value.trim() : ''));
 
-const listing = computed(() =>
-  isServerSearch.value && query.value ? found.value : loaded.value,
+const { status, say } = useComboBoxStatus();
+
+const optionsOfField = useComboBoxOptions<T>(
+  {
+    options: () => options,
+    optionsKey: () => optionsKey,
+    serverSearch: () => serverSearch && !isMultiple,
+    valueKey: () => valueKey,
+    labelKey: () => labelKey,
+    disabledKey: () => disabledKey,
+    noOptionsText: () => noOptionsText,
+    disabled: () => disabled,
+    loading: () => loading,
+    createOption: () => createOption,
+    createText: () => createText,
+  },
+  {
+    query: () => query.value,
+    isEdited: () => isEdited.value,
+    isOpen: () => isOpen.value,
+    needsList: (): boolean => mode.needsList,
+    say,
+    onListChange: () => mode.forgetHighlight(),
+  },
 );
+const {
+  valueOf,
+  labelOf,
+  isDisabled,
+  listing,
+  shown,
+  isBusy,
+  message,
+  createLabel,
+} = optionsOfField;
+const { touch, loadForLabel, refreshOptions } = optionsOfField;
 
-const shown = computed(() => {
-  if (isServerSearch.value) {
-    return (query.value && found.value?.options) || allOptions.value;
-  }
+const field = useComboBoxField({
+  root: rootRef,
+  input: inputRef,
+  popup: popupRef,
+  isOpen,
+  isEdited,
+  id,
+  disabled: () => disabled,
+  required: () => required,
+  instruction: () => instruction,
+  customError: () => customError,
+  showInvalid: () => showInvalid,
+  describedby: () => attrs['aria-describedby'],
+  errorText: () => errorText.value,
+  isFilled: () => mode.hasValue,
+  touch,
+  settle: () => mode.settle(),
+  onClose: () => mode.forgetHighlight(),
+  selectsOnFocus: () => several?.selectsOnFocus() ?? true,
+});
+const {
+  customErrorActive,
+  errorShown,
+  ariaDescribedby,
+  onFocus,
+  onMouseDown,
+  onMouseUp,
+  onClick,
+  onOpenButton,
+  onFocusOut,
+  focusElement,
+} = field;
 
-  const folded = foldCaseAndDiacritics(query.value);
-
-  return folded
-    ? allOptions.value.filter((option) =>
-        foldCaseAndDiacritics(labelOf(option)).includes(folded),
-      )
-    : allOptions.value;
+const { insetStyle } = useComboBoxPopup({
+  popup: popupRef,
+  control: controlRef,
+  input: inputRef,
+  isOpen,
 });
 
-const isBusy = computed(
-  () =>
-    loading ||
-    loadState.value === 'loading' ||
-    searchState.value === 'loading' ||
-    isLoadingMore.value,
+const modeContext = {
+  text,
+  isEdited,
+  isOpen,
+  query,
+  input: inputRef,
+  popup: popupRef,
+  id,
+  canClear: () => canClear,
+  disabled: () => disabled,
+  options: optionsOfField,
+  field: () => field,
+  emitCreate: (typed: string) => emit('create', typed),
+};
+
+// `M` decides the model's type, `multiple` the mode: the two agree, which a
+// conditional type cannot show inside the component
+const single = isMultiple
+  ? undefined
+  : reactive(
+      useComboBoxSingle<T>({
+        ...modeContext,
+        model: model as Ref<ComboBoxValue | null | undefined>,
+        selected: selected as Ref<T | null | undefined>,
+        label: () => label,
+        createOption: () => createOption,
+        say,
+      }),
+    );
+const several = isMultiple
+  ? reactive(
+      useComboBoxMultiple<T>({
+        ...modeContext,
+        model: model as Ref<ComboBoxValue[] | null | undefined>,
+        selected: selected as Ref<T[] | null | undefined>,
+      }),
+    )
+  : undefined;
+const mode = (single ?? several)!;
+
+const errorText = computed(() =>
+  isMultiple
+    ? t('form.checkbox-group-required')
+    : t('form.missing-value', { item: label }),
 );
 
-const message = computed(() => {
-  if (shown.value.length) return undefined;
-  if (
-    loading ||
-    loadState.value === 'loading' ||
-    searchState.value === 'loading'
-  ) {
-    return t('combobox.loading');
-  }
-  if (isServerSearch.value && query.value) {
-    return searchState.value === 'failed'
-      ? t('combobox.search-failed')
-      : t('combobox.no-results');
-  }
-  if (loadState.value === 'failed') return t('combobox.failed');
-  if (!allOptions.value.length) {
-    return noOptionsText ?? t('combobox.no-options');
-  }
-  return t('combobox.no-results');
-});
-
-const hasList = computed(() => isOpen.value && shown.value.length > 0);
-const activeIndex = computed(() =>
-  hasList.value && highlighted.value < shown.value.length
-    ? highlighted.value
-    : -1,
-);
-
-const listboxId = computed(() => `${id}-listbox`);
-const optionId = (index: number) => `${id}-option-${index}`;
-
-function open() {
-  if (disabled || isOpen.value) return;
-
-  isOpen.value = true;
-  touch();
-}
-
-function close() {
-  isOpen.value = false;
-  highlighted.value = -1;
-}
-
-function move(step: 1 | -1) {
-  const count = shown.value.length;
-  if (!count) return;
-
-  if (activeIndex.value === -1) {
-    const atValue = isEdited.value
-      ? -1
-      : shown.value.findIndex(
-          (option) => hasValue.value && valueOf(option) === model.value,
-        );
-
-    highlighted.value = atValue !== -1 ? atValue : step === 1 ? 0 : count - 1;
-  } else if (
-    step === 1 &&
-    activeIndex.value === count - 1 &&
-    listing.value?.more
-  ) {
-    void loadMore();
-  } else {
-    highlighted.value = (activeIndex.value + step + count) % count;
-  }
-}
-
-function onListScroll(event: Event) {
-  const list = event.target as HTMLElement;
-
-  if (list.scrollTop + list.clientHeight >= list.scrollHeight - 48) {
-    void loadMore();
-  }
-}
-
-const status = ref('');
-let statusTimer: ReturnType<typeof setTimeout> | undefined;
-
-function say(statusText: () => string, delay = 0) {
-  clearTimeout(statusTimer);
-  statusTimer = setTimeout(() => {
-    status.value = statusText();
-    statusTimer = setTimeout(() => (status.value = ''), 3000);
-  }, delay);
-}
-
-function sayResults(delay: number) {
-  say(
-    () =>
-      message.value ??
-      t('combobox.results', { count: shown.value.length }, shown.value.length),
-    delay,
-  );
-}
-
-watch([isOpen, message], ([nowOpen, newMessage]) => {
-  if (nowOpen && newMessage && !isEdited.value) say(() => newMessage);
-});
+text.value = mode.valueText;
 
 watch(
-  [loadState, () => loading],
-  ([, nowLoading], [stateBefore, wasLoading]) => {
-    const arrived =
-      (stateBefore === 'loading' && loadState.value !== 'loading') ||
-      (wasLoading && !nowLoading);
-    const isSearching = isServerSearch.value && !!query.value;
-
-    if (arrived && isOpen.value && isEdited.value && !isSearching)
-      sayResults(0);
+  () => mode.valueText,
+  (newText) => {
+    if (!isEdited.value) text.value = newText;
   },
 );
 
-onBeforeUnmount(() => clearTimeout(statusTimer));
+watch(() => mode.needsList, loadForLabel);
+onMounted(loadForLabel);
 
-const errorText = computed(() => t('form.missing-value', { item: label }));
+if (import.meta.dev || import.meta.test) {
+  const named = `[ComboBox] "${label}"`;
 
-function applyValidity(valueIsThere = hasValue.value) {
-  inputRef.value?.setCustomValidity(
-    required && !valueIsThere ? errorText.value : '',
+  watch(
+    () => !!multiple,
+    () =>
+      console.warn(
+        `${named}: multiple changed after the field was created, which keeps the mode it began in. Give it a new key to change the mode.`,
+      ),
   );
+  watchEffect(() => {
+    const value = model.value as unknown;
+
+    if (!isMultiple && Array.isArray(value)) {
+      console.warn(`${named} has an array as its value: add multiple.`);
+    }
+    if (isMultiple && value !== null && value !== undefined) {
+      if (!Array.isArray(value)) {
+        console.warn(
+          `${named} has multiple, but its value is not an array: give it [] or an array of values.`,
+        );
+      }
+    }
+  });
+  if (isMultiple && serverSearch) {
+    console.warn(
+      `${named} has multiple and server-search: multiple loads the whole list and ignores server-search.`,
+    );
+  }
 }
-
-watchPostEffect(() => applyValidity());
-
-const { customErrorActive, clearCustomError, errorShown } = useCustomError(
-  () => customError,
-  {
-    invalid: () => required && !hasValue.value,
-    showInvalid: () => showInvalid,
-  },
-);
-
-const ariaDescribedby = computed(
-  () =>
-    [
-      attrs['aria-describedby'],
-      instruction && `instruction-${id}`,
-      errorShown.value && `error-${id}`,
-    ]
-      .filter(Boolean)
-      .join(' ') || undefined,
-);
 
 const chipSize = computed(() => (size === 'lg' ? 'sm' : 'xs'));
-
-function setValue(option: T | null) {
-  selected.value = option;
-  model.value = option === null ? null : valueOf(option);
-  clearCustomError();
-  applyValidity(option !== null);
-}
-
-function pick(option: T) {
-  if (!hasValue.value || valueOf(option) !== model.value) setValue(option);
-
-  text.value = labelOf(option);
-  endEdit();
-  close();
-  nextTick(() => {
-    if (document.activeElement === inputRef.value) inputRef.value?.select();
-  });
-}
-
-function clear() {
-  if (hasValue.value) setValue(null);
-
-  text.value = '';
-  endEdit();
-  close();
-  inputRef.value?.focus();
-}
-
-function settle() {
-  const wasBusy = isEdited.value || isOpen.value;
-  const isEmptied = isEdited.value && text.value.trim() === '';
-
-  if (isEmptied && hasValue.value && canClear) {
-    setValue(null);
-    text.value = '';
-    say(() => t('combobox.cleared'));
-  } else {
-    text.value = valueLabel.value;
-  }
-
-  endEdit();
-  close();
-
-  return wasBusy;
-}
-
-const registerSync = inject(formSyncKey, null);
-let unregisterSync: (() => void) | undefined;
-
-onMounted(() => {
-  unregisterSync = registerSync?.(settle);
-});
-onBeforeUnmount(() => unregisterSync?.());
-
-let isFocusingByPress = false;
-let keepSelection = false;
-
-function onFocus() {
-  touch();
-  inputRef.value?.select();
-  keepSelection = isFocusingByPress;
-}
-
-function onMouseDown() {
-  isFocusingByPress = document.activeElement !== inputRef.value;
-}
-
-/** The mouseup of the press that gave focus would undo the selection */
-function onMouseUp(event: MouseEvent) {
-  if (keepSelection) event.preventDefault();
-
-  keepSelection = false;
-  isFocusingByPress = false;
-}
-
-function onClick() {
-  if (isOpen.value) close();
-  else open();
-}
-
-function onInput(event: Event) {
-  text.value = (event.target as HTMLInputElement).value;
-  isEdited.value = true;
-  highlighted.value = -1;
-  open();
-
-  if (isServerSearch.value) searchSoon();
-  if (!isServerSearch.value || !query.value) sayResults(600);
-}
-
-function onKeydown(event: KeyboardEvent) {
-  if (event.isComposing) return;
-
-  switch (event.key) {
-    case 'ArrowDown':
-    case 'ArrowUp':
-      event.preventDefault();
-
-      if (event.altKey && event.key === 'ArrowUp') {
-        close();
-        return;
-      }
-
-      if (!isOpen.value) {
-        open();
-        if (event.altKey) return;
-      }
-
-      move(event.key === 'ArrowDown' ? 1 : -1);
-      break;
-    case 'Enter': {
-      if (!isOpen.value) return;
-
-      event.preventDefault();
-
-      const option = shown.value[activeIndex.value];
-      if (option !== undefined) pick(option);
-      else close();
-      break;
-    }
-    case 'Escape':
-      if (!isOpen.value) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-      text.value = valueLabel.value;
-      endEdit();
-      close();
-      break;
-    case 'Tab': {
-      const option = shown.value[activeIndex.value];
-      if (option !== undefined) pick(option);
-      else close();
-      break;
-    }
-    case 'ArrowLeft':
-    case 'ArrowRight':
-    case 'Home':
-    case 'End':
-      highlighted.value = -1;
-      break;
-  }
-}
-
-function onOpenButton() {
-  inputRef.value?.focus();
-
-  if (isOpen.value) close();
-  else open();
-}
-
-let isPressInPopup = false;
-
-function onFocusOut(event: FocusEvent) {
-  const next = event.relatedTarget as Node | null;
-
-  if (next && rootRef.value?.contains(next)) return;
-  // Another window took focus: nothing closes, and the pointerup of a press
-  // that was held may never arrive
-  if (!next && !document.hasFocus()) {
-    isPressInPopup = false;
-    return;
-  }
-
-  // Until a press on the list's scrollbar no longer takes focus in Firefox
-  // (148): a press in the popup that takes focus gives it back, in every
-  // browser, once per press
-  if (isPressInPopup) {
-    isPressInPopup = false;
-    inputRef.value?.focus();
-    return;
-  }
-
-  settle();
-}
-
-function onDocumentPress(event: PointerEvent) {
-  const target = event.target as Node;
-
-  isPressInPopup = !!popupRef.value?.contains(target);
-
-  const field = rootRef.value?.closest('.form-field-wrapper') ?? rootRef.value;
-
-  if (!field?.contains(target) && (isOpen.value || isEdited.value)) settle();
-}
-
-function onDocumentPressEnd() {
-  isPressInPopup = false;
-}
-
-onMounted(() => {
-  document.addEventListener('pointerdown', onDocumentPress, true);
-  document.addEventListener('pointerup', onDocumentPressEnd, true);
-  document.addEventListener('pointercancel', onDocumentPressEnd, true);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener('pointerdown', onDocumentPress, true);
-  document.removeEventListener('pointerup', onDocumentPressEnd, true);
-  document.removeEventListener('pointercancel', onDocumentPressEnd, true);
-  untrackViewport();
-  forgetOptions();
-});
-
-const keyboardInsets = ref<{ top: number; bottom: number }>();
-
-// Until iOS makes the layout viewport smaller for its keyboard: the part the
-// visual viewport leaves out becomes an inset of the list's room
-function trackViewport() {
-  const viewport = window.visualViewport;
-
-  if (!viewport || Math.abs(viewport.scale - 1) > 0.01) {
-    keyboardInsets.value = undefined;
-    return;
-  }
-
-  const visibleEnd = viewport.offsetTop + viewport.height;
-  const top = Math.max(0, Math.round(viewport.offsetTop));
-  const bottom = Math.max(
-    0,
-    Math.round(document.documentElement.clientHeight - visibleEnd),
-  );
-
-  keyboardInsets.value = top || bottom ? { top, bottom } : undefined;
-
-  clearTimeout(revealTimer);
-  if (keyboardInsets.value) revealTimer = setTimeout(revealField, 250);
-}
-
-let revealTimer: ReturnType<typeof setTimeout> | undefined;
-
-// Until iOS always brings a focused field above its keyboard: one still out
-// of view once the keyboard has settled is centred there, as iOS does
-function revealField() {
-  const viewport = window.visualViewport;
-  const control = controlRef.value;
-
-  if (!viewport || !control || document.activeElement !== inputRef.value) {
-    return;
-  }
-
-  // Client coordinates start at the layout viewport, or on iOS at what is
-  // visible: an element fixed at the top tells which
-  const probe = document.createElement('div');
-  probe.style.cssText =
-    'position: fixed; inset: 0 auto auto 0; visibility: hidden';
-  document.body.append(probe);
-  const visibleTop = probe.getBoundingClientRect().top + viewport.offsetTop;
-  probe.remove();
-
-  const box = control.getBoundingClientRect();
-  if (box.top >= visibleTop && box.bottom <= visibleTop + viewport.height) {
-    return;
-  }
-
-  scrollerOf(control)?.scrollBy(
-    0,
-    box.top - visibleTop - (viewport.height - box.height) / 2,
-  );
-}
-
-function scrollerOf(element: Element) {
-  for (
-    let parent = element.parentElement;
-    parent && parent !== document.body;
-    parent = parent.parentElement
-  ) {
-    const style = getComputedStyle(parent);
-
-    if (
-      /auto|scroll/.test(style.overflowY) &&
-      parent.scrollHeight > parent.clientHeight
-    ) {
-      return parent;
-    }
-    if (style.position === 'fixed') return undefined;
-  }
-
-  return window;
-}
-
-function untrackViewport() {
-  clearTimeout(revealTimer);
-  window.visualViewport?.removeEventListener('resize', trackViewport);
-  window.visualViewport?.removeEventListener('scroll', trackViewport);
-  keyboardInsets.value = undefined;
-}
-
-watch(
-  isOpen,
-  (nowOpen) => {
-    const popup = popupRef.value;
-    if (!popup) return;
-
-    if (nowOpen) {
-      if (!popup.matches(':popover-open')) popup.showPopover?.();
-      window.visualViewport?.addEventListener('resize', trackViewport);
-      window.visualViewport?.addEventListener('scroll', trackViewport);
-      trackViewport();
-    } else {
-      if (popup.matches(':popover-open')) popup.hidePopover?.();
-      untrackViewport();
-    }
-  },
-  { flush: 'post' },
-);
-
-function fillList() {
-  const list = popupRef.value?.querySelector('[role="listbox"]');
-
-  if (list && list.clientHeight > 0 && list.scrollHeight <= list.clientHeight) {
-    void loadMore();
-  }
-}
-
-watch([isOpen, listing], ([nowOpen]) => nowOpen && fillList(), {
-  flush: 'post',
-});
-
-watch(
-  activeIndex,
-  (index) => {
-    if (index === -1) return;
-
-    document
-      .getElementById(optionId(index))
-      ?.scrollIntoView?.({ block: 'nearest' });
-  },
-  { flush: 'post' },
-);
-
-function focusElement() {
-  inputRef.value?.focus();
-}
 
 defineExpose({
   inputRef,
@@ -971,7 +397,8 @@ defineExpose({
     :class="[
       'combobox',
       `input-size--${size}`,
-      hasValue && 'has-value',
+      isMultiple && 'is-multiple',
+      mode.hasValue && 'has-value',
       $attrs.class,
     ]"
     :style="$attrs.style as StyleValue"
@@ -988,12 +415,7 @@ defineExpose({
     <div
       ref="root"
       class="combobox-root"
-      :style="
-        keyboardInsets && {
-          '--combobox-inset-top': `${keyboardInsets.top}px`,
-          '--combobox-inset-bottom': `${keyboardInsets.bottom}px`,
-        }
-      "
+      :style="insetStyle"
       @pointerdown="touch"
       @focusout="onFocusOut"
     >
@@ -1009,25 +431,24 @@ defineExpose({
           autocomplete="off"
           autocapitalize="none"
           spellcheck="false"
-          aria-autocomplete="list"
           data-1p-ignore
+          :aria-autocomplete="single ? 'list' : undefined"
+          :aria-haspopup="several ? 'dialog' : undefined"
           :placeholder="placeholder"
           :disabled="disabled"
           :autofocus="autofocus"
           :aria-required="required || undefined"
-          :aria-expanded="hasList"
-          :aria-controls="hasList ? listboxId : undefined"
-          :aria-activedescendant="
-            activeIndex === -1 ? undefined : optionId(activeIndex)
-          "
+          :aria-expanded="mode.expanded"
+          :aria-controls="mode.expanded ? mode.popupId : undefined"
+          :aria-activedescendant="single?.activeDescendant"
           :aria-describedby="ariaDescribedby"
           :aria-invalid="errorShown || undefined"
           @focus="onFocus"
           @mousedown="onMouseDown"
           @mouseup="onMouseUp"
           @click="onClick"
-          @input="onInput"
-          @keydown="onKeydown"
+          @input="mode.onInput"
+          @keydown="mode.onKeydown"
         />
 
         <div class="combobox-buttons">
@@ -1038,12 +459,12 @@ defineExpose({
           />
 
           <button
-            v-if="canClear && !disabled && (hasValue || text)"
+            v-if="mode.showsClear"
             type="button"
             class="combobox-button combobox-clear"
             :aria-label="t('combobox.clear', { label })"
             @mousedown.prevent
-            @click="clear"
+            @click="mode.clear"
           >
             <Icon name="material-symbols:close-rounded" />
           </button>
@@ -1054,8 +475,8 @@ defineExpose({
             tabindex="-1"
             :disabled="disabled"
             :aria-label="label"
-            :aria-expanded="hasList"
-            :aria-controls="hasList ? listboxId : undefined"
+            :aria-expanded="mode.expanded"
+            :aria-controls="mode.expanded ? mode.popupId : undefined"
             @mousedown.prevent
             @click="onOpenButton"
           >
@@ -1064,56 +485,135 @@ defineExpose({
         </div>
       </div>
 
-      <input
-        v-if="name && hasValue"
-        type="hidden"
-        :name="name"
-        :value="String(model)"
-        :disabled="disabled"
-      />
+      <template v-if="name">
+        <input
+          v-for="value in mode.hiddenValues"
+          :key="String(value)"
+          type="hidden"
+          :name="name"
+          :value="String(value)"
+          :disabled="disabled"
+        />
+      </template>
 
       <div
+        v-if="single"
         ref="popup"
         popover="manual"
         class="combobox-popup"
         @mousedown.prevent
       >
         <template v-if="isOpen">
+          <p v-if="!shown.length" class="combobox-message">{{ message }}</p>
+
           <!-- tabindex: a scrolling element is in the Tab order by itself -->
+
           <ul
-            v-if="shown.length"
-            :id="listboxId"
+            v-if="single.itemCount"
+            :id="single.popupId"
             role="listbox"
             class="combobox-list"
             tabindex="-1"
             :aria-label="label"
             :aria-busy="isBusy || undefined"
-            @scroll.passive="onListScroll"
+            @scroll.passive="single.onListScroll"
           >
             <li
               v-for="(option, index) in shown"
-              :id="optionId(index)"
+              :id="single.optionId(index)"
               :key="String(valueOf(option))"
               role="option"
               :class="[
                 'combobox-option',
-                index === activeIndex && 'is-highlighted',
+                index === single.activeIndex && 'is-highlighted',
+                isDisabled(option) && 'is-disabled',
               ]"
-              :aria-selected="hasValue && valueOf(option) === model"
+              :aria-selected="single.isSelected(option)"
+              :aria-disabled="isDisabled(option) || undefined"
               :aria-setsize="listing?.more ? -1 : undefined"
               :aria-posinset="listing?.more ? index + 1 : undefined"
-              @click="pick(option)"
+              @click="single.pickUnlessDisabled(option)"
             >
               <span>{{ labelOf(option) }}</span>
 
               <Icon
-                v-if="hasValue && valueOf(option) === model"
+                v-if="single.isSelected(option)"
                 name="material-symbols:check-rounded"
+              />
+            </li>
+
+            <li
+              v-if="createLabel"
+              :id="single.optionId(single.createIndex)"
+              role="option"
+              :class="[
+                'combobox-option',
+                'combobox-create',
+                single.createIndex === single.activeIndex && 'is-highlighted',
+              ]"
+              aria-selected="false"
+              @click="single.create"
+            >
+              <Icon name="material-symbols:add-rounded" />
+              <span>{{ createLabel }}</span>
+            </li>
+          </ul>
+        </template>
+      </div>
+
+      <div
+        v-else-if="several"
+        :id="several.popupId"
+        ref="popup"
+        popover="manual"
+        role="dialog"
+        class="combobox-popup"
+        :aria-label="label"
+        @mousedown.prevent
+        @focusin="several.onPopupFocusIn"
+        @click="several.onPopupClick"
+        @keydown="several.onPopupKeydown"
+      >
+        <template v-if="isOpen">
+          <p class="combobox-count">
+            {{
+              t('combobox.selected', { count: several.count }, several.count)
+            }}
+          </p>
+
+          <!-- tabindex: a scrolling element is in the Tab order by itself -->
+          <ul
+            v-if="shown.length"
+            class="combobox-list"
+            tabindex="-1"
+            :aria-busy="isBusy || undefined"
+          >
+            <li
+              v-for="(option, index) in shown"
+              :key="String(valueOf(option))"
+              :class="['combobox-check', isDisabled(option) && 'is-disabled']"
+            >
+              <Checkbox
+                :id="several.checkboxId(index)"
+                :model-value="several.isTicked(option)"
+                :label="labelOf(option)"
+                :aria-disabled="isDisabled(option)"
+                @update:model-value="several.toggle(option, !!$event)"
               />
             </li>
           </ul>
 
           <p v-else class="combobox-message">{{ message }}</p>
+
+          <button
+            v-if="createLabel"
+            type="button"
+            class="combobox-option combobox-create"
+            @click="several.create"
+          >
+            <Icon name="material-symbols:add-rounded" />
+            <span>{{ createLabel }}</span>
+          </button>
         </template>
       </div>
 
@@ -1229,7 +729,7 @@ defineExpose({
     flex-direction: column;
   }
 
-  /* The listbox scrolls, not the popup: it is the element the combobox controls */
+  /* The list scrolls, not the popup: it is the element the combobox controls */
   .combobox-list {
     min-block-size: 0;
     margin: 0;
@@ -1237,6 +737,12 @@ defineExpose({
     overflow-y: auto;
     overscroll-behavior: contain;
     list-style: none;
+  }
+
+  .combobox-message {
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    color: var(--color-grey-text);
   }
 
   .combobox-option {
@@ -1263,24 +769,108 @@ defineExpose({
       outline: 2px solid var(--focus-color);
       outline-offset: -2px;
     }
+
+    /* As the layer's other disabled controls; exempt from contrast (1.4.3) */
+    &.is-disabled {
+      cursor: not-allowed;
+
+      > * {
+        opacity: 0.35;
+      }
+
+      &:hover {
+        background-color: transparent;
+      }
+    }
   }
 
-  .combobox-message {
+  .combobox-create {
+    justify-content: start;
+    color: var(--color-accent-text);
+    font-weight: var(--font-weight-medium);
+  }
+
+  /* With `multiple`: the create button after the list */
+  button.combobox-create {
+    flex: none;
+    inline-size: 100%;
+    border: none;
+    background: none;
+    font: inherit;
+    font-weight: var(--font-weight-medium);
+    text-align: start;
+
+    &:focus-visible {
+      outline: 2px solid var(--focus-color);
+      outline-offset: -2px;
+    }
+  }
+
+  .combobox-count {
     margin: 0;
-    padding: 0.5rem 0.75rem;
+    padding-block: 0.75rem 0.5rem;
+    padding-inline: 0.75rem;
     color: var(--color-grey-text);
+    font-size: var(--font-size-sm);
+  }
+
+  .combobox-check {
+    border-radius: var(--radius-sm);
+    margin-block-end: 0.25rem;
+
+    &:hover {
+      background-color: var(--color-grey-bg);
+    }
+
+    &:has(:focus-visible) {
+      outline: 2px solid var(--focus-color);
+      outline-offset: -2px;
+    }
+
+    &.is-disabled {
+      &:hover {
+        background-color: transparent;
+      }
+
+      label {
+        cursor: not-allowed;
+      }
+    }
+
+    .checkbox-wrapper {
+      flex-wrap: nowrap;
+      align-items: start;
+    }
+
+    input[type='checkbox'] {
+      flex: none;
+      margin-block: 0.5rem;
+      margin-inline-start: 0.75rem;
+    }
+
+    label {
+      flex: 1;
+      max-width: none;
+      margin-block-end: 0;
+      padding-block: 0.5rem;
+      padding-inline: 0.5rem;
+      font-size: inherit;
+      overflow-wrap: anywhere;
+      cursor: pointer;
+    }
   }
 }
 
 /* An icon is a mask over a background, which forced colors would paint as the page */
 @media (forced-colors: active) {
+  .combobox-button .iconify,
   .combobox-option .iconify {
     forced-color-adjust: none;
     background-color: CanvasText;
   }
 
-  .combobox-button .iconify {
-    forced-color-adjust: none;
+  .combobox-button .iconify,
+  button.combobox-create .iconify {
     background-color: ButtonText;
   }
 

@@ -301,6 +301,47 @@ export function contrastRatio(a: number[], b: number[]) {
 }
 
 /**
+ * The contrast of a focused element's outline with the first opaque background
+ * behind it, as painted: the outline's alpha and every ancestor's opacity count
+ */
+export function focusRingContrast(locator: Locator): Promise<number> {
+  return locator
+    .evaluate((el) => {
+      const ctx = document
+        .createElement('canvas')
+        .getContext('2d', { willReadFrequently: true })!;
+      const composite = (...layers: [string, number][]) => {
+        ctx.clearRect(0, 0, 1, 1);
+        for (const [color, alpha] of layers) {
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = color;
+          ctx.fillRect(0, 0, 1, 1);
+        }
+        return [...ctx.getImageData(0, 0, 1, 1).data];
+      };
+
+      let opacity = 1;
+      for (let n: Element | null = el; n; n = n.parentElement) {
+        opacity *= Number(getComputedStyle(n).opacity);
+      }
+      let background = '#fff';
+      for (let n = el.parentElement; n; n = n.parentElement) {
+        const color = getComputedStyle(n).backgroundColor;
+        if (composite([color, 1])[3] === 255) {
+          background = color;
+          break;
+        }
+      }
+      const ring = composite(
+        [background, 1],
+        [getComputedStyle(el).outlineColor, opacity],
+      );
+      return [ring.slice(0, 3), composite([background, 1]).slice(0, 3)];
+    })
+    .then(([ring, background]) => contrastRatio(ring!, background!));
+}
+
+/**
  * The contrast of each pair of the `mainCss` text per mode class, as the browser
  * paints it (`color-mix()`, transparency over its background). Filter on `ratio < min`.
  */

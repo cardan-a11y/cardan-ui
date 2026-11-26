@@ -35,15 +35,9 @@ const {
 const dialogTemplateRef = useTemplateRef<HTMLDialogElement>('dialog');
 const isVisible = ref(false);
 
-function handleDialogClick(event: MouseEvent) {
-  if (!clickOutside) return;
-
-  const target = event.target as HTMLDialogElement;
-
-  if (target.nodeName === 'DIALOG') {
-    closeDialog();
-  }
-}
+const backdrop = useBackdropClick(() => {
+  if (clickOutside) closeDialog();
+});
 
 function openDialog() {
   const dialog = dialogTemplateRef.value;
@@ -110,7 +104,8 @@ defineExpose({
     :class="['dialog', `dialog-position--${position}`]"
     :role="role"
     @cancel="preventEscape"
-    @click="handleDialogClick"
+    @pointerdown="backdrop.onPointerdown"
+    @click="backdrop.onClick"
     @close="handleClose"
   >
     <FocusLoop :is-visible="isVisible" :modal="false">

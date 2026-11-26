@@ -61,6 +61,18 @@ declare global {
     [key: string]: unknown;
   };
 
+  /** The value of a ComboBox option */
+  type ComboBoxValue = string | number | boolean;
+
+  /** What the options function of ComboBox answers: a list, or one page of it */
+  type ComboBoxAnswer<T> = T[] | { options: T[]; more?: boolean };
+
+  /** The options function of ComboBox */
+  type ComboBoxLoader<T> = (
+    query: string,
+    context: { signal: AbortSignal; page: number },
+  ) => ComboBoxAnswer<T> | Promise<ComboBoxAnswer<T>>;
+
   type TabOption = {
     value: string;
     label: string;

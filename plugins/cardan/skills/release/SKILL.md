@@ -76,7 +76,15 @@ projects. See changelog for details.`, without details: the changelog says what 
    `main`.
 8. **Notion**: after the merge, the issues on the release PR's `Notion:`
    line go live as the guidelines' "The Notion issue follows the work"
-   describes.
+   describes. A commit without a `Notion:` line leaves its issue off that
+   line, so also query the Cardan UI Issues database
+   (`collection://251012ed-b3a1-41c1-8fb2-a93c9f62fbef`) for the issues
+   whose `Release` is `Cardan UI <version>` and whose `Status` is not
+   `Done`, and treat each the same way. Its work is in the release when its
+   commits are on `origin/main` or the changelog entry names it; an issue
+   whose work is not gets no Live line, keeps its status and is named to
+   the user. The guidelines' sweep runs the same query for a release
+   merged in GitHub.
 
 ## Release a project
 

@@ -20,7 +20,6 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// The one list of projects, which the token test and the contrast spec read too
 const PROJECTS = JSON.parse(
   readFileSync(new URL('./projects.json', import.meta.url), 'utf8'),
 ).map(({ folder }) => folder);

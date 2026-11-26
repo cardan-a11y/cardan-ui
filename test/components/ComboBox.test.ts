@@ -1781,3 +1781,218 @@ describe('ComboBox: a search and a page at the same time', () => {
     expect(labels()).toEqual(['Again 1', 'Again 2']);
   });
 });
+
+describe('ComboBox: create option', () => {
+  it('is the last option while no label is the typed text, ignoring case and spaces but not diacritics', async () => {
+    const { input, labels } = await mountComboBox({ createOption: true });
+
+    await type(input, 'ja');
+    expect(labels()).toEqual(['Jalapeños', 'Create “ja”']);
+
+    await type(input, ' HAM ');
+    expect(labels()).toEqual(['Ham']);
+
+    await type(input, 'Jalapenos');
+    expect(labels()).toEqual(['Jalapeños', 'Create “Jalapenos”']);
+  });
+
+  it('is a listbox of the create option alone when nothing matches, with aria-expanded true, and the status says both', async () => {
+    const { input, labels, popupText, status } = await mountComboBox({
+      createOption: true,
+    });
+
+    await type(input, 'Bacon');
+    await pause(650);
+
+    expect(input.attributes('aria-expanded')).toBe('true');
+    expect(labels()).toEqual(['Create “Bacon”']);
+    expect(popupText()).toContain('No options match your search');
+    expect(status()).toBe(
+      'No options match your search. Available: Create “Bacon”',
+    );
+  });
+
+  it('is never selected, takes its text from create-text, and is not there without create-option or for spaces alone', async () => {
+    const { wrapper, input, option } = await mountComboBox({
+      createOption: true,
+      createText: (text: string) => `New topping “${text}”`,
+      modelValue: 'ham',
+    });
+    await type(input, 'Bacon');
+    expect(option('New topping “Bacon”').attributes('aria-selected')).toBe(
+      'false',
+    );
+
+    await type(input, '   ');
+    expect(input.attributes('aria-expanded')).toBe('true');
+    expect(
+      wrapper
+        .findAll('[role="option"]')
+        .some((item) => item.text().startsWith('New topping')),
+    ).toBe(false);
+
+    const without = await mountComboBox();
+    await type(without.input, 'Bacon');
+    expect(without.labels()).toEqual([]);
+  });
+
+  it('is highlighted by an arrow key, not by itself; Enter on it emits create with the trimmed text, closes the list and keeps text and value', async () => {
+    const { wrapper, input, highlighted, emitted } = await mountComboBox({
+      createOption: true,
+      modelValue: 'ham',
+    });
+    await type(input, ' Bacon ');
+    expect(highlighted()).toBeNull();
+
+    await press('Enter');
+    expect(wrapper.emitted('create')).toBeUndefined();
+
+    await type(input, ' Bacon ');
+    await press('ArrowDown');
+    expect(highlighted()).toBe('Create “Bacon”');
+    await press('Enter');
+
+    expect(wrapper.emitted('create')).toEqual([['Bacon']]);
+    expect(input.attributes('aria-expanded')).toBe('false');
+    expect(input.element.value).toBe(' Bacon ');
+    expect(emitted).toEqual([]);
+  });
+
+  it('Tab on it creates nothing and closes the list', async () => {
+    const { wrapper, input } = await mountComboBox({ createOption: true });
+    await type(input, 'Bacon');
+    await press('ArrowUp');
+
+    await press('Tab');
+
+    expect(wrapper.emitted('create')).toBeUndefined();
+    expect(input.attributes('aria-expanded')).toBe('false');
+  });
+
+  it('a click on it emits create', async () => {
+    const { wrapper, input, option } = await mountComboBox({
+      createOption: true,
+    });
+    await type(input, 'Bacon');
+
+    await option('Create “Bacon”').trigger('click');
+
+    expect(wrapper.emitted('create')).toEqual([['Bacon']]);
+  });
+
+  it('shows the label of the value the parent sets after a create, and a failure through custom-error', async () => {
+    const { wrapper, input } = await mountComboBox({ createOption: true });
+    await type(input, 'Bacon');
+    await press('ArrowDown');
+    await press('Enter');
+
+    await wrapper.setProps({ customError: 'Bacon exists already' } as never);
+    expect(description(input)).toBe('Bacon exists already');
+
+    await wrapper.setProps({
+      options: [...options, { value: 'bacon', label: 'Bacon' }],
+      modelValue: 'bacon',
+      customError: undefined,
+    } as never);
+    expect(input.element.value).toBe('Bacon');
+  });
+
+  it('is not offered while the list loads, nor with server-search', async () => {
+    const loading = await mountComboBox({ createOption: true, loading: true });
+    await type(loading.input, 'Bacon');
+    expect(loading.labels()).toEqual([]);
+
+    const server = await mountComboBox({
+      createOption: true,
+      serverSearch: true,
+      options: async () => [],
+    });
+    await type(server.input, 'Bacon');
+    await pause(400);
+    await flushPromises();
+
+    expect(server.labels()).toEqual([]);
+  });
+});
+
+describe('ComboBox: disabled options', () => {
+  const withDisabled = [
+    { value: 'cheese', label: 'Cheese' },
+    { value: 'ham', label: 'Ham', disabled: true },
+    { value: 'jalapenos', label: 'Jalapeños' },
+  ];
+
+  it('has aria-disabled, stays in the list and in a search, and the arrow keys reach it', async () => {
+    const { input, option, highlighted, labels } = await mountComboBox({
+      options: withDisabled,
+    });
+    input.element.focus();
+
+    await press('ArrowDown');
+    await press('ArrowDown');
+
+    expect(option('Ham').attributes('aria-disabled')).toBe('true');
+    expect(highlighted()).toBe('Ham');
+
+    await type(input, 'ha');
+    expect(labels()).toEqual(['Ham']);
+  });
+
+  it('Enter and a click on it leave the value and keep the list open', async () => {
+    const { input, option, emitted } = await mountComboBox({
+      options: withDisabled,
+      modelValue: 'cheese',
+    });
+    input.element.focus();
+    await press('ArrowDown');
+    await press('ArrowDown');
+
+    const enter = await press('Enter');
+    await option('Ham').trigger('click');
+
+    expect(enter.defaultPrevented).toBe(true);
+    expect(emitted).toEqual([]);
+    expect(input.attributes('aria-expanded')).toBe('true');
+  });
+
+  it('Tab with it highlighted picks nothing and closes the list', async () => {
+    const { input, emitted } = await mountComboBox({
+      options: withDisabled,
+    });
+    input.element.focus();
+    await press('ArrowDown');
+    await press('ArrowDown');
+
+    await press('Tab');
+
+    expect(emitted).toEqual([]);
+    expect(input.attributes('aria-expanded')).toBe('false');
+  });
+
+  it('keeps the label and checkmark of a value whose option is disabled, which passes required', async () => {
+    const { input, wrapper } = await mountComboBox({
+      options: withDisabled,
+      modelValue: 'ham',
+      required: true,
+    });
+
+    expect(input.element.value).toBe('Ham');
+    expect(input.element.validity.valid).toBe(true);
+
+    await input.trigger('click');
+    expect(
+      wrapper.get('[aria-selected="true"]').attributes('aria-disabled'),
+    ).toBe('true');
+  });
+
+  it('takes the field that disables from disabled-key', async () => {
+    const { input, option } = await mountComboBox({
+      options: [{ value: 'ham', label: 'Ham', archived: true }],
+      disabledKey: 'archived',
+    });
+
+    await input.trigger('click');
+
+    expect(option('Ham').attributes('aria-disabled')).toBe('true');
+  });
+});

@@ -8,7 +8,7 @@ import {
   expectNoViolations,
   roleOf,
 } from '../a11y';
-import { addToPage } from '../dom';
+import { addToPage, clickBackdrop } from '../dom';
 
 /**
  * The APG modal dialog, on the native `<dialog>`. happy-dom's showModal()
@@ -153,22 +153,30 @@ describe('Dialog', () => {
     expectFocused(button('Cancel'));
   });
 
-  it('closes on a click on the backdrop, never on a click inside', async () => {
+  it('stays open on a click on the dialog element without a press outside it', async () => {
+    const { dialog } = await mountDialog();
+
+    dialog.click();
+    await settle();
+
+    expect(dialog.open).toBe(true);
+  });
+
+  it('closes on a press and release on the backdrop, never on a click inside', async () => {
     const { dialog } = await mountDialog();
 
     dialog.querySelector('p')!.click();
     await settle();
     expect(dialog.open).toBe(true);
 
-    // A click on the backdrop has the dialog itself as its target
-    dialog.click();
+    clickBackdrop(dialog);
     await vi.waitFor(() => expect(dialog.open).toBe(false));
   });
 
   it('stays open on a click on the backdrop without click-outside', async () => {
     const { dialog } = await mountDialog({ clickOutside: false });
 
-    dialog.click();
+    clickBackdrop(dialog);
     await settle();
 
     expect(dialog.open).toBe(true);

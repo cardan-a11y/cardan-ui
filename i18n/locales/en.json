@@ -24,6 +24,8 @@
   "combobox": {
     "clear": "Clear {label}",
     "cleared": "Value cleared",
+    "create": "Create “{text}”",
+    "create-available": "Available: {option}",
     "failed": "The options could not be loaded. Open the list again to retry.",
     "loading": "Loading options…",
     "more-failed": "More options could not be loaded",
@@ -32,6 +34,7 @@
     "no-results": "No options match your search",
     "results": "{count} option | {count} options",
     "search-failed": "The search failed. Change the text to search again.",
+    "selected": "{count} selected",
     "unknown-option": "Unknown option"
   },
   "cookies": {

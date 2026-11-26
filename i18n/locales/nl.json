@@ -24,6 +24,8 @@
   "combobox": {
     "clear": "{label} wissen",
     "cleared": "Waarde gewist",
+    "create": "“{text}” aanmaken",
+    "create-available": "Beschikbaar: {option}",
     "failed": "De opties konden niet worden geladen. Open de lijst opnieuw om het nog eens te proberen.",
     "loading": "Opties laden…",
     "more-failed": "Meer opties konden niet worden geladen",
@@ -32,6 +34,7 @@
     "no-results": "Geen opties gevonden voor je zoekopdracht",
     "results": "{count} optie | {count} opties",
     "search-failed": "Het zoeken is mislukt. Pas de tekst aan om opnieuw te zoeken.",
+    "selected": "{count} geselecteerd",
     "unknown-option": "Onbekende optie"
   },
   "cookies": {
