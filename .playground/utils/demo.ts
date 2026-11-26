@@ -51,11 +51,6 @@ export const navList: MenuItem[] = [
     label: 'ComboBox',
   },
   {
-    id: 'combobox-multiple',
-    to: '/combobox-multiple',
-    label: 'ComboBox multiple',
-  },
-  {
     id: 'table',
     to: '/table',
     label: 'Table, Pagination & Filter',

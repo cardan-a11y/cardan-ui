@@ -9,7 +9,7 @@ import { contrastRatio, gotoHydrated, runAxe, tabKey } from './helpers';
  * not by colour alone, F13 reflow).
  */
 test.beforeEach(async ({ page }) => {
-  await gotoHydrated(page, '/combobox-multiple');
+  await gotoHydrated(page, '/combobox');
 });
 
 const statuses = (page: Page) =>
@@ -60,7 +60,7 @@ test('ComboBox multiple: Tab goes through the checkboxes of the open dialog, and
   await expect(page.getByRole('checkbox', { name: 'Completed' })).toBeFocused();
 
   await page.keyboard.press(tabKey(page));
-  await expect(page.getByRole('button', { name: 'Save' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Apply' })).toBeFocused();
   await expect(popupOf(page)).toBeHidden();
   await expect(combobox).toHaveAttribute('aria-expanded', 'false');
 });
@@ -127,7 +127,9 @@ test('ComboBox multiple in a Dialog: Escape in the list closes only the list, a 
   page,
 }) => {
   const trigger = page.getByRole('button', { name: 'Open dialog' });
-  const dialog = page.getByRole('dialog', { name: 'Connect findings' });
+  const dialog = page.getByRole('dialog', {
+    name: 'Choose a client and findings',
+  });
   const combobox = dialog.getByRole('combobox', { name: 'Default findings' });
 
   await trigger.click();
