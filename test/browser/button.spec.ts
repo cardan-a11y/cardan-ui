@@ -49,7 +49,7 @@ for (const name of ['Loading link', 'Unavailable link']) {
     await link.focus();
     await expect(link).toBeFocused();
     await page.keyboard.press('Enter');
-    // The pointer cannot reach it (pointer-events: none), a click event can
+    // A click event: Playwright's click() refuses an aria-disabled element
     await link.dispatchEvent('click');
 
     expect(

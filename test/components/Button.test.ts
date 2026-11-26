@@ -225,6 +225,15 @@ describe('Button', () => {
     link.element.dispatchEvent(click);
     expect(click.defaultPrevented).toBe(true);
     expect(wrapper.emitted('click')).toHaveLength(1);
+
+    // A middle-click opens no new tab
+    const middle = new MouseEvent('auxclick', {
+      button: 1,
+      bubbles: true,
+      cancelable: true,
+    });
+    link.element.dispatchEvent(middle);
+    expect(middle.defaultPrevented).toBe(true);
   });
 
   it('keeps the current page on a disabled link, which has no href', async () => {

@@ -43,7 +43,8 @@ const {
   /**
    * Read and shown as unavailable, but focusable, where `disabled` takes it out
    * of the Tab order: a submit button does not submit and a link keeps its href
-   * but is not followed, yet a click, Enter or Space still emits `click`, so a
+   * but is not followed (not on a middle-click either; the context menu still
+   * opens it), yet a click, Enter or Space still emits `click`, so a
    * press can say why nothing happens. For a button the user should find and
    * learn why it is unavailable, such as a form's submit button; the reason
    * goes in its description (`aria-describedby`) or text next to it
@@ -104,6 +105,11 @@ function handleClick(event: Event) {
 
   emit('click');
 }
+
+// A middle-click would open an unavailable link in a new tab
+function handleAuxClick(event: MouseEvent) {
+  if (ariaDisabled || loading) event.preventDefault();
+}
 const buttonRef = useTemplateRef<HTMLButtonElement | ComponentPublicInstance>(
   'button',
 );
@@ -148,6 +154,7 @@ const emit = defineEmits<{
     ]"
     :style="computedStyle"
     @click.capture="handleClick"
+    @auxclick.capture="handleAuxClick"
   >
     <template v-if="loading">
       <Icon name="svg-spinners:90-ring-with-bg" />
