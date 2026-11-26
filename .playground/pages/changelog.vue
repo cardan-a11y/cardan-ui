@@ -39,6 +39,13 @@ useHead({ title: 'Changelog' });
           in the system's grey.
         </li>
         <li>
+          Dialog and MobileMenu close only on a press and a release on the
+          backdrop. A click in the panel's empty space or padding closed them,
+          and so did selecting text in a field with the mouse released over the
+          backdrop, which lost what was typed. A project's vitest test closes
+          them with <code>clickBackdrop()</code> from <code>test/dom.ts</code>.
+        </li>
+        <li>
           ComboBox scrolls the highlighted option fully into its list, where
           Chromium left it cut off by a fraction of a pixel at 400% zoom.
         </li>
