@@ -24,6 +24,8 @@
   "combobox": {
     "clear": "{label} wissen",
     "cleared": "Waarde gewist",
+    "create": "“{text}” aanmaken",
+    "create-available": "Beschikbaar: {option}",
     "failed": "De opties konden niet worden geladen. Open de lijst opnieuw om het nog eens te proberen.",
     "loading": "Opties laden…",
     "more-failed": "Meer opties konden niet worden geladen",
@@ -229,6 +231,9 @@
   },
   "meter": {
     "value-of-max": "{value} van {max}"
+  },
+  "multicombobox": {
+    "selected": "{count} geselecteerd"
   },
   "multiselect": {
     "items-selected": "{count} items geselecteerd"

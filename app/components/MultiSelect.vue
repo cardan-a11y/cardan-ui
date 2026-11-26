@@ -5,8 +5,7 @@ import type { ComponentPublicInstance, StyleValue } from 'vue';
 
 /**
  * Deprecated since 2.6.0 and removed in the next minor: a single select is
- * ComboBox; selecting several, tags and the create option stay here until
- * ComboBox has them.
+ * ComboBox, selecting several (`multiple` and `tags`) MultiComboBox.
  */
 
 defineOptions({ inheritAttrs: false });

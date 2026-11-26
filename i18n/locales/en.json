@@ -24,6 +24,8 @@
   "combobox": {
     "clear": "Clear {label}",
     "cleared": "Value cleared",
+    "create": "Create “{text}”",
+    "create-available": "Available: {option}",
     "failed": "The options could not be loaded. Open the list again to retry.",
     "loading": "Loading options…",
     "more-failed": "More options could not be loaded",
@@ -229,6 +231,9 @@
   },
   "meter": {
     "value-of-max": "{value} of {max}"
+  },
+  "multicombobox": {
+    "selected": "{count} selected"
   },
   "multiselect": {
     "items-selected": "{count} items selected"

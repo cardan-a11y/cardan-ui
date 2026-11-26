@@ -62,27 +62,13 @@ import type { StyleValue } from 'vue';
 
 defineOptions({ inheritAttrs: false });
 
-type Value = string | number | boolean;
-type Answer = T[] | { options: T[]; more?: boolean };
-type Loader = (
-  query: string,
-  context: { signal: AbortSignal; page: number },
-) => Answer | Promise<Answer>;
-
-interface Listing {
-  query: string;
-  options: T[];
-  more: boolean;
-  page: number;
-}
-
-const SEARCH_PAUSE_MS = 300;
-
 const { t } = useI18n();
 
 /** The selected option's value (`value-key`); `null` after a clear */
 // The default keeps Vue from casting an absent value to `false`, which is a value here
-const model = defineModel<Value | null | undefined>({ default: undefined });
+const model = defineModel<ComboBoxValue | null | undefined>({
+  default: undefined,
+});
 /** The selected option itself: written on a pick, read to show the label */
 const selected = defineModel<T | null>('selected');
 
@@ -109,7 +95,7 @@ const {
   /** Names the field, the listbox and the open button, and the clear button: "Clear <label>" */
   label: string;
   /** Objects, strings or numbers; or a function that answers them, asked on first touch */
-  options: T[] | Loader;
+  options: T[] | ComboBoxLoader<T>;
   /** A new key asks the options function again */
   optionsKey?: string | number;
   /** The options function searches, and may answer in pages; a value then needs `v-model:selected` */
@@ -145,208 +131,53 @@ const controlRef = useTemplateRef<HTMLElement>('control');
 const inputRef = useTemplateRef<HTMLInputElement>('input');
 const popupRef = useTemplateRef<HTMLElement>('popup');
 
-function isRecord(option: unknown): option is Record<string, unknown> {
-  return typeof option === 'object' && option !== null;
-}
+const text = ref('');
+const isEdited = ref(false);
+const isOpen = ref(false);
+const highlighted = ref(-1);
 
-function valueOf(option: T) {
-  return (isRecord(option) ? option[valueKey] : option) as Value;
-}
+const query = computed(() => (isEdited.value ? text.value.trim() : ''));
 
-function labelOf(option: T) {
-  return String(isRecord(option) ? (option[labelKey] ?? '') : option);
-}
+const { status, say } = useComboBoxStatus();
 
-function foldCaseAndDiacritics(text: string) {
-  return text
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase();
-}
-
-const loaded = shallowRef<Listing>();
-const loadState = ref<'idle' | 'loading' | 'loaded' | 'failed'>('idle');
-const found = shallowRef<Listing>();
-const searchState = ref<'idle' | 'loading' | 'failed'>('idle');
-const isLoadingMore = ref(false);
-
-let request: AbortController | undefined;
-let searchRequest: AbortController | undefined;
-let moreRequest: AbortController | undefined;
-let searchTimer: ReturnType<typeof setTimeout> | undefined;
-
-const isLoader = computed(() => typeof options === 'function');
-const isServerSearch = computed(() => !!serverSearch && isLoader.value);
-const allOptions = computed(() =>
-  Array.isArray(options) ? options : (loaded.value?.options ?? []),
+const {
+  valueOf,
+  labelOf,
+  isLoader,
+  isServerSearch,
+  allOptions,
+  hasWholeList,
+  listing,
+  shown,
+  isBusy,
+  message,
+  touch,
+  loadForLabel,
+  loadMore,
+  searchSoon,
+  forgetSearch,
+  refreshOptions,
+  sayResults,
+} = useComboBoxOptions<T>(
+  {
+    options: () => options,
+    optionsKey: () => optionsKey,
+    serverSearch: () => serverSearch,
+    valueKey: () => valueKey,
+    labelKey: () => labelKey,
+    noOptionsText: () => noOptionsText,
+    disabled: () => disabled,
+    loading: () => loading,
+  },
+  {
+    query: () => query.value,
+    isEdited: () => isEdited.value,
+    isOpen: () => isOpen.value,
+    needsList: (): boolean => needsList.value,
+    say,
+    onListChange: () => (highlighted.value = -1),
+  },
 );
-const hasWholeList = computed(
-  () =>
-    !loading &&
-    (isLoader.value
-      ? loadState.value === 'loaded' && !isServerSearch.value
-      : true),
-);
-
-async function ask(
-  query: string,
-  page: number,
-  signal: AbortSignal,
-): Promise<Listing> {
-  const answer = await (options as Loader)(query, { signal, page });
-  const isList = Array.isArray(answer);
-
-  return {
-    query,
-    page,
-    options: isList ? answer : answer.options,
-    more: !isList && !!answer.more && isServerSearch.value,
-  };
-}
-
-async function load() {
-  if (!isLoader.value || loadState.value === 'loading') return;
-
-  const controller = new AbortController();
-  request = controller;
-  loadState.value = 'loading';
-
-  try {
-    const listing = await ask('', 1, controller.signal);
-    if (request !== controller) return;
-
-    loaded.value = listing;
-    loadState.value = 'loaded';
-  } catch {
-    if (request !== controller) return;
-
-    loadState.value = 'failed';
-  }
-
-  highlighted.value = -1;
-}
-
-function touch() {
-  if (disabled || !isLoader.value || loadState.value === 'loading') return;
-
-  if (loadState.value !== 'loaded' || !loaded.value?.options.length) {
-    void load();
-  }
-}
-
-function stopLoadingMore() {
-  moreRequest?.abort();
-  moreRequest = undefined;
-  isLoadingMore.value = false;
-}
-
-function forgetSearch() {
-  clearTimeout(searchTimer);
-  searchRequest?.abort();
-  searchRequest = undefined;
-  stopLoadingMore();
-  found.value = undefined;
-  searchState.value = 'idle';
-}
-
-function searchSoon() {
-  const query = text.value.trim();
-
-  forgetSearchRequest();
-  if (!query) {
-    found.value = undefined;
-    searchState.value = 'idle';
-    return;
-  }
-
-  searchState.value = 'loading';
-  searchTimer = setTimeout(() => void search(query), SEARCH_PAUSE_MS);
-}
-
-function forgetSearchRequest() {
-  clearTimeout(searchTimer);
-  searchRequest?.abort();
-  searchRequest = undefined;
-  stopLoadingMore();
-}
-
-async function search(query: string) {
-  const controller = new AbortController();
-  searchRequest = controller;
-
-  try {
-    const listing = await ask(query, 1, controller.signal);
-    if (searchRequest !== controller) return;
-
-    stopLoadingMore();
-    found.value = listing;
-    searchState.value = 'idle';
-  } catch {
-    if (searchRequest !== controller) return;
-
-    stopLoadingMore();
-    found.value = { query, page: 1, options: [], more: false };
-    searchState.value = 'failed';
-  }
-
-  highlighted.value = -1;
-  if (isOpen.value) sayResults(0);
-}
-
-async function loadMore() {
-  const current = listing.value;
-  if (
-    !current?.more ||
-    isLoadingMore.value ||
-    searchState.value === 'loading'
-  ) {
-    return;
-  }
-
-  const controller = new AbortController();
-  moreRequest = controller;
-  isLoadingMore.value = true;
-
-  try {
-    const next = await ask(current.query, current.page + 1, controller.signal);
-    if (moreRequest !== controller) return;
-
-    const longer = {
-      ...next,
-      options: [...current.options, ...next.options],
-      more: next.more && next.options.length > 0,
-    };
-    if (current === found.value) found.value = longer;
-    else if (current === loaded.value) loaded.value = longer;
-
-    if (isOpen.value) say(() => t('combobox.more-loaded'));
-  } catch {
-    if (moreRequest !== controller) return;
-
-    if (isOpen.value) say(() => t('combobox.more-failed'));
-  }
-
-  isLoadingMore.value = false;
-}
-
-function forgetOptions() {
-  request?.abort();
-  request = undefined;
-  forgetSearch();
-  loaded.value = undefined;
-  loadState.value = 'idle';
-}
-
-/** Asks the options function again, now */
-async function refreshOptions() {
-  forgetOptions();
-  resumeSearch();
-  await load();
-}
-
-function resumeSearch() {
-  if (isServerSearch.value && query.value) searchSoon();
-}
 
 const hasValue = computed(
   () => model.value !== null && model.value !== undefined,
@@ -370,7 +201,7 @@ const valueLabel = computed(() => {
   return hasWholeList.value ? t('combobox.unknown-option') : '';
 });
 
-const needsList = computed(
+const needsList = computed<boolean>(
   () =>
     hasValue.value &&
     selectedOption.value === undefined &&
@@ -378,8 +209,7 @@ const needsList = computed(
     !isServerSearch.value,
 );
 
-const text = ref(valueLabel.value);
-const isEdited = ref(false);
+text.value = valueLabel.value;
 
 function endEdit() {
   isEdited.value = false;
@@ -390,21 +220,6 @@ watch(valueLabel, (newLabel) => {
   if (!isEdited.value) text.value = newLabel;
 });
 
-function loadForLabel() {
-  if (needsList.value && loadState.value === 'idle') void load();
-}
-
-function reloadOptions() {
-  forgetOptions();
-  resumeSearch();
-
-  if (isOpen.value) void load();
-  else loadForLabel();
-}
-
-watch(() => optionsKey, reloadOptions);
-watch(isLoader, reloadOptions);
-watch(isServerSearch, reloadOptions);
 watch(needsList, loadForLabel);
 
 watch(selectedOption, giveSelected);
@@ -447,58 +262,6 @@ if (import.meta.dev) {
 onMounted(() => {
   loadForLabel();
   giveSelected();
-});
-
-const isOpen = ref(false);
-const highlighted = ref(-1);
-
-const query = computed(() => (isEdited.value ? text.value.trim() : ''));
-
-const listing = computed(() =>
-  isServerSearch.value && query.value ? found.value : loaded.value,
-);
-
-const shown = computed(() => {
-  if (isServerSearch.value) {
-    return (query.value && found.value?.options) || allOptions.value;
-  }
-
-  const folded = foldCaseAndDiacritics(query.value);
-
-  return folded
-    ? allOptions.value.filter((option) =>
-        foldCaseAndDiacritics(labelOf(option)).includes(folded),
-      )
-    : allOptions.value;
-});
-
-const isBusy = computed(
-  () =>
-    loading ||
-    loadState.value === 'loading' ||
-    searchState.value === 'loading' ||
-    isLoadingMore.value,
-);
-
-const message = computed(() => {
-  if (shown.value.length) return undefined;
-  if (
-    loading ||
-    loadState.value === 'loading' ||
-    searchState.value === 'loading'
-  ) {
-    return t('combobox.loading');
-  }
-  if (isServerSearch.value && query.value) {
-    return searchState.value === 'failed'
-      ? t('combobox.search-failed')
-      : t('combobox.no-results');
-  }
-  if (loadState.value === 'failed') return t('combobox.failed');
-  if (!allOptions.value.length) {
-    return noOptionsText ?? t('combobox.no-options');
-  }
-  return t('combobox.no-results');
 });
 
 const hasList = computed(() => isOpen.value && shown.value.length > 0);
@@ -553,45 +316,6 @@ function onListScroll(event: Event) {
     void loadMore();
   }
 }
-
-const status = ref('');
-let statusTimer: ReturnType<typeof setTimeout> | undefined;
-
-function say(statusText: () => string, delay = 0) {
-  clearTimeout(statusTimer);
-  statusTimer = setTimeout(() => {
-    status.value = statusText();
-    statusTimer = setTimeout(() => (status.value = ''), 3000);
-  }, delay);
-}
-
-function sayResults(delay: number) {
-  say(
-    () =>
-      message.value ??
-      t('combobox.results', { count: shown.value.length }, shown.value.length),
-    delay,
-  );
-}
-
-watch([isOpen, message], ([nowOpen, newMessage]) => {
-  if (nowOpen && newMessage && !isEdited.value) say(() => newMessage);
-});
-
-watch(
-  [loadState, () => loading],
-  ([, nowLoading], [stateBefore, wasLoading]) => {
-    const arrived =
-      (stateBefore === 'loading' && loadState.value !== 'loading') ||
-      (wasLoading && !nowLoading);
-    const isSearching = isServerSearch.value && !!query.value;
-
-    if (arrived && isOpen.value && isEdited.value && !isSearching)
-      sayResults(0);
-  },
-);
-
-onBeforeUnmount(() => clearTimeout(statusTimer));
 
 const errorText = computed(() => t('form.missing-value', { item: label }));
 
@@ -823,112 +547,14 @@ onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', onDocumentPress, true);
   document.removeEventListener('pointerup', onDocumentPressEnd, true);
   document.removeEventListener('pointercancel', onDocumentPressEnd, true);
-  untrackViewport();
-  forgetOptions();
 });
 
-const keyboardInsets = ref<{ top: number; bottom: number }>();
-
-// Until iOS makes the layout viewport smaller for its keyboard: the part the
-// visual viewport leaves out becomes an inset of the list's room
-function trackViewport() {
-  const viewport = window.visualViewport;
-
-  if (!viewport || Math.abs(viewport.scale - 1) > 0.01) {
-    keyboardInsets.value = undefined;
-    return;
-  }
-
-  const visibleEnd = viewport.offsetTop + viewport.height;
-  const top = Math.max(0, Math.round(viewport.offsetTop));
-  const bottom = Math.max(
-    0,
-    Math.round(document.documentElement.clientHeight - visibleEnd),
-  );
-
-  keyboardInsets.value = top || bottom ? { top, bottom } : undefined;
-
-  clearTimeout(revealTimer);
-  if (keyboardInsets.value) revealTimer = setTimeout(revealField, 250);
-}
-
-let revealTimer: ReturnType<typeof setTimeout> | undefined;
-
-// Until iOS always brings a focused field above its keyboard: one still out
-// of view once the keyboard has settled is centred there, as iOS does
-function revealField() {
-  const viewport = window.visualViewport;
-  const control = controlRef.value;
-
-  if (!viewport || !control || document.activeElement !== inputRef.value) {
-    return;
-  }
-
-  // Client coordinates start at the layout viewport, or on iOS at what is
-  // visible: an element fixed at the top tells which
-  const probe = document.createElement('div');
-  probe.style.cssText =
-    'position: fixed; inset: 0 auto auto 0; visibility: hidden';
-  document.body.append(probe);
-  const visibleTop = probe.getBoundingClientRect().top + viewport.offsetTop;
-  probe.remove();
-
-  const box = control.getBoundingClientRect();
-  if (box.top >= visibleTop && box.bottom <= visibleTop + viewport.height) {
-    return;
-  }
-
-  scrollerOf(control)?.scrollBy(
-    0,
-    box.top - visibleTop - (viewport.height - box.height) / 2,
-  );
-}
-
-function scrollerOf(element: Element) {
-  for (
-    let parent = element.parentElement;
-    parent && parent !== document.body;
-    parent = parent.parentElement
-  ) {
-    const style = getComputedStyle(parent);
-
-    if (
-      /auto|scroll/.test(style.overflowY) &&
-      parent.scrollHeight > parent.clientHeight
-    ) {
-      return parent;
-    }
-    if (style.position === 'fixed') return undefined;
-  }
-
-  return window;
-}
-
-function untrackViewport() {
-  clearTimeout(revealTimer);
-  window.visualViewport?.removeEventListener('resize', trackViewport);
-  window.visualViewport?.removeEventListener('scroll', trackViewport);
-  keyboardInsets.value = undefined;
-}
-
-watch(
+const { insetStyle } = useComboBoxPopup({
+  popup: popupRef,
+  control: controlRef,
+  input: inputRef,
   isOpen,
-  (nowOpen) => {
-    const popup = popupRef.value;
-    if (!popup) return;
-
-    if (nowOpen) {
-      if (!popup.matches(':popover-open')) popup.showPopover?.();
-      window.visualViewport?.addEventListener('resize', trackViewport);
-      window.visualViewport?.addEventListener('scroll', trackViewport);
-      trackViewport();
-    } else {
-      if (popup.matches(':popover-open')) popup.hidePopover?.();
-      untrackViewport();
-    }
-  },
-  { flush: 'post' },
-);
+});
 
 function fillList() {
   const list = popupRef.value?.querySelector('[role="listbox"]');
@@ -988,12 +614,7 @@ defineExpose({
     <div
       ref="root"
       class="combobox-root"
-      :style="
-        keyboardInsets && {
-          '--combobox-inset-top': `${keyboardInsets.top}px`,
-          '--combobox-inset-bottom': `${keyboardInsets.bottom}px`,
-        }
-      "
+      :style="insetStyle"
       @pointerdown="touch"
       @focusout="onFocusOut"
     >
@@ -1122,123 +743,10 @@ defineExpose({
   </FormField>
 </template>
 
+<style src="../assets/combobox.css"></style>
+
 <style>
-.combobox {
-  --combobox-button-size: 2rem;
-  /* The buttons keep the same distance to the frame on every side */
-  --combobox-button-inset: 0.25rem;
-
-  .combobox-root {
-    display: grid;
-    min-inline-size: 0;
-    anchor-scope: --combobox;
-  }
-
-  .combobox-control {
-    position: relative;
-    anchor-name: --combobox;
-  }
-
-  .combobox-control:has(.combobox-spinner) {
-    --combobox-spinner-room: 1.5rem;
-  }
-
-  .input {
-    padding-inline-end: calc(
-      var(--combobox-button-size) + var(--combobox-button-inset) + 0.25rem +
-        var(--combobox-spinner-room, 0rem)
-    );
-    text-overflow: ellipsis;
-  }
-
-  .combobox-control:has(.combobox-clear) .input {
-    padding-inline-end: calc(
-      2 * var(--combobox-button-size) + var(--combobox-button-inset) +
-        0.375rem + var(--combobox-spinner-room, 0rem)
-    );
-  }
-
-  .combobox-buttons {
-    position: absolute;
-    inset-block: 0;
-    inset-inline-end: var(--combobox-button-inset);
-    display: flex;
-    align-items: center;
-    gap: 0.125rem;
-  }
-
-  .combobox-button {
-    display: grid;
-    place-content: center;
-    inline-size: var(--combobox-button-size);
-    block-size: var(--combobox-button-size);
-    padding: 0;
-    border: none;
-    border-radius: var(--radius-sm);
-    color: var(--color-text);
-    background: none;
-    cursor: pointer;
-    transition-property: background-color;
-    transition-duration: var(--duration-xs);
-
-    &:not(:disabled):hover {
-      background-color: var(--color-grey-bg);
-    }
-
-    &:disabled {
-      cursor: default;
-    }
-  }
-
-  .combobox-spinner {
-    margin-inline-end: 0.25rem;
-    color: var(--color-grey-text);
-  }
-
-  &.input-size--sm {
-    --combobox-button-size: 1.5rem;
-  }
-
-  &.input-size--lg {
-    --combobox-button-inset: 0.375rem;
-  }
-}
-
 .combobox-popup {
-  position-anchor: --combobox;
-  position-area: block-end;
-  /* Below while the whole list fits there, else above, else shortened to its room */
-  position-try-fallbacks:
-    --combobox-above, --combobox-fit-below, --combobox-fit-above;
-  /* Both block insets set: with one left auto the list sticks to the other edge */
-  inset-inline: auto;
-  inset-block: 0 var(--combobox-inset-bottom, 0px);
-  inline-size: anchor-size(width);
-  max-block-size: 20rem;
-  margin-block: 0.25rem;
-  margin-inline: 0;
-  padding: 0.25rem;
-  overflow: hidden;
-  border: 1px solid var(--color-grey-graphic);
-  border-radius: var(--radius-md);
-  color: var(--color-text);
-  background-color: var(--color-card-bg);
-
-  &:popover-open {
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* The listbox scrolls, not the popup: it is the element the combobox controls */
-  .combobox-list {
-    min-block-size: 0;
-    margin: 0;
-    padding: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    list-style: none;
-  }
-
   .combobox-option {
     display: flex;
     align-items: start;
@@ -1264,12 +772,6 @@ defineExpose({
       outline-offset: -2px;
     }
   }
-
-  .combobox-message {
-    margin: 0;
-    padding: 0.5rem 0.75rem;
-    color: var(--color-grey-text);
-  }
 }
 
 /* An icon is a mask over a background, which forced colors would paint as the page */
@@ -1278,40 +780,5 @@ defineExpose({
     forced-color-adjust: none;
     background-color: CanvasText;
   }
-
-  .combobox-button .iconify {
-    forced-color-adjust: none;
-    background-color: ButtonText;
-  }
-
-  .combobox-button:disabled .iconify {
-    background-color: GrayText;
-  }
-}
-
-/* Not flip-block: that would move the keyboard's inset to the other side too */
-@position-try --combobox-above {
-  position-area: block-start;
-  inset-block: var(--combobox-inset-top, 0px) 0;
-}
-
-/* A percentage is of the room without the inset, so the inset comes off too */
-@position-try --combobox-fit-below {
-  position-area: block-end;
-  inset-block: 0 var(--combobox-inset-bottom, 0px);
-  min-block-size: 8rem;
-  max-block-size: min(
-    calc(100% - 0.5rem - var(--combobox-inset-bottom, 0px)),
-    20rem
-  );
-}
-
-@position-try --combobox-fit-above {
-  position-area: block-start;
-  inset-block: var(--combobox-inset-top, 0px) 0;
-  max-block-size: min(
-    calc(100% - 0.5rem - var(--combobox-inset-top, 0px)),
-    20rem
-  );
 }
 </style>
