@@ -38,7 +38,7 @@ A project gets this configuration from the layer and does not need to copy it; i
 - **Fonts**: [`@nuxt/fonts`](https://fonts.nuxt.com) loads Hanken Grotesk from Google, weights 400 to 800, normal and italic, `latin` and `latin-ext`.
 - **Vite prebundling**: the packages of the layer's components are added to `vite.optimizeDeps.include`, but only those the project has installed.
 - **Video thumbnails**: [`image.domains`](https://image.nuxt.com/get-started/configuration#domains) lists `i.ytimg.com` and `i.vimeocdn.com` for VideoPlayer.
-- **Icons**: [`@nuxt/icon`](https://nuxt.com/modules/icon/bundles) bundles the icons the components show on first paint, scans the project's templates for more, and allows a bundle of 256 kB. The layer sets no `provider`.
+- **Icons**: [`@nuxt/icon`](https://nuxt.com/modules/icon/bundles) bundles the icons the components show on first paint, scans the project's templates for more, and allows a bundle of 256 kB. The layer sets no `provider`: `@nuxt/icon` picks `'iconify'` for an SPA (`ssr: false`) or a static site and `'server'` otherwise. With `'server'`, the layer's `fallbackToApi: 'server-only'` keeps the browser away from Iconify's API: an icon outside the bundle comes from the project's own server. With `'iconify'` the browser loads such an icon from Iconify's API itself; an SPA that wants its server's endpoint instead sets `provider: 'server'`.
 - **Languages**: [`@nuxtjs/i18n`](https://i18n.nuxtjs.org) has the locales `nl` (the default, without a prefix) and `en`. A project with its own locale files keeps its own `i18n.locales` list, or those files are not loaded.
 - **The rest**: color mode with the class suffix `-mode`, `<html lang>` and `dir` from the locale, Nuxt DevTools off, and `runtimeConfig.public.gtmId` for CookiesDialog.
 
@@ -75,6 +75,9 @@ pnpm add md-editor-v3 markdown-it @mdit/plugin-attrs @mdit/plugin-mark highlight
 
 # DatePicker
 pnpm add @vuepic/vue-datepicker date-fns
+
+# MultiSelect (deprecated for ComboBox, removed in the next minor)
+pnpm add @vueform/multiselect
 
 # VideoPlayer, or a video link in MarkdownPreview
 pnpm add @nuxt/image
