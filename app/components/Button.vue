@@ -18,6 +18,7 @@ const {
   hideExternalIcon = false,
   loading = false,
   disabled = false,
+  ariaDisabled = false,
   external = false,
   iconPos = 'start',
   variant = 'secondary',
@@ -39,6 +40,15 @@ const {
   radius?: BorderRadius;
   hideLabel?: boolean;
   disabled?: boolean;
+  /**
+   * Read and shown as unavailable, but focusable, where `disabled` takes it out
+   * of the Tab order: a submit button does not submit and a link keeps its href
+   * but is not followed, yet a click, Enter or Space still emits `click`, so a
+   * press can say why nothing happens. For a button the user should find and
+   * learn why it is unavailable, such as a form's submit button; the reason
+   * goes in its description (`aria-describedby`) or text next to it
+   */
+  ariaDisabled?: boolean;
   loading?: boolean;
   download?: boolean;
   external?: boolean;
@@ -89,6 +99,8 @@ function handleClick(event: Event) {
     event.preventDefault();
     return;
   }
+  // No submit or navigation, but the press is still the parent's to answer
+  if (ariaDisabled) event.preventDefault();
 
   emit('click');
 }
@@ -115,7 +127,7 @@ const emit = defineEmits<{
     ref="button"
     :to="disabled ? undefined : to || href"
     :role="disabled ? 'link' : undefined"
-    :aria-disabled="disabled || loading || undefined"
+    :aria-disabled="disabled || loading || ariaDisabled || undefined"
     v-bind="isDisabledCurrent ? { 'aria-current': 'page' } : {}"
     :aria-busy="loading || undefined"
     :target="target"
@@ -129,7 +141,8 @@ const emit = defineEmits<{
       `icon-position--${iconPos}`,
       hideLabel && 'button--icon-only',
       loading && 'button--loading',
-      (loading || disabled) && 'disabled',
+      (loading || disabled || ariaDisabled) && 'disabled',
+      ariaDisabled && !loading && !disabled && 'button--unavailable',
       isDisabledActive && 'router-link-active',
       isDisabledCurrent && 'router-link-exact-active',
     ]"
@@ -169,7 +182,7 @@ const emit = defineEmits<{
     ref="button"
     :type="type"
     :disabled="disabled"
-    :aria-disabled="loading || undefined"
+    :aria-disabled="loading || ariaDisabled || undefined"
     :aria-busy="loading || undefined"
     :aria-label="ariaLabel"
     :class="[
@@ -179,7 +192,8 @@ const emit = defineEmits<{
       `icon-position--${iconPos}`,
       hideLabel && 'button--icon-only',
       loading && 'button--loading',
-      loading && 'disabled',
+      (loading || ariaDisabled) && 'disabled',
+      ariaDisabled && !loading && 'button--unavailable',
     ]"
     :style="computedStyle"
     :title="disabled ? undefined : title"
@@ -234,6 +248,11 @@ const emit = defineEmits<{
     pointer-events: none;
     cursor: default;
     opacity: 35%;
+  }
+
+  /* Looks disabled, but takes a press, which may say why nothing happens */
+  &.button--unavailable {
+    pointer-events: auto;
   }
 
   .iconify {

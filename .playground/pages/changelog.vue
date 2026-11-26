@@ -25,17 +25,25 @@ useHead({ title: 'Changelog' });
           focusable, but a click or Space does not tick it.
         </li>
         <li>
+          Button has an <code>aria-disabled</code> prop: read and shown as
+          unavailable but still reached with Tab, where
+          <code>disabled</code> takes it out of the Tab order. A submit button
+          does not submit its form and a link is not followed, but a press still
+          emits <code>click</code>, so the page can say why; the attribute
+          alone, before, only told the screen reader.
+        </li>
+        <li>
           ComboBox scrolls the highlighted option fully into its list, where
           Chromium left it cut off by a fraction of a pixel at 400% zoom.
         </li>
         <li>
-          The README lists the packages a project installs for the components
-          it uses, such as <code>compressorjs</code> for FileInput: a
-          production build fails without them.
+          The README lists the packages a project installs for the components it
+          uses, such as <code>compressorjs</code> for FileInput: a production
+          build fails without them.
         </li>
         <li>
-          The layer's token test and contrast spec check only the template;
-          each project checks its own <code>main.css</code> in its own suite.
+          The layer's token test and contrast spec check only the template; each
+          project checks its own <code>main.css</code> in its own suite.
         </li>
         <li>
           The playground shows ComboBox and ComboBox <code>multiple</code> side
@@ -51,16 +59,15 @@ useHead({ title: 'Changelog' });
     <ChangelogEntry v="2.6.1" date="2026-11-26">
       <ul>
         <li>
-          FileInput in document mode with a <code>name</code> keeps a valid
-          file as its value and in its input, so a Form's submit posts it and
-          <code>required</code> holds back a submit without one; a rejected
-          file leaves the one before. Without <code>name</code> nothing
-          changes.
+          FileInput in document mode with a <code>name</code> keeps a valid file
+          as its value and in its input, so a Form's submit posts it and
+          <code>required</code> holds back a submit without one; a rejected file
+          leaves the one before. Without <code>name</code> nothing changes.
         </li>
         <li>
-          Form's <code>&lt;form&gt;</code> has <code>method="dialog"</code>,
-          so a submit before hydration does nothing, where it posted the form
-          with GET and put what was typed in the address.
+          Form's <code>&lt;form&gt;</code> has <code>method="dialog"</code>, so
+          a submit before hydration does nothing, where it posted the form with
+          GET and put what was typed in the address.
         </li>
         <li>
           MarkdownPreview takes the attributes a page gives it, such as
@@ -74,8 +81,8 @@ useHead({ title: 'Changelog' });
         </li>
         <li>
           DatePicker's calendar is no longer cut off in a Popover or a Dialog:
-          it is placed with a fixed strategy, and neither holds a transform
-          once open.
+          it is placed with a fixed strategy, and neither holds a transform once
+          open.
         </li>
         <li>
           AppSidebar keeps room for an overlay scrollbar at the navigation's
@@ -84,32 +91,30 @@ useHead({ title: 'Changelog' });
         <li>
           ComboBox: <code>v-model:selected</code> becomes <code>null</code>
           for a value the whole list has no option for (not with
-          <code>server-search</code>), and a click no longer leaves its
-          pointer state behind after focus returns or another window takes
-          focus.
+          <code>server-search</code>), and a click no longer leaves its pointer
+          state behind after focus returns or another window takes focus.
         </li>
         <li>
           Cardan Auth UI: a request that sets its own
           <code>Accept-Language</code> keeps it; the identity request's 10
-          seconds also cover an answer that stalls half way; the theme from
-          the profile takes only <code>light</code>, <code>dark</code> and
+          seconds also cover an answer that stalls half way; the theme from the
+          profile takes only <code>light</code>, <code>dark</code> and
           <code>system</code>; a project's i18n hook that throws no longer
-          aborts a navigation; <code>$identityReady</code> is a resolved
-          promise on the server.
+          aborts a navigation; <code>$identityReady</code> is a resolved promise
+          on the server.
         </li>
         <li>
-          A project's typecheck types the layer's browser test helpers with
-          the project's own <code>@playwright/test</code>, so the two no
-          longer have to be on the same version.
+          A project's typecheck types the layer's browser test helpers with the
+          project's own <code>@playwright/test</code>, so the two no longer have
+          to be on the same version.
         </li>
         <li>
           The layer's workarounds use public APIs where its tripwires watched
           private ones (the error page's way back, the html-lang plugin,
           <code>expectNoViolations()</code>); the test harness is hardened
           (<code>serve()</code>, <code>withApi()</code>, the vitest API fake,
-          which now answers <code>client.raw</code> only from the test's
-          routes) and adds <code>loadIdentity()</code> for a project's
-          start-up test.
+          which now answers <code>client.raw</code> only from the test's routes)
+          and adds <code>loadIdentity()</code> for a project's start-up test.
         </li>
         <li>
           <code>cardanVitestConfig()</code> inlines the wrapped libraries
@@ -117,15 +122,15 @@ useHead({ title: 'Changelog' });
           module resolves its packages in development only.
         </li>
         <li>
-          The playground shows MultiSelect only where it is still used, and
-          runs on compatibility version 4, as the projects do.
+          The playground shows MultiSelect only where it is still used, and runs
+          on compatibility version 4, as the projects do.
         </li>
         <li>
           The cardan Claude Code plugin: a workaround uses a dependency's public
           API, and a tripwire entry is only for a third-party internal, no
           longer for a wait on a Cardan UI release; Notion issues follow the
-          work up to production, with a sweep of recently merged pull
-          requests; the review hook counts a review of a worktree.
+          work up to production, with a sweep of recently merged pull requests;
+          the review hook counts a review of a worktree.
         </li>
       </ul>
     </ChangelogEntry>

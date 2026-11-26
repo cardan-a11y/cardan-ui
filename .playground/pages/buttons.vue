@@ -1,5 +1,19 @@
 <script setup lang="ts">
 useHead({ title: 'Buttons & Links' });
+
+const agreed = ref(false);
+const message = ref('');
+const sendStatus = ref('');
+const sent = ref(false);
+
+// A press while unavailable says why; emptied first, so a second press is
+// read out again
+async function onSend() {
+  if (agreed.value) return;
+  sendStatus.value = '';
+  await nextTick();
+  sendStatus.value = 'Not sent: tick “I agree to the terms” first.';
+}
 </script>
 
 <template>
@@ -156,6 +170,8 @@ useHead({ title: 'Buttons & Links' });
         <Button size="lg" loading label="Loading" />
         <Button size="lg" loading label="Loading link" to="/" />
         <Button size="lg" disabled label="Disabled button" />
+        <Button size="lg" aria-disabled label="Unavailable button" />
+        <Button size="lg" aria-disabled label="Unavailable link" to="/" />
         <Button
           size="lg"
           disabled
@@ -166,6 +182,38 @@ useHead({ title: 'Buttons & Links' });
         />
         <CopyButton size="lg" text="Demo Text" />
       </div>
+
+      <Spacer size="lg" />
+
+      <h3>Unavailable, but focusable</h3>
+      <p>
+        <code>disabled</code> takes a button out of the Tab order, so a
+        keyboard or screen reader user may never find it, or learn why it does
+        nothing. <code>aria-disabled</code> keeps it focusable and says it is
+        unavailable: a submit button does not submit, also not on Enter in a
+        field of its form, and an unavailable link keeps its href but is not
+        followed. A click, Enter or Space still emits <code>click</code>, so
+        a press can say why nothing happens. Say why in its description
+        (<code>aria-describedby</code>) or in text next to it.
+      </p>
+      <Form @submit="sent = true">
+        <Input v-model="message" label="Message" />
+        <Checkbox v-model="agreed" label="I agree to the terms" />
+        <div class="flex-wrapper">
+          <Button
+            type="submit"
+            variant="primary"
+            label="Send"
+            :aria-disabled="!agreed"
+            aria-describedby="send-reason"
+            @click="onSend"
+          />
+          <p id="send-reason">
+            {{ agreed ? '' : 'Tick “I agree to the terms” to send.' }}
+          </p>
+        </div>
+        <p role="status">{{ sent ? 'Sent.' : sendStatus }}</p>
+      </Form>
 
       <Spacer size="lg" />
 

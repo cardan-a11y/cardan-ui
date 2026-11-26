@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from 'vitest';
-import { computed } from 'vue';
+import { computed, h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Button, NuxtLink } from '#components';
 import {
@@ -8,6 +8,7 @@ import {
   expectNoViolations,
   roleOf,
 } from '../a11y';
+import { mountInForm } from '../form';
 
 describe('Button', () => {
   afterEach(() => {
@@ -92,6 +93,61 @@ describe('Button', () => {
     expect(wrapper.emitted('click')).toHaveLength(1);
   });
 
+  it('with aria-disabled is read as unavailable and stays focusable, and its click does nothing but tell the parent', async () => {
+    const wrapper = await mountSuspended(Button, {
+      props: { label: 'Send', ariaDisabled: true },
+      attachTo: document.body,
+    });
+
+    const button = wrapper.get('button');
+    expect((button.element as HTMLButtonElement).disabled).toBe(false);
+    expect(button.attributes('aria-disabled')).toBe('true');
+    expect(button.attributes('aria-busy')).toBeUndefined();
+    expect(accessibleName(button)).toBe('Send');
+
+    // Enter and Space reach a button as this click; test/browser/button.spec.ts
+    // presses them. The click still emits, so a press can say why
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    button.element.dispatchEvent(click);
+    expect(click.defaultPrevented).toBe(true);
+    expect(wrapper.emitted('click')).toHaveLength(1);
+
+    await wrapper.setProps({ ariaDisabled: false });
+    expect(button.attributes('aria-disabled')).toBeUndefined();
+    const enabledClick = new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+    });
+    button.element.dispatchEvent(enabledClick);
+    expect(enabledClick.defaultPrevented).toBe(false);
+    expect(wrapper.emitted('click')).toHaveLength(2);
+    await expectNoViolations();
+  });
+
+  it('with aria-disabled does not submit its Form', async () => {
+    const submitted: FormData[] = [];
+    const wrapper = await mountInForm(
+      () => [h(Button, { label: 'Send', type: 'submit', ariaDisabled: true })],
+      { onSubmit: (data: FormData) => submitted.push(data) },
+    );
+
+    wrapper.get('button').element.click();
+    await nextTick();
+    expect(submitted).toHaveLength(0);
+  });
+
+  it('submits its Form without aria-disabled', async () => {
+    const submitted: FormData[] = [];
+    const wrapper = await mountInForm(
+      () => [h(Button, { label: 'Send', type: 'submit' })],
+      { onSubmit: (data: FormData) => submitted.push(data) },
+    );
+
+    wrapper.get('button').element.click();
+    await nextTick();
+    expect(submitted).toHaveLength(1);
+  });
+
   it('is a link with to or href', async () => {
     const wrapper = await mountSuspended(Button, {
       props: { label: 'Buttons', to: '/buttons' },
@@ -149,6 +205,25 @@ describe('Button', () => {
 
     await wrapper.setProps({ loading: false });
     await wrapper.get('a').trigger('click');
+    expect(wrapper.emitted('click')).toHaveLength(1);
+  });
+
+  // The link is not followed: test/browser/button.spec.ts
+  it('keeps the href of an aria-disabled link, which says so and tells the parent of its click', async () => {
+    const wrapper = await mountSuspended(Button, {
+      props: { label: 'Buttons', to: '/buttons', ariaDisabled: true },
+      attachTo: document.body,
+    });
+
+    const link = wrapper.get('a');
+    expect(roleOf(link)).toBe('link');
+    expect(link.attributes('href')).toBe('/buttons');
+    expect(link.attributes('aria-disabled')).toBe('true');
+    expect(link.attributes('aria-busy')).toBeUndefined();
+
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    link.element.dispatchEvent(click);
+    expect(click.defaultPrevented).toBe(true);
     expect(wrapper.emitted('click')).toHaveLength(1);
   });
 

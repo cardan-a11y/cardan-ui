@@ -101,6 +101,7 @@ New: **ComboBox `multiple`**, which selects several options, and ComboBox's **`c
 - **`disabled-key`** (`disabled` by default) marks an option that a search and the arrow keys reach, but nothing picks: `aria-disabled` in the list, an `aria-disabled` Checkbox with `multiple`, which a clear keeps ticked. An option a project left out of `options` for 2.6 can come back.
 - **A project that styled a set MultiSelect** through `.multiselect-multiple-label` uses the class `has-value` on ComboBox's wrapper, and `is-multiple` for a multiple field. Remove the rest of the project's `.multiselect` CSS with the last field.
 - **A project's test** finds the field by `role="combobox"` and its label, opens the dialog with Down Arrow and finds each option by `role="checkbox"` and its label.
+- **Button's `aria-disabled` is a prop**: it looks disabled, does not submit or follow its link, and still emits `click`, so a press can say why. cardan-academy-nuxt's add-participant button (`checkout/participants.vue`) keeps working; its own `.button[aria-disabled='true']` look can go. Nothing else to do.
 
 ### 2.6.1
 
