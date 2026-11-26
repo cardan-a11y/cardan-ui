@@ -267,6 +267,17 @@ describe('MultiComboBox: keyboard support', () => {
     expect(closed.defaultPrevented).toBe(false);
   });
 
+  it('Enter in the field closes the dialog and puts the selection back in place of the search', async () => {
+    const { input } = await mountMulti({ modelValue: ['ham'] });
+    await type(input, 'che');
+
+    await press('Enter');
+
+    expect(input.attributes('aria-expanded')).toBe('false');
+    expect(input.element.value).toBe('Ham');
+    expectFocused(input);
+  });
+
   it('typing opens the dialog with the options that match, ignoring case and diacritics', async () => {
     const { input, labels } = await mountMulti();
 

@@ -21,7 +21,8 @@ import type { StyleValue } from 'vue';
  *   stays in sight while the list is filtered.
  * - Escape in the field or the dialog closes it, puts the selection back and
  *   focuses the field, and is stopped there, so a Dialog around it stays
- *   open. Enter in the field or on a checkbox never submits.
+ *   open. Enter in the field does the same, without being stopped; while it
+ *   is open, Enter in the field or on a checkbox never submits.
  * - `v-model` is an array of values, `[]` after a clear; `v-model:selected`
  *   the array of their options, so a field shows its labels without its
  *   list. `name` goes to a hidden input per value, since the checkboxes are
@@ -431,7 +432,7 @@ function onKeydown(event: KeyboardEvent) {
       if (!isOpen.value) return;
 
       event.preventDefault();
-      close();
+      returnToField();
       break;
     case 'Escape':
       if (!isOpen.value) return;
@@ -791,9 +792,9 @@ defineExpose({
     label {
       flex: 1;
       max-width: none;
-      padding: 0.5rem 0.75rem 0.5rem 0.5rem;
       margin-block-start: 0.125em;
       margin-block-end: 0;
+      padding: 0.5rem 0.75rem 0.5rem 0.5rem;
       font-size: inherit;
       overflow-wrap: anywhere;
       cursor: pointer;
