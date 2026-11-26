@@ -11,7 +11,13 @@ const weights = [
 
 const scale = [
   { size: 'xxxxl', px: 64, use: 'Display', sample: 'Impact', weight: 'bold' },
-  { size: 'xxxl', px: 48, use: 'Heading 1', sample: 'Our method', weight: 'bold' },
+  {
+    size: 'xxxl',
+    px: 48,
+    use: 'Heading 1',
+    sample: 'Our method',
+    weight: 'bold',
+  },
   {
     size: 'xxl',
     px: 32,
@@ -63,10 +69,6 @@ const rules = [
   {
     title: 'One typeface',
     text: 'Hanken Grotesk for everything, Arial as fallback. Inputs use the system font.',
-  },
-  {
-    title: '16px and up',
-    text: 'Running text is md or larger. sm and below is for labels, chips and captions.',
   },
   {
     title: 'Tokens, not pixels',
