@@ -102,6 +102,7 @@ New: **ComboBox `multiple`**, which selects several options, and ComboBox's **`c
 - **A project that styled a set MultiSelect** through `.multiselect-multiple-label` uses the class `has-value` on ComboBox's wrapper, and `is-multiple` for a multiple field. Remove the rest of the project's `.multiselect` CSS with the last field.
 - **A project's test** finds the field by `role="combobox"` and its label, opens the dialog with Down Arrow and finds each option by `role="checkbox"` and its label.
 - **Button's `aria-disabled` is a prop**: it looks disabled, does not submit or follow its link, and still emits `click`, so a press can say why. cardan-academy-nuxt's add-participant button (`checkout/participants.vue`) keeps working, but its own `.button[aria-disabled='true']` rule (`opacity: 35%`) must go: Button now dims the colours and not the button, so its focus ring keeps its contrast, and that rule would dim the ring again. Nothing else to do.
+- **Dialog and MobileMenu close on the backdrop only**: a click in the panel's empty space or padding, or a press in a field released over the backdrop, no longer closes them and loses what was typed. A project's vitest test that closes one from the backdrop with `dialog.click()` uses `clickBackdrop(dialog)` from the layer's `test/dom.ts` instead, since a click now needs a press outside the dialog before it: cardan-academy-nuxt's `test/layout/mobile-menu.test.ts` does this on `chore/cardan-ui-2.6.2`. Nothing else to do.
 
 ### 2.6.1
 

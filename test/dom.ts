@@ -21,6 +21,18 @@ export async function press(
   return event;
 }
 
+/**
+ * A press and a release on a modal `<dialog>`'s backdrop, as Dialog and
+ * MobileMenu want them (`useBackdropClick()`). happy-dom has no layout: the
+ * dialog's box is 0 by 0 at the origin, so (10, 10) is outside it. Whether a
+ * point in the panel counts is for the browser suite.
+ */
+export function clickBackdrop(dialog: HTMLDialogElement) {
+  const at = { bubbles: true, clientX: 10, clientY: 10 };
+  dialog.dispatchEvent(new PointerEvent('pointerdown', at));
+  dialog.dispatchEvent(new MouseEvent('click', at));
+}
+
 const added = new Set<Element>();
 
 /**

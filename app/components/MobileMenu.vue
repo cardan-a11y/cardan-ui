@@ -57,15 +57,9 @@ const dialogTriggerRef = useTemplateRef<ButtonComponent>('dialogTrigger');
 const dialogElementRef = useTemplateRef<HTMLDialogElement>('dialogElement');
 const isVisible = ref(false);
 
-function handleDialogClick(event: MouseEvent) {
-  if (!clickOutside) return;
-
-  const target = event.target as HTMLDialogElement;
-
-  if (target.nodeName === 'DIALOG') {
-    closeDialog();
-  }
-}
+const backdrop = useBackdropClick(() => {
+  if (clickOutside) closeDialog();
+});
 
 function closeDialog() {
   const dialog = dialogElementRef.value;
@@ -160,7 +154,8 @@ const emit = defineEmits<{
         v-bind="$attrs"
         :aria-label="label || $t('aria.mobile-menu')"
         :style="`--mobile-menu-width: ${width}px`"
-        @click="handleDialogClick"
+        @pointerdown="backdrop.onPointerdown"
+        @click="backdrop.onClick"
         @cancel="handleCancel"
         @close="
           () => {
