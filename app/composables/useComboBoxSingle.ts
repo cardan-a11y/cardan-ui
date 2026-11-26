@@ -345,9 +345,21 @@ export function useComboBoxSingle<T>(context: {
     (index) => {
       if (index === -1) return;
 
-      document
-        .getElementById(optionId(index))
-        ?.scrollIntoView?.({ block: 'nearest' });
+      const option = document.getElementById(optionId(index));
+      const list = option?.parentElement;
+      if (!option || !list) return;
+
+      // Not scrollIntoView: Chromium rounds its scrollTop down, which leaves
+      // a fraction of the option cut off in a list of fractional height. It
+      // can come back once the "400% zoom" test in combobox.spec.ts passes
+      // with scrollIntoView({ block: 'nearest' })
+      const box = option.getBoundingClientRect();
+      const top = list.getBoundingClientRect().top + list.clientTop;
+      const bottom = top + list.clientHeight;
+      if (box.top < top) list.scrollTop -= Math.ceil(top - box.top);
+      else if (box.bottom > bottom) {
+        list.scrollTop += Math.ceil(box.bottom - bottom);
+      }
     },
     { flush: 'post' },
   );
