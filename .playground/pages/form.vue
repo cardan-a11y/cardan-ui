@@ -3,8 +3,6 @@ useHead({ title: 'Form inputs' });
 
 const inputVariant = ref<InputVariant>('default');
 const singleSelection = ref('');
-const multiSelection = ref<string | string[]>();
-const filterSelection = ref<string[]>([]);
 const rangeValue = ref(0);
 const quantity = ref<number | undefined>(1);
 const min = ref(0);
@@ -14,7 +12,6 @@ const showTicks = ref(true);
 const showOutput = ref(false);
 const date = ref();
 const selectedCheckboxes = ref<string[]>([]);
-const showOptionIcons = ref(true);
 const selectedRadio = ref<string>();
 const raw = ref();
 const disabled = ref(false);
@@ -25,7 +22,6 @@ const avatar = ref<File>();
 
 const serverError = ref<string>();
 
-const multiselectMode = ref<'single' | 'multiple' | 'tags'>('multiple');
 const inputSize = ref<InputSize>('md');
 
 const choiceVariant = computed(() =>
@@ -49,21 +45,6 @@ const selectOptions = [
     id: 'option-4',
     name: 'Disabled option',
     disabled: true,
-  },
-];
-
-const multiSelectOptions = [
-  {
-    id: 'option-1',
-    name: 'Long option 1',
-  },
-  {
-    id: 'option-2',
-    name: 'Longer text option 2',
-  },
-  {
-    id: 'option-3',
-    name: 'The longest text option 3 The longest text option 3 with way more tet that can possible fit anywhere in this drop dead gorgeous UI',
   },
 ];
 
@@ -96,21 +77,6 @@ const radioOptions = [
     value: 'radio-c',
     label: 'Radio C',
     disabled: true,
-  },
-];
-
-const multiselectModes = [
-  {
-    value: 'single',
-    label: 'single',
-  },
-  {
-    value: 'multiple',
-    label: 'multiple',
-  },
-  {
-    value: 'tags',
-    label: 'tags',
   },
 ];
 

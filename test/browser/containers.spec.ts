@@ -39,10 +39,12 @@ async function expectEscapeInsideOut(
   page: Page,
   dialog: Locator,
   popup: Locator,
+  field: Locator,
 ) {
   await page.keyboard.press('Escape');
   await expect(popup).toBeHidden();
   await expect(dialog).toBeVisible();
+  await expect(field).toBeFocused();
 
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
@@ -80,7 +82,12 @@ for (const [name, open] of Object.entries(popupsOpenedByKeyboard)) {
     const popup = await open(page, dialog);
     await expect(popup).toBeVisible();
 
-    await expectEscapeInsideOut(page, dialog, popup);
+    await expectEscapeInsideOut(
+      page,
+      dialog,
+      popup,
+      dialog.getByRole('combobox', { name }),
+    );
   });
 
   test(`${name} in a Dialog: Tab stays in the dialog while its popup is open`, async ({

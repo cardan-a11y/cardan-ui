@@ -288,7 +288,7 @@ onMounted(() => {
 });
 
 // The library blurs the field on Escape and has no option against it: a no-op
-// `blur` until the event leaves keeps focus (test/browser/multiselect.spec.ts)
+// `blur` until the event leaves keeps focus (test/browser/containers.spec.ts)
 function keepFocusOnEscape(event: KeyboardEvent) {
   if (event.key !== 'Escape') return;
 
