@@ -68,6 +68,9 @@ const emit = defineEmits<{
 </script>
 
 <template>
+  <!-- method="dialog": a submit before hydration (or a lazy hydration) does
+       nothing, rather than put what was typed in the address. The action is
+       unused but gives iOS's keyboard its Go and Search key -->
   <form
     ref="form"
     :class="[
@@ -76,6 +79,7 @@ const emit = defineEmits<{
       validity ? 'show-valid' : 'show-invalid',
     ]"
     novalidate
+    method="dialog"
     action="."
     @submit.prevent="handleSubmit"
   >

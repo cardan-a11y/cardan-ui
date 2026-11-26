@@ -98,3 +98,22 @@ test('FileInput in document mode with a name: the form posts the file, also afte
   await submit.click();
   await expect(demo.locator('pre code')).toHaveText(/^document: essay\.pdf/);
 });
+
+test.describe('before hydration, also of a lazily hydrated part', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('a submit does not post the form natively, so nothing typed ends up in the address', async ({
+    page,
+  }) => {
+    await page.goto('/form');
+    const requests: string[] = [];
+    page.on('request', (request) => requests.push(request.url()));
+    await page.getByRole('textbox', { name: 'Email address' }).fill('a@b.nl');
+
+    await page.getByRole('button', { name: 'Submit' }).first().click();
+    await page.waitForTimeout(500);
+
+    expect(page.url()).toMatch(/\/form$/);
+    expect(requests).toEqual([]);
+  });
+});
