@@ -200,7 +200,7 @@ function positionDropdown() {
 }
 
 // The library has no placement of its own; anchor positioning can take over
-// once every target browser has it (README)
+// once every target browser has it (README; test/browser/multiselect.spec.ts)
 async function placeDropdown() {
   setDropdownLayer(true);
   positionDropdown();
