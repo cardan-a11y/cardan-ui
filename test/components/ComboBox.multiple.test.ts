@@ -155,6 +155,15 @@ describe('ComboBox multiple: roles, states and properties', () => {
     expect(checkbox('Jalapeños').element.checked).toBe(false);
     expect(dialog().text()).toContain('2 selected');
   });
+
+  it('says the number also before the first tick, so the list stays in place', async () => {
+    const { input, checkbox, dialog } = await mountMulti({ modelValue: [] });
+    await input.trigger('click');
+    expect(dialog().text()).toContain('0 selected');
+
+    await checkbox('Ham').trigger('click');
+    expect(dialog().text()).toContain('1 selected');
+  });
 });
 
 describe('ComboBox multiple: keyboard support', () => {

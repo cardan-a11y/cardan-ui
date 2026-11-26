@@ -575,7 +575,7 @@ defineExpose({
         @keydown="several.onPopupKeydown"
       >
         <template v-if="isOpen">
-          <p v-if="several.count > 0" class="combobox-count">
+          <p class="combobox-count">
             {{
               t('combobox.selected', { count: several.count }, several.count)
             }}
@@ -808,13 +808,15 @@ defineExpose({
 
   .combobox-count {
     margin: 0;
-    padding: 0.25rem 0.75rem;
+    padding-block: 0.75rem 0.5rem;
+    padding-inline: 0.75rem;
     color: var(--color-grey-text);
     font-size: var(--font-size-sm);
   }
 
   .combobox-check {
     border-radius: var(--radius-sm);
+    margin-block-end: 0.25rem;
 
     &:hover {
       background-color: var(--color-grey-bg);
@@ -842,16 +844,16 @@ defineExpose({
 
     input[type='checkbox'] {
       flex: none;
-      margin-block: 0.625rem;
+      margin-block: 0.5rem;
       margin-inline-start: 0.75rem;
     }
 
     label {
       flex: 1;
       max-width: none;
-      margin-block-start: 0.125em;
       margin-block-end: 0;
-      padding: 0.5rem 0.75rem 0.5rem 0.5rem;
+      padding-block: 0.5rem;
+      padding-inline: 0.5rem;
       font-size: inherit;
       overflow-wrap: anywhere;
       cursor: pointer;
