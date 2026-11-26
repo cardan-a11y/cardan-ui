@@ -23,17 +23,34 @@ const popoverActions = [
 ];
 
 const filterFrom = ref();
+
+const rules = [
+  {
+    title: 'Tooltip: text only',
+    text: 'A toggletip with static text: a button shows it in a live region, and focus stays on the button.',
+  },
+  {
+    title: 'Popover: links or buttons',
+    text: 'A disclosure, not a menu: a list of links or buttons. Focus moves to its first item when it opens.',
+  },
+  {
+    title: 'A click, not a hover',
+    text: 'Both open on a click or a key press, never on hover or focus alone: the same for touch, mouse and keyboard.',
+  },
+  {
+    title: 'Escape closes',
+    text: 'Escape closes either one. A Popover gives focus back to its trigger.',
+  },
+];
 </script>
 
 <template>
-  <div class="demo-page">
+  <div class="demo-page tooltip-page">
+    <p class="demo-eyebrow">Actions</p>
     <h1>Non modal dialog pattern</h1>
-
-    <p class="fs-md">
-      A common pattern on the web is to show content on top of other content,
-      drawing the user's attention to specific important information or actions
-      that need to be taken. This pattern can technically be described as a
-      non-modal dialog or popover. Cardan UI uses the
+    <p class="demo-lead">
+      Tooltip and Popover show content on top of the page, which stays in reach.
+      Both use the
       <Button
         to="https://developer.mozilla.org/en-US/docs/Web/API/Popover_API"
         label="Popover API"
@@ -46,48 +63,47 @@ const filterFrom = ref();
         label="CSS anchor positioning"
         variant="link"
         target="_blank"
-      />
-      for the Tooltip and Popover components.
+      />.
     </p>
 
-    <h2 class="mbs-2">Tooltip vs. Toggletip</h2>
+    <ul role="list" class="demo-grid">
+      <li v-for="rule in rules" :key="rule.title" class="demo-tile">
+        <strong>{{ rule.title }}</strong>
+        <span>{{ rule.text }}</span>
+      </li>
+    </ul>
 
-    <p class="fs-md">
-      A Tooltip is a popup that displays information related to an element when
-      the element receives keyboard focus or the mouse hovers over it. Cardan UI
-      uses
-      <Button
-        to="https://inclusive-components.design/tooltips-toggletips"
-        label="Toggletips with live regions"
-        target="_blank"
-        variant="link"
-      />
-      instead. Toggletips are revealed by click rather than by hover and focus.
-      This pattern is more consistent across touch, mouse and keyboard controls.
-    </p>
+    <section class="demo-section" aria-labelledby="tooltip-toggletip">
+      <h2 id="tooltip-toggletip">Tooltip vs. Toggletip</h2>
+      <p class="demo-hint">
+        A tooltip shows when its element gets keyboard focus or the mouse hovers
+        over it. Cardan UI uses
+        <Button
+          to="https://inclusive-components.design/tooltips-toggletips"
+          label="Toggletips with live regions"
+          target="_blank"
+          variant="link"
+        />
+        instead, which open on a click. The APG
+        <Button
+          label="Tooltip design pattern"
+          to="https://www.w3.org/WAI/ARIA/apg/patterns/tooltip"
+          target="_blank"
+          variant="link"
+        />
+        is work in progress, without task force consensus.
+      </p>
+    </section>
 
-    <p class="c-grey-text mbe-2 fs-sm">
-      Note: the
-      <Button
-        label="Tooltip design pattern"
-        to="https://www.w3.org/WAI/ARIA/apg/patterns/tooltip"
-        target="_blank"
-        variant="link"
-      />
-      is work in progress; it does not yet have task force consensus.
-    </p>
+    <section class="demo-section" aria-labelledby="tooltip-tooltip">
+      <h2 id="tooltip-tooltip">Tooltip</h2>
+      <p class="demo-hint">
+        <code>{{ `<Tooltip />` }}</code> is a toggletip with static content.
+        <code>placement</code> sets its side, and
+        <code>:hide-label="false"</code> shows the label next to the icon.
+      </p>
 
-    <div class="demo-page-cols">
       <Card>
-        <div class="text-content">
-          <h2>Tooltip</h2>
-
-          <p>
-            Cardan UI offers a <code>{{ `<Tooltip />`}}</code> component for
-            toggletips with static content.
-          </p>
-        </div>
-
         <div class="flex-wrapper">
           <Tooltip label="Live regions" :max-width="480" icon-size="xxl">
             Live regions are used to present changes in web content that occur
@@ -103,7 +119,7 @@ const filterFrom = ref();
           </Tooltip>
         </div>
 
-        <div class="text-content">
+        <div>
           <h3>Accessibility requirements</h3>
           <ul class="a11y-list">
             <li>Use a <code>button</code> element to trigger the toggletip.</li>
@@ -182,16 +198,17 @@ const filterFrom = ref();
           </ul>
         </div>
       </Card>
+    </section>
+
+    <section class="demo-section" aria-labelledby="tooltip-popover">
+      <h2 id="tooltip-popover">Popover</h2>
+      <p class="demo-hint">
+        <code>{{ `<Popover />` }}</code> is for content to act on: a
+        <code>list</code> of links or buttons, or your own in its slot. It has
+        no live region: focus moves to its first item when it opens.
+      </p>
 
       <Card>
-        <div class="text-content">
-          <h2>Popover</h2>
-          <p class="c-grey-text">
-            Cardan UI offers a <code>{{ `<Popover />` }}</code> component for
-            interactive toggletips that can contain links or buttons.
-          </p>
-        </div>
-
         <div class="flex-wrapper">
           <Popover
             hide-label
@@ -217,7 +234,7 @@ const filterFrom = ref();
             :hide-label="false"
           >
             <template #content>
-              <p style="padding: 1rem 1.5rem">
+              <p class="tooltip-popover-content">
                 An interesting article about
                 <Button
                   label="accessibility of the popover attribute"
@@ -237,7 +254,7 @@ const filterFrom = ref();
             :hide-label="false"
           >
             <template #content>
-              <div style="padding: 1rem 1.5rem">
+              <div class="tooltip-popover-content">
                 <DatePicker v-model="filterFrom" label="From" />
               </div>
             </template>
@@ -247,19 +264,12 @@ const filterFrom = ref();
         <p>
           A Popover can hold a form field with a popup of its own, such as the
           calendar of a DatePicker in a filter. The open Popover sets no
-          <code>translate</code>, so the calendar, which is placed with
-          <code>position: fixed</code>, can reach outside it instead of being
-          cut off by its edge.
+          <code>translate</code>, so the calendar, placed with
+          <code>position: fixed</code>, is not cut off by its edge.
         </p>
 
-        <div class="text-content">
+        <div>
           <h3>Accessibility requirements</h3>
-
-          <p>
-            The Popover component is an interative toggletip <em>without</em> a
-            live region. When the hidden menu appears, focus will be moved to
-            the first menu item.
-          </p>
 
           <ul class="a11y-list">
             <li>
@@ -310,22 +320,39 @@ const filterFrom = ref();
           </ul>
         </div>
       </Card>
+    </section>
 
-      <div style="min-height: 500px" />
-    </div>
+    <div class="tooltip-spacer" />
   </div>
 </template>
 
 <style>
-.demo-page-cols {
-  .flex-wrapper {
-    gap: 1.5rem;
-    margin-block-end: 1.5rem;
-  }
-
+.demo-page.tooltip-page {
   .card {
     display: grid;
     gap: 1rem;
+    margin-block-end: 0;
+
+    h3 {
+      margin-block: 1rem 0.75rem;
+      font-size: var(--font-size-md);
+    }
+  }
+
+  .flex-wrapper {
+    gap: 1.5rem;
+  }
+
+  .a11y-list {
+    margin-block: 0;
+  }
+
+  .tooltip-popover-content {
+    padding: 1rem 1.5rem;
+  }
+
+  .tooltip-spacer {
+    min-block-size: 500px;
   }
 }
 </style>

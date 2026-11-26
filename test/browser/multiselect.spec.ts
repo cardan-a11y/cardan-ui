@@ -4,7 +4,7 @@ import { gotoHydrated } from './helpers';
 test('MultiSelect: Escape closes the listbox, focus stays on the combobox', async ({
   page,
 }) => {
-  await gotoHydrated(page, '/table');
+  await gotoHydrated(page, '/form');
   const combobox = page.getByRole('combobox', { name: /WCAG level filter$/ });
 
   await combobox.focus();
@@ -45,7 +45,7 @@ async function expectHittable(option: Locator) {
 test('MultiSelect in a transformed container that hides its overflow: its options are not cut off', async ({
   page,
 }) => {
-  await gotoHydrated(page, '/table');
+  await gotoHydrated(page, '/form');
   const combobox = page.getByRole('combobox', { name: /WCAG level filter$/ });
 
   await combobox.evaluate((element) => {
@@ -77,7 +77,7 @@ test('MultiSelect: its open listbox follows the field when the page scrolls', as
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await gotoHydrated(page, '/table');
+  await gotoHydrated(page, '/form');
   const combobox = page.getByRole('combobox', { name: /WCAG level filter$/ });
   await combobox.evaluate((element) =>
     element.closest('.multiselect')!.scrollIntoView({ block: 'center' }),
@@ -134,15 +134,9 @@ test('MultiSelect near the bottom of the viewport opens upwards, its listbox wit
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await gotoHydrated(page, '/table');
+  await gotoHydrated(page, '/form');
   const combobox = page.getByRole('combobox', { name: /WCAG level filter$/ });
-  // The field is near the top of /table: the viewport ends below it instead
-  const fieldBottom = await combobox.evaluate(
-    (element) =>
-      element.closest('.multiselect')!.getBoundingClientRect().bottom +
-      window.scrollY,
-  );
-  await page.setViewportSize({ width: 1280, height: Math.ceil(fieldBottom) + 8 });
+  // The last field on /form: scrolled to the bottom edge of the viewport
   await combobox.evaluate((element) =>
     element.closest('.multiselect')!.scrollIntoView({ block: 'end' }),
   );

@@ -3,6 +3,25 @@ useHead({ title: 'Confirm dialog' });
 
 const { confirm } = useConfirm();
 
+const rules = [
+  {
+    title: 'One host',
+    text: 'A project mounts ConfirmDialogHost once, in its layout, as it does ToastManager. useConfirm() opens the dialog it renders.',
+  },
+  {
+    title: 'The action travels along',
+    text: 'Pass the action as onConfirm, a function that closes over its item. Nothing shared holds an item or decides which handler runs.',
+  },
+  {
+    title: 'One at a time',
+    text: 'While one confirmation is open, another confirm() resolves false at once and leaves the first as it is.',
+  },
+  {
+    title: 'Errors stay in the dialog',
+    text: 'A failed action shows in the dialog, so the user can try again or cancel. A toast would be under the backdrop.',
+  },
+];
+
 const lastResult = ref('');
 
 async function ask(options: ConfirmOptions, name: string) {
@@ -156,254 +175,307 @@ const confirmed = await confirm({
 
 <template>
   <div class="demo-page confirm-demo">
+    <p class="demo-eyebrow">Actions</p>
     <h1>Confirm dialog</h1>
+    <p class="demo-lead">
+      ConfirmDialog asks before an action, such as a delete. It is an APG
+      <Button
+        label="alert dialog"
+        to="https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog"
+        variant="link"
+        target="_blank"
+      />: a modal dialog that interrupts the user to get an answer.
+    </p>
 
-    <blockquote>
-      <p class="fs-md">
-        An alert dialog is a modal dialog that interrupts the user's workflow to
-        communicate an important message and acquire a response. Examples
-        include action confirmation prompts and error message confirmations.
+    <ul role="list" class="demo-grid">
+      <li v-for="rule in rules" :key="rule.title" class="demo-tile">
+        <strong>{{ rule.title }}</strong>
+        <span>{{ rule.text }}</span>
+      </li>
+    </ul>
+
+    <section class="demo-section" aria-labelledby="confirm-use-confirm">
+      <h2 id="confirm-use-confirm">useConfirm()</h2>
+      <p class="demo-hint">
+        <code>confirm()</code> opens the one ConfirmDialog that
+        <code>&lt;ConfirmDialogHost /&gt;</code> renders. Its promise resolves
+        <code>true</code> once the action has succeeded and the dialog has
+        closed, and <code>false</code> after a cancel.
       </p>
 
-      <p class="fs-sm mbe-2 c-grey-text">
-        Source:
-        <Button
-          label="ARIA Design Patterns"
-          to="https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog"
-          variant="link"
-          target="_blank"
-        />
-      </p>
-    </blockquote>
+      <Card>
+        <pre><code>{{ example }}</code></pre>
 
-    <Card>
-      <h2>useConfirm()</h2>
+        <ul class="confirm-demo-notes">
+          <li>
+            While <code>onConfirm</code> runs, the dialog stays open and its
+            button shows that it is busy; a second click does not run the action
+            again.
+          </li>
+          <li>
+            When the action throws, the dialog stays open and shows the error
+            that <code>extractApiError()</code> reads from it.
+          </li>
+          <li>
+            A cancel is the Cancel button, the close button,
+            <kbd>Escape</kbd> or a click outside the dialog. The request is
+            cleared when the dialog closes, however it closes.
+          </li>
+          <li>
+            By then the browser has given focus back to the button that opened
+            the dialog. When that button went with the deleted item, move focus
+            yourself, for example to the heading of the list, as the lists below
+            do.
+          </li>
+          <li>
+            Without a mounted host, <code>confirm()</code> runs nothing and
+            resolves <code>false</code>, with a warning in development. This
+            playground mounts the host in its default layout.
+          </li>
+        </ul>
 
-      <p>
-        Every project asks "are you sure?" before it deletes something.
-        <code>useConfirm()</code> asks it in one dialog, ConfirmDialog, which
-        <code>&lt;ConfirmDialogHost /&gt;</code> renders. A project mounts the
-        host once, in its layout, as it does ToastManager; this playground
-        mounts it in its default layout. Without a mounted host,
-        <code>confirm()</code> runs nothing and resolves <code>false</code>,
-        with a warning in development.
-      </p>
+        <div class="flex-wrapper">
+          <Button label="Delete the report" @click="askPlain" />
+          <Button label="Archive the course (slow)" @click="askSlow" />
+          <Button label="Delete the client (fails once)" @click="askFailing" />
+        </div>
 
-      <p>
-        The action travels with the request. You pass it as
-        <code>onConfirm</code>, a function that closes over the item it acts on,
-        so the dialog can only ever run the action of the caller that opened it.
-        Nothing shared holds an item or decides which handler runs, and the
-        request is cleared when the dialog closes, however it closes. While one
-        confirmation is open, another <code>confirm()</code> resolves
-        <code>false</code> at once and leaves the first as it is.
-      </p>
+        <p role="status" class="confirm-demo-result">{{ lastResult }}</p>
+      </Card>
+    </section>
 
-      <pre><code>{{ example }}</code></pre>
-
-      <p>
-        While <code>onConfirm</code> runs, the dialog stays open and its button
-        shows that it is busy; a second click does not run the action again.
-        When the action throws, the dialog stays open and shows the error that
-        <code>extractApiError()</code> reads from it, so the user can try again
-        or cancel. The promise resolves <code>true</code> once the action has
-        succeeded and the dialog has closed, and <code>false</code> after a
-        cancel: the Cancel button, the close button, <kbd>Escape</kbd> or a
-        click outside the dialog. By then the browser has given focus back to
-        the button that opened the dialog. When that button went with the
-        deleted item, move focus yourself, for example to the heading of the
-        list, as the lists below do.
-      </p>
-
-      <div class="flex-wrapper">
-        <Button label="Delete the report" @click="askPlain" />
-        <Button label="Archive the course (slow)" @click="askSlow" />
-        <Button label="Delete the client (fails once)" @click="askFailing" />
-      </div>
-
-      <p role="status" class="confirm-demo-result">{{ lastResult }}</p>
-    </Card>
-
-    <Card>
-      <h2>The digit challenge</h2>
-
-      <p>
+    <section class="demo-section" aria-labelledby="confirm-challenge">
+      <h2 id="confirm-challenge">The digit challenge</h2>
+      <p class="demo-hint">
         For an action that cannot be undone and takes a lot with it, such as a
         project with all its audits, pass <code>challenge: true</code>. The
-        dialog then names a random digit, new at every open, and asks the user
-        to type it in a field that is described by that text. The confirm button
-        stays disabled until the typed digit matches. Focus starts on the
-        dialog's first element, unless you pass <code>autofocus: true</code>
-        (the Auditor passes its user preference), which starts it in the field.
-        Without a challenge, focus starts on Cancel, the least destructive
-        action.
+        confirm button stays disabled until the user has typed the digit the
+        dialog names.
       </p>
 
-      <Switch v-model="autofocusChallenge" label="Start focus in the field" />
+      <Card>
+        <ul class="confirm-demo-notes">
+          <li>
+            The digit is random and new at every open; its field is described by
+            the text that names it.
+          </li>
+          <li>
+            Focus starts on the dialog's first element, unless you pass
+            <code>autofocus: true</code> (the Auditor passes its user
+            preference), which starts it in the field.
+          </li>
+          <li>
+            Without a challenge, focus starts on Cancel, the least destructive
+            action.
+          </li>
+        </ul>
 
-      <div class="flex-wrapper">
-        <Button label="Delete the project" @click="askChallenge" />
-      </div>
-    </Card>
+        <Switch v-model="autofocusChallenge" label="Start focus in the field" />
 
-    <Card>
-      <h2>Two lists on one page</h2>
+        <div class="flex-wrapper">
+          <Button label="Delete the project" @click="askChallenge" />
+        </div>
+      </Card>
+    </section>
 
-      <p>
+    <section class="demo-section" aria-labelledby="confirm-lists">
+      <h2 id="confirm-lists">Two lists on one page</h2>
+      <p class="demo-hint">
         Each list deletes from itself: its delete buttons pass their own item
         and their own list in the action. After a delete, focus moves to the
         list's heading, since the button that opened the dialog is gone.
       </p>
 
-      <div class="confirm-demo-lists">
-        <section aria-labelledby="fruit-heading">
-          <h3 id="fruit-heading" ref="fruitHeading" tabindex="-1">Fruit</h3>
-          <ul role="list">
-            <li v-for="item in fruit" :key="item">
-              {{ item }}
-              <Button
-                variant="ghost-red"
-                size="sm"
-                icon="material-symbols:delete-outline-rounded"
-                :aria-label="`Delete ${item}`"
-                @click="deleteFruit(item)"
-              />
-            </li>
-          </ul>
-        </section>
+      <Card>
+        <div class="confirm-demo-lists">
+          <section aria-labelledby="fruit-heading">
+            <h3 id="fruit-heading" ref="fruitHeading" tabindex="-1">Fruit</h3>
+            <ul role="list">
+              <li v-for="item in fruit" :key="item">
+                {{ item }}
+                <Button
+                  variant="ghost-red"
+                  size="sm"
+                  icon="material-symbols:delete-outline-rounded"
+                  :aria-label="`Delete ${item}`"
+                  @click="deleteFruit(item)"
+                />
+              </li>
+            </ul>
+          </section>
 
-        <section aria-labelledby="vegetable-heading">
-          <h3 id="vegetable-heading" ref="vegetableHeading" tabindex="-1">
-            Vegetables
-          </h3>
-          <ul role="list">
-            <li v-for="item in vegetables" :key="item">
-              {{ item }}
-              <Button
-                variant="ghost-red"
-                size="sm"
-                icon="material-symbols:delete-outline-rounded"
-                :aria-label="`Delete ${item}`"
-                @click="deleteVegetable(item)"
-              />
-            </li>
-          </ul>
-        </section>
-      </div>
+          <section aria-labelledby="vegetable-heading">
+            <h3 id="vegetable-heading" ref="vegetableHeading" tabindex="-1">
+              Vegetables
+            </h3>
+            <ul role="list">
+              <li v-for="item in vegetables" :key="item">
+                {{ item }}
+                <Button
+                  variant="ghost-red"
+                  size="sm"
+                  icon="material-symbols:delete-outline-rounded"
+                  :aria-label="`Delete ${item}`"
+                  @click="deleteVegetable(item)"
+                />
+              </li>
+            </ul>
+          </section>
+        </div>
 
-      <Button
-        label="Restore the lists"
-        variant="outline"
-        @click="restoreLists"
-      />
-    </Card>
+        <Button
+          label="Restore the lists"
+          variant="outline"
+          @click="restoreLists"
+        />
+      </Card>
+    </section>
 
-    <Card>
-      <h2>Declarative, with markup</h2>
-
-      <p>
+    <section class="demo-section" aria-labelledby="confirm-declarative">
+      <h2 id="confirm-declarative">Declarative, with markup</h2>
+      <p class="demo-hint">
         When the description needs markup, such as the name of a course in
         another language in a <code>&lt;strong lang&gt;</code>, put
         <code>&lt;ConfirmDialog&gt;</code> in the page and give it the text in
-        its default slot. Its state stays in the instance, behind its own
-        template ref, so two of them on one page know nothing of each other.
-        Open it with <code>openDialog()</code>; it emits <code>confirm</code>,
-        and you close it with <code>closeDialog()</code> once the action is
-        done, or show the failure in its <code>error</code> prop while
-        <code>loading</code> is off again. Any other close emits
-        <code>cancel</code>.
+        its default slot.
       </p>
 
-      <h3 ref="cartHeading" tabindex="-1">Your cart</h3>
+      <Card>
+        <ul class="confirm-demo-notes">
+          <li>
+            Its state stays in the instance, behind its own template ref, so two
+            of them on one page know nothing of each other.
+          </li>
+          <li>
+            Open it with <code>openDialog()</code>; it emits
+            <code>confirm</code> to ask you to act.
+          </li>
+          <li>
+            Close it with <code>closeDialog()</code> once the action is done, or
+            show the failure in its <code>error</code> prop while
+            <code>loading</code> is off again.
+          </li>
+          <li>Any other close emits <code>cancel</code>.</li>
+        </ul>
 
-      <p v-if="inCart">
-        <span lang="nl">Toegankelijkheid voor ontwikkelaars</span>
-        <Button
-          variant="ghost-red"
-          size="sm"
-          icon="material-symbols:delete-outline-rounded"
-          aria-label="Remove from cart"
-          @click="cartDialogRef?.openDialog()"
-        />
-      </p>
-      <template v-else>
-        <p>Your cart is empty.</p>
-        <Button label="Put it back" variant="outline" @click="inCart = true" />
-      </template>
+        <h3 ref="cartHeading" tabindex="-1">Your cart</h3>
 
-      <ConfirmDialog
-        ref="cartDialog"
-        label="Remove from your cart?"
-        :confirm-label="$t('general.remove')"
-        @confirm="removeFromCart"
-      >
-        <p>
-          Remove
-          <strong lang="nl">Toegankelijkheid voor ontwikkelaars</strong> from
-          your cart?
+        <p v-if="inCart">
+          <span lang="nl">Toegankelijkheid voor ontwikkelaars</span>
+          <Button
+            variant="ghost-red"
+            size="sm"
+            icon="material-symbols:delete-outline-rounded"
+            aria-label="Remove from cart"
+            @click="cartDialogRef?.openDialog()"
+          />
         </p>
-      </ConfirmDialog>
-    </Card>
+        <template v-else>
+          <p>Your cart is empty.</p>
+          <Button
+            label="Put it back"
+            variant="outline"
+            @click="inCart = true"
+          />
+        </template>
 
-    <Card>
-      <h2>From an open dialog</h2>
+        <ConfirmDialog
+          ref="cartDialog"
+          label="Remove from your cart?"
+          :confirm-label="$t('general.remove')"
+          @confirm="removeFromCart"
+        >
+          <p>
+            Remove
+            <strong lang="nl">Toegankelijkheid voor ontwikkelaars</strong> from
+            your cart?
+          </p>
+        </ConfirmDialog>
+      </Card>
+    </section>
 
-      <p>
+    <section class="demo-section" aria-labelledby="confirm-nested">
+      <h2 id="confirm-nested">From an open dialog</h2>
+      <p class="demo-hint">
         A confirmation can open over another dialog, such as a finding with its
         files. Both are in the top layer; when the confirmation closes, focus
         returns into the first dialog.
       </p>
 
-      <Button label="Open the finding" @click="filesDialogRef?.openDialog()" />
+      <Card>
+        <Button
+          label="Open the finding"
+          @click="filesDialogRef?.openDialog()"
+        />
 
-      <Dialog ref="filesDialog" label="Finding" class="confirm-demo-files">
-        <ul ref="filesList" role="list" aria-label="Files" tabindex="-1">
-          <li v-for="file in files" :key="file">
-            {{ file }}
-            <Button
-              variant="ghost-red"
-              size="sm"
-              icon="material-symbols:delete-outline-rounded"
-              :aria-label="`Delete ${file}`"
-              @click="deleteFile(file)"
-            />
+        <Dialog ref="filesDialog" label="Finding" class="confirm-demo-files">
+          <ul ref="filesList" role="list" aria-label="Files" tabindex="-1">
+            <li v-for="file in files" :key="file">
+              {{ file }}
+              <Button
+                variant="ghost-red"
+                size="sm"
+                icon="material-symbols:delete-outline-rounded"
+                :aria-label="`Delete ${file}`"
+                @click="deleteFile(file)"
+              />
+            </li>
+          </ul>
+        </Dialog>
+      </Card>
+    </section>
+
+    <section class="demo-section" aria-labelledby="confirm-a11y">
+      <h2 id="confirm-a11y">Accessibility Requirements</h2>
+
+      <Card>
+        <ul class="a11y-list">
+          <li>
+            The dialog has <code>role="alertdialog"</code>, is named by its
+            title and described by its description with
+            <code>aria-describedby</code>.
+          </li>
+          <li>
+            Focus starts on Cancel, the least destructive action. With the
+            challenge it starts in the digit's field when asked to, otherwise on
+            the dialog's first element.
+          </li>
+          <li>
+            Keyboard focus is trapped inside the dialog, and <kbd>Escape</kbd>
+            cancels.
+          </li>
+          <li>
+            When the dialog closes, focus returns to the button that opened it,
+            or the page moves it when that button is gone.
+          </li>
+          <li>
+            An error shows inside the dialog, in an alert: a toast would be
+            under the backdrop, out of reach and unannounced.
           </li>
         </ul>
-      </Dialog>
-    </Card>
-
-    <Card>
-      <h2>Accessibility Requirements</h2>
-
-      <ul class="a11y-list">
-        <li>
-          The dialog has <code>role="alertdialog"</code>, is named by its title
-          and described by its description with <code>aria-describedby</code>.
-        </li>
-        <li>
-          Focus starts on Cancel, the least destructive action. With the
-          challenge it starts in the digit's field when asked to, otherwise on
-          the dialog's first element.
-        </li>
-        <li>
-          Keyboard focus is trapped inside the dialog, and <kbd>Escape</kbd>
-          cancels.
-        </li>
-        <li>
-          When the dialog closes, focus returns to the button that opened it, or
-          the page moves it when that button is gone.
-        </li>
-        <li>
-          An error shows inside the dialog, in an alert: a toast would be under
-          the backdrop, out of reach and unannounced.
-        </li>
-      </ul>
-    </Card>
+      </Card>
+    </section>
   </div>
 </template>
 
 <style>
-.confirm-demo {
+.demo-page.confirm-demo {
+  .card {
+    margin-block-end: 0;
+  }
+
+  pre {
+    margin-block: 0 1.5rem;
+  }
+
+  .confirm-demo-notes {
+    margin-block: 0 1.5rem;
+  }
+
+  .a11y-list {
+    margin-block: 0;
+  }
+
   .confirm-demo-result:empty {
     margin-block: 0;
   }

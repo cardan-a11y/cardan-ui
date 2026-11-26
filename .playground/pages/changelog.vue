@@ -4,8 +4,12 @@ useHead({ title: 'Changelog' });
 
 <template>
   <div class="demo-page changelog-page">
+    <p class="demo-eyebrow">Start</p>
     <h1>Changelog</h1>
-    <p class="mbe-2">Release notes for new features and bug fixes.</p>
+    <p class="demo-lead">
+      Release notes for new features and bug fixes. What a project must do for
+      a release is in <code>MIGRATION.md</code>.
+    </p>
 
     <ChangelogEntry v="2.6.2" date="2026-11-26">
       <ul>

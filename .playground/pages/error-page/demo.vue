@@ -40,9 +40,10 @@ useHead({ title: 'Error page demo' });
 
 <template>
   <div class="demo-page">
+    <p class="demo-eyebrow">Layout</p>
     <h1>Error page demo</h1>
 
-    <p>
+    <p class="demo-lead">
       This page answers with the error page for the status in its address, such
       as <code>?status=403</code>. The
       <NuxtLink to="/error-page">error page documentation</NuxtLink> links to

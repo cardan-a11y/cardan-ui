@@ -4,6 +4,7 @@ useHead({ title: 'Accessibility' });
 
 <template>
   <div class="demo-page">
+    <p class="demo-eyebrow">Start</p>
     <h1>Accessibility</h1>
 
     <Card>

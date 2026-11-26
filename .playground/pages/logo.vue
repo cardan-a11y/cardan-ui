@@ -3,174 +3,193 @@ useHead({ title: 'Logo' });
 
 const variants: CardanLogoVariant[] = ['color', 'purple', 'black'];
 const darkVariants: CardanLogoVariant[] = ['negative', 'white'];
+
+const rules = [
+  {
+    title: 'Full logo first',
+    text: 'Headers, app shells and footers show the full logo.',
+  },
+  {
+    title: 'Tile for icons',
+    text: 'Favicons, app icons and profile images. Never in a website header.',
+  },
+  {
+    title: 'It has a name',
+    text: '“Logo Cardan”, or “Logo Cardan Academy” for a lockup. Add decorative when a visible name is right next to it.',
+  },
+  {
+    title: 'Never themed',
+    text: 'The colors are fixed brand artwork and do not follow the theme tokens.',
+  },
+];
 </script>
 
 <template>
-  <div class="demo-page">
+  <div class="demo-page logo-page">
+    <p class="demo-eyebrow">Brand</p>
     <h1>Logo</h1>
-
-    <p>
-      The <code>{{ `<CardanLogo />` }}</code> component renders the Cardan logo:
-      two interlocking links (green and purple) with the wordmark to the right.
-      Its colors are fixed brand artwork and never follow the theme tokens. The
-      logo has an accessible name ("Logo Cardan", or "Logo Cardan Academy" for a
-      lockup); add <code>decorative</code> when a visible name is right next to
-      it.
+    <p class="demo-lead">
+      <code>{{ `<CardanLogo />` }}</code> renders the Cardan logo: two
+      interlocking links, green and purple, with the wordmark to the right.
     </p>
 
-    <Card>
-      <h2>Forms</h2>
+    <ul role="list" class="demo-grid">
+      <li v-for="rule in rules" :key="rule.title" class="demo-tile">
+        <strong>{{ rule.title }}</strong>
+        <span>{{ rule.text }}</span>
+      </li>
+    </ul>
 
-      <div class="logo-demo-row">
-        <figure>
-          <CardanLogo />
-          <figcaption><code>form="full"</code> (default)</figcaption>
-        </figure>
-        <figure>
-          <CardanLogo form="symbol" />
-          <figcaption><code>form="symbol"</code></figcaption>
-        </figure>
-        <figure>
-          <CardanLogo form="tile" height="3rem" />
-          <figcaption><code>form="tile"</code></figcaption>
-        </figure>
-        <figure>
-          <CardanLogo form="tile" round height="3rem" />
-          <figcaption><code>form="tile" round</code></figcaption>
-        </figure>
-        <figure>
-          <CardanLogo form="tile" variant="white" height="3rem" />
-          <figcaption><code>form="tile" variant="white"</code></figcaption>
-        </figure>
-      </div>
-
-      <p>
-        Use the full logo everywhere the library shows a brand logo: headers,
-        app shells and footers. The tile, the color symbol on a light tile, is
-        for favicons, app icons and profile images, never in a website header.
-        The white symbol on a purple tile is only a dividing element in social
+    <section class="demo-section" aria-labelledby="logo-forms">
+      <h2 id="logo-forms">Forms</h2>
+      <p class="demo-hint">
+        <code>form</code> picks the full logo, the symbol or the tile. The
+        white symbol on a purple tile is only a dividing element in social
         media posts.
       </p>
-    </Card>
 
-    <Card>
-      <h2>Variants</h2>
+      <Card>
+        <div class="logo-demo-row">
+          <figure>
+            <CardanLogo />
+            <figcaption><code>form="full"</code> (default)</figcaption>
+          </figure>
+          <figure>
+            <CardanLogo form="symbol" />
+            <figcaption><code>form="symbol"</code></figcaption>
+          </figure>
+          <figure>
+            <CardanLogo form="tile" height="3rem" />
+            <figcaption><code>form="tile"</code></figcaption>
+          </figure>
+          <figure>
+            <CardanLogo form="tile" round height="3rem" />
+            <figcaption><code>form="tile" round</code></figcaption>
+          </figure>
+          <figure>
+            <CardanLogo form="tile" variant="white" height="3rem" />
+            <figcaption><code>form="tile" variant="white"</code></figcaption>
+          </figure>
+        </div>
+      </Card>
+    </section>
 
-      <p>
+    <section class="demo-section" aria-labelledby="logo-variants">
+      <h2 id="logo-variants">Variants</h2>
+      <p class="demo-hint">
         The default <code>variant="auto"</code> shows the color logo in light
-        mode and the color-negative logo in dark mode.
+        mode and the color-negative logo in dark mode. The surfaces below keep
+        their own mode.
       </p>
 
-      <div class="logo-demo-row logo-demo-light">
-        <figure v-for="variant in variants" :key="variant">
-          <CardanLogo :variant="variant" />
-          <figcaption>
-            <code>variant="{{ variant }}"</code>
-          </figcaption>
-        </figure>
+      <div class="demo-grid logo-variants">
+        <div class="logo-demo-row logo-demo-surface light-mode">
+          <figure v-for="variant in variants" :key="variant">
+            <CardanLogo :variant="variant" />
+            <figcaption>
+              <code>variant="{{ variant }}"</code>
+            </figcaption>
+          </figure>
+        </div>
+
+        <div class="logo-demo-row logo-demo-surface dark-mode">
+          <figure v-for="variant in darkVariants" :key="variant">
+            <CardanLogo :variant="variant" />
+            <figcaption>
+              <code>variant="{{ variant }}"</code>
+            </figcaption>
+          </figure>
+        </div>
       </div>
+    </section>
 
-      <div class="logo-demo-row logo-demo-dark">
-        <figure v-for="variant in darkVariants" :key="variant">
-          <CardanLogo :variant="variant" />
-          <figcaption>
-            <code>variant="{{ variant }}"</code>
-          </figcaption>
-        </figure>
-      </div>
-    </Card>
-
-    <Card>
-      <h2>Lockups</h2>
-
-      <p>
-        Sub-brands are lockups, not new logos: after the logo comes an upright
-        divider and the product name with a capital, in Hanken Grotesk Regular
-        at 0.8 times the logo height. Both are Body on light and white on dark,
-        never purple or green.
+    <section class="demo-section" aria-labelledby="logo-lockups">
+      <h2 id="logo-lockups">Lockups</h2>
+      <p class="demo-hint">
+        A sub-brand is a lockup, not a new logo: with <code>product</code>, the
+        logo gets an upright divider and the product name with a capital, in
+        Hanken Grotesk Regular at 0.8 times the logo height. The name is Body
+        on light and white on dark, never purple or green.
       </p>
 
-      <div class="logo-demo-row">
-        <CardanLogo product="academy" />
-        <CardanLogo product="auditor" />
-      </div>
-    </Card>
+      <Card>
+        <div class="logo-demo-row">
+          <CardanLogo product="academy" />
+          <CardanLogo product="auditor" />
+        </div>
+      </Card>
+    </section>
 
-    <Card>
-      <h2>Usage rules</h2>
+    <section class="demo-section" aria-labelledby="logo-rules">
+      <h2 id="logo-rules">Usage rules</h2>
 
-      <ul>
-        <li>
-          Keep clear space around the logo of at least its height, and twice
-          its height to the edge of a photo, post or slide.
-        </li>
-        <li>
-          The logo is 20px high by default, the brand size for websites. It is
-          never smaller than 18px, and never smaller than 20px with a product
-          name. In a flex row, such as an app header, a lockup takes the room
-          it gets, from 144px (the <code>narrow-width</code> prop) up to its
-          height, so it fits in an app header on a 320px screen.
-        </li>
-        <li>
-          Never stretch, recolor or rotate the logo, never put the color logo on
-          purple, and never place it on a busy area.
-        </li>
-        <li>On photos, use the white or black one-color logo only.</li>
-      </ul>
-    </Card>
+      <Card>
+        <ul class="a11y-list">
+          <li>
+            Keep clear space around the logo of at least its height, and twice
+            its height to the edge of a photo, post or slide.
+          </li>
+          <li>
+            The logo is 20px high by default, the brand size for websites. It
+            is never smaller than 18px, and never smaller than 20px with a
+            product name.
+          </li>
+          <li>
+            In a flex row, such as an app header, a lockup takes the room it
+            gets, from 144px (the <code>narrow-width</code> prop) up to its
+            height, so it fits in an app header on a 320px screen.
+          </li>
+          <li>
+            Never stretch, recolor or rotate the logo, never put the color logo
+            on purple, and never place it on a busy area.
+          </li>
+          <li>On photos, use the white or black one-color logo only.</li>
+        </ul>
+      </Card>
+    </section>
   </div>
 </template>
 
 <style>
-.logo-demo-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: 2rem 3rem;
-  margin-block: 1.5rem;
-
-  figure {
-    display: grid;
-    justify-items: start;
-    gap: 0.75rem;
+.logo-page {
+  .card {
+    margin-block-end: 0;
   }
 
-  figcaption {
-    font-size: var(--font-size-sm);
-    color: var(--color-grey-text);
-  }
-}
-
-.logo-demo-light,
-.logo-demo-dark {
-  padding: 1.5rem;
-  border-radius: var(--radius-lg);
-}
-
-.logo-demo-light {
-  background-color: var(--cardan-white);
-  border: 1px solid var(--cardan-beige-mid);
-
-  figcaption {
-    color: var(--cardan-body-grey);
+  .a11y-list {
+    margin-block: 0;
   }
 
-  code {
-    color: var(--cardan-body);
-    background-color: var(--cardan-beige-sand);
+  .logo-demo-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: start;
+    align-items: end;
+    gap: 2rem 3rem;
+
+    figure {
+      display: grid;
+      justify-items: start;
+      gap: 0.75rem;
+    }
+
+    figcaption {
+      color: var(--color-grey-text);
+      font-size: var(--font-size-sm);
+    }
   }
-}
 
-.logo-demo-dark {
-  background-color: var(--cardan-black);
-
-  figcaption {
-    color: var(--cardan-white);
+  .logo-variants {
+    --demo-column: 18rem;
   }
 
-  code {
-    color: var(--cardan-black);
-    background-color: var(--cardan-beige-sand);
+  .logo-demo-surface {
+    padding: 1.5rem;
+    border: 1px solid var(--card-border-color);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    color-scheme: var(--color-scheme);
   }
 }
 </style>

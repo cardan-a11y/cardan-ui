@@ -1,6 +1,25 @@
 <script setup lang="ts">
 useHead({ title: 'Empty message' });
 
+const rules = [
+  {
+    title: 'Not a live region',
+    text: 'It is not announced when it appears. A list that changes in place tells the reader with useResultsFocus() or a status element of the page.',
+  },
+  {
+    title: 'The text says it all',
+    text: 'The icon is decorative and hidden from screen readers.',
+  },
+  {
+    title: 'No outer margin',
+    text: 'The page sets the spacing where it is used, with a margin on a class of its own on the component.',
+  },
+  {
+    title: 'An action moves focus',
+    text: 'A button that removes the message disappears with it. Its click handler moves focus, such as to the filter field.',
+  },
+];
+
 const courses = [
   'Accessible forms',
   'Colour and contrast',
@@ -27,31 +46,29 @@ function resetFilter() {
 
 <template>
   <div class="demo-page empty-message-page">
+    <p class="demo-eyebrow">Feedback</p>
     <h1>Empty message</h1>
-
-    <p class="mbe-2 fs-lg">
-      EmptyMessage is the text that takes the place of a list, a table or a
-      set of search results when there is nothing to show. It replaces the
-      paragraph with the <code>no-results</code> class that every project
-      styled on its own, so that an empty list looks the same everywhere and
-      a project changes its look in one place.
+    <p class="demo-lead">
+      EmptyMessage is the text in the place of a list, a table or search
+      results with nothing to show, so an empty list looks the same everywhere.
     </p>
 
-    <div class="card-cols">
+    <ul role="list" class="demo-grid">
+      <li v-for="rule in rules" :key="rule.title" class="demo-tile">
+        <strong>{{ rule.title }}</strong>
+        <span>{{ rule.text }}</span>
+      </li>
+    </ul>
+
+    <section class="demo-section" aria-labelledby="empty-text">
+      <h2 id="empty-text">Text only</h2>
+      <p class="demo-hint">
+        The text comes from <code>text</code> or from the default slot, which
+        takes inline markup such as a link. It renders one paragraph with the
+        class <code>empty-message</code>.
+      </p>
+
       <Card>
-        <h2>Text only</h2>
-
-        <p class="c-grey-text">
-          The text comes from the <code>text</code> prop or from the default
-          slot, which also takes inline markup such as a link or emphasis.
-          With only a text, the component renders a single paragraph with the
-          class <code>empty-message</code>, just like the paragraph it
-          replaces, so the markup of a page stays the same. The component has
-          no outer margin: the spacing around it depends on where it is used,
-          so the page sets it there, with a <code>margin</code> on a class of
-          its own on the component.
-        </p>
-
         <div class="demo-box">
           <EmptyMessage text="There are no courses yet." />
         </div>
@@ -65,18 +82,17 @@ function resetFilter() {
 
         <code>{{ `<EmptyMessage text="There are no courses yet." />` }}</code>
       </Card>
+    </section>
+
+    <section class="demo-section" aria-labelledby="empty-icon">
+      <h2 id="empty-icon">With an icon</h2>
+      <p class="demo-hint">
+        <code>icon</code> adds an icon before the text, in the color of the
+        text and on its first line when the text wraps. Use a Material Symbols
+        icon, the outlined and rounded variant first.
+      </p>
 
       <Card>
-        <h2>With an icon</h2>
-
-        <p class="c-grey-text">
-          The <code>icon</code> prop adds an icon before the text. The icon is
-          decorative: it is hidden from screen readers, so the text has to say
-          everything on its own. It takes the color of the text and sits on
-          its first line when the text wraps. Use a Material Symbols icon, the
-          outlined and rounded variant first.
-        </p>
-
         <div class="demo-box">
           <EmptyMessage
             text="No results match your search. Check the spelling or try a shorter search term."
@@ -88,27 +104,18 @@ function resetFilter() {
           `<EmptyMessage text="No results match your search." icon="material-symbols:search-off-outline-rounded" />`
         }}</code>
       </Card>
+    </section>
+
+    <section class="demo-section" aria-labelledby="empty-action">
+      <h2 id="empty-action">With an action</h2>
+      <p class="demo-hint">
+        The <code>actions</code> slot places buttons or links after the text,
+        next to it when there is room and below it on a narrow screen. Type a
+        word that matches no course to see it. The count above the list has
+        <code>role="status"</code>, and Reset filter moves focus to the field.
+      </p>
 
       <Card>
-        <h2>With an action</h2>
-
-        <p class="c-grey-text">
-          The <code>actions</code> slot places one or more buttons or links
-          after the text, such as a button that resets the filters of a
-          catalog. The component then renders a wrapper with the paragraph and
-          the actions, which sit next to the text when there is room and below
-          it on a narrow screen. Type a word below that matches no course to
-          see it.
-        </p>
-
-        <p class="c-grey-text">
-          When an action removes the empty message, as resetting the filters
-          does, the button that had focus disappears with it. Move focus to a
-          sensible place in its click handler, such as the filter field, so a
-          keyboard or screen reader user does not end up at the top of the
-          page.
-        </p>
-
         <div class="demo-box filter-demo">
           <Input
             ref="filterInput"
@@ -140,52 +147,31 @@ function resetFilter() {
           </EmptyMessage>
         </div>
       </Card>
+    </section>
+
+    <section class="demo-section" aria-labelledby="empty-look">
+      <h2 id="empty-look">Changing the look</h2>
+      <p class="demo-hint">
+        A project sets the look of every empty message with three variables in
+        its <code>main.css</code>. The color keeps 4.5:1 on every surface the
+        message appears on, in light and dark mode.
+      </p>
 
       <Card>
-        <h2>Not a live region</h2>
-
-        <p class="c-grey-text">
-          EmptyMessage is not a live region, and screen readers do not
-          announce it when it appears. That is deliberate: an empty message
-          that appears on page load should not interrupt the reader, and a
-          list that changes in place already tells the reader what happened.
-          Use <code>useResultsFocus()</code> to bring the reader to the
-          results after a filter or a page change, or a status element of the
-          page itself, such as the result count in the example with an action,
-          which has <code>role="status"</code>.
-        </p>
-      </Card>
-
-      <Card>
-        <h2>Changing the look</h2>
-
-        <p class="c-grey-text">
-          The text is grey and has the size and style of its surroundings by
-          default. A project changes the look of every empty message at once
-          with three CSS variables in its <code>main.css</code>. The color
-          must keep a contrast of at least 4.5:1 with every surface the
-          message appears on, in light and dark mode.
-        </p>
-
-        <ul class="c-grey-text">
+        <ul>
           <li>
-            <code>--empty-message-color</code>: the color of the text and the
-            icon, <code>var(--color-grey-text)</code> by default.
+            <code>--empty-message-color</code>: the text and the icon,
+            <code>var(--color-grey-text)</code> by default.
           </li>
           <li>
-            <code>--empty-message-font-size</code>: the font size,
-            <code>1em</code> (the size of the surroundings) by default.
+            <code>--empty-message-font-size</code>: <code>1em</code>, the size
+            of the surroundings, by default.
           </li>
           <li>
-            <code>--empty-message-font-style</code>: the font style,
-            <code>normal</code> by default.
+            <code>--empty-message-font-style</code>: <code>normal</code> by
+            default.
           </li>
         </ul>
-
-        <p class="c-grey-text">
-          The example below sets a smaller italic text, the look the Auditor
-          has always given its empty lists.
-        </p>
 
         <div class="demo-box small-italic">
           <EmptyMessage
@@ -199,7 +185,7 @@ function resetFilter() {
   --empty-message-font-style: italic;
 }` }}</code></pre>
       </Card>
-    </div>
+    </section>
   </div>
 </template>
 
@@ -209,8 +195,8 @@ function resetFilter() {
     display: grid;
     align-content: start;
     gap: 1rem;
+    margin-block-end: 0;
 
-    h2,
     p,
     ul {
       margin-block: 0;
