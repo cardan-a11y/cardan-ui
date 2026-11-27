@@ -254,7 +254,20 @@ for (const mode of modes) {
         if (mode.name === 'dark') return;
 
         await expectAxe(page, route, mode.name, '320px');
+        // A dialog open on load (/cookies) makes the UserMenu inert: close it
+        // without a choice, switch, and open it again as the visitor would
+        const openOnLoad = page.getByRole('dialog', { name: 'Cookies' });
+        const reopen = await openOnLoad.isVisible();
+        if (reopen) {
+          await page.keyboard.press('Escape');
+          await expect(openOnLoad).toBeHidden();
+        }
         await switchToDutch(page);
+        if (reopen) {
+          await page.getByRole('button', { name: /^Cookies/ }).click();
+          await expect(openOnLoad).toBeVisible();
+          await settled(page);
+        }
         await expectNoSideScroll(page);
         await expectAxe(page, route, mode.name, '320px, Dutch');
       });
