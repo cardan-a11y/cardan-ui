@@ -94,7 +94,12 @@ async function leaveField(input: Mounted['input']) {
   await nextTick();
 }
 
-const pause = (ms = 10) => new Promise((resolve) => setTimeout(resolve, ms));
+/** Waits `ms`, on the fake clock once a test turned it on */
+async function pause(ms = 10) {
+  if (vi.isFakeTimers()) await vi.advanceTimersByTimeAsync(ms);
+  else await new Promise((resolve) => setTimeout(resolve, ms));
+  await nextTick();
+}
 
 describe('ComboBox multiple: roles, states and properties', () => {
   it('is a text field with the combobox role and a dialog popup, named by its label, with no accessibility violations', async () => {
@@ -300,6 +305,7 @@ describe('ComboBox multiple: keyboard support', () => {
 
   it('says the number of results after a pause in typing', async () => {
     const { input, status } = await mountMulti();
+    vi.useFakeTimers();
 
     await type(input, 'a');
     await pause(650);
@@ -655,6 +661,7 @@ describe('ComboBox multiple: create option', () => {
 
   it('says both that nothing matches and that the create option is there', async () => {
     const { input, status } = await mountMulti({ createOption: true });
+    vi.useFakeTimers();
 
     await type(input, 'Bacon');
     await pause(650);

@@ -1,4 +1,4 @@
-import { afterEach, describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { defineComponent, h, nextTick } from 'vue';
 import type { VueWrapper } from '@vue/test-utils';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
@@ -35,7 +35,13 @@ const tabbable =
   'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 describe('AppShell', () => {
+  let historyState: unknown;
+  beforeEach(() => {
+    historyState = window.history.state;
+  });
+
   afterEach(async () => {
+    window.history.replaceState(historyState, '');
     await useRouter().push('/');
   });
 

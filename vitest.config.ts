@@ -1,24 +1,65 @@
-import { defineVitestConfig } from '@nuxt/test-utils/config';
+import { globSync, readFileSync } from 'node:fs';
+import { defineConfig } from 'vitest/config';
+import { defineVitestProject } from '@nuxt/test-utils/config';
 
-// The tests mount the components in the playground's Nuxt app, which
-// extends the layer and the auth layer with the modules the components need.
-export default defineVitestConfig({
+// Files that import nothing of Nuxt: happy-dom without the Nuxt environment
+const plain = [
+  'test/{a11y,i18n,projectTypes,templates,tokens}.test.ts',
+  'test/claude-plugin/**/*.test.ts',
+  'test/modules/optimize-deps.test.ts',
+  'test/utils/{file,markdown,number,video}.test.ts',
+  'test/auth/{qr,resolveLocale,layerConfig}.test.ts',
+];
+
+// A module mock does not reach a module the shared app has loaded already
+const mocksModules = (file: string) =>
+  /\b(vi\.(do)?[mM]ock|mockNuxtImport|mockComponent)\(/.test(
+    readFileSync(file, 'utf8'),
+  );
+
+// One playground app per worker for these files (CLAUDE.md, Tests)
+const shared = globSync('test/{components,composables,utils}/**/*.test.ts', {
+  exclude: plain,
+}).filter((file) => !mocksModules(file));
+
+// The console guard first, so its afterEach runs last
+const consoleGuard = './test/console-setup.ts';
+
+const nuxt = {
+  environment: 'nuxt',
+  environmentOptions: {
+    nuxt: { rootDir: '.playground', domEnvironment: 'happy-dom' as const },
+  },
+  setupFiles: [consoleGuard, './test/api-setup.ts', './test/setup.ts'],
+  // A spy a failed test left behind does not reach the next test
+  restoreMocks: true,
+};
+
+export default defineConfig({
   test: {
-    environment: 'nuxt',
-    environmentOptions: {
-      nuxt: {
-        rootDir: '.playground',
-        domEnvironment: 'happy-dom',
+    projects: [
+      {
+        test: {
+          name: 'plain',
+          environment: 'happy-dom',
+          include: plain,
+          setupFiles: [consoleGuard],
+          restoreMocks: true,
+        },
       },
-    },
-    // The console guard first, so its afterEach runs last
-    setupFiles: [
-      './test/console-setup.ts',
-      './test/api-setup.ts',
-      './test/setup.ts',
+      await defineVitestProject({
+        test: { ...nuxt, name: 'nuxt', include: shared, isolate: false },
+      }),
+      // A fresh app per file: module mocks, and the auth layer, plugins and
+      // modules, which start it in a state of their own
+      await defineVitestProject({
+        test: {
+          ...nuxt,
+          name: 'nuxt-isolated',
+          include: ['test/**/*.test.ts'],
+          exclude: [...plain, ...shared, 'test/browser/**'],
+        },
+      }),
     ],
-    // A spy a failed test left behind does not reach the next test
-    restoreMocks: true,
-    include: ['test/**/*.test.ts'],
   },
 });

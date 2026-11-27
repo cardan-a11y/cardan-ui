@@ -1,9 +1,25 @@
-import { afterEach } from 'vitest';
-import { enableAutoUnmount } from '@vue/test-utils';
+import { afterEach, vi } from 'vitest';
+import { disableAutoUnmount, enableAutoUnmount } from '@vue/test-utils';
 import { registerEndpoint } from '@nuxt/test-utils/runtime';
+import { useNuxtApp } from '#imports';
 
-// A failed test must not leave its component for the next test's axe run
+// A failed test must not leave its component for the next test's axe run; test-utils
+// stays loaded across files without isolation and allows one enableAutoUnmount()
+disableAutoUnmount();
 enableAutoUnmount(afterEach);
+
+// A test that faked the clock and failed does not leave it faked
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+// The tests start in English, also after a file that switched the language
+if (typeof window !== 'undefined') {
+  afterEach(async () => {
+    const { locale, setLocale } = useNuxtApp().$i18n;
+    if (locale.value !== 'en') await setLocale('en');
+  });
+}
 
 // The auth layer's identity request at start-up, to the playground's
 // `sanctum.baseUrl`: a guest, whether or not a dev server listens there

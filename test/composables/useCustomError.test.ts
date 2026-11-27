@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect } from 'vitest';
 import { defineComponent, h, nextTick, ref } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 
@@ -26,6 +26,10 @@ interface Exposed {
 }
 
 describe('useCustomError', () => {
+  beforeEach(() => {
+    invalid.value = false;
+  });
+
   it('shows a custom error from mount until a new value clears it', async () => {
     const wrapper = await mountSuspended(Field, {
       props: { customError: 'Taken' },

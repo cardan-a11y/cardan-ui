@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { flushPromises } from '@vue/test-utils';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
@@ -11,10 +11,10 @@ import { accessibleName, expectNoViolations } from '../a11y';
  * screen reader announces a change in a live region it already knows.
  */
 async function mountCopyButton(writeText: (text: string) => Promise<void>) {
-  Object.defineProperty(navigator, 'clipboard', {
-    value: { writeText: vi.fn(writeText) },
-    configurable: true,
-  });
+  // A spy on the getter, which restoreMocks puts back after the test
+  vi.spyOn(navigator, 'clipboard', 'get').mockReturnValue({
+    writeText: vi.fn(writeText),
+  } as unknown as Clipboard);
 
   const wrapper = await mountSuspended(CopyButton, {
     props: { text: 'https://cardan.nl' },
@@ -27,10 +27,6 @@ async function mountCopyButton(writeText: (text: string) => Promise<void>) {
     writeText: navigator.clipboard.writeText as ReturnType<typeof vi.fn>,
   };
 }
-
-afterEach(() => {
-  vi.useRealTimers();
-});
 
 describe('CopyButton', () => {
   it('is a button named "Copy" next to an empty status region', async () => {

@@ -33,12 +33,18 @@ function setReferrer(value: string) {
 }
 
 describe('ErrorPageContent', () => {
+  let historyState: unknown;
   beforeEach(() => {
+    historyState = window.history.state;
     window.history.replaceState({ ...window.history.state, back: null }, '');
     setReferrer('');
   });
 
+  // What the tests changed on the page and the app, for the next file
   afterEach(async () => {
+    window.history.replaceState(historyState, '');
+    Reflect.deleteProperty(document, 'referrer');
+    await clearError();
     vi.restoreAllMocks();
     await useNuxtApp().$i18n.setLocale('en');
   });

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { defineComponent, h, nextTick } from 'vue';
 import { flushPromises } from '@vue/test-utils';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
@@ -109,11 +109,12 @@ async function pressOutside() {
   await nextTick();
 }
 
-const pause = (ms = 10) => new Promise((resolve) => setTimeout(resolve, ms));
-
-afterEach(() => {
-  vi.useRealTimers();
-});
+/** Waits `ms`, on the fake clock once a test turned it on */
+async function pause(ms = 10) {
+  if (vi.isFakeTimers()) await vi.advanceTimersByTimeAsync(ms);
+  else await new Promise((resolve) => setTimeout(resolve, ms));
+  await nextTick();
+}
 
 describe('ComboBox: roles, states and properties', () => {
   it('is a text field with the combobox role, named by its label, with no accessibility violations', async () => {
@@ -1129,6 +1130,7 @@ describe('ComboBox: what the review found', () => {
     const { input, status } = await mountComboBox({
       options: () => new Promise<unknown[]>((resolve) => (answer = resolve)),
     });
+    vi.useFakeTimers();
 
     await type(input, 'h');
     await pause(650);
@@ -1147,6 +1149,7 @@ describe('ComboBox: what the review found', () => {
     const { input, status } = await mountComboBox({
       options: () => new Promise<unknown[]>((_, reject) => (fail = reject)),
     });
+    vi.useFakeTimers();
 
     await type(input, 'h');
     await pause(650);
@@ -1235,6 +1238,7 @@ describe('ComboBox: what the review found', () => {
       options: [],
       loading: true,
     });
+    vi.useFakeTimers();
 
     await type(input, 'h');
     await pause(650);
@@ -1836,6 +1840,7 @@ describe('ComboBox: create option', () => {
     const { input, labels, popupText, status } = await mountComboBox({
       createOption: true,
     });
+    vi.useFakeTimers();
 
     await type(input, 'Bacon');
     await pause(650);
@@ -1948,6 +1953,7 @@ describe('ComboBox: create option', () => {
       serverSearch: true,
       options: async () => [],
     });
+    vi.useFakeTimers();
     await type(server.input, 'Bacon');
     await pause(400);
     await flushPromises();
@@ -2069,6 +2075,7 @@ describe('ComboBox: the cause of a failed load', () => {
     });
     input.element.focus();
     await flushPromises();
+    vi.useFakeTimers();
 
     await type(input, 'ac');
     await pause(650);

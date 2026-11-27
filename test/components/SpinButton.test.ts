@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { SpinButton } from '#components';
@@ -47,10 +47,6 @@ async function type(
   (input.element as HTMLInputElement).value = text;
   await input.trigger('input');
 }
-
-afterEach(() => {
-  vi.useRealTimers();
-});
 
 describe('SpinButton: roles, states and properties', () => {
   it('is a labelled text field with the spinbutton role and no accessibility violations', async () => {

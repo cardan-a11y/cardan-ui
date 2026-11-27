@@ -25,7 +25,6 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
-  vi.useRealTimers();
   await useNuxtApp().$i18n.setLocale('en');
 });
 
