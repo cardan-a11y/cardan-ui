@@ -7,42 +7,54 @@ export function useMfa() {
   // Not `useI18n()`: this also runs outside a component's setup
   const { $i18n } = useNuxtApp();
 
-  const mfaStep = useState<MfaStep>('mfaStep', () => 1);
-  const qrCode = useState('qrCode', () => '');
+  const mfaStep = useState<MfaStep>('cardan-auth:mfa-step', () => 1);
+  const qrCode = useState('cardan-auth:qr-code', () => '');
   /** The `otpauth://` link the QR code holds: opens an authenticator app. */
-  const qrCodeUrl = useState('qrCodeUrl', () => '');
-  const recoveryCodes = useState<string[]>('recoveryCodes', () => []);
-  const mfaError = useState<ApiErrorData | null>('mfaError', () => null);
+  const qrCodeUrl = useState('cardan-auth:qr-code-url', () => '');
+  const recoveryCodes = useState<string[]>(
+    'cardan-auth:recovery-codes',
+    () => [],
+  );
+  const mfaError = useState<ApiErrorData | null>(
+    'cardan-auth:mfa-error',
+    () => null,
+  );
 
-  const mfaCredentials = useState<MfaCredentials>('mfaCredentials', () => ({
-    code: '',
-    recovery_code: '',
-  }));
+  const mfaCredentials = useState<MfaCredentials>(
+    'cardan-auth:mfa-credentials',
+    () => ({
+      code: '',
+      recovery_code: '',
+    }),
+  );
 
   const loadingGenerateRecoveryCodes = useState(
-    'loadingGenerateRecoveryCodes',
+    'cardan-auth:loading-generate-recovery-codes',
     () => false,
   );
 
   const loadingConfirmationCode = useState(
-    'loadingConfirmationCode',
+    'cardan-auth:loading-confirmation-code',
     () => false,
   );
 
   const loadingSolveMfaChallenge = useState(
-    'loadingSolveMfaChallenge',
+    'cardan-auth:loading-solve-mfa-challenge',
     () => false,
   );
 
-  const loadingDisableMfa = useState('loadingDisableMfa', () => false);
+  const loadingDisableMfa = useState(
+    'cardan-auth:loading-disable-mfa',
+    () => false,
+  );
 
   const codeInputRef = useState<InputComponent | null>(
-    'codeInputRef',
+    'cardan-auth:code-input-ref',
     () => null,
   );
 
   const recoveryCodeInputRef = useState<InputComponent | null>(
-    'recoveryCodeInputRef',
+    'cardan-auth:recovery-code-input-ref',
     () => null,
   );
 

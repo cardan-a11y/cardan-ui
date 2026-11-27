@@ -37,6 +37,8 @@ const computedStyle = computed(() => ({
 </template>
 
 <style>
+@import '../assets/css/keyframes/shimmer.css';
+
 .skeleton {
   width: var(--skeleton-width, 100%);
   height: var(--skeleton-size);
@@ -50,13 +52,14 @@ const computedStyle = computed(() => ({
 }
 
 .skeleton-animation--pulse {
-  animation: pulse var(--duration-xl) cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: cardan-pulse var(--duration-xl) cubic-bezier(0.4, 0, 0.6, 1)
+    infinite;
 }
 
 .skeleton-animation--shimmer {
   --skeleton-color-1: var(--color-grey-bg);
   --skeleton-color-2: var(--color-grey-light);
-  animation: shimmer var(--duration-xl) linear infinite;
+  animation: cardan-shimmer var(--duration-xl) linear infinite;
   background: linear-gradient(
     -45deg,
     var(--skeleton-color-1) 30%,
@@ -67,18 +70,9 @@ const computedStyle = computed(() => ({
   background-size: 400% 400%;
 }
 
-@keyframes pulse {
+@keyframes cardan-pulse {
   50% {
     opacity: 0.5;
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: 100% 100%;
-  }
-  100% {
-    background-position: 0% 0%;
   }
 }
 </style>

@@ -8,13 +8,16 @@ export function usePasswordPolicy() {
   const { endpoints, passwordPolicy: configured } = useCardanAuthConfig();
 
   const policy = useState<{ minLength: number; maxLength?: number }>(
-    'passwordPolicy',
+    'cardan-auth:password-policy',
     () => ({
       minLength: configured.minLength,
       maxLength: configured.maxLength ?? undefined,
     }),
   );
-  const requested = useState('passwordPolicyRequested', () => false);
+  const requested = useState(
+    'cardan-auth:password-policy-requested',
+    () => false,
+  );
 
   if (endpoints.passwordPolicy && !requested.value) {
     requested.value = true;

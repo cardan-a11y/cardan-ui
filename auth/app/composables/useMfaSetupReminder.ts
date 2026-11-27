@@ -29,14 +29,16 @@ export function useMfaSetupReminder() {
 
   const fields = computed(() => user.value?.data as MfaUserFields | undefined);
 
-  const pendingFor = useState<string | null>('mfaSetupReminder', () => null);
+  const pendingFor = useState<string | null>(
+    'cardan-auth:mfa-setup-reminder',
+    () => null,
+  );
 
   // Outside the initializer: on a server-rendered page that runs on the server,
   // without sessionStorage. Nothing renders from it, so hydration is unaffected
   if (import.meta.client && !reminderReadFromStorage) {
     reminderReadFromStorage = true;
-    pendingFor.value =
-      storage((store) => store.getItem(STORAGE_KEY)) ?? null;
+    pendingFor.value = storage((store) => store.getItem(STORAGE_KEY)) ?? null;
   }
 
   const mfaEnabled = computed(() => !!fields.value?.mfa_enabled);

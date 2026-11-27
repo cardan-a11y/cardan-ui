@@ -51,6 +51,8 @@ const computedStyle = computed(() => ({
 </template>
 
 <style>
+@import '../assets/css/keyframes/shimmer.css';
+
 :where(table) {
   --table-border-color: var(--color-grey-light);
 
@@ -113,7 +115,7 @@ const computedStyle = computed(() => ({
     tr {
       --table-shimmer-color-1: var(--color-card-bg);
       --table-shimmer-color-2: var(--color-bg);
-      animation: shimmer var(--duration-xl) linear infinite;
+      animation: cardan-shimmer var(--duration-xl) linear infinite;
       animation-duration: var(--duration-xxl);
       background: linear-gradient(
         -45deg,
@@ -194,15 +196,6 @@ const computedStyle = computed(() => ({
   td {
     padding-block: 0.6rem;
     padding-inline: 0.5rem;
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: 100% 100%;
-  }
-  100% {
-    background-position: 0% 0%;
   }
 }
 </style>

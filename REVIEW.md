@@ -122,6 +122,11 @@ happens.
   `--color-*-text` token.
 - Custom CSS: nested classes, logical properties
   (`margin-inline`, `padding-block`, …), mobile-first.
+- A new `useState` key starts with `cardan-ui:` (`cardan-auth:` in the auth
+  layer), and a new `@keyframes` name with `cardan-` (`cardan-auth-`): both
+  are global, so a plain name collides with a project's. A keyframe two
+  components use lives once in `app/assets/css/keyframes/`, imported by a
+  path relative to the component. `test/namespaces.test.ts` pins both.
 - The `cardan` plugin under `plugins/cardan` is what every Cardan project
   loads: a change to its guidelines, reviewer, hook or skills reaches them
   at their next plugin update. A change to it alone goes to the

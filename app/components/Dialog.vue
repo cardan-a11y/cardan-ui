@@ -151,6 +151,8 @@ defineExpose({
 </template>
 
 <style>
+@import '../assets/css/keyframes/fade.css';
+
 html:has(.dialog[open]) {
   overflow: hidden;
 }
@@ -193,7 +195,10 @@ html:has(.dialog[open]) {
     }
   }
 
-  > :where(.vue-focus-loop) > :where(div) > :where(.dialog-header-wrapper) > :where(.dialog-header) {
+  > :where(.vue-focus-loop)
+    > :where(div)
+    > :where(.dialog-header-wrapper)
+    > :where(.dialog-header) {
     > h1 {
       margin-block: 0;
       font-size: var(--font-size-lg);
@@ -253,19 +258,19 @@ html:has(.dialog[open]) {
   padding-block: var(--dialog-padding-block);
 
   &[open] {
-    animation: fadeIn var(--duration-md) forwards;
+    animation: cardan-fade-in var(--duration-md) forwards;
 
     &::backdrop {
-      animation: fadeIn var(--duration-md) forwards;
+      animation: cardan-fade-in var(--duration-md) forwards;
     }
   }
 
   &[closing] {
     display: block;
-    animation: fadeOut var(--duration-md) forwards;
+    animation: cardan-fade-out var(--duration-md) forwards;
 
     &::backdrop {
-      animation: fadeOut var(--duration-md) forwards;
+      animation: cardan-fade-out var(--duration-md) forwards;
     }
   }
 }
@@ -280,7 +285,7 @@ html:has(.dialog[open]) {
 
   &[open] {
     &::backdrop {
-      animation: fadeIn var(--duration-md) forwards;
+      animation: cardan-fade-in var(--duration-md) forwards;
     }
   }
 
@@ -288,7 +293,7 @@ html:has(.dialog[open]) {
     display: block;
 
     &::backdrop {
-      animation: fadeOut var(--duration-md) forwards;
+      animation: cardan-fade-out var(--duration-md) forwards;
     }
   }
 }
@@ -298,11 +303,11 @@ html:has(.dialog[open]) {
   border-inline-end: 1px solid var(--color-dialog-border);
 
   &[open] {
-    animation: slideFadeInLeft var(--duration-md);
+    animation: cardan-slide-fade-in-left var(--duration-md);
   }
 
   &[closing] {
-    animation: slideFadeOutLeft var(--duration-md) forwards;
+    animation: cardan-slide-fade-out-left var(--duration-md) forwards;
   }
 }
 
@@ -311,11 +316,11 @@ html:has(.dialog[open]) {
   border-inline-start: 1px solid var(--color-dialog-border);
 
   &[open] {
-    animation: slideFadeInRight var(--duration-md);
+    animation: cardan-slide-fade-in-right var(--duration-md);
   }
 
   &[closing] {
-    animation: slideFadeOutRight var(--duration-md) forwards;
+    animation: cardan-slide-fade-out-right var(--duration-md) forwards;
   }
 }
 
@@ -329,19 +334,19 @@ html:has(.dialog[open]) {
   width: 100%;
 
   &[open] {
-    animation: slideInTop var(--duration-md);
+    animation: cardan-slide-in-top var(--duration-md);
 
     &::backdrop {
-      animation: fadeIn var(--duration-md) forwards;
+      animation: cardan-fade-in var(--duration-md) forwards;
     }
   }
 
   &[closing] {
     display: block;
-    animation: slideOutTop var(--duration-md) forwards;
+    animation: cardan-slide-out-top var(--duration-md) forwards;
 
     &::backdrop {
-      animation: fadeOut var(--duration-md) forwards;
+      animation: cardan-fade-out var(--duration-md) forwards;
     }
   }
 }
@@ -358,42 +363,24 @@ html:has(.dialog[open]) {
   );
 
   &[open] {
-    animation: slideInBottom var(--duration-sm);
+    animation: cardan-slide-in-bottom var(--duration-sm);
 
     &::backdrop {
-      animation: fadeIn var(--duration-sm) forwards;
+      animation: cardan-fade-in var(--duration-sm) forwards;
     }
   }
 
   &[closing] {
     display: block;
-    animation: slideOutBottom var(--duration-md) forwards;
+    animation: cardan-slide-out-bottom var(--duration-md) forwards;
 
     &::backdrop {
-      animation: fadeOut var(--duration-md) forwards;
+      animation: cardan-fade-out var(--duration-md) forwards;
     }
   }
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes fadeOut {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes slideFadeInLeft {
+@keyframes cardan-slide-fade-in-left {
   from {
     transform: translateX(-4rem);
     opacity: 0;
@@ -404,7 +391,7 @@ html:has(.dialog[open]) {
   }
 }
 
-@keyframes slideFadeOutLeft {
+@keyframes cardan-slide-fade-out-left {
   from {
     transform: translateX(0rem);
     opacity: 1;
@@ -415,7 +402,7 @@ html:has(.dialog[open]) {
   }
 }
 
-@keyframes slideFadeInRight {
+@keyframes cardan-slide-fade-in-right {
   from {
     transform: translateX(4rem);
     opacity: 0;
@@ -426,7 +413,7 @@ html:has(.dialog[open]) {
   }
 }
 
-@keyframes slideFadeOutRight {
+@keyframes cardan-slide-fade-out-right {
   from {
     transform: translateX(0rem);
     opacity: 1;
@@ -437,43 +424,7 @@ html:has(.dialog[open]) {
   }
 }
 
-@keyframes slideInLeft {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideOutLeft {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-100%);
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0%);
-  }
-}
-
-@keyframes slideOutRight {
-  from {
-    transform: translateX(0%);
-  }
-  to {
-    transform: translateX(100%);
-  }
-}
-
-@keyframes slideInBottom {
+@keyframes cardan-slide-in-bottom {
   from {
     transform: translateY(100%);
   }
@@ -482,7 +433,7 @@ html:has(.dialog[open]) {
   }
 }
 
-@keyframes slideOutTop {
+@keyframes cardan-slide-out-top {
   from {
     transform: translateY(0);
   }
@@ -491,7 +442,7 @@ html:has(.dialog[open]) {
   }
 }
 
-@keyframes slideInTop {
+@keyframes cardan-slide-in-top {
   from {
     transform: translateY(-100%);
   }
@@ -500,7 +451,7 @@ html:has(.dialog[open]) {
   }
 }
 
-@keyframes slideOutBottom {
+@keyframes cardan-slide-out-bottom {
   from {
     transform: translateY(0);
   }

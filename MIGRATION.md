@@ -149,6 +149,10 @@ Fixed: **FileInput's file-type icons are in the client bundle.** They were named
 
 - **Nothing to do.** `fileTypeIcon()` and `fileTypeIcons` are no longer auto-imported utils; no project uses them. cardan-academy-nuxt and cardan-auditor-nuxt name icons in `.ts` files that are not in their bundle, which their `'server'` provider serves; a project that moves to a static host lists those in its `icon.clientBundle.icons`.
 
+Changed: **the layers' internal names carry a prefix**, so a project's own name no longer collides with them. The auth layer's `useState` keys start with `cardan-auth:` (`cardan-auth:login-email`, `cardan-auth:mfa-step`, …), as the base layer's already started with `cardan-ui:`, and every `@keyframes` starts with `cardan-` (`cardan-fade-in`, `cardan-shimmer`, `cardan-toast-in-bottom`) or, in the auth layer, `cardan-auth-` (`cardan-auth-shake`). The keyframes that Dialog and MobileMenu, and Skeleton and Table, defined twice now have one source each.
+
+- **Nothing to do.** No project uses one of the old names, checked on their `origin/main` on 27 November 2026. A project that read the layer's state by key, such as `useState('loginEmail')`, uses the composable instead (`useLoginEmail()`).
+
 ### 2.6.2
 
 New: **ComboBox `multiple`**, which selects several options, and ComboBox's **`create-option`** and **`disabled-key`** (`/combobox` in the playground). With them every MultiSelect field has its ComboBox; MultiSelect is removed in the next minor, so move each field over and then remove `@vueform/multiselect` from the project's `package.json`. cardan-auditor-nuxt, the only project that still uses MultiSelect, does this on `chore/cardan-ui-2.6.2`, which merges only after this release is on `main`.

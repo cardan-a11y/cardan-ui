@@ -119,36 +119,15 @@ export function signIn(data: Record<string, unknown>) {
   user.value = { data };
 }
 
-/** The state the layer shares through `useState`, see auth/app/composables */
-const AUTH_STATE = [
-  'mfaStep',
-  'qrCode',
-  'qrCodeUrl',
-  'recoveryCodes',
-  'mfaError',
-  'mfaCredentials',
-  'loadingGenerateRecoveryCodes',
-  'loadingConfirmationCode',
-  'loadingSolveMfaChallenge',
-  'loadingDisableMfa',
-  'codeInputRef',
-  'recoveryCodeInputRef',
-  'loadingMfaRecoveryCodesDialog',
-  'loadingMfaDisableDialog',
-  'cardan-ui:dialog:auth:mfa',
-  'cardan-ui:dialog:auth:mfa-recovery-codes',
-  'cardan-ui:dialog:auth:logout',
-  'cardan-ui:dialog:auth:password-confirmation',
-  'passwordConfirmationError',
-  'loadingPasswordConfirmation',
-  'passwordConfirmationRequest',
-  'loginEmail',
-  'mfaSetupReminder',
-  'passwordPolicy',
-  'passwordPolicyRequested',
-  'cardan-ui:toasts',
-  'cardan-auth:profile-locale',
-];
+/** The `useState` keys an auth test starts without */
+function isAuthState(key: string) {
+  return (
+    key.startsWith('cardan-auth:') ||
+    key.startsWith('cardan-ui:dialog:auth:') ||
+    key === 'cardan-ui:toasts' ||
+    key === useRuntimeConfig().public.sanctum.userStateKey
+  );
+}
 
 // happy-dom lacks the browser's rule for `hidden`: axe would see hidden fields
 const hiddenRule = document.createElement('style');
@@ -168,10 +147,7 @@ beforeEach(async () => {
   navigate.mockResolvedValue(undefined);
 
   // Removed, not reset: a default can depend on the next test's scenario
-  clearNuxtState(
-    [...AUTH_STATE, useRuntimeConfig().public.sanctum.userStateKey as string],
-    { reset: false },
-  );
+  clearNuxtState(isAuthState, { reset: false });
   sessionStorage.clear();
 
   await useRouter().push('/');

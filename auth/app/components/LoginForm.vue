@@ -211,10 +211,10 @@ defineExpose({ submitting, error });
 }
 
 :root {
-  --animation-shake: shake var(--duration-lg) both;
+  --animation-shake: cardan-auth-shake var(--duration-lg) both;
 }
 
-@keyframes shake {
+@keyframes cardan-auth-shake {
   0% {
     translate: -10px 0;
   }

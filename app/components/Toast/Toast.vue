@@ -143,7 +143,7 @@ const emit = defineEmits<{
   width: 100%;
   background-color: var(--color-grey-bg);
   transform-origin: left;
-  animation: scale-x linear 1 forwards;
+  animation: cardan-scale-x linear 1 forwards;
   animation-delay: var(--duration-xl);
   animation-duration: var(--toast-animation-duration);
   animation-play-state: var(--toast-animation-play-state);
@@ -221,42 +221,42 @@ const emit = defineEmits<{
 }
 
 .toast-enter-active {
-  animation-name: toastInBottom;
+  animation-name: cardan-toast-in-bottom;
 
   @media (min-width: 768px) {
-    animation-name: toastInRight;
+    animation-name: cardan-toast-in-right;
   }
 }
 
 .toast-leave-active {
-  animation-name: toastOutBottom;
+  animation-name: cardan-toast-out-bottom;
 
   @media (min-width: 768px) {
-    animation-name: toastOutRight;
+    animation-name: cardan-toast-out-right;
   }
 }
 
-@keyframes scale-x {
+@keyframes cardan-scale-x {
   to {
     transform: scaleX(0);
   }
 }
 
-@keyframes toastInBottom {
+@keyframes cardan-toast-in-bottom {
   from {
     opacity: 0;
     transform: translateY(100%);
   }
 }
 
-@keyframes toastInRight {
+@keyframes cardan-toast-in-right {
   from {
     opacity: 0;
     transform: translateX(100%);
   }
 }
 
-@keyframes toastOutBottom {
+@keyframes cardan-toast-out-bottom {
   to {
     opacity: 0;
     transform: translateY(100%);
@@ -267,7 +267,7 @@ const emit = defineEmits<{
   }
 }
 
-@keyframes toastOutRight {
+@keyframes cardan-toast-out-right {
   to {
     opacity: 0;
     transform: translateX(100%);

@@ -24,7 +24,7 @@ async function almostRunOut(page: Page, msLeft: number) {
       .find(
         (animation) =>
           animation instanceof CSSAnimation &&
-          animation.animationName === 'scale-x' &&
+          animation.animationName === 'cardan-scale-x' &&
           animation.effect instanceof KeyframeEffect &&
           !!animation.effect.target?.closest('#teleports'),
       );

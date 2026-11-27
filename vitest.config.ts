@@ -5,7 +5,7 @@ import { mocksModule } from './test/config/vitest.ts';
 
 // Files that import nothing of Nuxt: happy-dom without the Nuxt environment
 const plain = [
-  'test/{a11y,i18n,icons,projectTypes,templates,tokens}.test.ts',
+  'test/{a11y,i18n,icons,namespaces,projectTypes,templates,tokens}.test.ts',
   'test/claude-plugin/**/*.test.ts',
   'test/modules/optimize-deps.test.ts',
   'test/utils/{file,markdown,number,video}.test.ts',

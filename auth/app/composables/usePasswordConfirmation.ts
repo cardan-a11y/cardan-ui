@@ -24,18 +24,18 @@ export function usePasswordConfirmation() {
   } = useLayerDialog('auth:password-confirmation');
 
   const passwordConfirmationError = useState<ApiErrorData | null>(
-    'passwordConfirmationError',
+    'cardan-auth:password-confirmation-error',
     () => null,
   );
 
   const loadingPasswordConfirmation = useState(
-    'loadingPasswordConfirmation',
+    'cardan-auth:loading-password-confirmation',
     () => false,
   );
 
   /** Counts the confirmations asked for; the dialog keys its form on it. */
   const passwordConfirmationRequest = useState(
-    'passwordConfirmationRequest',
+    'cardan-auth:password-confirmation-request',
     () => 0,
   );
 

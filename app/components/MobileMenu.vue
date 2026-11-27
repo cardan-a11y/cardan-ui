@@ -200,6 +200,8 @@ const emit = defineEmits<{
 </template>
 
 <style>
+@import '../assets/css/keyframes/fade.css';
+
 body:has(.mobile-dialog[open]) {
   overflow: hidden;
 }
@@ -252,19 +254,19 @@ body:has(.mobile-dialog[open]) {
   border-inline-end: 1px solid var(--card-border-color);
 
   &[open] {
-    animation: slideInLeft var(--duration-md) forwards;
+    animation: cardan-slide-in-left var(--duration-md) forwards;
 
     &::backdrop {
-      animation: fadeIn var(--duration-sm) forwards;
+      animation: cardan-fade-in var(--duration-sm) forwards;
     }
   }
 
   &[closing] {
     display: block;
-    animation: slideOutLeft var(--duration-md) forwards;
+    animation: cardan-slide-out-left var(--duration-md) forwards;
 
     &::backdrop {
-      animation: fadeOut var(--duration-sm) forwards;
+      animation: cardan-fade-out var(--duration-sm) forwards;
     }
   }
 
@@ -281,19 +283,19 @@ body:has(.mobile-dialog[open]) {
   border-inline-start: 1px solid var(--card-border-color);
 
   &[open] {
-    animation: slideInRight var(--duration-md) forwards;
+    animation: cardan-slide-in-right var(--duration-md) forwards;
 
     &::backdrop {
-      animation: fadeIn var(--duration-sm) forwards;
+      animation: cardan-fade-in var(--duration-sm) forwards;
     }
   }
 
   &[closing] {
     display: block;
-    animation: slideOutRight var(--duration-md) forwards;
+    animation: cardan-slide-out-right var(--duration-md) forwards;
 
     &::backdrop {
-      animation: fadeOut var(--duration-sm) forwards;
+      animation: cardan-fade-out var(--duration-sm) forwards;
     }
   }
 
@@ -304,25 +306,7 @@ body:has(.mobile-dialog[open]) {
   }
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes fadeOut {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes slideInLeft {
+@keyframes cardan-slide-in-left {
   from {
     transform: translateX(-100%);
   }
@@ -331,7 +315,7 @@ body:has(.mobile-dialog[open]) {
   }
 }
 
-@keyframes slideOutLeft {
+@keyframes cardan-slide-out-left {
   from {
     transform: translateX(0);
   }
@@ -340,7 +324,7 @@ body:has(.mobile-dialog[open]) {
   }
 }
 
-@keyframes slideInRight {
+@keyframes cardan-slide-in-right {
   from {
     transform: translateX(100%);
   }
@@ -349,7 +333,7 @@ body:has(.mobile-dialog[open]) {
   }
 }
 
-@keyframes slideOutRight {
+@keyframes cardan-slide-out-right {
   from {
     transform: translateX(0%);
   }

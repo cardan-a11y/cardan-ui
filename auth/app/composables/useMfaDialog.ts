@@ -5,12 +5,12 @@ export function useMfaDialog() {
     usePasswordConfirmation();
 
   const loadingMfaRecoveryCodesDialog = useState(
-    'loadingMfaRecoveryCodesDialog',
+    'cardan-auth:loading-mfa-recovery-codes-dialog',
     () => false,
   );
 
   const loadingMfaDisableDialog = useState(
-    'loadingMfaDisableDialog',
+    'cardan-auth:loading-mfa-disable-dialog',
     () => false,
   );
 
