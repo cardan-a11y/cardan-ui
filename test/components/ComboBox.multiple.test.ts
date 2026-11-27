@@ -1,8 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { h, nextTick } from 'vue';
+import { nextTick } from 'vue';
 import { flushPromises } from '@vue/test-utils';
-import { mountSuspended } from '@nuxt/test-utils/runtime';
-import { ComboBox } from '#components';
 import {
   accessibleName,
   description,
@@ -11,8 +9,15 @@ import {
   roleOf,
 } from '../a11y';
 import { expectConsole } from '../console';
-import { addToPage, leave, press } from '../dom';
-import { mountInForm } from '../form';
+import { leave, press } from '../dom';
+import {
+  leaveField,
+  mountComboBoxInForm,
+  mountComboBoxWith,
+  options,
+  pause,
+  type,
+} from './combobox';
 
 /**
  * ComboBox with `multiple` as its docblock describes it: a combobox with a dialog popup
@@ -20,45 +25,15 @@ import { mountInForm } from '../form';
  * with focus moving into the dialog. Focus order and Tab, the top layer and
  * a Dialog around it are in test/browser/combobox-multiple.spec.ts.
  */
-const options = [
-  { value: 'cheese', label: 'Cheese' },
-  { value: 'ham', label: 'Ham' },
-  { value: 'jalapenos', label: 'Jalapeños' },
-];
-
 async function mountMulti(props: Record<string, unknown> = {}) {
-  const emitted: string[] = [];
-  const mounted: { setProps?: (props: Record<string, unknown>) => unknown } =
-    {};
-  const wrapper = await mountSuspended(ComboBox, {
-    props: {
-      label: 'Toppings',
-      multiple: true,
-      options,
-      modelValue: [],
-      'onUpdate:modelValue': (value: unknown) => {
-        emitted.push(`value ${JSON.stringify(value)}`);
-        mounted.setProps?.({ modelValue: value });
-      },
-      'onUpdate:selected': (selected: unknown) => {
-        emitted.push(`selected ${JSON.stringify(selected)}`);
-        mounted.setProps?.({ selected });
-      },
-      ...props,
-    } as never,
-    attachTo: document.body,
-  });
-  mounted.setProps = (props) => wrapper.setProps(props as never);
-  await nextTick();
-
-  const input = wrapper.get<HTMLInputElement>('input[role="combobox"]');
-  const emittedOnMount = emitted.splice(0);
+  const mounted = await mountComboBoxWith(
+    { label: 'Toppings', multiple: true, modelValue: [] },
+    props,
+  );
+  const { wrapper } = mounted;
 
   return {
-    wrapper,
-    input,
-    emitted,
-    emittedOnMount,
+    ...mounted,
     dialog: () => wrapper.find('[role="dialog"]'),
     checkboxes: () => wrapper.findAll<HTMLInputElement>('[type="checkbox"]'),
     checkbox: (name: string) => {
@@ -72,33 +47,7 @@ async function mountMulti(props: Record<string, unknown> = {}) {
       wrapper
         .findAll('[type="checkbox"]')
         .map((checkbox) => accessibleName(checkbox)),
-    button: (name: string) =>
-      wrapper
-        .findAll('button')
-        .find((button) => accessibleName(button) === name),
-    status: () => wrapper.get('[role="status"]').text(),
   };
-}
-
-type Mounted = Awaited<ReturnType<typeof mountMulti>>;
-
-async function type(input: Mounted['input'], text: string) {
-  input.element.focus();
-  input.element.value = text;
-  await input.trigger('input');
-}
-
-async function leaveField(input: Mounted['input']) {
-  const next = addToPage('<button type="button">Next</button>');
-  leave(input.element, next);
-  await nextTick();
-}
-
-/** Waits `ms`, on the fake clock once a test turned it on */
-async function pause(ms = 10) {
-  if (vi.isFakeTimers()) await vi.advanceTimersByTimeAsync(ms);
-  else await new Promise((resolve) => setTimeout(resolve, ms));
-  await nextTick();
 }
 
 describe('ComboBox multiple: roles, states and properties', () => {
@@ -294,13 +243,15 @@ describe('ComboBox multiple: keyboard support', () => {
     expectFocused(input);
   });
 
-  it('typing opens the dialog with the options that match, ignoring case and diacritics', async () => {
+  // How a label matches is the shared options' (ComboBox.test.ts, "matches a
+  // label that contains the text")
+  it('typing opens the dialog with the options that match', async () => {
     const { input, labels } = await mountMulti();
 
-    await type(input, 'JALAPENO');
+    await type(input, 'ha');
 
     expect(input.attributes('aria-expanded')).toBe('true');
-    expect(labels()).toEqual(['Jalapeños']);
+    expect(labels()).toEqual(['Ham']);
   });
 
   it('says the number of results after a pause in typing', async () => {
@@ -325,6 +276,8 @@ describe('ComboBox multiple: the pointer', () => {
     expect(input.attributes('aria-expanded')).toBe('false');
   });
 
+  // Only the prevented mousedown: test/browser/combobox-multiple.spec.ts ("a
+  // click on an option ticks it") proves that focus stays in the field
   it('keeps focus where it was on a press in the dialog', async () => {
     const { input, dialog } = await mountMulti();
     await input.trigger('click');
@@ -469,40 +422,11 @@ describe('ComboBox multiple: the field', () => {
 });
 
 describe('ComboBox multiple: in a form', () => {
-  async function mountForm(props: Record<string, unknown> = {}) {
-    const submitted: [string, FormDataEntryValue][][] = [];
-    const model = { value: (props.modelValue ?? []) as unknown };
-    const wrapper = await mountInForm(
-      () => [
-        h(ComboBox, {
-          label: 'Toppings',
-          multiple: true,
-          name: 'toppings',
-          options,
-          ...props,
-          modelValue: model.value,
-          'onUpdate:modelValue': (value: unknown) => {
-            model.value = value;
-            wrapper.vm.$forceUpdate();
-          },
-        } as never),
-      ],
-      {
-        onSubmit: (data: FormData) => submitted.push([...data.entries()]),
-      },
+  const mountForm = (props: Record<string, unknown> = {}) =>
+    mountComboBoxInForm(
+      { label: 'Toppings', multiple: true, name: 'toppings', modelValue: [] },
+      props,
     );
-    await nextTick();
-
-    return {
-      wrapper,
-      submitted,
-      input: wrapper.get<HTMLInputElement>('input[role="combobox"]'),
-      submit: async () => {
-        await wrapper.get('form').trigger('submit');
-        await flushPromises();
-      },
-    };
-  }
 
   it('puts every value in the FormData under its name', async () => {
     const { submitted, submit } = await mountForm({
@@ -553,18 +477,14 @@ describe('ComboBox multiple: options from a function', () => {
     return { load, calls };
   }
 
-  it('asks once when the field is first touched', async () => {
+  // When a list is asked for is the shared options' (ComboBox.test.ts, "asks
+  // once when the field is first touched"); an empty value needs none on mount
+  it('asks nothing on mount for an empty value', async () => {
     const { load, calls } = loader();
-    const { input, labels } = await mountMulti({ options: load });
-    expect(calls).toEqual([]);
-
-    input.element.focus();
-    await input.trigger('focus');
+    await mountMulti({ options: load });
     await flushPromises();
-    await input.trigger('click');
 
-    expect(calls).toEqual(['']);
-    expect(labels()).toEqual(['Cheese', 'Ham', 'Jalapeños']);
+    expect(calls).toEqual([]);
   });
 
   it('asks at once for a value without its option, and gives the options found', async () => {

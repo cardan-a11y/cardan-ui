@@ -58,25 +58,6 @@ function boxes(combobox: Locator) {
   });
 }
 
-test('ComboBox: Escape closes the list, focus stays in the text field', async ({
-  page,
-}) => {
-  const combobox = topping(page);
-
-  await combobox.focus();
-  await page.keyboard.press('ArrowDown');
-  await expect(combobox).toHaveAttribute('aria-expanded', 'true');
-  await expect(listOf(page)).toBeVisible();
-
-  await page.keyboard.press('Escape');
-  await expect(combobox).toHaveAttribute('aria-expanded', 'false');
-  await expect(listOf(page)).toBeHidden();
-  await expect(combobox).toBeFocused();
-
-  await page.keyboard.press('Escape');
-  await expect(combobox).toBeFocused();
-});
-
 test('ComboBox in a Dialog: Escape closes the list, also on "no results", and a second Escape the dialog', async ({
   page,
 }) => {
@@ -288,17 +269,17 @@ test('ComboBox: the highlighted option is scrolled into view', async ({
     .toBe(true);
 });
 
-test('ComboBox: focus selects the text, Tab skips the open button, reaches the clear button and then leaves', async ({
+test('ComboBox: focus selects the text, also by a click, Tab skips the open button, reaches the clear button and then leaves', async ({
   page,
 }) => {
   const combobox = client(page);
+  const selected = () =>
+    combobox.evaluate(
+      (input: HTMLInputElement) => input.selectionEnd! - input.selectionStart!,
+    );
 
   await combobox.focus();
-  expect(
-    await combobox.evaluate(
-      (input: HTMLInputElement) => input.selectionEnd! - input.selectionStart!,
-    ),
-  ).toBe('Gemeente Utrecht'.length);
+  expect(await selected()).toBe('Gemeente Utrecht'.length);
 
   await page.keyboard.press(tabKey(page));
   await expect(
@@ -307,20 +288,9 @@ test('ComboBox: focus selects the text, Tab skips the open button, reaches the c
 
   await page.keyboard.press(tabKey(page));
   await expect(page.getByRole('button', { name: 'Save' })).toBeFocused();
-});
-
-test('ComboBox: a click that gives focus keeps the text selected', async ({
-  page,
-}) => {
-  const combobox = client(page);
 
   await combobox.click();
-
-  expect(
-    await combobox.evaluate(
-      (input: HTMLInputElement) => input.selectionEnd! - input.selectionStart!,
-    ),
-  ).toBe('Gemeente Utrecht'.length);
+  expect(await selected()).toBe('Gemeente Utrecht'.length);
 });
 
 test('ComboBox: Tab from an emptied field, and from text that was not picked, lands on a control, never on the page', async ({

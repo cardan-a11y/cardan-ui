@@ -11,8 +11,15 @@ import {
   roleOf,
 } from '../a11y';
 import { expectConsole } from '../console';
-import { addToPage, leave, press } from '../dom';
-import { mountInForm } from '../form';
+import { leave, press } from '../dom';
+import {
+  leaveField,
+  mountComboBoxInForm,
+  mountComboBoxWith,
+  options,
+  pause,
+  type,
+} from './combobox';
 
 /**
  * The rows of the two tables of the APG example "Editable Combobox With List
@@ -21,46 +28,15 @@ import { mountInForm } from '../form';
  * where ComboBox leaves the pattern, as its docblock lists them, the field it
  * shares with the other fields, its form and its loading.
  */
-const options = [
-  { value: 'cheese', label: 'Cheese' },
-  { value: 'ham', label: 'Ham' },
-  { value: 'jalapenos', label: 'Jalapeños' },
-];
-
 async function mountComboBox(props: Record<string, unknown> = {}) {
-  const emitted: string[] = [];
-  // An option found on mount is given before `wrapper` is there
-  const mounted: { setProps?: (props: Record<string, unknown>) => unknown } =
-    {};
-  const wrapper = await mountSuspended(ComboBox, {
-    props: {
-      label: 'Topping',
-      options,
-      modelValue: null,
-      'onUpdate:modelValue': (value: unknown) => {
-        emitted.push(`value ${JSON.stringify(value)}`);
-        mounted.setProps?.({ modelValue: value });
-      },
-      'onUpdate:selected': (option: unknown) => {
-        emitted.push(`selected ${JSON.stringify(option)}`);
-        mounted.setProps?.({ selected: option });
-      },
-      ...props,
-    } as never,
-    attachTo: document.body,
-  });
-  mounted.setProps = (props) => wrapper.setProps(props as never);
-  await nextTick();
-
-  const input = wrapper.get<HTMLInputElement>('input[role="combobox"]');
-  /** What mounting emitted: the option of a value, found in the list */
-  const emittedOnMount = emitted.splice(0);
+  const mounted = await mountComboBoxWith(
+    { label: 'Topping', modelValue: null },
+    props,
+  );
+  const { wrapper, input } = mounted;
 
   return {
-    wrapper,
-    input,
-    emitted,
-    emittedOnMount,
+    ...mounted,
     /** The labels of the options in the list */
     labels: () =>
       wrapper.findAll('[role="option"]').map((option) => option.text()),
@@ -78,41 +54,13 @@ async function mountComboBox(props: Record<string, unknown> = {}) {
         ? (document.getElementById(id)?.textContent?.trim() ?? null)
         : null;
     },
-    button: (name: string) =>
-      wrapper
-        .findAll('button')
-        .find((button) => accessibleName(button) === name),
-    status: () => wrapper.get('[role="status"]').text(),
     popupText: () => wrapper.get('.combobox-popup').text(),
   };
-}
-
-type Mounted = Awaited<ReturnType<typeof mountComboBox>>;
-
-/** Types into the field, as the user's own edit */
-async function type(input: Mounted['input'], text: string) {
-  input.element.focus();
-  input.element.value = text;
-  await input.trigger('input');
-}
-
-/** Focus leaves the component for another element of the page */
-async function leaveField(input: Mounted['input']) {
-  const next = addToPage('<button type="button">Next</button>');
-  leave(input.element, next);
-  await nextTick();
 }
 
 /** A press on the page, outside the component */
 async function pressOutside() {
   document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
-  await nextTick();
-}
-
-/** Waits `ms`, on the fake clock once a test turned it on */
-async function pause(ms = 10) {
-  if (vi.isFakeTimers()) await vi.advanceTimersByTimeAsync(ms);
-  else await new Promise((resolve) => setTimeout(resolve, ms));
   await nextTick();
 }
 
@@ -216,6 +164,18 @@ describe('ComboBox: keyboard support', () => {
 
     expect(input.attributes('aria-expanded')).toBe('true');
     expect(input.attributes('aria-activedescendant')).toBeUndefined();
+  });
+
+  it('Alt + Up Arrow closes the list and picks nothing', async () => {
+    const { wrapper, input } = await mountComboBox();
+    input.element.focus();
+    await press('ArrowDown');
+
+    const event = await press('ArrowUp', { altKey: true });
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(input.attributes('aria-expanded')).toBe('false');
+    expect(wrapper.props('modelValue')).toBeNull();
   });
 
   it('Down Arrow on the last option goes to the first, Up Arrow on the first to the last', async () => {
@@ -409,6 +369,8 @@ describe('ComboBox: the pointer', () => {
     expect(input.attributes('aria-expanded')).toBe('false');
   });
 
+  // Fails once a hover handler moves the highlight; test/browser/combobox.spec.ts
+  // ("hover leaves the highlight") proves it with a real pointer
   it('hover leaves the highlight where the arrow keys put it', async () => {
     const { input, option, highlighted } = await mountComboBox();
     input.element.focus();
@@ -747,48 +709,18 @@ describe('ComboBox: the field', () => {
 });
 
 describe('ComboBox: in a form', () => {
-  async function mountForm(props: Record<string, unknown> = {}) {
-    const submitted: Record<string, unknown>[] = [];
-    const model = { value: (props.modelValue ?? null) as unknown };
-    const wrapper = await mountInForm(
-      () => [
-        h(ComboBox, {
-          label: 'Topping',
-          name: 'topping',
-          options,
-          ...props,
-          modelValue: model.value,
-          'onUpdate:modelValue': (value: unknown) => {
-            model.value = value;
-            wrapper.vm.$forceUpdate();
-          },
-        } as never),
-      ],
-      {
-        onSubmit: (data: FormData) =>
-          submitted.push(Object.fromEntries(data.entries())),
-      },
+  const mountForm = (props: Record<string, unknown> = {}) =>
+    mountComboBoxInForm(
+      { label: 'Topping', name: 'topping', modelValue: null },
+      props,
     );
-    await nextTick();
-
-    return {
-      wrapper,
-      submitted,
-      model,
-      input: wrapper.get<HTMLInputElement>('input[role="combobox"]'),
-      submit: async () => {
-        await wrapper.get('form').trigger('submit');
-        await flushPromises();
-      },
-    };
-  }
 
   it('puts the value of the option in the FormData under its name, not the label', async () => {
     const { submitted, submit } = await mountForm({ modelValue: 'ham' });
 
     await submit();
 
-    expect(submitted).toEqual([{ topping: 'ham' }]);
+    expect(submitted).toEqual([[['topping', 'ham']]]);
   });
 
   it('has no key in the FormData without a value', async () => {
@@ -796,7 +728,7 @@ describe('ComboBox: in a form', () => {
 
     await submit();
 
-    expect(submitted).toEqual([{}]);
+    expect(submitted).toEqual([[]]);
   });
 
   it('fails the submit of a required field without a value, with its error and focus on the text field', async () => {
@@ -830,7 +762,7 @@ describe('ComboBox: in a form', () => {
     await submit();
 
     expect(model.value).toBeNull();
-    expect(submitted).toEqual([{}]);
+    expect(submitted).toEqual([[]]);
   });
 
   it('settles before the submit: text that was not picked submits the value the field shows again', async () => {
@@ -840,7 +772,7 @@ describe('ComboBox: in a form', () => {
     await submit();
 
     expect(input.element.value).toBe('Ham');
-    expect(submitted).toEqual([{ topping: 'ham' }]);
+    expect(submitted).toEqual([[['topping', 'ham']]]);
   });
 });
 
@@ -1220,18 +1152,8 @@ describe('ComboBox: what the review found', () => {
     expect(status()).toBe('2 options');
   });
 
-  it('Alt + Up Arrow closes the list and picks nothing', async () => {
-    const { wrapper, input } = await mountComboBox();
-    input.element.focus();
-    await press('ArrowDown');
-
-    const event = await press('ArrowUp', { altKey: true });
-
-    expect(event.defaultPrevented).toBe(true);
-    expect(input.attributes('aria-expanded')).toBe('false');
-    expect(wrapper.props('modelValue')).toBeNull();
-  });
-
+  // A spy on focus(): test/browser/combobox.spec.ts ("dragging the scrollbar",
+  // "after a pan in the list") proves where focus really goes
   it('gives focus back to the field once per press in the list', async () => {
     const { wrapper, input } = await mountComboBox();
     await input.trigger('click');
