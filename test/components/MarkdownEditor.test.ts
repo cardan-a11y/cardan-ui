@@ -234,3 +234,36 @@ describe('MarkdownEditor', () => {
     ).toContain('Pixel');
   });
 });
+
+describe('MarkdownEditor: disabled', () => {
+  it('and required, holds no submit back and is not invalid after a failed one', async () => {
+    const submitted = vi.fn();
+    const wrapper = await mountInForm(
+      () => [
+        h(MarkdownEditor, {
+          label: 'Answer',
+          required: true,
+          disabled: true,
+          modelValue: '',
+        }),
+      ],
+      { onSubmit: submitted },
+    );
+    await rendered();
+
+    await wrapper.get('form').trigger('submit');
+    await rendered();
+    expect(submitted).toHaveBeenCalledTimes(1);
+
+    // Another field fails, so the Form shows errors
+    const other = document.createElement('input');
+    other.required = true;
+    other.setAttribute('aria-label', 'Other');
+    wrapper.get('form').element.append(other);
+    await wrapper.get('form').trigger('submit');
+    await rendered();
+
+    expect(textbox().getAttribute('aria-invalid')).toBeNull();
+    expect(description(textbox())).toBe('');
+  });
+});

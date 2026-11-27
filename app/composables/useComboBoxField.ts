@@ -59,6 +59,7 @@ export function useComboBoxField(field: {
     {
       invalid: () => !!field.required() && !field.isFilled(),
       showInvalid: field.showInvalid,
+      exempt: field.disabled,
     },
   );
 

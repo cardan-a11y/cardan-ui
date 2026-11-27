@@ -2,17 +2,20 @@
  * The `custom-error` of a field component: an error the browser cannot find,
  * such as one from the server. It shows and describes the field like its own
  * error, without holding the form back, until `clearCustomError()` on a new
- * value. `invalid`: whether the field's own error applies; `errorShown`: while
- * either error shows.
+ * value. `invalid`: whether the field's own error applies; `exempt`: the browser
+ * does not check the control (disabled or read-only), so its own error never
+ * applies; `errorShown`: while either error shows.
  */
 export function useCustomError(
   customError: () => string | undefined,
   {
     invalid,
     showInvalid = () => false,
+    exempt = () => false,
   }: {
     invalid: () => boolean | undefined;
     showInvalid?: () => boolean | undefined;
+    exempt?: () => boolean | undefined;
   },
 ) {
   const formShowInvalid = inject(formShowInvalidKey, ref(false));
@@ -32,7 +35,7 @@ export function useCustomError(
   const errorShown = computed(
     () =>
       customErrorActive.value ||
-      ((showInvalid() || formShowInvalid.value) && invalid()),
+      ((showInvalid() || formShowInvalid.value) && !exempt() && invalid()),
   );
 
   return { customErrorActive, clearCustomError, errorShown };

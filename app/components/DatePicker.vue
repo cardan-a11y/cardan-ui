@@ -97,7 +97,11 @@ const isDark = computed(() => isMounted.value && colorMode.value === 'dark');
 
 const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   () => customError,
-  { invalid: () => required && !model.value, showInvalid: () => showInvalid },
+  {
+    invalid: () => required && !model.value,
+    showInvalid: () => showInvalid,
+    exempt: () => disabled || isReadonly(),
+  },
 );
 
 const { attrs, controlAttrs: datePickerAttrs } = useControlAttrs([

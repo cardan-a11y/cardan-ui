@@ -247,3 +247,44 @@ describe('CheckboxGroup', () => {
     await expectNoViolations();
   });
 });
+
+describe('A disabled, required field after a failed submit', () => {
+  it('Checkbox: not invalid, and not described by an error that does not show', async () => {
+    const wrapper = await mountInForm(() => [
+      h(Checkbox, {
+        label: 'I agree',
+        modelValue: false,
+        required: true,
+        disabled: true,
+      }),
+      // Another field fails, so the Form shows errors
+      h('input', { required: true, 'aria-label': 'Other' }),
+    ]);
+    const checkbox = wrapper.get('input');
+
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+
+    expect(checkbox.attributes('aria-invalid')).toBeUndefined();
+    expect(description(checkbox)).toBe('');
+  });
+
+  it('CheckboxGroup: the group is not described by an error that does not show', async () => {
+    const wrapper = await mountInForm(() => [
+      h(CheckboxGroup, {
+        label: 'Toppings',
+        required: true,
+        disabled: true,
+        options: toppings,
+        modelValue: [],
+      }),
+      // Another field fails, so the Form shows errors
+      h('input', { required: true, 'aria-label': 'Other' }),
+    ]);
+
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+
+    expect(description(wrapper.get('fieldset'))).toBe('');
+  });
+});

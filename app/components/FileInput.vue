@@ -90,6 +90,7 @@ const keepsFile = computed(() => mode !== 'document' || !!name);
 const missingFile = computed(
   () =>
     required &&
+    !disabled &&
     keepsFile.value &&
     !model.value &&
     (showInvalid || formShowInvalid.value),

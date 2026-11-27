@@ -107,6 +107,10 @@ Fixed: **FileInput's form post carries the compressed image.** Once compressorjs
 - **Remove the `formData.set(...)` that put the compressed file in the post by hand**: cardan-academy-nuxt's `UserProfileForm.vue` (`avatar`), cardan-auditor-nuxt's `FileUploadForm.vue`, `FindingForm.vue` and `TeamDialog.vue`. In `TeamDialog.vue` this also fixes `logo_dark`, which went uncompressed.
 - **Call `reset()` instead of setting `validity` or `imagePreview` from outside** (cardan-auditor-nuxt's `FileUpload.vue` and `useFileUpload.ts`): it empties the value, the input and the preview. Both refs stay exposed for now.
 
+Fixed: **small defects in the field components**.
+
+- **A disabled or read-only required field is no longer `aria-invalid`** after a failed submit, nor described by an error that does not show: Checkbox, CheckboxGroup, RadioGroup, DatePicker, ComboBox, SpinButton, FileInput and MarkdownEditor, which no longer holds a submit back while disabled. Nothing to do.
+
 ### 2.6.2
 
 New: **ComboBox `multiple`**, which selects several options, and ComboBox's **`create-option`** and **`disabled-key`** (`/combobox` in the playground). With them every MultiSelect field has its ComboBox; MultiSelect is removed in the next minor, so move each field over and then remove `@vueform/multiselect` from the project's `package.json`. cardan-auditor-nuxt, the only project that still uses MultiSelect, does this on `chore/cardan-ui-2.6.2`, which merges only after this release is on `main`.

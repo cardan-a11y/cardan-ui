@@ -66,6 +66,7 @@ const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   {
     invalid: () => required && !hasSelection.value,
     showInvalid: () => showInvalid,
+    exempt: () => disabled,
   },
 );
 

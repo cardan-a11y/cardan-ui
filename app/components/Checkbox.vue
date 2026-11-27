@@ -13,6 +13,7 @@ const {
   customError = undefined,
   showInvalid = false,
   required,
+  disabled,
   ariaDisabled,
 } = defineProps<{
   label?: string;
@@ -55,6 +56,7 @@ const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   {
     invalid: () => required && !isTicked.value,
     showInvalid: () => showInvalid,
+    exempt: () => disabled,
   },
 );
 </script>

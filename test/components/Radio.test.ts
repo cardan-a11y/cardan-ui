@@ -169,3 +169,24 @@ describe('RadioGroup', () => {
     await expectNoViolations();
   });
 });
+
+describe('RadioGroup: disabled', () => {
+  it('disabled and required, is not described by an error that does not show', async () => {
+    const wrapper = await mountInForm(() => [
+      h(RadioGroup, {
+        label: 'Answer',
+        required: true,
+        disabled: true,
+        options: answers,
+        modelValue: undefined,
+      }),
+      // Another field fails, so the Form shows errors
+      h('input', { required: true, 'aria-label': 'Other' }),
+    ]);
+
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+
+    expect(description(wrapper.get('fieldset'))).toBe('');
+  });
+});

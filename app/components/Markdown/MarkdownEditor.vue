@@ -128,7 +128,10 @@ function focusEditor() {
 
 const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   () => customError,
-  { invalid: () => !!required && !content.value?.trim() },
+  {
+    invalid: () => !!required && !content.value?.trim(),
+    exempt: () => disabled,
+  },
 );
 
 // md-editor-v3 passes no attributes to CodeMirror's textbox, and a <label>
@@ -221,6 +224,7 @@ const emit = defineEmits<{
         v-if="required"
         :value="content?.trim()"
         :required="required"
+        :disabled="disabled"
         class="visuallyhidden"
         aria-hidden="true"
         tabindex="-1"

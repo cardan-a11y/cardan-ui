@@ -2007,3 +2007,26 @@ describe('ComboBox: disabled options', () => {
     expect(option('Ham').attributes('aria-disabled')).toBe('true');
   });
 });
+
+describe('ComboBox: disabled', () => {
+  it('and required, is not invalid after a failed submit', async () => {
+    const wrapper = await mountInForm(() => [
+      h(ComboBox, {
+        label: 'Topping',
+        options,
+        modelValue: null,
+        required: true,
+        disabled: true,
+      }),
+      // Another field fails, so the Form shows errors
+      h('input', { required: true, 'aria-label': 'Other' }),
+    ]);
+    const input = wrapper.get('input[role="combobox"]');
+
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+
+    expect(input.attributes('aria-invalid')).toBeUndefined();
+    expect(description(input)).toBe('');
+  });
+});

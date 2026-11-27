@@ -739,3 +739,25 @@ describe('FileInput and image compression', () => {
     revoke.mockRestore();
   });
 });
+
+describe('FileInput: disabled', () => {
+  it('and required, is not invalid after a failed submit', async () => {
+    const wrapper = await mountInForm(() => [
+      h(FileInput, {
+        label: 'Picture',
+        required: true,
+        disabled: true,
+        maxFileSize: 1000,
+      }),
+      // Another field fails, so the Form shows errors
+      h('input', { required: true, 'aria-label': 'Other' }),
+    ]);
+    const input = wrapper.get('input');
+
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+
+    expect(input.attributes('aria-invalid')).toBeUndefined();
+    expect(description(input)).not.toContain('Picture is missing');
+  });
+});
