@@ -91,23 +91,13 @@ for (const [name, open] of Object.entries(popupsOpenedByKeyboard)) {
     );
   });
 
-  test(`${name} in a Dialog: Tab stays in the dialog while its popup is open`, async ({
+  test(`${name} in a Dialog: Tab stays in the dialog while its popup is open, and never drops focus`, async ({
     page,
   }) => {
     const dialog = await openDialog(page);
     await expect(await open(page, dialog)).toBeVisible();
 
     const stops = await tabAround(page, dialog);
-    expect(stops.filter((stop) => !stop.inside && !stop.onBody)).toEqual([]);
-  });
-
-  test(`${name} in a Dialog: Tab through its open popup never drops focus`, async ({
-    page,
-  }) => {
-    const dialog = await openDialog(page);
-    await expect(await open(page, dialog)).toBeVisible();
-
-    const stops = await tabAround(page, dialog);
-    expect(stops.filter((stop) => stop.onBody)).toEqual([]);
+    expect(stops.filter((stop) => !stop.inside || stop.onBody)).toEqual([]);
   });
 }

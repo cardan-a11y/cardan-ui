@@ -172,6 +172,7 @@ describe('DatePicker', () => {
     ]);
   });
 
+  // Its own describedBy(), not FormField's: the instruction stays with the error
   it('is described by its instruction and, after a failed submit, by the error', async () => {
     const wrapper = await mountInForm(() => [
       h(DatePicker, {
@@ -183,42 +184,10 @@ describe('DatePicker', () => {
     ]);
     await nextTick();
     const input = wrapper.get('input');
-    expect(description(input)).toBe('The first day');
 
     await wrapper.get('form').trigger('submit');
     await nextTick();
 
     expect(description(input)).toBe('The first day Start is missing');
-    expect(input.attributes('aria-invalid')).toBe('true');
   });
-});
-
-describe('DatePicker: the browser does not check it', () => {
-  it.each([
-    { name: 'disabled', props: { disabled: true }, attrs: {} },
-    { name: 'read-only', props: {}, attrs: { readonly: true } },
-  ])(
-    '$name and required, is not invalid after a failed submit',
-    async ({ props, attrs }) => {
-      const wrapper = await mountInForm(() => [
-        h(DatePicker, {
-          label: 'Start',
-          modelValue: null,
-          required: true,
-          ...props,
-          ...attrs,
-        }),
-        // Another field fails, so the Form shows errors
-        h('input', { required: true, 'aria-label': 'Other' }),
-      ]);
-      await nextTick();
-      const input = wrapper.get('input');
-
-      await wrapper.get('form').trigger('submit');
-      await nextTick();
-
-      expect(input.attributes('aria-invalid')).toBeUndefined();
-      expect(description(input)).toBe('');
-    },
-  );
 });

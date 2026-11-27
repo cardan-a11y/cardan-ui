@@ -1,17 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { MfaCode } from '#components';
-import { expectNoViolations } from '../a11y';
 
+// Its name, keyboard and autocomplete are in MfaChallenge.test.ts ("starts in
+// a code field made for one-time codes")
 describe('MfaCode', () => {
-  it('takes a one-time code on a numeric keyboard', async () => {
+  it('takes six digits and nothing else', async () => {
     const wrapper = await mountSuspended(MfaCode, { attachTo: document.body });
 
     const input = wrapper.get('input[name="code"]');
-    expect(input.attributes('inputmode')).toBe('numeric');
-    expect(input.attributes('autocomplete')).toBe('one-time-code');
-    await expectNoViolations();
-
     const element = input.element as HTMLInputElement;
     for (const [code, valid] of [
       ['123456', true],
