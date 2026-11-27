@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './test';
-import { gotoHydrated } from './helpers';
+import { gotoHydrated, runAxe, settled } from './helpers';
 
 test('DatePicker: Enter opens the calendar, Escape closes it with focus on the field', async ({
   page,
@@ -24,6 +24,37 @@ test('DatePicker: Enter opens the calendar, Escape closes it with focus on the f
   await expect(calendar).toBeHidden();
   await expect(combobox).toBeFocused();
 });
+
+for (const colorScheme of ['light', 'dark'] as const) {
+  test.describe(`${colorScheme} mode`, () => {
+    test.use({ colorScheme });
+
+    // The wrapper sets --dp-secondary-color, the library's colour for these days,
+    // to --color-grey-bg, a background token: 1.19:1
+    test.fixme('DatePicker: the days of the month before and after, which can be picked, have text contrast', async ({
+      page,
+    }) => {
+      // March 2026 starts on a Sunday: the grid shows days of February
+      await page.clock.setFixedTime(new Date('2026-03-15T12:00:00'));
+      await gotoHydrated(page, '/form');
+      const combobox = page.getByRole('combobox', { name: 'DatePicker' });
+      await combobox.click();
+      const calendar = page.locator(
+        `#${await combobox.getAttribute('aria-controls')}`,
+      );
+      await expect(
+        calendar.getByRole('gridcell', { name: /February/ }).first(),
+      ).toBeVisible();
+      await settled(page);
+
+      expect(
+        (await runAxe(page)).filter(
+          (v) => v.rule === 'color-contrast' && /dp--cell/.test(v.target),
+        ),
+      ).toEqual([]);
+    });
+  });
+}
 
 test('DatePicker: Tab from an empty field moves into the open calendar, which stays open', async ({
   page,

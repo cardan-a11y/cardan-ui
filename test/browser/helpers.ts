@@ -17,6 +17,18 @@ export async function gotoHydrated(page: Page, url: string) {
   );
 }
 
+/** Waits for the page's finite animations, such as a popup's fade, so axe does not measure colours mid-fade. */
+export async function settled(page: Page) {
+  await page.evaluate(() =>
+    Promise.allSettled(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.getComputedTiming().endTime !== Infinity)
+        .map((a) => a.finished),
+    ),
+  );
+}
+
 /** Where focus is after one key press of a walk */
 export interface FocusStop {
   /** `tag[role] "name"`, for messages */
