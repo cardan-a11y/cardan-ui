@@ -180,46 +180,49 @@ html:has(.dialog[open]) {
     background-color: var(--color-backdrop);
   }
 
-  h1 {
-    margin-block: 0;
-    font-size: var(--font-size-lg);
-  }
-
-  .dialog-header-wrapper {
+  /* Child combinators through FocusLoop, so nothing here reaches the slots' content beyond the buttons slot's own Buttons, such as a nested Dialog or a heading; `:where()` keeps the specificity the projects override */
+  > :where(.vue-focus-loop) > :where(div) > .dialog-header-wrapper {
     padding-block-start: var(--dialog-padding-block);
     padding-block-end: 1.5rem;
     padding-inline: var(--dialog-padding-inline);
     padding-inline-end: calc(2.75rem + var(--dialog-padding-inline));
 
-    .dialog-header {
+    > .dialog-header {
       display: flex;
       align-items: center;
     }
   }
 
-  .dialog-title-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  > :where(.vue-focus-loop) > :where(div) > :where(.dialog-header-wrapper) > :where(.dialog-header) {
+    > h1 {
+      margin-block: 0;
+      font-size: var(--font-size-lg);
+    }
 
-    > .iconify {
-      font-size: larger;
-      flex-shrink: 0;
+    > .dialog-title-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      > .iconify {
+        font-size: larger;
+        flex-shrink: 0;
+      }
+    }
+
+    > .close-button {
+      z-index: 9;
+      position: absolute;
+      right: 1rem;
+      top: 1rem;
     }
   }
 
-  .close-button {
-    z-index: 9;
-    position: absolute;
-    right: 1rem;
-    top: 1rem;
-  }
-
-  .dialog-content {
+  > :where(.vue-focus-loop) > :where(div) > .dialog-content {
     padding-inline: var(--dialog-padding-inline);
   }
 
-  .dialog-buttons {
+  > :where(.vue-focus-loop) > :where(div) > .dialog-buttons {
     padding-inline: var(--dialog-padding-inline);
     display: flex;
     flex-wrap: wrap;

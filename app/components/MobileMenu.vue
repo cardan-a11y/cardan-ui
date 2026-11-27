@@ -219,31 +219,31 @@ body:has(.mobile-dialog[open]) {
     background-color: var(--color-backdrop);
   }
 
-  .close-button {
-    background-color: transparent;
-    z-index: 1;
-    position: absolute;
-    right: 1.25rem;
-    top: 1.25rem;
-  }
-
-  .dialog-content {
+  /* Child combinators through FocusLoop, so nothing here reaches a Dialog in the slot; `:where()` keeps the specificity the projects override */
+  > :where(.vue-focus-loop) > :where(div) > .dialog-content {
     display: grid;
     min-height: 100svh;
     align-content: start;
+    padding-block: 4rem;
   }
 
-  .dialog-content {
-    padding-block: 4rem;
+  > :where(.vue-focus-loop) > :where(div) > :where(.dialog-content) {
+    > .close-button {
+      background-color: transparent;
+      z-index: 1;
+      position: absolute;
+      right: 1.25rem;
+      top: 1.25rem;
+    }
+
+    > .nav-label {
+      margin-inline-start: 2rem;
+      margin-block-end: 1rem;
+    }
   }
 
   .mobile-nav {
     padding-inline: var(--mobile-menu-padding-inline);
-  }
-
-  .nav-label {
-    margin-inline-start: 2rem;
-    margin-block-end: 1rem;
   }
 }
 
@@ -268,8 +268,7 @@ body:has(.mobile-dialog[open]) {
     }
   }
 
-  .dialog-content {
-    display: grid;
+  > :where(.vue-focus-loop) > :where(div) > .dialog-content {
     padding-inline-start: calc(
       var(--mobile-menu-padding-inline) + env(safe-area-inset-left)
     );
@@ -298,8 +297,7 @@ body:has(.mobile-dialog[open]) {
     }
   }
 
-  .dialog-content {
-    display: grid;
+  > :where(.vue-focus-loop) > :where(div) > .dialog-content {
     padding-inline-end: calc(
       var(--mobile-menu-padding-inline) + env(safe-area-inset-right)
     );
