@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { SpinButton } from '#components';
 import { accessibleName, description, expectNoViolations } from '../a11y';
+import { mountInForm } from '../form';
 
 /**
  * The rows of the APG spinbutton pattern and its quantity example
@@ -401,4 +403,56 @@ describe('SpinButton: as a field', () => {
     await increase.trigger('click');
     expect(description(input)).toBe('Everyone aged 12 or older');
   });
+});
+
+describe('SpinButton: null and read-only', () => {
+  it('shows an empty field for null, without aria-valuenow', async () => {
+    const { input } = await mountSpinButton({ modelValue: null });
+
+    expect((input.element as HTMLInputElement).value).toBe('');
+    expect(input.attributes('aria-valuenow')).toBeUndefined();
+  });
+
+  it('read-only: the arrow keys and the buttons leave the value, and the buttons are disabled', async () => {
+    const { wrapper, input, decrease, increase } = await mountSpinButton({
+      readonly: true,
+    });
+
+    expect((input.element as HTMLInputElement).readOnly).toBe(true);
+    expect(decrease.attributes('disabled')).toBeDefined();
+    expect(increase.attributes('disabled')).toBeDefined();
+
+    (input.element as HTMLInputElement).focus();
+    await input.trigger('keydown', { key: 'ArrowUp' });
+    await input.trigger('keydown', { key: 'ArrowDown' });
+    await increase.trigger('click');
+
+    expect(input.attributes('aria-valuenow')).toBe('2');
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    expect(wrapper.emitted('change')).toBeUndefined();
+    await expectNoViolations();
+  });
+
+  it.each([{ disabled: true }, { readonly: true }])(
+    'with %o and required, is not invalid after a failed submit',
+    async (props) => {
+      const wrapper = await mountInForm(() => [
+        h(SpinButton, {
+          label: 'Adults',
+          modelValue: undefined,
+          required: true,
+          ...props,
+        }),
+        // Another field fails, so the Form shows errors
+        h('input', { required: true, 'aria-label': 'Other' }),
+      ]);
+      const input = wrapper.get('input');
+
+      await wrapper.get('form').trigger('submit');
+      await nextTick();
+
+      expect(input.attributes('aria-invalid')).toBeUndefined();
+      expect(description(input)).toBe('');
+    },
+  );
 });

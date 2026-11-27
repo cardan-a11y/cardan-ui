@@ -27,6 +27,8 @@ const {
   size = 'md',
   id = useId(),
   required,
+  disabled,
+  readonly,
   showInvalid,
 } = defineProps<{
   /** Names the field, and the buttons: "Decrease <label>", "Increase <label>" */
@@ -38,6 +40,8 @@ const {
   max?: number;
   required?: boolean;
   disabled?: boolean;
+  /** Shown and submitted, but not changed: the keys and buttons do nothing */
+  readonly?: boolean;
   hideLabel?: boolean;
   instruction?: string;
   /** Shows the error now; a Form shows it after a failed submit */
@@ -54,8 +58,9 @@ const emit = defineEmits<{
 
 const { attrs, controlAttrs } = useControlAttrs();
 
-function toText(value: number | undefined) {
-  return value === undefined ? '' : String(value);
+// `null` too, which a project's data may hold though the type says otherwise
+function toText(value: number | null | undefined) {
+  return value == null ? '' : String(value);
 }
 
 const text = ref(toText(model.value));
@@ -102,6 +107,7 @@ const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   {
     invalid: () => invalid.value,
     showInvalid: () => showInvalid || rangeErrorShown.value,
+    exempt: () => disabled || readonly,
   },
 );
 
@@ -164,6 +170,7 @@ function step(delta: number) {
 
 function handleKeydown(event: KeyboardEvent) {
   if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+  if (readonly) return;
 
   if (event.key === 'ArrowUp') step(1);
   else if (event.key === 'ArrowDown') step(-1);
@@ -183,7 +190,7 @@ const MAX_EXACT_DIGITS = String(Number.MAX_SAFE_INTEGER).length - 1;
 let announcementTimer: ReturnType<typeof setTimeout> | undefined;
 
 function handleButton(delta: number) {
-  if (delta < 0 ? atMin.value : atMax.value) return;
+  if (readonly || (delta < 0 ? atMin.value : atMax.value)) return;
 
   step(delta);
 
@@ -230,7 +237,7 @@ defineExpose({
         :aria-label="t('spinbutton.decrease', { label })"
         :aria-controls="id"
         :aria-disabled="atMin || undefined"
-        :disabled="disabled"
+        :disabled="disabled || readonly"
         @click="handleButton(-1)"
       >
         <Icon name="material-symbols:remove-rounded" />
@@ -250,6 +257,7 @@ defineExpose({
         :maxlength="MAX_EXACT_DIGITS"
         :required="required"
         :disabled="disabled"
+        :readonly="readonly"
         :aria-valuenow="value"
         :aria-valuemin="min"
         :aria-valuemax="max"
@@ -267,7 +275,7 @@ defineExpose({
         :aria-label="t('spinbutton.increase', { label })"
         :aria-controls="id"
         :aria-disabled="atMax || undefined"
-        :disabled="disabled"
+        :disabled="disabled || readonly"
         @click="handleButton(1)"
       >
         <Icon name="material-symbols:add-rounded" />
