@@ -8,6 +8,7 @@ import {
   expectNoViolations,
   roleOf,
 } from '../a11y';
+import { addToPage } from '../dom';
 import { mountInForm } from '../form';
 
 /**
@@ -90,5 +91,35 @@ describe('Switch', () => {
     const form = wrapper.get('form').element as HTMLFormElement;
 
     expect(new FormData(form).get('newsletter')).toBe('false');
+  });
+
+  it("keeps a parent's aria-describedby before its instruction", async () => {
+    addToPage('<p id="hint">Applies to every device</p>');
+    const wrapper = await mountSuspended(Switch, {
+      props: {
+        label: 'Dark mode',
+        instruction: 'Easier on the eyes at night',
+        ariaDescribedby: 'hint',
+      },
+      attachTo: document.body,
+    });
+
+    expect(description(wrapper.get('[role="switch"]'))).toBe(
+      'Applies to every device Easier on the eyes at night',
+    );
+  });
+
+  it('posts nothing while disabled', async () => {
+    const wrapper = await mountInForm(() => [
+      h(Switch, {
+        label: 'Newsletter',
+        name: 'newsletter',
+        modelValue: true,
+        disabled: true,
+      }),
+    ]);
+    const form = wrapper.get('form').element as HTMLFormElement;
+
+    expect(new FormData(form).has('newsletter')).toBe(false);
   });
 });

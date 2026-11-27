@@ -17,6 +17,8 @@ const {
   variant = 'default',
   showInvalid = false,
   required,
+  disabled,
+  readonly,
   autoresize,
   id = useId(),
 } = defineProps<{
@@ -74,7 +76,11 @@ function updateValidity() {
 
 const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   () => customError,
-  { invalid: () => !isValid.value, showInvalid: () => showInvalid },
+  {
+    invalid: () => !isValid.value,
+    showInvalid: () => showInvalid,
+    exempt: () => disabled || readonly,
+  },
 );
 
 onMounted(updateValidity);

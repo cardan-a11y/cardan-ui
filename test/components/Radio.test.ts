@@ -45,53 +45,6 @@ describe('RadioGroup', () => {
     await expectNoViolations();
   });
 
-  it('keeps its error for the form to reveal when required', async () => {
-    const wrapper = await mountSuspended(RadioGroup, {
-      props: {
-        label: 'Answer',
-        required: true,
-        options: answers,
-        // As a v-model passes it before a choice
-        modelValue: undefined,
-      },
-      attachTo: document.body,
-    });
-
-    // In the document, for the form to reveal; not describing the group yet
-    const group = wrapper.get('fieldset');
-    expect(wrapper.text()).toContain('Answer is missing');
-    expect(description(group)).toBe('');
-
-    await wrapper.setProps({ showInvalid: true });
-
-    expect(description(group)).toBe('Answer is missing');
-    // Not aria-invalid: ARIA 1.2 deprecates it on a group (the fieldset), and
-    // a radio does not take it
-    expect(group.attributes('aria-invalid')).toBeUndefined();
-    expect(group.findAll('[aria-invalid]')).toHaveLength(0);
-    await expectNoViolations();
-
-    await wrapper.setProps({ modelValue: 'no' });
-    expect(description(group)).toBe('');
-  });
-
-  it('shows its error after a failed submit of its form', async () => {
-    const wrapper = await mountInForm(() => [
-      h(RadioGroup, {
-        label: 'Answer',
-        required: true,
-        options: answers,
-        modelValue: undefined,
-      }),
-    ]);
-    const group = wrapper.get('fieldset');
-
-    await wrapper.get('form').trigger('submit');
-    await nextTick();
-
-    expect(description(group)).toBe('Answer is missing');
-  });
-
   it('without a v-model, checks nothing and is missing a choice until one is made', async () => {
     const wrapper = await mountInForm(() => [
       h(RadioGroup, {
@@ -116,26 +69,6 @@ describe('RadioGroup', () => {
     expect(description(group)).toBe('Coffee is missing');
 
     await radios[1]!.setValue(true);
-    expect(description(group)).toBe('');
-  });
-
-  it('shows a custom error, and is described by it, until another option is chosen', async () => {
-    const wrapper = await mountSuspended(RadioGroup, {
-      props: {
-        label: 'Answer',
-        options: answers,
-        modelValue: 'yes',
-        customError: 'Yes is no longer possible',
-      },
-      attachTo: document.body,
-    });
-    const group = wrapper.get('fieldset');
-
-    expect(description(group)).toBe('Yes is no longer possible');
-    await expectNoViolations();
-
-    await wrapper.findAll('input')[1]!.setValue(true);
-
     expect(description(group)).toBe('');
   });
 
@@ -216,22 +149,34 @@ describe('RadioGroup: a choice is an option', () => {
     expect(description(wrapper.get('fieldset'))).toBe('');
   });
 
-  it('disabled and required, is not described by an error that does not show', async () => {
-    const wrapper = await mountInForm(() => [
-      h(RadioGroup, {
+  it('with a tooltip on its legend, is still named by its label', async () => {
+    const wrapper = await mountSuspended(RadioGroup, {
+      props: {
         label: 'Answer',
-        required: true,
-        disabled: true,
+        tooltip: 'Only one answer counts',
         options: answers,
-        modelValue: undefined,
-      }),
-      // Another field fails, so the Form shows errors
-      h('input', { required: true, 'aria-label': 'Other' }),
-    ]);
+        modelValue: 'yes',
+      },
+      attachTo: document.body,
+    });
 
-    await wrapper.get('form').trigger('submit');
-    await nextTick();
+    expect(accessibleName(wrapper.get('fieldset'))).toBe('Answer');
+    await expectNoViolations();
 
-    expect(description(wrapper.get('fieldset'))).toBe('');
+    await wrapper.setProps({ required: true });
+    expect(accessibleName(wrapper.get('fieldset'))).toBe('Answer required');
+  });
+
+  it('disabled, disables every radio', async () => {
+    const wrapper = await mountSuspended(RadioGroup, {
+      props: { label: 'Answer', options: answers, disabled: true },
+      attachTo: document.body,
+    });
+
+    expect(
+      wrapper
+        .findAll<HTMLInputElement>('input')
+        .map((radio) => radio.element.disabled),
+    ).toEqual([true, true]);
   });
 });

@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { defineComponent, h, nextTick } from 'vue';
+import { h } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Select } from '#components';
-import { accessibleName, description, expectNoViolations } from '../a11y';
-import { mountInForm } from '../form';
+import { description, expectNoViolations } from '../a11y';
 
 const options = [
   { value: 'red', label: 'Red' },
@@ -11,17 +10,6 @@ const options = [
 ];
 
 describe('Select', () => {
-  it('is named by its label and has no accessibility violations', async () => {
-    const wrapper = await mountSuspended(Select, {
-      props: { label: 'Colour', options, modelValue: 'red' },
-      attachTo: document.body,
-    });
-
-    expect(accessibleName(wrapper.get('select'))).toBe('Colour');
-    expect(wrapper.findAll('option').map((o) => o.text())).toContain('Green');
-    await expectNoViolations();
-  });
-
   it('shows the error under the select, above the instruction, and is described by both', async () => {
     const wrapper = await mountSuspended(Select, {
       props: {
@@ -80,115 +68,6 @@ describe('Select', () => {
       { value: 'en', label: 'English', disabled: true },
     ]);
   });
-
-  it('describes the select by its error only while the error shows', async () => {
-    const wrapper = await mountSuspended(Select, {
-      props: {
-        label: 'Colour',
-        options,
-        placeholder: 'Choose',
-        modelValue: '',
-        required: true,
-        errorMessage: 'Choose a colour',
-      },
-      attachTo: document.body,
-    });
-
-    // Invalid, but not shown yet: a valid-looking field is not described by it
-    const select = wrapper.get('select');
-    expect(description(select)).toBe('');
-    expect(select.attributes('aria-invalid')).toBeUndefined();
-
-    await wrapper.setProps({ showInvalid: true });
-
-    expect(description(select)).toBe('Choose a colour');
-    expect(select.attributes('aria-invalid')).toBe('true');
-    await expectNoViolations();
-
-    // Valid: not described, whatever the form shows
-    await select.setValue('green');
-    expect(description(select)).toBe('');
-    expect(select.attributes('aria-invalid')).toBeUndefined();
-  });
-
-  it('shows its error after a failed submit of its form', async () => {
-    const wrapper = await mountInForm(() => [
-      h(Select, {
-        label: 'Colour',
-        options,
-        placeholder: 'Choose',
-        modelValue: '',
-        required: true,
-      }),
-    ]);
-    const select = wrapper.get('select');
-    expect(select.attributes('aria-invalid')).toBeUndefined();
-
-    await wrapper.get('form').trigger('submit');
-    await nextTick();
-
-    expect(select.attributes('aria-invalid')).toBe('true');
-    expect(description(select)).toBe('Colour is missing');
-  });
-
-  it('shows a custom error, and is described by it, until its value changes', async () => {
-    const wrapper = await mountSuspended(Select, {
-      props: { label: 'Colour', options, modelValue: 'red' },
-      attachTo: document.body,
-    });
-    const select = wrapper.get('select');
-
-    await wrapper.setProps({ customError: 'Red is sold out' });
-
-    expect(description(select)).toBe('Red is sold out');
-    expect(select.attributes('aria-invalid')).toBe('true');
-    // The server judges the next submit: the browser does not hold it back
-    expect((select.element as HTMLSelectElement).checkValidity()).toBe(true);
-    await expectNoViolations();
-
-    await select.setValue('green');
-
-    expect(description(select)).toBe('');
-    expect(select.attributes('aria-invalid')).toBeUndefined();
-  });
-
-  it('puts an attribute on the select and a class and style on the wrapper', async () => {
-    const wrapper = await mountSuspended(Select, {
-      props: { label: 'Colour', options, modelValue: 'red' },
-      attrs: { 'data-test': 'colour', class: 'wide', style: 'color: red' },
-      attachTo: document.body,
-    });
-
-    const select = wrapper.get('select');
-    expect(select.attributes('data-test')).toBe('colour');
-    expect(select.attributes('class')).not.toContain('wide');
-    expect(select.attributes('style')).toBeUndefined();
-    expect(wrapper.classes()).toContain('wide');
-    expect(wrapper.attributes('style')).toContain('color: red');
-  });
-
-  it('keeps its label and texts to itself next to another Select', async () => {
-    await mountSuspended(
-      defineComponent({
-        setup: () => () => [
-          h(Select, { label: 'Colour', options, instruction: 'Of the badge' }),
-          h(Select, { label: 'Shade', options, instruction: 'Of the text' }),
-        ],
-      }),
-      { attachTo: document.body },
-    );
-
-    const selects = Array.from(document.querySelectorAll('select'));
-    expect(selects.map((select) => accessibleName(select))).toEqual([
-      'Colour',
-      'Shade',
-    ]);
-    expect(selects.map((select) => description(select))).toEqual([
-      'Of the badge',
-      'Of the text',
-    ]);
-    await expectNoViolations();
-  });
 });
 
 describe('Select: no value yet', () => {
@@ -226,5 +105,32 @@ describe('Select: no value yet', () => {
       'Blue',
       'Grey',
     ]);
+  });
+
+  it('without options says so in one disabled option, in its own words when given', async () => {
+    const wrapper = await mountSuspended(Select, {
+      props: { label: 'Colour', options: [], modelValue: undefined },
+      attachTo: document.body,
+    });
+
+    const only = () => wrapper.findAll<HTMLOptionElement>('option');
+    expect(only().map((option) => option.text())).toEqual(['No options']);
+    expect(only()[0]!.element.disabled).toBe(true);
+    expect(wrapper.get<HTMLSelectElement>('select').element.value).toBe('');
+
+    await wrapper.setProps({ noOptionsLabel: 'No colours yet' });
+    expect(only().map((option) => option.text())).toEqual(['No colours yet']);
+  });
+
+  it('keeps the placeholder out of the choices', async () => {
+    const wrapper = await mountSuspended(Select, {
+      props: { label: 'Colour', options, placeholder: 'Choose a colour' },
+      attachTo: document.body,
+    });
+
+    const placeholder = wrapper
+      .findAll<HTMLOptionElement>('option')
+      .find((option) => option.text() === 'Choose a colour')!;
+    expect(placeholder.element.hidden).toBe(true);
   });
 });

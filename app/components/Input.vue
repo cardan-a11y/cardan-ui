@@ -37,6 +37,8 @@ const {
   type = 'text',
   size = 'md',
   showInvalid = false,
+  disabled,
+  readonly,
   id = useId(),
 } = defineProps<{
   label?: string;
@@ -152,7 +154,11 @@ function updateValidity() {
 
 const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   () => customError,
-  { invalid: () => !isValid.value, showInvalid: () => showInvalid },
+  {
+    invalid: () => !isValid.value,
+    showInvalid: () => showInvalid,
+    exempt: () => disabled || readonly,
+  },
 );
 
 onMounted(updateValidity);

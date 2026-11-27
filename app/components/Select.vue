@@ -19,6 +19,7 @@ const {
   tabindex = undefined,
   color = undefined,
   required,
+  disabled,
   variant = 'default',
   placeholderValue = '',
   size = 'md',
@@ -81,11 +82,17 @@ function updateValidity() {
 
 const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   () => customError,
-  { invalid: () => !isValid.value, showInvalid: () => showInvalid },
+  {
+    invalid: () => !isValid.value,
+    showInvalid: () => showInvalid,
+    exempt: () => disabled,
+  },
 );
 
 onMounted(updateValidity);
-watch([model, () => required, () => options], updateValidity, {
+// nextTick: v-model sets the select's value in its updated hook, after this
+// watcher, and the DOM flush is done by then
+watch([model, () => required, () => options], () => nextTick(updateValidity), {
   flush: 'post',
 });
 

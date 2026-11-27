@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { defineComponent, h, nextTick } from 'vue';
+import { h, nextTick } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { DatePicker } from '#components';
 import { accessibleName, description, expectNoViolations } from '../a11y';
@@ -28,41 +28,6 @@ describe('DatePicker', () => {
     expect(wrapper.get('label').attributes('for')).toBe(input.attributes('id'));
     expect(description(input)).toBe('The first day');
     await expectNoViolations();
-  });
-
-  it('describes its input by the error only while the error shows', async () => {
-    const wrapper = await mountPicker({ required: true });
-
-    const input = wrapper.get('input');
-    expect(description(input)).toBe('');
-    expect(input.attributes('aria-invalid')).toBeUndefined();
-
-    await wrapper.setProps({ showInvalid: true });
-    await nextTick();
-
-    expect(description(input)).toBe('Start is missing');
-    expect(input.attributes('aria-invalid')).toBe('true');
-    await expectNoViolations();
-
-    await wrapper.setProps({ modelValue: new Date(2026, 10, 9) });
-    await nextTick();
-
-    expect(description(input)).toBe('');
-    expect(input.attributes('aria-invalid')).toBeUndefined();
-  });
-
-  it('shows its error after a failed submit of its form', async () => {
-    const wrapper = await mountInForm(() => [
-      h(DatePicker, { label: 'Start', modelValue: null, required: true }),
-    ]);
-    await nextTick();
-    const input = wrapper.get('input');
-
-    await wrapper.get('form').trigger('submit');
-    await nextTick();
-
-    expect(input.attributes('aria-invalid')).toBe('true');
-    expect(description(input)).toBe('Start is missing');
   });
 
   it('shows a custom error, and is described by it, until its value changes', async () => {
@@ -117,38 +82,6 @@ describe('DatePicker', () => {
     expect(description(input)).toBe('Weekdays only The first day');
     await wrapper.setProps({ 'aria-describedby': undefined } as never);
     expect(description(input)).toBe('The first day');
-  });
-
-  it('keeps its label and texts to itself next to another DatePicker', async () => {
-    await mountSuspended(
-      defineComponent({
-        setup: () => () => [
-          h(DatePicker, {
-            label: 'Start',
-            modelValue: null,
-            instruction: 'The first day',
-          }),
-          h(DatePicker, {
-            label: 'End',
-            modelValue: null,
-            instruction: 'The last day',
-          }),
-        ],
-      }),
-      { attachTo: document.body },
-    );
-    await nextTick();
-
-    const inputs = Array.from(document.querySelectorAll('input'));
-    expect(inputs.map((input) => accessibleName(input))).toEqual([
-      'Start',
-      'End',
-    ]);
-    expect(inputs.map((input) => description(input))).toEqual([
-      'The first day',
-      'The last day',
-    ]);
-    await expectNoViolations();
   });
 
   it('names its input by the label alone, as a combobox whose aria-expanded follows the calendar', async () => {

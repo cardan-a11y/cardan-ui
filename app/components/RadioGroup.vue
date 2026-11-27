@@ -88,6 +88,7 @@ const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   >
     <fieldset
       v-if="options?.length"
+      :aria-labelledby="tooltip ? `legend-${id}` : undefined"
       :aria-describedby="errorShown ? `error-${id}` : undefined"
       @change="clearCustomError"
     >
@@ -106,6 +107,11 @@ const { customErrorActive, clearCustomError, errorShown } = useCustomError(
         <span v-else>{{ label }}</span>
 
         <RequiredChip v-if="required" />
+
+        <!-- The group's name without the tooltip button's "(More info)" -->
+        <span v-if="tooltip" :id="`legend-${id}`" hidden>
+          {{ label }}{{ required ? ` ${$t('form.required')}` : '' }}
+        </span>
       </legend>
 
       <ul role="list" :class="['radio-list', inline && 'inline']">

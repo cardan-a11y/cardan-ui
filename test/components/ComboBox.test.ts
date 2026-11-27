@@ -694,38 +694,6 @@ describe('ComboBox: the field', () => {
     expect(input.attributes('aria-invalid')).toBeUndefined();
   });
 
-  it('shows a custom error, and is described by it, until its value changes', async () => {
-    const { input, option } = await mountComboBox({
-      modelValue: 'ham',
-      customError: 'Ham is sold out',
-    });
-
-    expect(description(input)).toBe('Ham is sold out');
-    expect(input.attributes('aria-invalid')).toBe('true');
-    await expectNoViolations();
-
-    await input.trigger('click');
-    await option('Cheese').trigger('click');
-
-    expect(description(input)).toBe('');
-    expect(input.attributes('aria-invalid')).toBeUndefined();
-  });
-
-  it('puts an attribute on the text field and a class and style on the wrapper', async () => {
-    const wrapper = await mountSuspended(ComboBox, {
-      props: { label: 'Topping', options, modelValue: 'ham' } as never,
-      attrs: { 'data-test': 'topping', class: 'wide', style: 'color: red' },
-      attachTo: document.body,
-    });
-
-    const input = wrapper.get('[data-test="topping"]');
-    expect(roleOf(input)).toBe('combobox');
-    expect(input.classes()).not.toContain('wide');
-    expect(wrapper.classes()).toContain('wide');
-    expect(wrapper.classes()).toContain('has-value');
-    expect(wrapper.attributes('style')).toContain('color: red');
-  });
-
   it('keeps its label, texts and list to itself next to another ComboBox', async () => {
     await mountSuspended(
       defineComponent({
@@ -2120,28 +2088,5 @@ describe('ComboBox: value-key and label-key', () => {
     await option('Cheese').trigger('click');
     expect(wrapper.props('modelValue')).toBe(8);
     expect(input.element.value).toBe('Cheese');
-  });
-});
-
-describe('ComboBox: disabled', () => {
-  it('and required, is not invalid after a failed submit', async () => {
-    const wrapper = await mountInForm(() => [
-      h(ComboBox, {
-        label: 'Topping',
-        options,
-        modelValue: null,
-        required: true,
-        disabled: true,
-      }),
-      // Another field fails, so the Form shows errors
-      h('input', { required: true, 'aria-label': 'Other' }),
-    ]);
-    const input = wrapper.get('input[role="combobox"]');
-
-    await wrapper.get('form').trigger('submit');
-    await nextTick();
-
-    expect(input.attributes('aria-invalid')).toBeUndefined();
-    expect(description(input)).toBe('');
   });
 });

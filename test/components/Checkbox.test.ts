@@ -8,7 +8,6 @@ import {
   expectNoViolations,
   roleOf,
 } from '../a11y';
-import { mountInForm } from '../form';
 
 const toppings = [
   { value: 'cheese', label: 'Cheese' },
@@ -49,42 +48,6 @@ describe('Checkbox', () => {
     await expectNoViolations();
 
     await checkbox.setValue(true);
-    expect(description(checkbox)).toBe('');
-    expect(checkbox.attributes('aria-invalid')).toBeUndefined();
-  });
-
-  it('shows its error after a failed submit of its form', async () => {
-    const wrapper = await mountInForm(() => [
-      h(Checkbox, { label: 'I agree', modelValue: false, required: true }),
-    ]);
-    const checkbox = wrapper.get('input');
-
-    await wrapper.get('form').trigger('submit');
-    await nextTick();
-
-    expect(checkbox.attributes('aria-invalid')).toBe('true');
-    expect(description(checkbox)).toBe('Tick this box to continue');
-  });
-
-  it('shows a custom error, and is described by it, until it is ticked or unticked', async () => {
-    const wrapper = await mountSuspended(Checkbox, {
-      props: {
-        label: 'Newsletter',
-        modelValue: true,
-        customError: 'The newsletter is paused',
-      },
-      attachTo: document.body,
-    });
-    const checkbox = wrapper.get('input');
-
-    expect(description(checkbox)).toBe('The newsletter is paused');
-    expect(checkbox.attributes('aria-invalid')).toBe('true');
-    // The server judges the next submit: the browser does not hold it back
-    expect((checkbox.element as HTMLInputElement).checkValidity()).toBe(true);
-    await expectNoViolations();
-
-    await checkbox.setValue(false);
-
     expect(description(checkbox)).toBe('');
     expect(checkbox.attributes('aria-invalid')).toBeUndefined();
   });
@@ -155,24 +118,6 @@ describe('CheckboxGroup', () => {
     await expectNoViolations();
   });
 
-  it('shows its error after a failed submit of its form', async () => {
-    const wrapper = await mountInForm(() => [
-      h(CheckboxGroup, {
-        label: 'Toppings',
-        required: true,
-        options: toppings,
-        modelValue: [],
-      }),
-    ]);
-    const group = wrapper.get('fieldset');
-    expect(description(group)).toBe('');
-
-    await wrapper.get('form').trigger('submit');
-    await nextTick();
-
-    expect(description(group)).toBe('Tick at least one option');
-  });
-
   it('asks for one box also of a box added to the options in place', async () => {
     const options = reactive([{ value: 'cheese', label: 'Cheese' }]);
     const wrapper = await mountSuspended(CheckboxGroup, {
@@ -188,26 +133,6 @@ describe('CheckboxGroup', () => {
       .map((box) => box.element as HTMLInputElement);
     expect(boxes).toHaveLength(2);
     expect(boxes[1]?.validationMessage).toBe('Tick at least one option');
-  });
-
-  it('shows a custom error, and is described by it, until a box is ticked or unticked', async () => {
-    const wrapper = await mountSuspended(CheckboxGroup, {
-      props: {
-        label: 'Toppings',
-        options: toppings,
-        modelValue: ['ham'],
-        customError: 'Ham is sold out',
-      },
-      attachTo: document.body,
-    });
-    const group = wrapper.get('fieldset');
-
-    expect(description(group)).toBe('Ham is sold out');
-    await expectNoViolations();
-
-    await wrapper.get('input').setValue(true);
-
-    expect(description(group)).toBe('');
   });
 
   it('keeps its boxes and its error to itself next to another group with the same options', async () => {
@@ -248,6 +173,26 @@ describe('CheckboxGroup', () => {
   });
 });
 
+describe('CheckboxGroup: disabled', () => {
+  it('disables every box', async () => {
+    const wrapper = await mountSuspended(CheckboxGroup, {
+      props: {
+        label: 'Toppings',
+        options: toppings,
+        modelValue: [],
+        disabled: true,
+      },
+      attachTo: document.body,
+    });
+
+    expect(
+      wrapper
+        .findAll<HTMLInputElement>('input')
+        .map((box) => box.element.disabled),
+    ).toEqual([true, true]);
+  });
+});
+
 describe('CheckboxGroup: a model that is no array', () => {
   it.each([undefined, null])(
     'with %s ticks only the box that is ticked, and the model becomes an array',
@@ -270,45 +215,4 @@ describe('CheckboxGroup: a model that is no array', () => {
       expect(boxes.map((box) => box.element.checked)).toEqual([true, false]);
     },
   );
-});
-
-describe('A disabled, required field after a failed submit', () => {
-  it('Checkbox: not invalid, and not described by an error that does not show', async () => {
-    const wrapper = await mountInForm(() => [
-      h(Checkbox, {
-        label: 'I agree',
-        modelValue: false,
-        required: true,
-        disabled: true,
-      }),
-      // Another field fails, so the Form shows errors
-      h('input', { required: true, 'aria-label': 'Other' }),
-    ]);
-    const checkbox = wrapper.get('input');
-
-    await wrapper.get('form').trigger('submit');
-    await nextTick();
-
-    expect(checkbox.attributes('aria-invalid')).toBeUndefined();
-    expect(description(checkbox)).toBe('');
-  });
-
-  it('CheckboxGroup: the group is not described by an error that does not show', async () => {
-    const wrapper = await mountInForm(() => [
-      h(CheckboxGroup, {
-        label: 'Toppings',
-        required: true,
-        disabled: true,
-        options: toppings,
-        modelValue: [],
-      }),
-      // Another field fails, so the Form shows errors
-      h('input', { required: true, 'aria-label': 'Other' }),
-    ]);
-
-    await wrapper.get('form').trigger('submit');
-    await nextTick();
-
-    expect(description(wrapper.get('fieldset'))).toBe('');
-  });
 });

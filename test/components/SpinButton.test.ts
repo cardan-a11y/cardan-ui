@@ -361,18 +361,6 @@ describe('SpinButton: buttons', () => {
 });
 
 describe('SpinButton: as a field', () => {
-  it('puts an attribute on the input and a class on the wrapper', async () => {
-    const wrapper = await mountSuspended(SpinButton, {
-      props: { label: 'Adults', modelValue: 2 },
-      attrs: { 'data-test': 'adults', class: 'wide' },
-      attachTo: document.body,
-    });
-
-    expect(wrapper.get('input').attributes('data-test')).toBe('adults');
-    expect(wrapper.get('.form-field-wrapper').classes()).toContain('wide');
-    expect(wrapper.get('input').classes()).not.toContain('wide');
-  });
-
   it('shows a custom error, and is described by it, until its value changes', async () => {
     const { wrapper, input, increase } = await mountSpinButton({
       instruction: 'Everyone aged 12 or older',

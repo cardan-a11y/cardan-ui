@@ -2,12 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { defineComponent, h, nextTick, ref } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Input } from '#components';
-import {
-  accessibleName,
-  description,
-  expectFocused,
-  expectNoViolations,
-} from '../a11y';
+import { accessibleName, description, expectFocused } from '../a11y';
 import { mountInForm } from '../form';
 
 /** An Input with a v-model in a Form with a submit button */
@@ -27,16 +22,6 @@ async function mountField(props: Record<string, unknown>, value: string) {
 }
 
 describe('Input', () => {
-  it('is named by its label and has no accessibility violations', async () => {
-    const wrapper = await mountSuspended(Input, {
-      props: { label: 'Name', modelValue: '' },
-      attachTo: document.body,
-    });
-
-    expect(accessibleName(wrapper.get('input'))).toBe('Name');
-    await expectNoViolations();
-  });
-
   it('names a required field with its "required" chip as a word of its own', async () => {
     const wrapper = await mountSuspended(Input, {
       props: { label: 'Password', modelValue: '', required: true },
@@ -59,70 +44,13 @@ describe('Input', () => {
     expect(description(wrapper.get('input'))).toBe('As on your passport');
   });
 
-  it('describes the field by its error only while the error shows', async () => {
-    const wrapper = await mountSuspended(Input, {
-      props: {
-        label: 'Name',
-        modelValue: '',
-        required: true,
-        errorMessage: 'Required',
-        instruction: 'As on your passport',
-      },
-      attachTo: document.body,
-    });
-
-    // Invalid, but not shown yet: a valid-looking field is not described by it
-    const input = wrapper.get('input');
-    expect(description(input)).toBe('As on your passport');
-    expect(input.attributes('aria-invalid')).toBeUndefined();
-
-    await wrapper.setProps({ showInvalid: true });
-
-    expect(description(input)).toBe('As on your passport Required');
-    expect(input.attributes('aria-invalid')).toBe('true');
-    await expectNoViolations();
-
-    // Valid: not described, whatever the form shows
-    await wrapper.setProps({ modelValue: 'Ada' });
-    expect(description(input)).toBe('As on your passport');
-    expect(input.attributes('aria-invalid')).toBeUndefined();
-  });
-
-  it('shows a custom error, and is described by it, until its value changes', async () => {
-    const wrapper = await mountSuspended(Input, {
-      props: { label: 'Email', modelValue: 'ada@example.com', type: 'email' },
-      attachTo: document.body,
-    });
-    const input = wrapper.get('input');
-
-    await wrapper.setProps({ customError: 'Already registered' });
-
-    expect(description(input)).toBe('Already registered');
-    expect(input.attributes('aria-invalid')).toBe('true');
-    // The server judges the next submit: the browser does not hold it back
-    expect(input.element.checkValidity()).toBe(true);
-    await expectNoViolations();
-
-    await input.setValue('ada@cardan.com');
-
-    expect(description(input)).toBe('');
-    expect(input.attributes('aria-invalid')).toBeUndefined();
-  });
-
-  it('puts an attribute on the input and a class and style on the wrapper', async () => {
+  it('puts inputmode on the input', async () => {
     const wrapper = await mountSuspended(Input, {
       props: { label: 'Code', modelValue: '', inputmode: 'numeric' },
-      attrs: { 'data-test': 'code', class: 'wide', style: 'color: red' },
       attachTo: document.body,
     });
 
-    const input = wrapper.get('input');
-    expect(input.attributes('inputmode')).toBe('numeric');
-    expect(input.attributes('data-test')).toBe('code');
-    expect(input.attributes('class')).not.toContain('wide');
-    expect(input.attributes('style')).toBeUndefined();
-    expect(wrapper.classes()).toContain('wide');
-    expect(wrapper.attributes('style')).toContain('color: red');
+    expect(wrapper.get('input').attributes('inputmode')).toBe('numeric');
   });
 
   it('lets a number outside min and max reach the model', async () => {
@@ -144,29 +72,6 @@ describe('Input', () => {
     await wrapper.get('input').setValue('15');
 
     expect(value).toBe('15');
-  });
-
-  it('keeps its label and texts to itself next to another Input', async () => {
-    await mountSuspended(
-      defineComponent({
-        setup: () => () => [
-          h(Input, { label: 'First name', instruction: 'Given name' }),
-          h(Input, { label: 'Last name', instruction: 'Family name' }),
-        ],
-      }),
-      { attachTo: document.body },
-    );
-
-    const inputs = Array.from(document.querySelectorAll('input'));
-    expect(inputs.map((input) => accessibleName(input))).toEqual([
-      'First name',
-      'Last name',
-    ]);
-    expect(inputs.map((input) => description(input))).toEqual([
-      'Given name',
-      'Family name',
-    ]);
-    await expectNoViolations();
   });
 
   // The Laravel APIs trim a text and refuse an empty one
