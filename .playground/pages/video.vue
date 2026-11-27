@@ -18,9 +18,13 @@ const vimeoPrivate = ref('https://vimeo.com/706156113/91b6e7682f');
     <section class="demo-section" aria-labelledby="video-player">
       <h2 id="video-player">VideoPlayer</h2>
       <p class="demo-hint">
-        <code>url</code> is the link to the video; <code>parseVideoUrl()</code>
-        in <code>app/utils/video.ts</code> decides which links it plays, for
-        MarkdownPreview too. The project installs <code>@nuxt/image</code>
+        <code>url</code> is the link to the video;
+        <code>parseVideoUrl()</code> in <code>app/utils/video.ts</code> decides
+        which links it plays, for MarkdownPreview too; any other web address
+        becomes a plain link. The title comes from the layer's server route
+        <code>/_cardan/video</code>, so the browser asks YouTube or Vimeo
+        nothing before the play button is pressed; a <code>title</code> prop
+        skips that request. The project installs <code>@nuxt/image</code>
         for the thumbnail.
       </p>
 

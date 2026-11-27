@@ -88,15 +88,16 @@ describe('MarkdownPreview', () => {
   });
 
   it('renders a bare video link as a player, or as a link with videos-as-links', async () => {
-    // VideoPlayer asks YouTube's oEmbed for the title: answered here, not
-    // over the network. The test environment's fetch serves a registered
-    // endpoint; a stubbed global `$fetch` does not reach the component.
+    // VideoPlayer asks the layer's own route for the title; the test
+    // environment's fetch serves a registered endpoint
     const oembed = vi.fn(() => ({
       title: 'Never Gonna Give You Up',
       width: 480,
       height: 270,
     }));
-    onTestFinished(registerEndpoint('https://youtube.com/oembed', oembed));
+    onTestFinished(
+      registerEndpoint('/_cardan/video/youtube/dQw4w9WgXcQ', oembed),
+    );
 
     const content =
       'Watch this:\n\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ';
@@ -127,13 +128,15 @@ describe('MarkdownPreview', () => {
       dQw4w9WgXcQ: 'Never Gonna Give You Up',
       '9bZkp7q19f0': 'Gangnam Style',
     };
-    onTestFinished(
-      registerEndpoint('https://youtube.com/oembed', (event) => {
-        const url = new URL(event.node.req.url ?? '', 'https://youtube.com');
-        const id = new URL(url.searchParams.get('url')!).searchParams.get('v')!;
-        return { title: titles[id], width: 480, height: 270 };
-      }),
-    );
+    for (const [id, title] of Object.entries(titles)) {
+      onTestFinished(
+        registerEndpoint(`/_cardan/video/youtube/${id}`, () => ({
+          title,
+          width: 480,
+          height: 270,
+        })),
+      );
+    }
     const wrapper = await mountSuspended(MarkdownPreview, {
       props: { content: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
       attachTo: document.body,
@@ -212,7 +215,7 @@ describe('MarkdownPreview', () => {
 
   it('keeps hostile input inert on its default path, between videos too', async () => {
     onTestFinished(
-      registerEndpoint('https://youtube.com/oembed', () => ({
+      registerEndpoint('/_cardan/video/youtube/dQw4w9WgXcQ', () => ({
         title: 'Never Gonna Give You Up',
         width: 480,
         height: 270,

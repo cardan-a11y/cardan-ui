@@ -24,5 +24,8 @@ await serve({
     NUXT_PUBLIC_SANCTUM_BASE_URL: origin,
     // CookiesDialog registers Tag Manager; the tests answer its request
     NUXT_PUBLIC_GTM_ID: 'GTM-TEST',
+    // VideoPlayer's oEmbed asks this server's fake providers
+    NUXT_CARDAN_UI_OEMBED_YOUTUBE: `${origin}/_fake-oembed/youtube`,
+    NUXT_CARDAN_UI_OEMBED_VIMEO: `${origin}/_fake-oembed/vimeo`,
   }),
 });

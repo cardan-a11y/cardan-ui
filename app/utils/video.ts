@@ -6,6 +6,8 @@ export type VideoSource = {
   hash?: string;
 };
 
+const VIMEO_HASH = /^[a-zA-Z0-9]+$/;
+
 /** The video in a YouTube or Vimeo URL, or `undefined` for any other URL. */
 export function parseVideoUrl(
   url: string | undefined,
@@ -50,14 +52,11 @@ export function parseVideoUrl(
       return undefined;
     }
 
-    return {
-      provider: 'vimeo',
-      id,
-      hash:
-        next && /^[a-zA-Z0-9]+$/.test(next)
-          ? next
-          : (parsed.searchParams.get('h') ?? undefined),
-    };
+    const hash = [next, parsed.searchParams.get('h')].find(
+      (value) => value && VIMEO_HASH.test(value),
+    );
+
+    return { provider: 'vimeo', id, hash: hash ?? undefined };
   }
 
   return undefined;

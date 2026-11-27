@@ -1,40 +1,47 @@
 <script setup lang="ts">
-import { parseVideoUrl, type VideoSource } from '../utils/video';
+/**
+ * A thumbnail and a play button; the provider's player only after a click.
+ * Title and size come from the layer's `/_cardan/video` route, never from the provider.
+ */
+import { parseVideoUrl } from '../utils/video';
 
 const props = defineProps<{
   url: string;
   caption?: string;
   loading?: 'lazy' | 'eager';
+  /** The video's title, which skips the request for it. */
+  title?: string;
 }>();
 
 const { t } = useI18n();
 
 const started = ref(false);
 
-// A URL that is no video still renders the figure, with a dummy id
-const video = computed<VideoSource>(
-  () => parseVideoUrl(props.url) ?? { provider: 'youtube', id: 'e' },
-);
+const video = computed(() => parseVideoUrl(props.url));
 
-const metadataUrl = computed(() => {
+// Vue does not sanitise `href`: any other URL renders nothing
+const isWebUrl = computed(() => /^https?:\/\//i.test(props.url ?? ''));
+
+const metadataPath = computed(() => {
+  if (!video.value) return undefined;
   const { provider, id, hash } = video.value;
-
-  if (provider === 'vimeo') {
-    const pageUrl = hash
-      ? `https://vimeo.com/${id}/${hash}`
-      : `https://vimeo.com/${id}`;
-    return `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(pageUrl)}&width=960&height=540`;
-  }
-  return `https://youtube.com/oembed?url=https://youtube.com/watch?v=${id}&format=json`;
+  return `/_cardan/video/${provider}/${id}${hash ? `/${hash}` : ''}`;
 });
 
-const { data: videoData } = await useAsyncData<VideoMetaData>(
-  () => `video:${props.url ?? ''}`,
-  () => $fetch<VideoMetaData>(metadataUrl.value),
-  {
-    lazy: true,
+const { data: videoData } = await useAsyncData<VideoMetaData | null>(
+  () => `video:${metadataPath.value ?? ''}:${props.title ?? ''}`,
+  async () => {
+    if (!metadataPath.value || props.title) return null;
+    // The route caps the provider's answer at 3 s; no retry doubles a timeout
+    return $fetch<VideoMetaData>(metadataPath.value, {
+      timeout: 3500,
+      retry: false,
+    }).catch(() => null);
   },
+  { lazy: true },
 );
+
+const videoTitle = computed(() => props.title || videoData.value?.title);
 
 const ratio = computed(() => {
   if (videoData.value?.width && videoData.value?.height) {
@@ -50,6 +57,7 @@ const ratio = computed(() => {
 });
 
 const embedUrl = computed(() => {
+  if (!video.value) return undefined;
   const { provider, id, hash } = video.value;
 
   if (provider === 'vimeo') {
@@ -63,6 +71,7 @@ const thumbFailures = ref(0);
 
 // YouTube's sharpest thumbnail is missing for some videos; hqdefault.jpg never is
 const thumbUrl = computed(() => {
+  if (!video.value) return undefined;
   const { provider, id } = video.value;
   const fromMetadata = videoData.value?.thumbnail_url;
 
@@ -89,8 +98,8 @@ watch(
 );
 
 const iframeTitle = computed(() =>
-  videoData.value?.title
-    ? `Video: ${videoData.value.title}`
+  videoTitle.value
+    ? t('video.title', { title: videoTitle.value })
     : t('video.heading'),
 );
 
@@ -104,16 +113,25 @@ async function playVideo() {
 </script>
 
 <template>
-  <figure class="video-player" :style="`--video-player-aspect-ratio: ${ratio}`">
+  <figure
+    v-if="video"
+    class="video-player"
+    :style="`--video-player-aspect-ratio: ${ratio}`"
+  >
     <NuxtImg
-      v-if="!started"
+      v-if="!started && thumbUrl"
       :src="thumbUrl"
-      :alt="videoData?.title || ''"
+      :alt="videoTitle || ''"
       :loading="loading"
       :preload="loading === 'eager' ? { fetchPriority: 'high' } : undefined"
       format="webp"
       @click="playVideo"
       @error="nextThumb"
+    />
+    <div
+      v-else-if="!started"
+      class="video-player-placeholder"
+      @click="playVideo"
     />
 
     <button v-if="!started" type="button" @click="playVideo">
@@ -130,8 +148,7 @@ async function playVideo() {
       </svg>
 
       <span class="visuallyhidden">
-        {{ $t('video.play')
-        }}{{ videoData?.title ? `: ${videoData.title}` : '' }}
+        {{ $t('video.play') }}{{ videoTitle ? `: ${videoTitle}` : '' }}
       </span>
     </button>
 
@@ -147,6 +164,9 @@ async function playVideo() {
       />
     </div>
   </figure>
+  <a v-else-if="isWebUrl" :href="url" class="video-player-link">{{
+    caption || url
+  }}</a>
 </template>
 
 <style>
@@ -156,7 +176,8 @@ async function playVideo() {
   min-width: 240px;
   place-items: center;
 
-  img {
+  img,
+  .video-player-placeholder {
     cursor: pointer;
     background-color: black;
     aspect-ratio: var(--video-player-aspect-ratio);
@@ -211,5 +232,9 @@ async function playVideo() {
     width: 100%;
     height: 100%;
   }
+}
+
+.video-player-link {
+  overflow-wrap: anywhere;
 }
 </style>

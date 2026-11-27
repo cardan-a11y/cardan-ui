@@ -32,6 +32,13 @@ describe('parseVideoUrl', () => {
       '76979871',
       '8272103f6e',
     ],
+    // A `?h=` value is checked as the hash in the path
+    [
+      'https://player.vimeo.com/video/76979871?h=82%26x%3D1',
+      '76979871',
+      undefined,
+    ],
+    ['https://vimeo.com/76979871/not-a-hash?h=abc123', '76979871', 'abc123'],
   ])('plays %s as Vimeo video %s with hash %s', (url, id, hash) => {
     expect(parseVideoUrl(url)).toStrictEqual({ provider: 'vimeo', id, hash });
   });

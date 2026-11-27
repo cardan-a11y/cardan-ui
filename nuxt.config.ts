@@ -139,6 +139,11 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // VideoPlayer's oEmbed endpoints (NUXT_CARDAN_UI_OEMBED_YOUTUBE and _VIMEO): a test server fakes them
+    cardanUi: {
+      oembedYoutube: 'https://www.youtube.com/oembed',
+      oembedVimeo: 'https://vimeo.com/api/oembed.json',
+    },
     public: {
       // CookiesDialog's Google Tag Manager container: NUXT_PUBLIC_GTM_ID
       gtmId: '',

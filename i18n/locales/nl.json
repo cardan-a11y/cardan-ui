@@ -277,6 +277,7 @@
   },
   "video": {
     "heading": "Video",
-    "play": "Video afspelen"
+    "play": "Video afspelen",
+    "title": "Video: {title}"
   }
 }
