@@ -76,7 +76,9 @@ describe('the config functions', () => {
       (file) => `test/config/${file}`,
     ),
     'test/browser/api.ts',
+    'test/browser/console.ts',
     'test/browser/helpers.ts',
+    'test/browser/network.ts',
   ])('%s loads only node: modules and relative files', (file) => {
     const { all, loaded } = importsOf(readFileSync(join(root, file), 'utf8'));
 

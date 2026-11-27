@@ -85,9 +85,10 @@ export interface ApiOptions {
   /** The status of an unanswered request, 599 by default */
   unansweredStatus?: number;
   /**
-   * A request to another origin: `continue` (the default) lets it go to the
-   * network, `abort` aborts it and fails the test, unless `api.external()`
-   * answers it
+   * A request to another origin: `continue` (the default) leaves it to the
+   * next route, `abort` aborts it and fails the test, unless `api.external()`
+   * answers it. Under `withOtherOrigins()` (./network.ts), as in the layer's
+   * specs, the next route is that guard, which aborts it too
    */
   otherOrigins?: 'continue' | 'abort';
   /** Guards every test, also one that never asks for `api`; true by default */

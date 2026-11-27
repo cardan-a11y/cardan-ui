@@ -25,6 +25,23 @@ const KNOWN_VIOLATIONS: {
   },
 ];
 
+// Known defects: a page asks a third party unasked; fails once the request is gone
+const KNOWN_THIRD_PARTIES: { route: string; url: string; cause: string }[] = [
+  {
+    route: '/video',
+    // VideoPlayer would ask the same address; it goes through /_ipx instead
+    url: 'https://i.ytimg.com/vi_webp/PGvgdZuQu6w/hq720.webp',
+    cause:
+      "YouTube.vue: Nuxt Scripts' ScriptYouTubePlayer loads its placeholder from YouTube on mount",
+  },
+];
+
+// A 1×1 transparent PNG, for an image a third party would have sent
+const PIXEL = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+  'base64',
+);
+
 const modes = [
   { name: 'light', colorScheme: 'light', className: 'light-mode' },
   { name: 'dark', colorScheme: 'dark', className: 'dark-mode' },
@@ -35,8 +52,16 @@ for (const mode of modes) {
     test.use({ colorScheme: mode.colorScheme });
 
     for (const route of routes) {
-      // Console errors and hydration warnings fail it through ./test.ts
-      test(route, async ({ page }) => {
+      // Console errors, hydration warnings and other origins fail it through ./test.ts
+      test(route, async ({ page, otherOrigins }) => {
+        for (const known of KNOWN_THIRD_PARTIES.filter(
+          (k) => k.route === route,
+        ))
+          otherOrigins.answer(
+            (url) => url.href === known.url,
+            { body: PIXEL, contentType: 'image/png' },
+            `${known.url} (${known.cause})`,
+          );
         await gotoHydrated(page, route);
         await expect(page.locator('html')).toHaveClass(
           new RegExp(mode.className),
