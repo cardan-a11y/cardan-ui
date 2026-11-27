@@ -4,6 +4,7 @@ import { attrs } from '@mdit/plugin-attrs';
 import { mark } from '@mdit/plugin-mark';
 import {
   headingOffsetExtension,
+  imageHostsExtension,
   swatchExtension,
   italicExtension,
   tableScrollExtension,
@@ -32,6 +33,7 @@ function createRenderer(trusted: boolean) {
   md.use(tableScrollExtension);
   md.use(videoExtension);
   md.use(attrs, trusted ? {} : { allowed: SAFE_ATTRIBUTES });
+  if (!trusted) md.use(imageHostsExtension);
   md.use(mark);
 
   return md;
@@ -43,7 +45,10 @@ const renderers = {
 };
 
 export type MarkdownRenderOptions = {
-  /** Allow raw HTML and every `{…}` attribute: only for text the team wrote. */
+  /**
+   * Allow raw HTML, every `{…}` attribute and images from any host: only for
+   * text the team wrote.
+   */
   trusted?: boolean;
   /** Inline content only (emphasis, code, links), without `<p>` or blocks. */
   inline?: boolean;
@@ -58,6 +63,11 @@ export type MarkdownRenderOptions = {
    * browser's own by default; the server has none, so pass it there.
    */
   origin?: string;
+  /**
+   * First-party hosts an image may load from besides `origin`, as a host
+   * (`https`) or an origin; any other image becomes a link. Not with `trusted`.
+   */
+  imageHosts?: readonly string[];
 };
 
 /** A piece of the text as HTML, or a video to render with VideoPlayer. */
@@ -70,10 +80,11 @@ function select({
   tableLabel = 'Table',
   newWindowLabel = 'open in new window',
   origin,
+  imageHosts = [],
 }: MarkdownRenderOptions) {
   return {
     md: trusted ? renderers.trusted : renderers.safe,
-    env: { headingOffset, tableLabel, newWindowLabel, origin },
+    env: { headingOffset, tableLabel, newWindowLabel, origin, imageHosts },
   };
 }
 

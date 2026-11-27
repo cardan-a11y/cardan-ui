@@ -90,6 +90,13 @@ New: **ComboBox**, our own searchable single select (`/combobox` in the playgrou
 - **A list too long to load whole takes `server-search`**: the function is then `options(query, { signal, page })`, asked after a pause in typing, and may answer one page as `{ options, more }`. Such a field needs `v-model:selected` to show the label of its value.
 - **Browsers**: nothing new. ComboBox needs what Tooltip, Popover and UserMenu already need; the README now lists the supported browsers with their versions.
 
+### 2.6.3
+
+Changed: **MarkdownPreview's safe mode shows an image only from a first-party host**: the page's own origin, or a host the project lists in its `app.config.ts`. Any other image, which told its host who read the text and when, is now a link to it with its alt text; a `data:` image, which asks no host, still shows. `trusted` is unchanged, and so is MarkdownEditor apart from its preview, which follows the same list.
+
+- **List the hosts the project's markdown images come from**, first-party only: `defineAppConfig({ cardan: { markdownImageHosts: ['cdn.example.com'] } })`, a host (for `https`) or an origin. cardan-academy-nuxt lists the bucket the API's `AWS_PUBLIC_ASSETS_URL` points at (`cardan-lms-prod.fsn1.your-objectstorage.com`, already in its `image.domains`) and its API's origin (from `NUXT_PUBLIC_SANCTUM_BASE_URL`, which is `http:` locally: list the origin, not the bare host); every image in its production content is in that bucket, checked on 27 November 2026, so none becomes a link. cardan-auditor-nuxt lists nothing: its editor has no image button and its texts link to no upload host, but a hand-typed image from another host in a finding or comment is now a link (its stored texts were not checked). cardan-cms-nuxt and cardan-support-nuxt do not use MarkdownPreview and need to do nothing.
+- **A link to another origin gets `rel="noopener"`**, and a protocol-relative link (`//example.com`) now opens in a new window as one too. Nothing to do.
+
 ### 2.6.2
 
 New: **ComboBox `multiple`**, which selects several options, and ComboBox's **`create-option`** and **`disabled-key`** (`/combobox` in the playground). With them every MultiSelect field has its ComboBox; MultiSelect is removed in the next minor, so move each field over and then remove `@vueform/multiselect` from the project's `package.json`. cardan-auditor-nuxt, the only project that still uses MultiSelect, does this on `chore/cardan-ui-2.6.2`, which merges only after this release is on `main`.

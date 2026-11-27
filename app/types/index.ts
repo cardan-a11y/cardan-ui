@@ -262,3 +262,21 @@ declare global {
     thumbnail_url?: string;
   };
 }
+
+/** Cardan UI's settings in a project's `app.config.ts` */
+export type CardanConfig = {
+  /**
+   * First-party hosts (`cdn.example.com`, `https`) or origins a markdown
+   * image in MarkdownPreview's safe mode may load from, besides the page's
+   * own origin; any other image becomes a link. Never a third party's host:
+   * it would learn who reads the text.
+   */
+  markdownImageHosts: string[];
+};
+
+declare module 'nuxt/schema' {
+  interface AppConfigInput {
+    /** Cardan UI's settings, see `CardanConfig`. */
+    cardan?: Partial<CardanConfig>;
+  }
+}

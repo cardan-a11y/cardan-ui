@@ -132,9 +132,10 @@ happens.
   (buttons like Close, Save or Cancel, generic labels and errors) goes into
   the layer's locale files, as the auth strings did, so projects don't each
   keep a copy.
-- MarkdownPreview stays safe by default: raw HTML is shown as text and
-  `{…}` sets only `lang`, `dir` and `class`. `trusted` is for text the team
-  wrote.
+- MarkdownPreview stays safe by default: raw HTML is shown as text,
+  `{…}` sets only `lang`, `dir` and `class`, and an image loads only from
+  the page's origin or a first-party host in `cardan.markdownImageHosts`,
+  else it is a link. `trusted` is for text the team wrote.
 - Props are typed; shared types live in `app/types/index.ts` as
   `declare global`.
 - No new external dependencies unless clearly necessary, and nothing loaded

@@ -1,6 +1,7 @@
 import { describe, it, expect, onTestFinished, vi } from 'vitest';
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime';
 import { MarkdownPreview } from '#components';
+import { useAppConfig } from '#imports';
 import { renderMarkdown } from '../../app/components/Markdown/renderer';
 import { accessibleName, expectNoViolations } from '../a11y';
 
@@ -207,5 +208,115 @@ describe('MarkdownPreview', () => {
     await vi.waitFor(() => expect(useHighlight).toHaveBeenCalled());
     expect(code.find('span').exists()).toBe(false);
     await expectNoViolations();
+  });
+
+  it('keeps hostile input inert on its default path, between videos too', async () => {
+    onTestFinished(
+      registerEndpoint('https://youtube.com/oembed', () => ({
+        title: 'Never Gonna Give You Up',
+        width: 480,
+        height: 270,
+      })),
+    );
+    const hostile = [
+      '<script>alert(1)</script>',
+      '<img src="x" onerror="alert(1)">',
+      '<style>body { display: none }</style>',
+      'A [link](javascript:alert(1)) and *text*{onclick="alert(1)" style="display:none"}.',
+      '![Pixel](https://evil.example/track.png)',
+    ].join('\n\n');
+
+    const wrapper = await mountSuspended(MarkdownPreview, {
+      props: {
+        content: `${hostile}\n\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ\n\n${hostile}`,
+      },
+      attachTo: document.body,
+    });
+
+    // Rendered in chunks around the player, not as one string
+    expect(wrapper.findAll('.markdown-chunk')).toHaveLength(2);
+    expect(
+      wrapper
+        .find('script, style, [onerror], [onclick], [style*="display"]')
+        .exists(),
+    ).toBe(false);
+    expect(wrapper.find('.markdown-chunk img').exists()).toBe(false);
+    expect(wrapper.find('a[href^="javascript"]').exists()).toBe(false);
+    for (const chunk of wrapper.findAll('.markdown-chunk')) {
+      expect(chunk.text()).toContain('<script>alert(1)</script>');
+      expect(
+        chunk.get('a[href="https://evil.example/track.png"]').text(),
+      ).toContain('Pixel');
+    }
+  });
+
+  it("shows an image from the page's origin and a host from the app config", async () => {
+    const { cardan } = useAppConfig();
+    const before = [...cardan.markdownImageHosts];
+    cardan.markdownImageHosts.push('cdn.cardan.academy');
+    onTestFinished(() => {
+      cardan.markdownImageHosts.splice(0, Infinity, ...before);
+    });
+
+    const wrapper = await mountSuspended(MarkdownPreview, {
+      props: {
+        content: [
+          '![Own](/media/own.png)',
+          '![Listed](https://cdn.cardan.academy/listed.png)',
+          '![Other](https://evil.example/other.png)',
+        ].join('\n\n'),
+      },
+      attachTo: document.body,
+    });
+
+    expect(wrapper.findAll('img').map((img) => img.attributes('alt'))).toEqual([
+      'Own',
+      'Listed',
+    ]);
+    expect(
+      wrapper.get('a[href="https://evil.example/other.png"]').text(),
+    ).toContain('Other');
+  });
+
+  it('shows an image from any host with trusted', async () => {
+    const wrapper = await mountSuspended(MarkdownPreview, {
+      props: {
+        content: '![Chart](https://example.com/chart.png)',
+        trusted: true,
+      },
+    });
+
+    expect(wrapper.get('img').attributes('src')).toBe(
+      'https://example.com/chart.png',
+    );
+  });
+
+  it('keeps markup in a highlighted code block as text', async () => {
+    const wrapper = await mountSuspended(MarkdownPreview, {
+      props: {
+        content:
+          '```html\n</code></pre><img src="x" onerror="alert(1)"><script>alert(1)</script>\n```',
+      },
+      attachTo: document.body,
+    });
+
+    const code = wrapper.get('pre code.hljs');
+    // highlight.js has coloured it: the markup is in its spans, as text
+    await vi.waitFor(() => expect(code.find('.hljs-tag').exists()).toBe(true));
+    expect(wrapper.find('img, script, [onerror]').exists()).toBe(false);
+    expect(code.text()).toContain('<img src="x" onerror="alert(1)">');
+    expect(wrapper.findAll('pre')).toHaveLength(1);
+  });
+
+  it('keeps a hostile language name in data-lang only', async () => {
+    const lang = '"><img/src=x/onerror=alert(1)>';
+    const wrapper = await mountSuspended(MarkdownPreview, {
+      props: { content: `\`\`\`${lang}\nplain\n\`\`\`` },
+      attachTo: document.body,
+    });
+
+    expect(wrapper.find('img, [onerror]').exists()).toBe(false);
+    expect(wrapper.get('pre code.hljs').attributes('data-lang')).toBe(lang);
+    expect(wrapper.get('pre code').text()).toBe('plain');
   });
 });

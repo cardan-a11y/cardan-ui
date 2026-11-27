@@ -7,8 +7,10 @@ import {
 
 /**
  * The safe mode of MarkdownPreview's renderer, the default for any text a
- * user or an API wrote: nothing in the text runs a script, loads a resource,
- * styles the page or links to a script.
+ * user or an API wrote: nothing in the text runs a script, styles the page or
+ * links to a script, and it loads a resource only from a first-party host
+ * (the site's origin or a listed image host), so no third party learns who
+ * reads it.
  */
 
 /** The rendered HTML as a tree, for asserting what elements it makes. */
@@ -158,6 +160,178 @@ describe('renderMarkdown, safe by default', () => {
     expect(
       page.querySelector('[role="region"]')?.getAttribute('aria-label'),
     ).toBe('"><img src=x onerror=alert(1)>');
+  });
+});
+
+describe('renderMarkdown, images in safe mode', () => {
+  const site = 'https://cardan.academy';
+  const bucket = 'cdn.cardan.academy';
+
+  it.each([
+    ['an absolute address', '![Chart](https://evil.example/track.png)'],
+    ['a protocol-relative address', '![Chart](//evil.example/track.png)'],
+    [
+      'a reference',
+      '![Chart][pixel]\n\n[pixel]: https://evil.example/track.png',
+    ],
+    ['an http address', '![Chart](http://cardan.academy/track.png)'],
+    [
+      'a host that ends like the site',
+      '![Chart](https://evilcardan.academy/x.png)',
+    ],
+  ])('makes a link to an image from %s on another origin', (_, content) => {
+    const page = render(content, { origin: site, imageHosts: [bucket] });
+    const link = page.querySelector('a')!;
+
+    expect(page.querySelector('img')).toBeNull();
+    expect(link.firstChild?.textContent).toBe('Chart');
+    expect(link.getAttribute('href')).toMatch(/track\.png$|x\.png$/);
+  });
+
+  it('opens that link in a new window when it leaves the site, without access to it', () => {
+    const link = render('![Chart](https://evil.example/track.png "Sales")', {
+      origin: site,
+      newWindowLabel: 'opens in a new window',
+    }).querySelector('a')!;
+
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toBe('noopener');
+    expect(link.getAttribute('title')).toBe('Sales');
+    expect(link.textContent).toBe('Chart (opens in a new window)');
+  });
+
+  it('names a link to an image without alt text by its address', () => {
+    const link = render('![](https://evil.example/track.png)', {
+      origin: site,
+    }).querySelector('a')!;
+
+    expect(link.firstChild?.textContent).toBe('https://evil.example/track.png');
+  });
+
+  it('keeps the alt text, and no link in a link, for an image inside a link', () => {
+    const page = render(
+      '[![Logo](https://evil.example/logo.png)](https://cardan.academy/about)',
+      { origin: site },
+    );
+
+    expect(page.querySelector('img')).toBeNull();
+    expect(page.querySelectorAll('a')).toHaveLength(1);
+    expect(page.querySelector('a')!.textContent).toBe('Logo');
+  });
+
+  it.each([
+    [
+      'an image in the alt text',
+      '![![i](https://evil.example/p.png)](https://evil.example/x.png)',
+      1,
+    ],
+    [
+      'an image in the alt text inside a link',
+      '[![![i](https://evil.example/p.png)](https://evil.example/x)](https://cardan.academy/y)',
+      1,
+    ],
+    [
+      'a link in the alt text',
+      '![*a* [l](https://cardan.academy/l)](https://evil.example/p.png)',
+      1,
+    ],
+  ])('keeps %s as plain text', (_, content, links) => {
+    const page = render(content, { origin: site });
+
+    expect(page.querySelector('img, a a, a em')).toBeNull();
+    expect(page.querySelectorAll('a')).toHaveLength(links);
+  });
+
+  it('keeps the new-window text on a link made of an image with a link in its alt text', () => {
+    const link = render(
+      '![*a* [l](https://cardan.academy/l)](https://evil.example/p.png)',
+      { origin: site, newWindowLabel: 'new window' },
+    ).querySelector('a')!;
+
+    expect(link.textContent).toBe('a l (new window)');
+  });
+
+  it.each([
+    ['a path', '![Chart](/media/chart.png)'],
+    ['a relative path', '![Chart](media/chart.png)'],
+    ['the site itself', '![Chart](https://cardan.academy/media/chart.png)'],
+    ['a listed host', '![Chart](https://cdn.cardan.academy/chart.png)'],
+    [
+      'a listed origin',
+      '![Chart](https://files.cardan.academy:8443/chart.png)',
+    ],
+  ])('shows an image from %s', (_, content) => {
+    const image = render(content, {
+      origin: site,
+      imageHosts: [bucket, 'https://files.cardan.academy:8443/any/path'],
+    }).querySelector('img')!;
+
+    expect(image.getAttribute('alt')).toBe('Chart');
+  });
+
+  it('lists a bare host for https only', () => {
+    const page = render('![Chart](http://cdn.cardan.academy/chart.png)', {
+      origin: site,
+      imageHosts: [bucket],
+    });
+
+    expect(page.querySelector('img')).toBeNull();
+  });
+
+  it('keeps the address of an image that {…} tries to change', () => {
+    const page = render(
+      '![Chart](/media/chart.png){src="https://evil.example/track.png"}',
+      { origin: site },
+    );
+
+    expect(page.querySelector('img')?.getAttribute('src')).toBe(
+      '/media/chart.png',
+    );
+  });
+
+  it('shows an image from any host in a trusted text', () => {
+    const page = render('![Chart](https://example.com/chart.png)', {
+      origin: site,
+      trusted: true,
+    });
+
+    expect(page.querySelector('img')?.getAttribute('src')).toBe(
+      'https://example.com/chart.png',
+    );
+  });
+
+  it('makes a link of the image in an inline text and in segments too', () => {
+    const content = '![Chart](https://evil.example/track.png)';
+
+    expect(
+      render(content, { origin: site, inline: true }).innerHTML,
+    ).not.toContain('<img');
+    expect(
+      renderMarkdownSegments(content, { origin: site })
+        .map((segment) => (segment.type === 'html' ? segment.html : ''))
+        .join(''),
+    ).not.toContain('<img');
+  });
+});
+
+describe('renderMarkdown, links', () => {
+  it('opens a protocol-relative link to another site in a new window, without access to this one', () => {
+    const link = render('[guide](//evil.example/guide)', {
+      origin: 'https://cardan.academy',
+    }).querySelector('a')!;
+
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toBe('noopener');
+    expect(link.querySelector('.visuallyhidden')).not.toBeNull();
+  });
+
+  it('keeps a protocol-relative link to the site itself in the window', () => {
+    const link = render('[course](//cardan.academy/courses/1)', {
+      origin: 'https://cardan.academy',
+    }).querySelector('a')!;
+
+    expect(link.hasAttribute('target')).toBe(false);
+    expect(link.hasAttribute('rel')).toBe(false);
   });
 });
 

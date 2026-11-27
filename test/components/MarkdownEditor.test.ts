@@ -198,4 +198,39 @@ describe('MarkdownEditor', () => {
       'Markdown works',
     ]);
   });
+
+  it('shows raw HTML as text in its preview, and an image from another host as a link', async () => {
+    await mountSuspended(MarkdownEditor, {
+      props: {
+        label: 'Answer',
+        preview: true,
+        modelValue: [
+          'A <b onclick="alert(1)">bold</b> word <img src="x" onerror="alert(1)">',
+          '',
+          '![Pixel](https://evil.example/track.png)',
+          '',
+          `![Own](${window.location.origin}/media/own.png)`,
+        ].join('\n'),
+      },
+      attachTo: document.body,
+    });
+
+    const preview = await vi.waitFor(() => {
+      const found = document.querySelector('.md-editor-preview');
+      expect(found?.textContent).toContain('bold');
+      return found!;
+    });
+
+    expect(preview.querySelector('b, [onclick], [onerror]')).toBeNull();
+    expect(preview.textContent).toContain('<b onclick="alert(1)">bold</b>');
+    expect(
+      [...preview.querySelectorAll('img')].map((img) =>
+        img.getAttribute('alt'),
+      ),
+    ).toEqual(['Own']);
+    expect(
+      preview.querySelector('a[href="https://evil.example/track.png"]')
+        ?.textContent,
+    ).toContain('Pixel');
+  });
 });

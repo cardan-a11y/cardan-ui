@@ -13,6 +13,10 @@ const untrusted = [
   'A phrase in *English*{lang=en onclick=alert(1)} and a `#ff0000` swatch.',
   '',
   'Not a swatch: `rgb(0 0 0);background:url(https://example.com/x.png)`',
+  '',
+  'An image from this site: ![The Cardan symbol](/favicon.svg){.markdown-demo-image}',
+  '',
+  'An image from another host, which becomes a link: ![A tracking pixel](https://example.com/pixel.png)',
 ].join('\n');
 
 const trustedContent = [
@@ -114,10 +118,10 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
     <section class="demo-section" aria-labelledby="markdown-safety">
       <h2 id="markdown-safety">Safe by default</h2>
       <p class="demo-hint">
-        Without <code>trusted</code>, raw HTML shows as text and
+        Without <code>trusted</code>, raw HTML shows as text,
         <code>{…}</code> sets only <code>lang</code>, <code>dir</code> and
-        <code>class</code>. <code>trusted</code> allows both, only for text the
-        team wrote.
+        <code>class</code>, and an image loads only from a first-party host.
+        <code>trusted</code> allows all three, only for text the team wrote.
       </p>
 
       <Card>
@@ -136,6 +140,40 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
             />
           </section>
         </div>
+
+        <ul class="markdown-notes">
+          <li>
+            An image in a text a user or an API wrote loads only from the page's
+            own origin, or from a host the project lists in its
+            <code>app.config.ts</code>. Any other address would tell that host
+            who opened the text, and when: whoever wrote the text could follow
+            every reader with an invisible image.
+          </li>
+          <li>
+            Such an image becomes a link to its address, with the alt text as
+            the link's text (the address itself when the image has no alt text),
+            so nothing is lost: it loads only when the reader follows the link.
+            Inside a link, it is only its alt text. An image written as a
+            <code>data:</code> address (PNG, JPEG, GIF or WebP) still shows,
+            since it asks no host for anything.
+          </li>
+          <li>
+            A project lists its own hosts, such as the bucket its uploads are
+            in, as a host (<code>cdn.example.com</code>, which means
+            <code>https</code>) or an origin:
+            <code
+              >defineAppConfig({ cardan: { markdownImageHosts:
+              ['cdn.example.com'] } })</code
+            >. The list holds first-party hosts only: a third party's host on it
+            would learn who reads the text after all. MarkdownEditor's preview
+            follows the same list.
+          </li>
+          <li>
+            A link to another origin opens in a new window with
+            <code>rel="noopener"</code>, and so does a protocol-relative link
+            (<code>//example.com</code>).
+          </li>
+        </ul>
       </Card>
     </section>
 
@@ -145,8 +183,8 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
         A bare YouTube or Vimeo link in a paragraph of its own renders as a
         <NuxtLink to="/video">VideoPlayer</NuxtLink>, also without
         <code>trusted</code>. A link with its own text stays a link, and with
-        <code>videos-as-links</code> every link does, for a place a player
-        does not fit, such as a table cell.
+        <code>videos-as-links</code> every link does, for a place a player does
+        not fit, such as a table cell.
       </p>
 
       <Card>
@@ -195,8 +233,8 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
 
         <ul class="markdown-notes">
           <li>
-            The block is dark with plain text first; its tokens get their
-            colors a moment later.
+            The block is dark with plain text first; its tokens get their colors
+            a moment later.
           </li>
           <li>
             The table lists the most common fence names of each grammar.
@@ -204,8 +242,8 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
             <code>xhtml</code> and <code>zsh</code>.
           </li>
           <li>
-            A fence in another language, or without one, stays plain text in
-            the same dark block, with the name in <code>data-lang</code> on the
+            A fence in another language, or without one, stays plain text in the
+            same dark block, with the name in <code>data-lang</code> on the
             <code>&lt;code&gt;</code> element.
           </li>
           <li>
@@ -254,6 +292,11 @@ const fontSizeOptions: { value: FontSize; label: string }[] = [
 
   .section-topbar h3 {
     margin-block: 0;
+  }
+
+  .markdown-demo-image {
+    inline-size: 1.5rem;
+    vertical-align: middle;
   }
 
   .markdown-cases {

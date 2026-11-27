@@ -31,26 +31,31 @@ export type TargetBlankOptions = {
   label?: string | (() => string);
 };
 
-function isExternal(href: string, origin?: unknown) {
-  if (!/^https?:\/\//i.test(href)) return false;
-  const site =
-    typeof origin === 'string'
-      ? origin
-      : typeof window === 'undefined'
-        ? undefined
-        : window.location.origin;
+/** The site's origin: `env.origin`, else the browser's; none on a server without one */
+function siteOrigin(env: unknown) {
+  const origin = (env as { origin?: unknown } | undefined)?.origin;
+
+  if (typeof origin === 'string') return origin;
+
+  return typeof window === 'undefined' ? undefined : window.location.origin;
+}
+
+/** An `http(s)` address, protocol-relative too, on another origin than the site */
+function isExternal(href: string, site?: string) {
+  if (!/^(https?:)?\/\//i.test(href)) return false;
   if (!site) return true;
 
   try {
-    return new URL(href).origin !== site;
+    return new URL(href, site).origin !== site;
   } catch {
     return true;
   }
 }
 
 /**
- * A link to another site opens in a new window, with hidden text that says so
- * from `env.newWindowLabel`, else the `label` option.
+ * A link to another site opens in a new window, without access to this one,
+ * with hidden text that says so from `env.newWindowLabel`, else the `label`
+ * option.
  */
 export function targetBlankExtension(
   md: MarkdownIt,
@@ -83,9 +88,10 @@ export function targetBlankExtension(
     if (
       token &&
       typeof href === 'string' &&
-      isExternal(href, (env as { origin?: unknown } | undefined)?.origin)
+      isExternal(href, siteOrigin(env))
     ) {
       token.attrSet('target', '_blank');
+      token.attrSet('rel', 'noopener');
     }
 
     return defaultOpen(tokens, idx, options, env, self);
@@ -195,5 +201,96 @@ export function videoExtension(md: MarkdownIt) {
         token.meta = { ...token.meta, video: url };
       }
     });
+  });
+}
+
+export type ImageHostsOptions = {
+  /** Hosts besides the site's own, the `env.imageHosts` default; a function follows a config change */
+  hosts?: readonly string[] | (() => readonly string[]);
+};
+
+/** The origin of a listed host: a bare host is `https`, a URL gives its own */
+function hostOrigin(host: string) {
+  try {
+    return new URL(host.includes('://') ? host : `https://${host}`).origin;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Lets an image load only from the site's origin (`env.origin`, else the
+ * browser's), a host in `env.imageHosts`, else the `hosts` option, or a
+ * `data:` address: none of them tells a third party who reads the text. Any other
+ * image becomes a link to it with its alt text (its address when it has
+ * none), as plain text, which loads only when the reader asks; inside a link,
+ * its alt text.
+ */
+export function imageHostsExtension(
+  md: MarkdownIt,
+  { hosts = [] }: ImageHostsOptions = {},
+) {
+  md.core.ruler.push('image_hosts', (state) => {
+    const site = siteOrigin(state.env);
+    const fromEnv = (state.env as { imageHosts?: unknown } | undefined)
+      ?.imageHosts;
+    const listed = Array.isArray(fromEnv)
+      ? fromEnv
+      : typeof hosts === 'function'
+        ? hosts()
+        : hosts;
+    const allowed = new Set(
+      [site, ...listed.map((host) => hostOrigin(String(host)))].filter(Boolean),
+    );
+    // Without a site, a relative address resolves here: never allowed
+    const base = site ?? 'https://no-site.invalid';
+
+    const loads = (src: string) => {
+      // markdown-it lets only raster images through as data: no request
+      if (/^data:image\//i.test(src)) return true;
+
+      try {
+        return allowed.has(new URL(src, base).origin);
+      } catch {
+        return false;
+      }
+    };
+
+    for (const block of state.tokens) {
+      if (block.type !== 'inline' || !block.children) continue;
+
+      let inLink = 0;
+
+      block.children = block.children.flatMap((token) => {
+        if (token.type === 'link_open') inLink += 1;
+        if (token.type === 'link_close') inLink -= 1;
+
+        const attr = token.attrGet('src');
+        const src = attr === null ? null : String(attr);
+
+        if (token.type !== 'image' || src === null || loads(src)) {
+          return [token];
+        }
+
+        // Plain text: alt text is inline markdown, and may hold an image or a link
+        const text = new state.Token('text', '', 0);
+        text.content =
+          md.renderer.renderInlineAsText(
+            token.children ?? [],
+            md.options,
+            state.env,
+          ) || src;
+        const alt = [text];
+
+        if (inLink) return alt;
+
+        const open = new state.Token('link_open', 'a', 1);
+        open.attrSet('href', src);
+        const title = token.attrGet('title');
+        if (title) open.attrSet('title', title);
+
+        return [open, ...alt, new state.Token('link_close', 'a', -1)];
+      });
+    }
   });
 }

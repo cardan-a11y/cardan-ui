@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * Markdown as HTML, safe by default: raw HTML shows as text and `{…}` sets
- * only `lang`, `dir` and `class`; `trusted` allows both, for text the team
- * wrote. A bare YouTube or Vimeo link in a paragraph of its own renders as a
+ * Markdown as HTML, safe by default: raw HTML shows as text, `{…}` sets only
+ * `lang`, `dir` and `class`, and an image loads only from the page's origin
+ * or a host in the app config's `cardan.markdownImageHosts`, else it is a
+ * link; `trusted` allows all three, for text the team wrote. A bare YouTube or Vimeo link in a paragraph of its own renders as a
  * VideoPlayer, unless `videos-as-links`. `inline` is for a title or label.
  */
 import { computed, onMounted, useTemplateRef, watch } from 'vue';
@@ -25,7 +26,7 @@ const {
   inline?: boolean;
   /** A bare YouTube or Vimeo link stays a link instead of a VideoPlayer. */
   videosAsLinks?: boolean;
-  /** Allow raw HTML and every `{…}` attribute: only for text the team wrote. */
+  /** Allow raw HTML, every `{…}` attribute and any image: only for text the team wrote. */
   trusted?: boolean;
   /** Levels to move the text's own headings down: 1 turns `##` into `<h3>`. */
   headingOffset?: number;
@@ -40,6 +41,7 @@ const computedStyle = computed(() => ({
 
 const { t } = useI18n();
 const { origin } = useRequestURL();
+const appConfig = useAppConfig();
 
 const options = computed(() => ({
   trusted,
@@ -47,6 +49,7 @@ const options = computed(() => ({
   tableLabel: t('aria.table'),
   newWindowLabel: t('aria.open-new-window'),
   origin,
+  imageHosts: appConfig.cardan?.markdownImageHosts ?? [],
 }));
 
 const segments = computed<MarkdownSegment[]>(() =>
@@ -95,7 +98,8 @@ async function highlightCode() {
 onMounted(highlightCode);
 watch(segments, highlightCode, { flush: 'post' });
 
-// v-html is safe: the renderer escapes raw HTML unless `trusted`
+// v-html is safe: the renderer escapes raw HTML unless `trusted`, and
+// highlight.js escapes the code it colours
 /* eslint-disable vue/no-v-html */
 </script>
 

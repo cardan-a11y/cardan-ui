@@ -109,4 +109,29 @@ describe('ErrorMessage', () => {
     expect(wrapper.find('[role="alert"]').exists()).toBe(true);
     expect(wrapper.find('.error-message').exists()).toBe(false);
   });
+
+  it("shows markup in the server's messages as text", async () => {
+    const markup = '<img src="x" onerror="alert(1)"><b>Bold</b>';
+    const laravel = await mountSuspended(ErrorMessage, {
+      props: {
+        data: extractApiError(
+          fetchError(422, {
+            message: markup,
+            errors: { name: [markup], email: [`${markup} two`] },
+          }),
+        ),
+      },
+    });
+    const single = await mountSuspended(ErrorMessage, {
+      props: {
+        text: markup,
+        data: extractApiError(fetchError(500, { message: markup })),
+      },
+    });
+
+    for (const wrapper of [laravel, single]) {
+      expect(wrapper.find('img, b, [onerror]').exists()).toBe(false);
+      expect(wrapper.text()).toContain(markup);
+    }
+  });
 });

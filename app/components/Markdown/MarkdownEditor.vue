@@ -6,6 +6,7 @@ import { attrs } from '@mdit/plugin-attrs';
 import { mark } from '@mdit/plugin-mark';
 import {
   swatchExtension,
+  imageHostsExtension,
   italicExtension,
   targetBlankExtension,
 } from './extensions';
@@ -19,6 +20,7 @@ import 'highlight.js/styles/stackoverflow-dark.css';
 let configured = false;
 
 let translateOfLatestEditor = (key: string) => key;
+let imageHostsOfLatestEditor: () => readonly string[] = () => [];
 </script>
 
 <script setup lang="ts">
@@ -72,6 +74,9 @@ const { t, locale } = useI18n();
 
 translateOfLatestEditor = t;
 
+const appConfig = useAppConfig();
+imageHostsOfLatestEditor = () => appConfig.cardan?.markdownImageHosts ?? [];
+
 if (!configured) {
   configured = true;
 
@@ -82,12 +87,16 @@ if (!configured) {
       // @ts-expect-error -- markdown-it 14 is not assignable to 15
       const md: MarkdownIt = mdit;
 
+      // md-editor-v3's default, set here so that no update turns it on: the
+      // preview shows raw HTML as text, as MarkdownPreview's safe mode does
+      md.set({ html: false });
       md.use(swatchExtension);
       md.use(targetBlankExtension, {
         label: () => translateOfLatestEditor('aria.open-new-window'),
       });
       md.use(italicExtension);
       md.use(attrs, { allowed: SAFE_ATTRIBUTES });
+      md.use(imageHostsExtension, { hosts: () => imageHostsOfLatestEditor() });
       md.use(mark);
     },
     codeMirrorExtensions: (extensions) =>
