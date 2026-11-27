@@ -18,7 +18,7 @@ import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { api, client, requests, resetApi } from './api';
 import { cardanPlaywrightConfig } from './config/playwright';
 import { nuxtOptions } from './config/serve.mjs';
-import { cardanVitestConfig } from './config/vitest';
+import { cardanVitestConfig, cardanVitestProjects } from './config/vitest';
 import { expectConsole, installConsoleGuard, resetConsole } from './console';
 import { fetchError } from './fetch';
 import { loadIdentity } from './identity';
@@ -197,6 +197,39 @@ describe('the config functions', () => {
       './test/setup.ts',
     ]);
     expect(config.test.restoreMocks).toBe(true);
+  });
+
+  it('cardanVitestProjects shares the named files in one app, never one that mocks a module, and isolates the rest', async () => {
+    writeJson(join(dir, 'package.json'), {});
+    const file = (name: string, source = '') => {
+      mkdirSync(join(dir, 'test', name, '..'), { recursive: true });
+      writeFileSync(join(dir, 'test', name), source);
+    };
+    file('unit/plain.test.ts');
+    file('unit/mocks.test.ts', "vi.mock('../../app/x');");
+    file('unit/imports.test.ts', "mockNuxtImport('useX', () => () => 1);");
+    file('unit/own-app.test.ts');
+    file('pages/page.test.ts');
+
+    const config = await cardanVitestProjects({
+      root: dir,
+      shared: ['test/unit/*.test.ts'],
+      isolated: ['test/unit/own-app.test.ts'],
+      defineVitestProject: (project) => project,
+    });
+    const [shared, isolated] = config.test.projects as {
+      test: { include?: string[]; exclude?: string[]; isolate?: boolean };
+    }[];
+
+    expect(shared!.test.include).toEqual(['test/unit/plain.test.ts']);
+    expect(shared!.test.isolate).toBe(false);
+    expect(isolated!.test.include).toEqual(['test/**/*.test.ts']);
+    expect(isolated!.test.exclude).toEqual([
+      '**/node_modules/**',
+      '**/.git/**',
+      'test/unit/plain.test.ts',
+    ]);
+    expect(isolated!.test.isolate).toBeUndefined();
   });
 
   it("serve's build goes to the project's cache, with its own overrides merged in", () => {

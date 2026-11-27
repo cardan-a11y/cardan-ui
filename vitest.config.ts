@@ -1,6 +1,7 @@
-import { globSync, readFileSync } from 'node:fs';
+import { globSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
 import { defineVitestProject } from '@nuxt/test-utils/config';
+import { mocksModule } from './test/config/vitest.ts';
 
 // Files that import nothing of Nuxt: happy-dom without the Nuxt environment
 const plain = [
@@ -11,16 +12,11 @@ const plain = [
   'test/auth/{qr,resolveLocale,layerConfig}.test.ts',
 ];
 
-// A module mock does not reach a module the shared app has loaded already
-const mocksModules = (file: string) =>
-  /\b(vi\.(do)?[mM]ock|mockNuxtImport|mockComponent)\(/.test(
-    readFileSync(file, 'utf8'),
-  );
-
-// One playground app per worker for these files (CLAUDE.md, Tests)
+// One playground app per worker for these files (CLAUDE.md, Tests); a module
+// mock would not reach a module the shared app has loaded already
 const shared = globSync('test/{components,composables,utils}/**/*.test.ts', {
   exclude: plain,
-}).filter((file) => !mocksModules(file));
+}).filter((file) => !mocksModule(file));
 
 // The console guard first, so its afterEach runs last
 const consoleGuard = './test/console-setup.ts';

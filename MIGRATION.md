@@ -127,6 +127,13 @@ New: **ComboBox's `error` event, Form's `resetValidity()` and SpinButton's `read
 - **A disabled or read-only required field is no longer `aria-invalid`** after a failed submit, nor described by an error that does not show: Checkbox, CheckboxGroup, RadioGroup, DatePicker, ComboBox, SpinButton, FileInput and MarkdownEditor, which no longer holds a submit back while disabled. Nothing to do.
 - **Input's and Textarea's error names the check that failed**, such as "Enter at least 3 characters" or "Enter 2 or more", with the layer's new keys `form.too-short` and `form.too-long`. Nothing to do.
 
+Changed: **the test harness is faster**, and a project's suites get most of it without a change of their own.
+
+- **`serve()` reuses the browser suite's build** while nothing it is built from changed: the working tree of every checkout that holds one of the app's layers (spec and test files left out), the installed packages, the `NUXT_*` and `NITRO_*` variables, `.env`, the port and Node's version. The first run after the update builds as before. `REBUILD=1` builds anyway. Nothing to do.
+- **`test/setup.ts` puts the app's default language back after every test**, and the real clock, so a test no longer inherits a language or a fake clock from the test before it. cardan-academy-nuxt and cardan-cms-nuxt import it in their own setup; their suites pass unchanged.
+- **`cardanVitestProjects()`** splits a project's vitest suite in two: the files it names share one Nuxt app per worker, every other file keeps an app of its own, and a file that mocks a module is never shared. The project's `vitest.config.ts` then uses vitest's `defineConfig` with its own `defineVitestProject` (the docblock in `test/config/vitest.ts` has the example). Optional. cardan-auditor-nuxt shares every file but `FindingForm.test.ts` (16 s to about 8 s) and cardan-academy-nuxt 26 of its 60 files (11 s to about 8 s), both on `chore/cardan-ui-2.6.3`, which merges only after this release is on `main`.
+- **The projects' CI job** (`project.yml`) caches pnpm's store for both installs and cancels a run that a newer push to the same branch replaced. Nothing to do.
+
 ### 2.6.2
 
 New: **ComboBox `multiple`**, which selects several options, and ComboBox's **`create-option`** and **`disabled-key`** (`/combobox` in the playground). With them every MultiSelect field has its ComboBox; MultiSelect is removed in the next minor, so move each field over and then remove `@vueform/multiselect` from the project's `package.json`. cardan-auditor-nuxt, the only project that still uses MultiSelect, does this on `chore/cardan-ui-2.6.2`, which merges only after this release is on `main`.

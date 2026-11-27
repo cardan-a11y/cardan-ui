@@ -1,3 +1,4 @@
+import { globSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dependenciesOf } from './serve.mjs';
@@ -45,6 +46,28 @@ import { dependenciesOf } from './serve.mjs';
  *
  * The layer's own vitest.config.ts does not use it: the layer is the checkout
  * and needs no dedupe.
+ *
+ * `cardanVitestProjects()` takes the same options and splits the suite in
+ * two vitest projects: the files of `shared` in one Nuxt app per worker
+ * (`isolate: false`), every other file in an app of its own. A shared file
+ * puts back what its tests change; a file that mocks a module is never
+ * shared, as the mock would not reach a module the app has loaded already.
+ * The project passes its own `defineVitestProject` and uses vitest's
+ * `defineConfig`, since `defineVitestConfig` refuses projects:
+ *
+ * ```ts
+ * import { defineConfig } from 'vitest/config';
+ * import { defineVitestProject } from '@nuxt/test-utils/config';
+ * import { cardanVitestProjects } from '../cardan-ui/test/config/vitest.ts';
+ *
+ * export default defineConfig(
+ *   await cardanVitestProjects({
+ *     root: import.meta.dirname,
+ *     shared: ['test/unit/**\/*.test.ts'],
+ *     defineVitestProject,
+ *   }),
+ * );
+ * ```
  */
 export interface CardanVitestOptions {
   /** The project's root, with its package.json */
@@ -95,6 +118,60 @@ export function cardanVitestConfig(options: CardanVitestOptions) {
       },
       ...(options.exclude ? { exclude: options.exclude } : {}),
       ...(options.globals !== undefined ? { globals: options.globals } : {}),
+    },
+  };
+}
+
+/** Whether a test file mocks a module (`vi.mock`, `mockNuxtImport`, `mockComponent`) */
+export function mocksModule(file: string) {
+  return /\b(vi\.(do)?[mM]ock|mockNuxtImport|mockComponent)\(/.test(
+    readFileSync(file, 'utf8'),
+  );
+}
+
+export interface CardanVitestProjectsOptions<P> extends CardanVitestOptions {
+  /** Globs, from `root`, of the files that share one app per worker */
+  shared: string[];
+  /** Globs of files among `shared` that keep an app of their own; a comment beside each gives why */
+  isolated?: string[];
+  /** The project's own `defineVitestProject` from `@nuxt/test-utils/config` */
+  defineVitestProject(config: object): P;
+}
+
+export async function cardanVitestProjects<P>(
+  options: CardanVitestProjectsOptions<P>,
+) {
+  const config = cardanVitestConfig(options);
+  const shared = globSync(options.shared, {
+    cwd: options.root,
+    exclude: [...(config.test.exclude ?? []), ...(options.isolated ?? [])],
+  }).filter((file) => !mocksModule(join(options.root, file)));
+
+  return {
+    test: {
+      projects: [
+        await options.defineVitestProject({
+          ...config,
+          test: {
+            ...config.test,
+            name: 'shared',
+            include: shared,
+            isolate: false,
+          },
+        }),
+        await options.defineVitestProject({
+          ...config,
+          test: {
+            ...config.test,
+            name: 'isolated',
+            // vitest's default, which an `exclude` replaces
+            exclude: [
+              ...(config.test.exclude ?? ['**/node_modules/**', '**/.git/**']),
+              ...shared,
+            ],
+          },
+        }),
+      ],
     },
   };
 }

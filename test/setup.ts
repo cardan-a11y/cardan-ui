@@ -13,11 +13,12 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-// The tests start in English, also after a file that switched the language
+// Each test starts in the app's default language, also after a switch
 if (typeof window !== 'undefined') {
   afterEach(async () => {
-    const { locale, setLocale } = useNuxtApp().$i18n;
-    if (locale.value !== 'en') await setLocale('en');
+    const { defaultLocale, locale, setLocale } = useNuxtApp().$i18n;
+    if (defaultLocale && locale.value !== defaultLocale)
+      await setLocale(defaultLocale);
   });
 }
 
