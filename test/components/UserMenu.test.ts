@@ -145,14 +145,20 @@ describe('UserMenu', () => {
     expectFocused(trigger);
   });
 
-  it('closes when focus leaves it, but not for a move within it or to its trigger', async () => {
-    const { trigger, item, popover } = await mountUserMenu();
+  // The rules are useFocusLeave()'s (test/composables/useFocusLeave.test.ts):
+  // this pins that the trigger and the panel both take part
+  it('closes when focus leaves it, not for a move between its trigger and panel, nor for a press on either', async () => {
+    const { panel, trigger, item, popover } = await mountUserMenu();
     const outside = addToPage('<button>Outside</button>');
     await popover.show();
 
-    leave(item('Profile'), item('Settings'));
     leave(item('Settings'), trigger);
     leave(trigger, item('Profile'));
+    for (const pressed of [panel, trigger]) {
+      pressed.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      leave(item('Profile'), outside);
+      await new Promise((resolve) => setTimeout(resolve));
+    }
     await nextTick();
     expect(popover.isOpen()).toBe(true);
 
@@ -166,31 +172,6 @@ describe('UserMenu', () => {
     leave(trigger, outside);
     await nextTick();
     expect(popover.isOpen()).toBe(false);
-  });
-
-  it('stays open when a press on its text or its trigger moves focus to the page around it', async () => {
-    const { panel, trigger, item, popover } = await mountUserMenu();
-    const shell = addToPage('<div tabindex="-1"><a href="#">Next</a></div>');
-    await popover.show();
-
-    panel.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-    leave(item('Profile'), shell);
-    await nextTick();
-    expect(popover.isOpen()).toBe(true);
-
-    // The next Tab, after the press is over
-    await new Promise((resolve) => setTimeout(resolve));
-    leave(shell, shell.querySelector('a'));
-    await nextTick();
-    expect(popover.isOpen()).toBe(false);
-
-    // Safari does not focus a pressed button: the click that follows closes
-    // it, as the trigger's own toggle
-    await popover.show();
-    trigger.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-    leave(item('Profile'), shell);
-    await nextTick();
-    expect(popover.isOpen()).toBe(true);
   });
 
   it('closes on a route change', async () => {

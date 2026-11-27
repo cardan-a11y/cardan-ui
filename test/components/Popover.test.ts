@@ -112,55 +112,28 @@ describe('Popover', () => {
     expect(popover.isOpen()).toBe(false);
   });
 
-  it('closes when focus leaves it, but not for a move within it or to its trigger', async () => {
-    const { trigger, item, popover } = await mountPopover();
+  // The rules are useFocusLeave()'s (test/composables/useFocusLeave.test.ts):
+  // this pins that the trigger and the content both take part
+  it('closes when focus leaves it, not for a move between its trigger and content, nor for a press on either', async () => {
+    const { trigger, content, item, popover } = await mountPopover();
     const outside = addToPage('<button>Outside</button>');
     await popover.show();
 
-    leave(item('Edit'), item('Delete'));
     leave(item('Delete'), trigger.element);
-    expect(popover.hidePopover).not.toHaveBeenCalled();
-
-    leave(item('Delete'), outside);
-    expect(popover.hidePopover).toHaveBeenCalledTimes(1);
-
-    // The same from the trigger: into the content stays, to the page closes
-    await popover.show();
     leave(trigger.element, item('Edit'));
-    expect(popover.hidePopover).toHaveBeenCalledTimes(1);
-    leave(trigger.element, outside);
-    expect(popover.hidePopover).toHaveBeenCalledTimes(2);
-
-    // To an element around it, such as the shell after a navigation, closes
-    await popover.show();
-    leave(item('Edit'), document.body);
-    expect(popover.hidePopover).toHaveBeenCalledTimes(3);
-  });
-
-  it('stays open when a press inside or on its trigger moves focus to the page around it, and closes when focus leaves that', async () => {
-    const { trigger, content, item, popover } = await mountPopover();
-    const main = addToPage('<main tabindex="-1"><a href="#">Next</a></main>');
-    const next = main.querySelector('a')!;
-    await popover.show();
-
-    // A press on the content's padding gives focus to the nearest focusable
-    // element around it
-    content.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-    leave(item('Edit'), main);
+    for (const pressed of [content, trigger.element]) {
+      pressed.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      leave(item('Edit'), outside);
+      await new Promise((resolve) => setTimeout(resolve));
+    }
     expect(popover.isOpen()).toBe(true);
 
-    // The next Tab, after the press is over
-    await new Promise((resolve) => setTimeout(resolve));
-    leave(main, next);
+    leave(item('Edit'), outside);
     expect(popover.isOpen()).toBe(false);
-    // Safari does not focus a pressed button: the click that follows closes
-    // it, as the trigger's own toggle
+
     await popover.show();
-    trigger.element.dispatchEvent(
-      new MouseEvent('mousedown', { bubbles: true }),
-    );
-    leave(item('Edit'), main);
-    expect(popover.isOpen()).toBe(true);
+    leave(trigger.element, outside);
+    expect(popover.isOpen()).toBe(false);
   });
 
   it('closes on a route change, also when focus did not move', async () => {

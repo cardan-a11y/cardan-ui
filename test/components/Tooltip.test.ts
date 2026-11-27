@@ -71,7 +71,9 @@ describe('Tooltip', () => {
     expect(content.textContent?.trim()).toBe('');
   });
 
-  it('closes when focus leaves the button for the page, not for its text or nowhere', async () => {
+  // The rules are useFocusLeave()'s (test/composables/useFocusLeave.test.ts):
+  // this pins that the button and the text both take part
+  it('closes when focus leaves the button for the page, not for its text, nor after a press in the text', async () => {
     const { trigger, content, popover } = await mountTooltip(
       {},
       'See <a href="#rules">the rules</a>.',
@@ -82,33 +84,13 @@ describe('Tooltip', () => {
 
     leave(trigger.element, inside);
     leave(inside, trigger.element);
-    // The window loses focus, or the element is removed
-    leave(trigger.element, null);
-    expect(popover.isOpen()).toBe(true);
-
-    leave(trigger.element, outside);
-    expect(popover.isOpen()).toBe(false);
-
-    // Closed, a focus move does nothing
-    leave(trigger.element, outside);
-    expect(popover.hidePopover).toHaveBeenCalledTimes(1);
-  });
-
-  it('stays open when a press in its text moves focus to the page around it, and closes when focus leaves that', async () => {
-    const { trigger, content, popover } = await mountTooltip();
-    const main = addToPage('<main tabindex="-1"><a href="#">Next</a></main>');
-    const next = main.querySelector('a')!;
-    await popover.show();
-
-    // A press to select the text gives focus to the nearest focusable
-    // element around it
+    // A press to select the text gives focus to the page around it
     content.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-    leave(trigger.element, main);
+    leave(trigger.element, outside);
+    await new Promise((resolve) => setTimeout(resolve));
     expect(popover.isOpen()).toBe(true);
 
-    // The next Tab, after the press is over
-    await new Promise((resolve) => setTimeout(resolve));
-    leave(main, next);
+    leave(trigger.element, outside);
     expect(popover.isOpen()).toBe(false);
   });
 });
