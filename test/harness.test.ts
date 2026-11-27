@@ -13,10 +13,13 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSanctumClient, useSanctumUser } from '#imports';
+import { defineComponent } from 'vue';
+import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { api, client, requests, resetApi } from './api';
 import { cardanPlaywrightConfig } from './config/playwright';
 import { nuxtOptions } from './config/serve.mjs';
 import { cardanVitestConfig } from './config/vitest';
+import { expectConsole, installConsoleGuard, resetConsole } from './console';
 import { fetchError } from './fetch';
 import { loadIdentity } from './identity';
 import { readTripwire } from './tripwires';
@@ -172,6 +175,26 @@ describe('the config functions', () => {
       globals: true,
       include: ['test/**/*.test.ts'],
     });
+    expect(config.test).not.toHaveProperty('restoreMocks');
+  });
+
+  it('cardanVitestConfig lists the console guard first and restores spies, when the project asks for them', () => {
+    writeJson(join(dir, 'package.json'), {});
+
+    const config = cardanVitestConfig({
+      root: dir,
+      setupFiles: ['./test/setup.ts'],
+      sanctumClient: true,
+      failOnConsole: true,
+      restoreMocks: true,
+    });
+
+    expect(config.test.setupFiles).toEqual([
+      join(root, 'test/console-setup.ts'),
+      join(root, 'test/api-setup.ts'),
+      './test/setup.ts',
+    ]);
+    expect(config.test.restoreMocks).toBe(true);
   });
 
   it("serve's build goes to the project's cache, with its own overrides merged in", () => {
@@ -615,5 +638,52 @@ describe('the vitest API fake', () => {
     } finally {
       user.value = null;
     }
+  });
+});
+
+// test/console-setup.ts guards every test of the layer
+describe('the vitest console guard', () => {
+  // Fails in test/console-setup.ts's afterEach, before `fails` applies
+  it.fails('fails a test that writes to console.error', () => {
+    console.error('Something broke');
+  });
+
+  it.fails('fails a test that warns', () => {
+    console.warn('Something is off');
+  });
+
+  it.fails('fails a test in which Vue warns', async () => {
+    const NeedsLabel = defineComponent({
+      props: { label: { type: String, required: true } },
+      render: () => null,
+    });
+    await mountSuspended(NeedsLabel);
+  });
+
+  it('lets a test name the message it expects, and keeps it off the output', () => {
+    expectConsole('warn', /has create-option and server-search/);
+    console.warn('[ComboBox] "Topping" has create-option and server-search');
+  });
+
+  it.fails('fails a test whose expected message never came', () => {
+    expectConsole('error', /Something broke/);
+  });
+
+  it.fails('fails on a message other than the one named', () => {
+    expectConsole('warn', /Something is off/);
+    console.warn('Something else');
+  });
+
+  it("leaves a method the test spied on itself to the test's own assertions", () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    console.warn('Something is off');
+    expect(warn).toHaveBeenCalledOnce();
+  });
+
+  it('refuses expectConsole() where no guard is installed', () => {
+    expect(resetConsole()).toEqual([]);
+    expect(() => expectConsole('warn', /x/)).toThrow('needs the console guard');
+    // For test/console-setup.ts's afterEach
+    installConsoleGuard();
   });
 });

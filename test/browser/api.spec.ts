@@ -1,4 +1,5 @@
-import { expect, test as base, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test as base } from './test';
 import { Api, matchRoute, withApi } from './api';
 import { gotoHydrated } from './helpers';
 
@@ -58,7 +59,10 @@ test('answers the routes a test names, with their segments, and records the requ
 test('a request no route answers gets 599 and is kept as unanswered', async ({
   page,
   api,
+  pageErrors,
 }) => {
+  // The browser logs every failed request
+  pageErrors.expect(/status of 599 .*\/api\/nothing/);
   await gotoHydrated(page, '/buttons');
 
   expect(await send(page, '/api/nothing')).toEqual({
@@ -78,16 +82,21 @@ test('a request no route answers fails the test afterwards', async ({
   page,
   // Asked for, as a test that reads it does; the next test does not
   api: _api,
+  pageErrors,
 }) => {
   test.fail();
+  // Named, so the console guard does not fail it: only the API fake may
+  pageErrors.expect(/status of 599 .*\/api\/nothing/);
   await gotoHydrated(page, '/buttons');
   await send(page, '/api/nothing');
 });
 
 test('a request no route answers fails a test that never asks for `api` too', async ({
   page,
+  pageErrors,
 }) => {
   test.fail();
+  pageErrors.expect(/status of 599 .*\/api\/nothing/);
   await gotoHydrated(page, '/buttons');
   await send(page, '/api/nothing');
 });
@@ -114,7 +123,9 @@ test("an exact route wins over a `:name` route, and a test's routes over the sui
 test("every answer has the suite's headers, an unanswered one too", async ({
   page,
   api,
+  pageErrors,
 }) => {
+  pageErrors.expect(/status of 599 .*\/api\/nothing/);
   await gotoHydrated(page, '/buttons');
 
   // The suite's Set-Cookie: the browser keeps the cookie from either answer
@@ -148,7 +159,9 @@ test('a route added again counts as the last one added', async ({
 test('a handler that throws is answered as unanswered, with its error', async ({
   page,
   api,
+  pageErrors,
 }) => {
+  pageErrors.expect(/status of 599 .*\/api\/audits\/7/);
   api.answer({
     'GET /api/audits/:id': () => {
       throw new Error('No audit 7 in this test');
@@ -198,7 +211,9 @@ const strict = withApi(base, expect, {
 
 strict(
   "an error answer has the suite's content type, an unanswered request its status",
-  async ({ page, api }) => {
+  async ({ page, api, pageErrors }) => {
+    pageErrors.expect(/status of 422 .*\/api\/audits/);
+    pageErrors.expect(/status of 404 .*\/api\/nothing/);
     api.answer({
       'POST /api/audits': () => ({ status: 422, body: { message: 'Invalid' } }),
       'GET /api/audits': () => ({ body: [] }),
@@ -230,7 +245,8 @@ strict(
 
 strict(
   'another origin is aborted and kept as unanswered, unless `external()` answers it',
-  async ({ page, api }) => {
+  async ({ page, api, pageErrors }) => {
+    pageErrors.expect(/ERR_FAILED .*elsewhere\.example\.com\/x/);
     api.external(
       (request) => request.url().startsWith('https://pay.example.com/'),
       () => ({ text: 'Paid', headers: { 'Content-Type': 'text/html' } }),
@@ -255,7 +271,8 @@ strict(
 
 strict(
   'an `external()` handler that throws aborts the request and keeps its error',
-  async ({ page, api }) => {
+  async ({ page, api, pageErrors }) => {
+    pageErrors.expect(/ERR_FAILED .*pay\.example\.com\/x/);
     api.external(
       (request) => request.url().startsWith('https://pay.example.com/'),
       () => {

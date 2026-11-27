@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { focusStop, gotoHydrated, inertElements } from './helpers';
 
 test('SkipLink: the first Tab stop, in view when focused, moves focus to main', async ({

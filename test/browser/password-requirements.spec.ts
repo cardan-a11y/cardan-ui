@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { contrastRatio, gotoHydrated } from './helpers';
 
 for (const mode of ['light', 'dark'] as const) {

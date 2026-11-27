@@ -1,5 +1,5 @@
 // A browser test: a NuxtLink in happy-dom does not navigate on a click at all.
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { focusRingContrast, gotoHydrated } from './helpers';
 
 for (const name of ['Loading link', 'Unavailable link']) {

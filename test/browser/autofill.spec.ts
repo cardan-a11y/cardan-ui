@@ -1,5 +1,5 @@
 // iCloud Passwords in Firefox sets `value` without any event: the form must still send it.
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { gotoHydrated } from './helpers';
 
 test('LoginForm: one Enter after a fill without input events signs in with the filled values', async ({

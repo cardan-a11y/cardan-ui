@@ -4,6 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { buildNuxt, loadNuxt } from 'nuxt/kit';
 import type { NuxtApp, NuxtOptions } from 'nuxt/schema';
 import { bundledIcons } from '../../app/utils/icons';
+import { expectConsole } from '../console';
 
 const root = resolve(__dirname, '../..');
 const authLayer = resolve(root, 'auth');
@@ -18,10 +19,16 @@ type Resolved = {
  * Loads a fixture app as `nuxt prepare` does: the merged config and the
  * resolved app (plugins, middleware), without a bundle.
  */
+// @nuxt/icon 2.6.2 calls devtools-kit's deprecated `addCustomTab`, which
+// warns once per process; drop this once @nuxt/icon no longer does
+let firstLoad = true;
+
 async function resolveFixture(
   fixture: string,
   apiUrl?: string,
 ): Promise<Resolved> {
+  if (firstLoad) expectConsole('warn', /`addCustomTab` is deprecated/);
+  firstLoad = false;
   const saved = process.env.NUXT_PUBLIC_SANCTUM_BASE_URL;
   setApiUrl(apiUrl);
 

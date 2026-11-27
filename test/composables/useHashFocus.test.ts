@@ -2,6 +2,7 @@ import { afterEach, describe, it, expect, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { expectFocused } from '../a11y';
+import { expectConsole } from '../console';
 import { addToPage } from '../dom';
 
 /** A page that calls focusHash itself, as one whose content arrives later */
@@ -76,6 +77,11 @@ describe('useHashFocus', () => {
   it('says so when there is nothing to focus, and leaves focus where it is', async () => {
     const button = addToPage('<button>Somewhere else</button>');
     button.focus();
+    // The router's scroll finds nothing either
+    expectConsole(
+      'warn',
+      /Couldn't find element using selector "#nothing-here"/,
+    );
 
     for (const address of ['/buttons', '/buttons#nothing-here']) {
       const focusHash = await atAddress(address);

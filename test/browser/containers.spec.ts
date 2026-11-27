@@ -1,4 +1,5 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
+import { expect, test } from './test';
 import { focusWalk, gotoHydrated } from './helpers';
 
 test('Popover in a table row: opens on top of the table, Escape returns focus, Tab past the end closes', async ({

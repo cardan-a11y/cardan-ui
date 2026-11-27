@@ -132,6 +132,7 @@ const emit = defineEmits<{
     v-if="to || href"
     ref="button"
     :to="disabled ? undefined : to || href"
+    :prefetch="disabled ? false : undefined"
     :role="disabled ? 'link' : undefined"
     :aria-disabled="disabled || loading || ariaDisabled || undefined"
     v-bind="isDisabledCurrent ? { 'aria-current': 'page' } : {}"

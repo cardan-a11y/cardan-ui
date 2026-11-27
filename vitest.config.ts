@@ -11,8 +11,14 @@ export default defineVitestConfig({
         domEnvironment: 'happy-dom',
       },
     },
-    // test/api-setup.ts: nuxt-auth-sanctum's client is the API fake in every test
-    setupFiles: ['./test/api-setup.ts', './test/setup.ts'],
+    // The console guard first, so its afterEach runs last
+    setupFiles: [
+      './test/console-setup.ts',
+      './test/api-setup.ts',
+      './test/setup.ts',
+    ],
+    // A spy a failed test left behind does not reach the next test
+    restoreMocks: true,
     include: ['test/**/*.test.ts'],
   },
 });

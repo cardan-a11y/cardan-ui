@@ -9,6 +9,7 @@ import {
   expectNoViolations,
   roleOf,
 } from '../a11y';
+import { expectConsole } from '../console';
 import { afterRouteFocus } from '../dom';
 
 /**
@@ -166,6 +167,8 @@ describe('AppShell', () => {
     const pageLink = link(wrapper, 'A link of the page');
     pageLink.focus();
 
+    // No element is #top: the router's scroll says so
+    expectConsole('warn', /Couldn't find element using selector "#top"/);
     await useRouter().push({ path: '/', query: { page: '2' }, hash: '#top' });
     await afterRouteFocus();
 

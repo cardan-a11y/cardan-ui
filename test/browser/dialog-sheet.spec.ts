@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { gotoHydrated } from './helpers';
 
 test('Dialog: the bottom sheet ends its content above the screen edge at 320px', async ({

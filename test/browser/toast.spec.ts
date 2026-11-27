@@ -1,6 +1,7 @@
 // WCAG 2.2.1. The timer is a CSS animation, which page.clock does not drive:
 // the tests move it on to just before its end.
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
 import { focusStop, gotoHydrated, tabKey } from './helpers';
 
 test.use({ reducedMotion: 'reduce' });

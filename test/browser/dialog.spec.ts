@@ -1,10 +1,5 @@
-import {
-  expect,
-  test,
-  type BrowserContext,
-  type Locator,
-  type Page,
-} from '@playwright/test';
+import type { BrowserContext, Locator, Page } from '@playwright/test';
+import { expect, test } from './test';
 import { focusStop, focusWalk, gotoHydrated, inertElements } from './helpers';
 
 async function expectModalPattern(

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { gotoHydrated } from './helpers';
 
 test('LogoutDialog: closes on its own page before the sign-out leaves it', async ({

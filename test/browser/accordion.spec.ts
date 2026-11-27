@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
 import { gotoHydrated } from './helpers';
 
 /** A button in the panel that reaches past its end */

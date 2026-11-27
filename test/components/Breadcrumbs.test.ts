@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { Breadcrumbs } from '#components';
 import { accessibleName, expectNoViolations, roleOf } from '../a11y';
+import { addRoutes } from '../dom';
 
 /**
  * The APG breadcrumb pattern
@@ -10,6 +11,8 @@ import { accessibleName, expectNoViolations, roleOf } from '../a11y';
  * page marked with `aria-current="page"`. Here the current page is text, not
  * a link (the component's docblock).
  */
+addRoutes('/knowledge-base', '/knowledge-base/webinars');
+
 const items: BreadcrumbItem[] = [
   { label: 'Home', to: '/' },
   { label: 'Knowledge base', to: '/knowledge-base' },

@@ -35,6 +35,13 @@ import { dependenciesOf } from './serve.mjs';
  *   in the production config.
  * - **sanctumClient**: lists test/api-setup.ts, which mocks nuxt-auth-sanctum's
  *   client for every test with the API fake of test/api.ts.
+ * - **failOnConsole**: lists test/console-setup.ts, which fails a test that
+ *   writes to `console.error` or `console.warn` (a Vue warning among them)
+ *   unless it names the message with `expectConsole()` (test/console.ts).
+ *   Opt-in until each project's suite is clean with it.
+ * - **restoreMocks**: every spy goes back before each test, the first one
+ *   included, so a spy made at the top of a file or in `beforeAll` is gone
+ *   before a test reads it: move it into `beforeEach` first. Opt-in.
  *
  * The layer's own vitest.config.ts does not use it: the layer is the checkout
  * and needs no dedupe.
@@ -50,6 +57,10 @@ export interface CardanVitestOptions {
   globals?: boolean;
   /** Mocks nuxt-auth-sanctum's client for every test (test/api-setup.ts) */
   sanctumClient?: boolean;
+  /** A console error or warning fails the test (test/console-setup.ts) */
+  failOnConsole?: boolean;
+  /** `vi.restoreAllMocks()` before each test, the first one included */
+  restoreMocks?: boolean;
   /** Packages to inline besides the wrapped libraries (`server.deps.inline`) */
   inline?: (string | RegExp)[];
 }
@@ -71,11 +82,14 @@ export function cardanVitestConfig(options: CardanVitestOptions) {
       environmentOptions: {
         nuxt: { domEnvironment: 'happy-dom' as const },
       },
+      // The console guard first, so its afterEach runs last
       setupFiles: [
+        ...(options.failOnConsole ? [join(layerTest, 'console-setup.ts')] : []),
         ...(options.sanctumClient ? [join(layerTest, 'api-setup.ts')] : []),
         ...(options.setupFiles ?? []),
       ],
       include: options.include ?? ['test/**/*.test.ts'],
+      ...(options.restoreMocks ? { restoreMocks: true } : {}),
       server: {
         deps: { inline: [...wrappedLibraries, ...(options.inline ?? [])] },
       },

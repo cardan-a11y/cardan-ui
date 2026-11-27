@@ -2,13 +2,15 @@ import { describe, it, expect, vi } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { MenuList } from '#components';
 import { accessibleName, expectNoViolations, roleOf } from '../a11y';
-import { addToPage } from '../dom';
+import { addRoutes, addToPage } from '../dom';
 
 /**
  * A navigation landmark with a list of links and buttons: not the ARIA
  * `menu` role, which is for application menus with arrow-key navigation. A
  * list in a list is a group inside the same landmark.
  */
+addRoutes('/dashboard', '/profile', '/billing');
+
 const list: MenuItem[] = [
   { id: 1, label: 'Dashboard', to: '/dashboard' },
   { id: 2, label: 'Sign out' },

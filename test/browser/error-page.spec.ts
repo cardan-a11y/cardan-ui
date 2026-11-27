@@ -1,5 +1,12 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
 import { focusStop, gotoHydrated, runAxe } from './helpers';
+
+/** The browser logs the error status of a page, or of its payload, as a console error */
+const failedLoad = (status: number, path: string) =>
+  new RegExp(
+    `status of ${status} .*${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
+  );
 
 const wayOn = (page: Page) => page.locator('.error-page-content a');
 const skipLink = (page: Page) =>
@@ -15,7 +22,9 @@ async function expectFocusAtTop(page: Page) {
 
 test('a missing address answers 404, in the layout, with a link home on a direct load', async ({
   page,
+  pageErrors,
 }) => {
+  pageErrors.expect(failedLoad(404, '/this-page-does-not-exist'));
   const response = await page.goto('/this-page-does-not-exist');
   expect(response?.status()).toBe(404);
   await gotoHydrated(page, '/this-page-does-not-exist');
@@ -45,7 +54,9 @@ test('a missing address answers 404, in the layout, with a link home on a direct
 
 test('the skip link and then the link home, on a page that errors after an await, end on the homepage', async ({
   page,
+  pageErrors,
 }) => {
+  pageErrors.expect(failedLoad(404, '/error-page/demo?status=404'));
   // The page's data is a 200ms timer
   await page.clock.install();
   await gotoHydrated(page, '/error-page/demo?status=404');
@@ -71,7 +82,9 @@ test('the skip link and then the link home, on a page that errors after an await
 
 test('after an error in the browser, focus and the announcement are those of a new page, and back returns to the page before', async ({
   page,
+  pageErrors,
 }) => {
+  pageErrors.expect(failedLoad(403, '/error-page/demo/_payload.json'));
   await gotoHydrated(page, '/error-page');
   await page
     .getByRole('link', { name: 'A page you have no access to (403)' })
@@ -143,7 +156,11 @@ for (const fatal of [false, true]) {
   });
 }
 
-test("the page's own text replaces the status's", async ({ page }) => {
+test("the page's own text replaces the status's", async ({
+  page,
+  pageErrors,
+}) => {
+  pageErrors.expect(failedLoad(404, '/error-page/demo?status=404&text'));
   await gotoHydrated(page, '/error-page/demo?status=404&text');
 
   await expect(page.getByRole('main')).toContainText(
@@ -154,7 +171,9 @@ test("the page's own text replaces the status's", async ({ page }) => {
 
 test('back from a missing address, which Nuxt loads from the server, returns to the page with the link', async ({
   page,
+  pageErrors,
 }) => {
+  pageErrors.expect(failedLoad(404, '/this-page-does-not-exist'));
   await gotoHydrated(page, '/error-page');
   await page
     .getByRole('link', { name: 'A page that does not exist (404)' })
@@ -197,7 +216,9 @@ test('an error on the page the user is on takes focus to the top', async ({
 
 test('Dutch: the text, the title and <html lang> follow the locale', async ({
   page,
+  pageErrors,
 }) => {
+  pageErrors.expect(failedLoad(403, '/error-page/demo/_payload.json'));
   await gotoHydrated(page, '/error-page');
   await page.getByRole('button', { name: 'User menu' }).click();
   await page.getByText('Nederlands').click();
@@ -217,7 +238,8 @@ test('Dutch: the text, the title and <html lang> follow the locale', async ({
   await expect(page.locator('.error-page-content [lang]')).toHaveCount(0);
 });
 
-test('fits 320px without sideways scroll', async ({ page }) => {
+test('fits 320px without sideways scroll', async ({ page, pageErrors }) => {
+  pageErrors.expect(failedLoad(404, '/error-page/demo?status=404&text'));
   await page.setViewportSize({ width: 320, height: 640 });
   await gotoHydrated(page, '/error-page/demo?status=404&text');
 
@@ -231,7 +253,9 @@ test('fits 320px without sideways scroll', async ({ page }) => {
 for (const colorScheme of ['light', 'dark'] as const) {
   test(`axe finds nothing on the error page in ${colorScheme} mode`, async ({
     page,
+    pageErrors,
   }) => {
+    pageErrors.expect(failedLoad(404, '/this-page-does-not-exist'));
     await page.emulateMedia({ colorScheme });
     await gotoHydrated(page, '/this-page-does-not-exist');
     await expect(page.locator('html')).toHaveClass(

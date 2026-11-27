@@ -4,6 +4,7 @@ import { flushPromises } from '@vue/test-utils';
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { useMfaSetupReminder, useNuxtApp, useRouter } from '#imports';
 import mfaSetupMiddleware from '../../auth/app/middleware/mfa-setup.global';
+import { addRoutes } from '../dom';
 import { fetchError } from '../fetch';
 import {
   fortify,
@@ -21,6 +22,8 @@ mockNuxtImport(
     (...args: unknown[]) =>
       navigate(...args),
 );
+
+addRoutes('/courses/:id', '/profile', '/dashboard', '/audits');
 
 /** Runs the global middleware for a navigation to `path` */
 function navigateToPath(path: string) {

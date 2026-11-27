@@ -306,15 +306,17 @@ export class Api {
  * The project's `test` with an `api` fixture: installed before the page
  * loads, and after the test it fails on every request no route answered.
  */
-export function withApi(
-  base: TestType<
+export function withApi<
+  T extends PlaywrightTestArgs & PlaywrightTestOptions,
+  W extends PlaywrightWorkerArgs & PlaywrightWorkerOptions,
+>(base: TestType<T, W>, expect: Expect, options: ApiOptions = {}) {
+  // Playwright's fixture types do not resolve over a generic base: extend the
+  // base as Playwright's own, and give back the caller's with `api` added
+  const plain = base as unknown as TestType<
     PlaywrightTestArgs & PlaywrightTestOptions,
     PlaywrightWorkerArgs & PlaywrightWorkerOptions
-  >,
-  expect: Expect,
-  options: ApiOptions = {},
-) {
-  return base.extend<{ api: Api }>({
+  >;
+  return plain.extend<{ api: Api }>({
     api: [
       async ({ page, baseURL }, use) => {
         const api = new Api(page, options);
@@ -324,5 +326,5 @@ export function withApi(
       },
       { auto: options.auto ?? true },
     ],
-  });
+  }) as unknown as TestType<T & { api: Api }, W>;
 }

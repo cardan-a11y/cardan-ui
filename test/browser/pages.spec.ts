@@ -1,5 +1,5 @@
 import { readdirSync } from 'node:fs';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { type AxeViolation, gotoHydrated, runAxe } from './helpers';
 
 const pagesDir = new URL('../../.playground/pages/', import.meta.url);
@@ -35,23 +35,8 @@ for (const mode of modes) {
     test.use({ colorScheme: mode.colorScheme });
 
     for (const route of routes) {
+      // Console errors and hydration warnings fail it through ./test.ts
       test(route, async ({ page }) => {
-        const problems: string[] = [];
-        page.on('console', (message) => {
-          // A visitor's identity request: the mock API answers 401, as a real one
-          if (message.location().url.endsWith('/api/user')) return;
-
-          if (
-            message.type() === 'error' ||
-            (message.type() === 'warning' && /hydrat/i.test(message.text()))
-          ) {
-            problems.push(`${message.type()}: ${message.text()}`);
-          }
-        });
-        page.on('pageerror', (error) =>
-          problems.push(`pageerror: ${error.message}`),
-        );
-
         await gotoHydrated(page, route);
         await expect(page.locator('html')).toHaveClass(
           new RegExp(mode.className),
@@ -96,8 +81,6 @@ for (const mode of modes) {
             ),
           )
           .toBeLessThanOrEqual(0);
-
-        expect(problems, 'console errors and hydration warnings').toEqual([]);
       });
     }
   });

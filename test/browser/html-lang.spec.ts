@@ -1,5 +1,5 @@
 // The playground's default locale is English; the layer's is Dutch.
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 
 for (const [kind, path] of [
   ['a server-rendered page', '/buttons'],

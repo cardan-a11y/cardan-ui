@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { gotoHydrated } from './helpers';
 
 test('a required field of only spaces holds the submit back, with focus on it', async ({

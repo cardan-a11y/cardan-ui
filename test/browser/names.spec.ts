@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { axNode, gotoHydrated } from './helpers';
 
 test('a required field is named "Password required", not "Passwordrequired"', async ({

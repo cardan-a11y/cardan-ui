@@ -38,6 +38,8 @@ const ROUTES = [
   { name: 'test-catalog', path: '/catalog', meta: { locale: 'nl' } },
   { name: 'test-dashboard', path: '/dashboard', meta: {} },
   { name: 'test-profile', path: '/profile', meta: {} },
+  // An app's own sign-in page; the middleware knows it by its path
+  { name: 'test-invitation', path: '/invitations/:token', meta: {} },
 ];
 
 const locale = () => useNuxtApp().$i18n.locale.value;

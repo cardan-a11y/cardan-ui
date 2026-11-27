@@ -1,5 +1,6 @@
-import { onTestFinished, vi } from 'vitest';
-import { nextTick } from 'vue';
+import { beforeAll, onTestFinished, vi } from 'vitest';
+import { defineComponent, nextTick } from 'vue';
+import { useRouter } from '#imports';
 import type { Target } from './a11y';
 
 /**
@@ -134,4 +135,20 @@ export async function afterRouteFocus(): Promise<void> {
   await nextTick();
   await new Promise((resolve) => setTimeout(resolve));
   await nextTick();
+}
+
+/**
+ * Pages of an app at these paths (`'/courses/:id'`), rendering nothing, for
+ * the file's tests: a link or a navigation to a path no route matches makes
+ * Vue Router warn, which fails the test (test/console-setup.ts). Call it at
+ * the top of the file or a `describe`.
+ */
+export function addRoutes(...paths: string[]) {
+  const page = defineComponent({ render: () => null });
+  beforeAll(() => {
+    const router = useRouter();
+    const known = new Set(router.getRoutes().map((route) => route.path));
+    for (const path of paths.filter((path) => !known.has(path)))
+      router.addRoute({ path, component: page });
+  });
 }

@@ -10,6 +10,7 @@ import {
   expectNoViolations,
   roleOf,
 } from '../a11y';
+import { expectConsole } from '../console';
 import { addToPage, leave, press } from '../dom';
 import { mountInForm } from '../form';
 
@@ -1521,6 +1522,10 @@ describe('ComboBox: search on the server', () => {
     first.wrapper.unmount();
 
     const without = server();
+    expectConsole(
+      'warn',
+      /has a value and server-search, but no v-model:selected with its option: it cannot show the label/,
+    );
     const second = await mountComboBox({
       options: without.options,
       serverSearch: true,
@@ -1902,6 +1907,10 @@ describe('ComboBox: create option', () => {
     await type(loading.input, 'Bacon');
     expect(loading.labels()).toEqual([]);
 
+    expectConsole(
+      'warn',
+      /has create-option and server-search: the create option needs the whole list, so it never shows/,
+    );
     const server = await mountComboBox({
       createOption: true,
       serverSearch: true,
