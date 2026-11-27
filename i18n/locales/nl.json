@@ -115,6 +115,7 @@
   "files": {
     "browse": "Selecteer bestand",
     "example": "Voorbeeld van {file}",
+    "max-size": "(max. {size})",
     "open": "Bestand openen",
     "too-big": "Dit bestand is groter dan {size}. Kies een kleiner bestand.",
     "button-text": "Klik om te uploaden of sleep een bestand",

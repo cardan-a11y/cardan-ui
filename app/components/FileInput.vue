@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import compressor from 'compressorjs';
-
 const { t, locale } = useI18n();
 
 const model = defineModel<File>();
@@ -34,6 +32,10 @@ const {
   mode?: 'image' | 'document';
   /** `circle`: a pill led by a round preview, for an avatar */
   shape?: 'default' | 'circle';
+  /**
+   * The input a form post reads. It holds the final image from `ready` on; a
+   * submit before that posts the original, which passed `maxFileSize`.
+   */
   name?: string;
   placeholderUrl?: string;
   id?: string;
@@ -147,6 +149,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('paste', handlePaste);
+  fileBeingCompressed = undefined;
+  revokePreview();
 });
 
 /** Opens the file picker, e.g. from a "Replace" button */
@@ -159,12 +163,18 @@ defineExpose({
   imagePreview,
   handleFile,
   open,
+  reset,
 });
 
 const emit = defineEmits<{
   paste: [file: File];
   /** In document mode, a file that passed the checks */
   select: [file: File];
+  /**
+   * In image mode, the file is final: the compressed image, or the original
+   * when it is not compressed (a GIF, not an image) or compression failed
+   */
+  ready: [file: File];
 }>();
 
 const errorMessage = ref('');
@@ -179,33 +189,62 @@ function handleDragLeave() {
   dragover.value = false;
 }
 
-function compressFile(file: File) {
+async function compressFile(file: File) {
   model.value = file;
   fileBeingCompressed = file;
 
-  if (!file.type.includes('image') || file.type.includes('gif')) return;
+  // Once per file, unless a newer file or reset() took its place
+  function finish(result: File) {
+    if (fileBeingCompressed !== file) return;
+    fileBeingCompressed = undefined;
+    if (result !== file) {
+      model.value = result;
+      setInputFile(result);
+    }
+    emit('ready', result);
+  }
 
-  new compressor(file, {
-    quality: quality,
-    maxWidth: maxWidth,
-    maxHeight: maxHeight,
-    convertSize: convertSize,
+  if (!file.type.includes('image') || file.type.includes('gif')) {
+    finish(file);
+    return;
+  }
 
-    success(result: File) {
-      if (fileBeingCompressed !== file) return;
-      model.value = new File([result], result.name, { type: result.type });
-    },
-  });
+  try {
+    // Loaded on the first image, out of the main chunk
+    const { default: Compressor } = await import('compressorjs');
+    if (fileBeingCompressed !== file) return;
+
+    new Compressor(file, {
+      quality: quality,
+      maxWidth: maxWidth,
+      maxHeight: maxHeight,
+      convertSize: convertSize,
+      success: (result: File) =>
+        finish(new File([result], result.name, { type: result.type })),
+      // The original passed the checks: it stays
+      error: () => finish(file),
+    });
+  } catch {
+    // A chunk that failed to load keeps the original too
+    finish(file);
+  }
+}
+
+/** The preview's blob URL FileInput made, never a parent's `placeholderUrl` */
+let ownPreviewUrl: string | undefined;
+
+function revokePreview() {
+  if (ownPreviewUrl) URL.revokeObjectURL(ownPreviewUrl);
+  ownPreviewUrl = undefined;
 }
 
 function handleImagePreview(file: File) {
-  if (imagePreview.value) {
-    URL.revokeObjectURL(imagePreview.value);
-    imagePreview.value = undefined;
-  }
+  revokePreview();
+  imagePreview.value = undefined;
 
   if (file?.type?.includes('image')) {
-    imagePreview.value = URL.createObjectURL(file);
+    ownPreviewUrl = URL.createObjectURL(file);
+    imagePreview.value = ownPreviewUrl;
   }
 }
 
@@ -242,13 +281,13 @@ function clearInput() {
   if (fileInputRef.value) fileInputRef.value.value = '';
 }
 
-function restoreInput() {
+function setInputFile(file?: File) {
   const input = fileInputRef.value;
   if (!input) return;
 
-  if (model.value && typeof DataTransfer !== 'undefined') {
+  if (file && typeof DataTransfer !== 'undefined') {
     const transfer = new DataTransfer();
-    transfer.items.add(model.value);
+    transfer.items.add(file);
     input.files = transfer.files;
   } else {
     clearInput();
@@ -270,7 +309,7 @@ async function handleFile(file?: File) {
   }
 
   if (!validity.value) {
-    restoreInput();
+    setInputFile(model.value);
     return;
   }
 
@@ -281,7 +320,7 @@ async function handleFile(file?: File) {
   }
 
   handleImagePreview(file);
-  compressFile(file);
+  void compressFile(file);
 }
 
 function handleFileInput(event: Event) {
@@ -291,24 +330,26 @@ function handleFileInput(event: Event) {
   handleFile(file);
 }
 
-function reset() {
+function clearState() {
   validity.value = true;
   errorMessage.value = '';
   fileBeingCompressed = undefined;
   clearInput();
-
-  if (imagePreview.value?.startsWith('blob:')) {
-    URL.revokeObjectURL(imagePreview.value);
-  }
+  revokePreview();
   imagePreview.value = placeholderUrl;
 }
 
+/** Empties the value, the input and the preview (back to `placeholderUrl`) */
+function reset() {
+  model.value = undefined;
+  clearState();
+}
+
 watch([() => placeholderUrl, model], ([, file]) => {
-  if (!file) reset();
+  if (!file) clearState();
 });
 
 function removeFile() {
-  model.value = undefined;
   reset();
   fileInputRef.value?.focus();
 }
@@ -380,7 +421,7 @@ function removeFile() {
             <template v-if="acceptedExtensions.length"
               >{{ typesLabel }}
             </template>
-            (max. {{ maxSizeLabel }})
+            {{ $t('files.max-size', { size: maxSizeLabel }) }}
           </span>
         </span>
 

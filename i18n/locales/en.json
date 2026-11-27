@@ -115,6 +115,7 @@
   "files": {
     "browse": "Browse files",
     "example": "Example of {file}",
+    "max-size": "(max. {size})",
     "open": "Open file",
     "too-big": "This file is larger than {size}. Choose a smaller file.",
     "button-text": "Click to upload or drop a file",

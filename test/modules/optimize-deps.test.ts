@@ -22,6 +22,8 @@ function packageImports(source: string) {
   const ids = [
     ...source.matchAll(/^import\s+(?!type\s)[^;]*?from\s+'([^']+)'/gm),
     ...source.matchAll(/^import\s+'([^']+)'/gm),
+    // A package loaded on demand, such as FileInput's compressorjs
+    ...source.matchAll(/\bimport\(\s*'([^']+)'\s*\)/g),
   ].map((match) => match[1]!);
   return ids.filter(
     (id) => !id.startsWith('.') && !id.endsWith('.css') && !ESM.test(id),

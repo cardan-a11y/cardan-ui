@@ -99,6 +99,46 @@ test('FileInput in document mode with a name: the form posts the file, also afte
   await expect(demo.locator('pre code')).toHaveText(/^document: essay\.pdf/);
 });
 
+test('FileInput with a name: once compressorjs is done, the form posts the compressed image, smaller than the chosen one', async ({
+  page,
+}) => {
+  await gotoHydrated(page, '/form');
+  const demo = page.locator('.demo-file-form');
+  // Noise does not compress as PNG: about 3 MB, under the 5 MB limit
+  const png = Buffer.from(
+    await page.evaluate(async () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 900;
+      const context = canvas.getContext('2d')!;
+      const image = context.createImageData(900, 900);
+      for (let i = 0; i < image.data.length; i++) {
+        image.data[i] = i % 4 === 3 ? 255 : Math.floor(Math.random() * 256);
+      }
+      context.putImageData(image, 0, 0);
+      const blob = await new Promise<Blob>((resolve) =>
+        canvas.toBlob((b) => resolve(b!), 'image/png'),
+      );
+      return [...new Uint8Array(await blob.arrayBuffer())];
+    }),
+  );
+  expect(png.length).toBeGreaterThan(500_000);
+
+  await demo.getByLabel('Upload file').setInputFiles({
+    name: 'noise.png',
+    mimeType: 'image/png',
+    buffer: png,
+  });
+  // Past convertSize, compressorjs makes it a JPEG
+  await expect(demo.getByText('noise.jpg', { exact: true })).toBeVisible();
+  await demo.getByRole('button', { name: 'Upload', exact: true }).click();
+
+  const posted = page.locator('.demo-file-form-posted code');
+  await expect(posted).toHaveText(/^file: noise\.jpg \(\d+ bytes\)$/);
+  const size = Number((await posted.textContent())!.match(/\((\d+) bytes/)![1]);
+  expect(size).toBeGreaterThan(0);
+  expect(size).toBeLessThan(png.length);
+});
+
 test.describe('before hydration, also of a lazily hydrated part', () => {
   test.use({ javaScriptEnabled: false });
 

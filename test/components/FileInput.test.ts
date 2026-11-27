@@ -12,18 +12,27 @@ import {
 import { addToPage } from '../dom';
 import { mountInForm } from '../form';
 
-/** compressorjs, finished when a test calls `finish` */
+/** compressorjs, finished when a test calls `finish` or `fail` */
 const compressions = vi.hoisted(
-  () => [] as { file: File; finish: (result: File) => void }[],
+  () =>
+    [] as {
+      file: File;
+      finish: (result: File) => void;
+      fail: (error: Error) => void;
+    }[],
 );
-vi.mock('compressorjs', () => ({
+const compressorMock = vi.hoisted(() => () => ({
   default: vi.fn(function (
     file: File,
-    options: { success: (result: File) => void },
+    options: {
+      success: (result: File) => void;
+      error: (error: Error) => void;
+    },
   ) {
-    compressions.push({ file, finish: options.success });
+    compressions.push({ file, finish: options.success, fail: options.error });
   }),
 }));
+vi.mock('compressorjs', compressorMock);
 
 /**
  * Chooses a file the way the picker does: the input's files, then change. The
@@ -509,10 +518,10 @@ describe('FileInput and image compression', () => {
 
     const first = new File(['x'], 'first.png', { type: 'image/png' });
     await choose(input, first);
-    await nextTick();
+    await vi.waitFor(() => expect(compressions).toHaveLength(1));
     const second = new File(['y'], 'second.png', { type: 'image/png' });
     await choose(input, second);
-    await nextTick();
+    await vi.waitFor(() => expect(compressions).toHaveLength(2));
     expect(values).toEqual([first, second]);
 
     compressions[0]!.finish(
@@ -525,5 +534,208 @@ describe('FileInput and image compression', () => {
     );
     expect(values.at(-1)?.name).toBe('second.jpg');
     objectUrl.mockRestore();
+  });
+
+  /** A FileInput in a Form, its updates and `compressed` in one log */
+  async function mountInFormWithLog(props: Record<string, unknown> = {}) {
+    const value = ref<File>();
+    const log: string[] = [];
+    const wrapper = await mountInForm(() => [
+      h(FileInput, {
+        label: 'Avatar',
+        name: 'avatar',
+        modelValue: value.value,
+        'onUpdate:modelValue': (file?: File) => {
+          log.push(`update ${file?.name}`);
+          value.value = file;
+        },
+        onReady: (file: File) => log.push(`ready ${file.name}`),
+        ...props,
+      }),
+    ]);
+    return {
+      wrapper,
+      value,
+      log,
+      form: wrapper.get('form').element as HTMLFormElement,
+      input: wrapper.get('input').element as HTMLInputElement,
+    };
+  }
+
+  /** Chooses through the input's own file list, which FormData reads */
+  async function pick(input: HTMLInputElement, file: File) {
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    input.files = transfer.files;
+    input.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => expect(compressions).toHaveLength(1));
+  }
+
+  /** Chooses a file that is not compressed, so nothing waits for compressorjs */
+  async function pickUncompressed(input: HTMLInputElement, file: File) {
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    input.files = transfer.files;
+    input.dispatchEvent(new Event('change'));
+    await nextTick();
+    await nextTick();
+  }
+
+  const posted = (form: HTMLFormElement) =>
+    (new FormData(form).get('avatar') as File | null)?.name || undefined;
+
+  it('with a name, posts the original while compressing and the compressed image after, then emits ready once', async () => {
+    const objectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:preview');
+    const { form, input, log } = await mountInFormWithLog();
+    compressions.length = 0;
+
+    await pick(input, new File(['x'], 'second.png', { type: 'image/png' }));
+    expect(posted(form)).toBe('second.png');
+    expect(log).toEqual(['update second.png']);
+
+    compressions[0]!.finish(
+      new File(['b'], 'second.jpg', { type: 'image/jpeg' }),
+    );
+    await nextTick();
+    expect(posted(form)).toBe('second.jpg');
+    expect(log).toEqual([
+      'update second.png',
+      'update second.jpg',
+      'ready second.jpg',
+    ]);
+    objectUrl.mockRestore();
+  });
+
+  it('reset() empties the value, the input and the preview, and drops a compression still running', async () => {
+    const objectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:preview');
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockReturnValue();
+    const { wrapper, form, input, value, log } = await mountInFormWithLog();
+    compressions.length = 0;
+
+    await pick(input, new File(['x'], 'photo.png', { type: 'image/png' }));
+    expect(wrapper.find('img').exists()).toBe(true);
+
+    const field = wrapper.findComponent(FileInput);
+    (field.vm as unknown as { reset: () => void }).reset();
+    await nextTick();
+    expect(value.value).toBeUndefined();
+    expect(input.files).toHaveLength(0);
+    expect(posted(form)).toBeUndefined();
+    expect(wrapper.find('img').exists()).toBe(false);
+    expect(revoke).toHaveBeenCalledWith('blob:preview');
+
+    compressions[0]!.finish(
+      new File(['b'], 'photo.jpg', { type: 'image/jpeg' }),
+    );
+    await nextTick();
+    expect(value.value).toBeUndefined();
+    expect(log).toEqual(['update photo.png', 'update undefined']);
+    objectUrl.mockRestore();
+    revoke.mockRestore();
+  });
+
+  it('revokes the preview of a chosen image when it unmounts', async () => {
+    const objectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:preview');
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockReturnValue();
+    const { wrapper, input } = await mountInFormWithLog();
+    compressions.length = 0;
+
+    await pick(input, new File(['x'], 'photo.png', { type: 'image/png' }));
+    expect(revoke).not.toHaveBeenCalled();
+    wrapper.unmount();
+    expect(revoke).toHaveBeenCalledWith('blob:preview');
+    objectUrl.mockRestore();
+    revoke.mockRestore();
+  });
+
+  it('emits ready with the original for a GIF, which it does not compress', async () => {
+    const objectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:preview');
+    const { form, input, log } = await mountInFormWithLog();
+    compressions.length = 0;
+
+    await pickUncompressed(
+      input,
+      new File(['x'], 'moving.gif', { type: 'image/gif' }),
+    );
+    await vi.waitFor(() =>
+      expect(log).toEqual(['update moving.gif', 'ready moving.gif']),
+    );
+    expect(compressions).toHaveLength(0);
+    expect(posted(form)).toBe('moving.gif');
+    objectUrl.mockRestore();
+  });
+
+  it('keeps the original and emits ready with it when compressorjs fails', async () => {
+    const objectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:preview');
+    const { form, input, log, value } = await mountInFormWithLog();
+    compressions.length = 0;
+
+    await pick(input, new File(['x'], 'broken.png', { type: 'image/png' }));
+    compressions[0]!.fail(new Error('Failed to load the image.'));
+    await nextTick();
+    expect(log).toEqual(['update broken.png', 'ready broken.png']);
+    expect(value.value?.name).toBe('broken.png');
+    expect(posted(form)).toBe('broken.png');
+    objectUrl.mockRestore();
+  });
+
+  it('keeps the original and emits ready with it when compressorjs does not load', async () => {
+    const objectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:preview');
+    vi.doMock('compressorjs', () => {
+      throw new Error('Failed to fetch dynamically imported module');
+    });
+    try {
+      const { form, input, log } = await mountInFormWithLog();
+      await pickUncompressed(
+        input,
+        new File(['x'], 'offline.png', { type: 'image/png' }),
+      );
+      await vi.waitFor(() =>
+        expect(log).toEqual(['update offline.png', 'ready offline.png']),
+      );
+      expect(posted(form)).toBe('offline.png');
+    } finally {
+      vi.doMock('compressorjs', compressorMock);
+      objectUrl.mockRestore();
+    }
+  });
+
+  it('revokes only the preview it made, never the placeholder its parent passed', async () => {
+    const objectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:preview');
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockReturnValue();
+    const { wrapper, input } = await mountInFormWithLog({
+      placeholderUrl: 'blob:parent',
+    });
+    compressions.length = 0;
+    const field = wrapper.findComponent(FileInput);
+    const reset = () => (field.vm as unknown as { reset: () => void }).reset();
+
+    reset();
+    await nextTick();
+    expect(wrapper.get('img').attributes('src')).toBe('blob:parent');
+
+    await pick(input, new File(['x'], 'photo.png', { type: 'image/png' }));
+    expect(wrapper.get('img').attributes('src')).toBe('blob:preview');
+    reset();
+    await nextTick();
+    expect(wrapper.get('img').attributes('src')).toBe('blob:parent');
+    wrapper.unmount();
+    expect(revoke.mock.calls).toEqual([['blob:preview']]);
+    objectUrl.mockRestore();
+    revoke.mockRestore();
   });
 });

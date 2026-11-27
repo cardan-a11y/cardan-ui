@@ -89,3 +89,5 @@ pnpm add @nuxt/scripts
 ```
 
 The auth layer's `nuxt-auth-sanctum` is the same case; see its README.
+
+FileInput loads compressorjs only once an image is chosen, in a chunk of its own, but the build still resolves it, so a project that uses FileInput installs it even for `mode="document"` alone.

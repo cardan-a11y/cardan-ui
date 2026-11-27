@@ -29,9 +29,15 @@ function handleFileInput(file?: File) {
   }
 }
 
-async function uploadFile(formData: FormData) {
+const posted = ref<string[]>([]);
+
+function uploadFile(formData: FormData) {
   showInvalid.value = false;
-  console.log(Object.fromEntries(formData));
+  posted.value = [...formData].map(([key, value]) =>
+    value instanceof File
+      ? `${key}: ${value.name} (${value.size} bytes)`
+      : `${key}: ${value}`,
+  );
 }
 </script>
 
@@ -57,10 +63,20 @@ async function uploadFile(formData: FormData) {
       size="lg"
     />
   </Form>
+
+  <pre
+    v-if="posted.length"
+    class="demo-file-form-posted"
+  ><code>{{ posted.join('\n') }}</code></pre>
 </template>
 
 <style>
 .demo-file-form {
   max-width: 300px;
+}
+
+.demo-file-form-posted {
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 </style>
