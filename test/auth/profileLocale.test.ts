@@ -20,6 +20,7 @@ import {
   useSanctumAuth,
 } from '#imports';
 import localeMiddleware from '../../auth/app/middleware/01.locale.global';
+import { expectConsole } from '../console';
 import { navigate, signIn, useScenario } from './fortify';
 import { academy, auditor } from './scenarios';
 
@@ -100,7 +101,7 @@ describe('the profile language (Academy)', () => {
 
   describe("with a project's i18n hook that throws", () => {
     beforeEach(() => {
-      vi.spyOn(console, 'error').mockImplementation(() => {});
+      expectConsole('error', /The switch to the language "nl" failed/, 1);
       const unhook = useNuxtApp().hook('i18n:beforeLocaleSwitch', () => {
         throw new Error('A hook of the project');
       });
@@ -114,7 +115,6 @@ describe('the profile language (Academy)', () => {
 
       expect(useRouter().currentRoute.value.path).toBe('/dashboard');
       expect(locale()).toBe('en');
-      expect(console.error).toHaveBeenCalledOnce();
     });
 
     it('resolves apply() after a save, in the language it had', async () => {

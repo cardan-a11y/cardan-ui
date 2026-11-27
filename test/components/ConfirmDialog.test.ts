@@ -11,6 +11,7 @@ import {
   expectNoViolations,
   roleOf,
 } from '../a11y';
+import { expectConsole } from '../console';
 import { clickBackdrop } from '../dom';
 import { fetchError } from '../fetch';
 
@@ -199,16 +200,13 @@ describe('useConfirm: the action travels with the request', () => {
   });
 
   it('refuses a second confirm() while one is open, and the first runs its own action', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expectConsole('warn', /another confirmation is open/);
     const { dialog, dialogButton, ask, results } = await mountLists();
 
     const { result: first } = await ask('Delete apple');
     const { result: second } = await ask('Delete leek');
 
     await expect(second).resolves.toBe(false);
-    expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining('another confirmation is open'),
-    );
     expect(results).toHaveLength(2);
     expect(accessibleName(dialog())).toBe('Delete apple?');
 
@@ -265,25 +263,20 @@ describe('useConfirm: the action travels with the request', () => {
   });
 
   it('without a host resolves false, runs nothing and warns', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expectConsole('warn', /needs a mounted <ConfirmDialogHost \/>/);
     const { ask } = await mountLists({ host: false });
 
     const { result } = await ask('Delete apple');
     await expect(result).resolves.toBe(false);
     expect(deleteFruit).not.toHaveBeenCalled();
-    expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining('ConfirmDialogHost'),
-    );
   });
 
   it('warns about a second host, which shows nothing', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expectConsole('warn', /is mounted twice/);
     const { dialogButton, ask } = await mountLists();
     const second = await mountSuspended(ConfirmDialogHost, {
       attachTo: document.body,
     });
-
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('mounted twice'));
 
     const { result } = await ask('Delete apple');
     expect((second.element as HTMLDialogElement).open).toBe(false);

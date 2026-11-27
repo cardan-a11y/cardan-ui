@@ -1525,6 +1525,7 @@ describe('ComboBox: search on the server', () => {
     expectConsole(
       'warn',
       /has a value and server-search, but no v-model:selected with its option: it cannot show the label/,
+      1,
     );
     const second = await mountComboBox({
       options: without.options,
@@ -1910,6 +1911,7 @@ describe('ComboBox: create option', () => {
     expectConsole(
       'warn',
       /has create-option and server-search: the create option needs the whole list, so it never shows/,
+      1,
     );
     const server = await mountComboBox({
       createOption: true,

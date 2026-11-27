@@ -84,6 +84,14 @@ export class PageErrors {
       this.add({ type, text: message.text(), url: message.location().url });
   }
 
+  /** What fails the test so far, which no longer counts: for a test that checks it itself */
+  take(): string[] {
+    const problems = this.problems();
+    this.messages.splice(0);
+    this.expected = [];
+    return problems;
+  }
+
   /** What fails the test */
   problems(): string[] {
     return [

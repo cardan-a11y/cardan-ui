@@ -671,6 +671,12 @@ describe('the vitest console guard', () => {
     expectConsole('error', /Something broke/);
   });
 
+  it.fails('fails on a named message that came more often than said', () => {
+    expectConsole('warn', /Something is off/, 1);
+    console.warn('Something is off');
+    console.warn('Something is off');
+  });
+
   it.fails('fails on a message other than the one named', () => {
     expectConsole('warn', /Something is off/);
     console.warn('Something else');

@@ -67,6 +67,14 @@ export class OtherOrigins {
     return undefined;
   }
 
+  /** What fails the test so far, which no longer counts: for a test that checks it itself */
+  take(): string[] {
+    const problems = this.problems();
+    this.unanswered.splice(0);
+    this.answers = [];
+    return problems;
+  }
+
   /** What fails the test */
   problems(): string[] {
     return [

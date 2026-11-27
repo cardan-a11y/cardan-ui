@@ -52,11 +52,7 @@ describe('useLogoutDialog', () => {
   });
 
   it('open() resolves without a mounted dialog', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
     await expect(useLogoutDialog().open()).resolves.toBeUndefined();
-
-    warn.mockRestore();
   });
 
   it('signs out, then closes the dialog', async () => {

@@ -10,6 +10,7 @@ import {
   expectNoViolations,
   roleOf,
 } from '../a11y';
+import { expectConsole } from '../console';
 import { addToPage, leave, press } from '../dom';
 import { mountInForm } from '../form';
 
@@ -710,53 +711,27 @@ describe('ComboBox multiple: disabled options', () => {
 });
 
 describe('ComboBox multiple: warnings in development', () => {
-  function warnings() {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    return {
-      said: () =>
-        warn.mock.calls
-          .map(([text]) => String(text))
-          .filter((text) => text.startsWith('[ComboBox]')),
-      restore: () => warn.mockRestore(),
-    };
-  }
-
   it('warns when multiple changes after the field was created, and keeps the mode', async () => {
-    const warn = warnings();
+    expectConsole('warn', /multiple changed after the field was created/, 1);
     const { wrapper, dialog } = await mountMulti();
 
     await wrapper.setProps({ multiple: false } as never);
 
-    expect(warn.said()).toEqual([
-      expect.stringContaining('multiple changed after the field was created'),
-    ]);
     expect(wrapper.find('input').attributes('aria-haspopup')).toBe('dialog');
     expect(dialog().exists()).toBe(true);
-    warn.restore();
   });
 
   it('warns for a value that is not an array with multiple, and for an array without it', async () => {
-    const warn = warnings();
+    expectConsole('warn', /its value is not an array/, 1);
+    expectConsole('warn', /has an array as its value: add multiple/, 1);
     await mountMulti({ modelValue: 'ham' });
     await mountMulti({ multiple: false, modelValue: ['ham'] });
-
-    expect(warn.said()).toEqual([
-      expect.stringContaining('its value is not an array'),
-      expect.stringContaining('has an array as its value: add multiple'),
-    ]);
-    warn.restore();
   });
 
   it('warns for server-search, which multiple ignores, and not for null or [] while loading', async () => {
-    const warn = warnings();
+    expectConsole('warn', /multiple and server-search/, 1);
     await mountMulti({ modelValue: null });
     await mountMulti({ modelValue: undefined });
     await mountMulti({ options: () => options, serverSearch: true });
-
-    expect(warn.said()).toEqual([
-      expect.stringContaining('multiple and server-search'),
-    ]);
-    warn.restore();
   });
 });

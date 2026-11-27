@@ -3,35 +3,46 @@ import { expect, test } from './test';
 import { PageErrors } from './console';
 import { gotoHydrated } from './helpers';
 
-// A failing test here fails in the fixture, so it has no `expect` of its own
-
-test('a console error fails the test, after the first load too', async ({
+test('a console error counts, after the first load too', async ({
   page,
+  pageErrors,
 }) => {
-  test.fail();
   await gotoHydrated(page, '/buttons');
   await page.evaluate(() => console.error('Something broke'));
+
+  await expect.poll(() => pageErrors.problems()).toHaveLength(1);
+  // Code run through evaluate() has no address of its own
+  expect(pageErrors.take()).toEqual(['error: Something broke']);
 });
 
-test('an error nothing caught fails the test', async ({ page }) => {
-  test.fail();
+test('an error nothing caught counts', async ({ page, pageErrors }) => {
   await gotoHydrated(page, '/buttons');
   await page.evaluate(() => {
     setTimeout(() => {
       throw new Error('Thrown in a handler');
     });
   });
-  await page.waitForTimeout(50);
+
+  await expect.poll(() => pageErrors.problems()).toHaveLength(1);
+  expect(pageErrors.take().map((p) => p.split(' (')[0])).toEqual([
+    'pageerror: Thrown in a handler',
+  ]);
 });
 
-test('a page the test opens itself counts too', async ({ context }) => {
-  test.fail();
+test('a page the test opens itself counts too', async ({
+  context,
+  pageErrors,
+}) => {
   const other = await context.newPage();
   await gotoHydrated(other, '/buttons');
   await other.evaluate(() => console.error('Something broke'));
+
+  await expect.poll(() => pageErrors.problems()).toHaveLength(1);
+  // Code run through evaluate() has no address of its own
+  expect(pageErrors.take()).toEqual(['error: Something broke']);
 });
 
-test('a message the test names does not fail it', async ({
+test('a message the test names does not count', async ({
   page,
   pageErrors,
 }) => {
@@ -40,13 +51,18 @@ test('a message the test names does not fail it', async ({
   await page.evaluate(() => console.error('Something broke'));
 });
 
-test('a named message that never came fails the test', async ({
-  page,
-  pageErrors,
-}) => {
-  test.fail();
+test('a named message that never came counts', async ({ page, pageErrors }) => {
   pageErrors.expect(/Something broke/);
   await gotoHydrated(page, '/buttons');
+
+  expect(pageErrors.take()).toEqual([
+    'expected message never came: /Something broke/',
+  ]);
+});
+
+test('what the guard found fails the test at its end', ({ pageErrors }) => {
+  test.fail();
+  pageErrors.add({ type: 'error', text: 'Something broke', url: '' });
 });
 
 test('counts errors and hydration warnings, not other warnings', () => {

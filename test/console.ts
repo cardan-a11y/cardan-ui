@@ -25,7 +25,7 @@ type Guard = {
   originals: Record<Kind, (...args: unknown[]) => void>;
   wrappers: Record<Kind, (...args: unknown[]) => void>;
   seen: { kind: Kind; text: string }[];
-  expected: { kind: Kind; pattern: RegExp; count: number }[];
+  expected: { kind: Kind; pattern: RegExp; times?: number; count: number }[];
 };
 
 // On globalThis: the setup file and a test file may load their own copy of
@@ -102,6 +102,17 @@ export function resetConsole(): string[] {
       ...guard.expected
         .filter((e) => e.kind === kind && e.count === 0)
         .map((e) => `expected ${kind} never came: ${e.pattern}`),
+      ...guard.expected
+        .filter(
+          (e) =>
+            e.kind === kind &&
+            e.count > 0 &&
+            e.times !== undefined &&
+            e.count !== e.times,
+        )
+        .map(
+          (e) => `expected ${kind} ${e.times}×, came ${e.count}×: ${e.pattern}`,
+        ),
     );
   }
   return problems;
@@ -109,14 +120,15 @@ export function resetConsole(): string[] {
 
 /**
  * The test writes this message to the console, at least once: it is not
- * printed and does not fail the test. A message that never came fails it.
+ * printed and does not fail the test. A message that never came fails it, and
+ * with `times` one that came another number of times.
  */
-export function expectConsole(kind: Kind, pattern: RegExp) {
+export function expectConsole(kind: Kind, pattern: RegExp, times?: number) {
   const guard = store.cardanConsole;
   if (!guard) {
     throw new Error(
       'expectConsole() needs the console guard: list test/console-setup.ts (failOnConsole in cardanVitestConfig)',
     );
   }
-  guard.expected.push({ kind, pattern, count: 0 });
+  guard.expected.push({ kind, pattern, times, count: 0 });
 }
