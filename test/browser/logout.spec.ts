@@ -52,3 +52,35 @@ test('LogoutDialog: closes on its own page before the sign-out leaves it', async
     frames.filter((frame) => frame.path !== '/auth' && frame.open),
   ).toEqual([]);
 });
+
+test('Sign-out: the next person finds the login form empty', async ({
+  page,
+}) => {
+  await gotoHydrated(page, '/login');
+  await page.getByRole('textbox', { name: 'Email' }).fill('demo@example.com');
+  await page.locator('input[name="password"]').fill('secret');
+  await page.locator('input[name="password"]').press('Enter');
+  await page.waitForURL('**/two-factor-authentication');
+  await page.locator('input[autocomplete="one-time-code"]').fill('123456');
+  await page.locator('input[autocomplete="one-time-code"]').press('Enter');
+  await page.waitForURL('**/auth');
+  // As a sign-in without MFA leaves it
+  await page.evaluate(() =>
+    sessionStorage.setItem('mfa-setup-reminder', 'demo@example.com'),
+  );
+
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  const dialog = page.getByRole('alertdialog', { name: 'Sign out' });
+  await dialog.getByRole('button', { name: 'Sign out' }).click();
+  await page.waitForURL((url) => url.pathname === '/');
+  // Through links, not a reload, which would forget the address anyway
+  await page.getByRole('link', { name: 'Auth UI' }).click();
+  await page.waitForURL('**/auth');
+  await page.getByRole('link', { name: 'Login', exact: true }).click();
+  await page.waitForURL('**/login');
+
+  await expect(page.getByRole('textbox', { name: 'Email' })).toHaveValue('');
+  expect(
+    await page.evaluate(() => sessionStorage.getItem('mfa-setup-reminder')),
+  ).toBeNull();
+});

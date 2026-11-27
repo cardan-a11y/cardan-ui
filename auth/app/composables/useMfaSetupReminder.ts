@@ -10,6 +10,15 @@ const STORAGE_KEY = 'mfa-setup-reminder';
 
 let reminderReadFromStorage = false;
 
+// Throws where site data is blocked: the reminder then lasts for this page only
+function storage<T>(use: (store: Storage) => T): T | undefined {
+  try {
+    return use(sessionStorage);
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Whether the MFA setup page stands between the user and the app, for an API
  * whose user payload has `mfa_enabled`: required (`mfa_required`, no skip), or
@@ -26,7 +35,8 @@ export function useMfaSetupReminder() {
   // without sessionStorage. Nothing renders from it, so hydration is unaffected
   if (import.meta.client && !reminderReadFromStorage) {
     reminderReadFromStorage = true;
-    pendingFor.value = sessionStorage.getItem(STORAGE_KEY);
+    pendingFor.value =
+      storage((store) => store.getItem(STORAGE_KEY)) ?? null;
   }
 
   const mfaEnabled = computed(() => !!fields.value?.mfa_enabled);
@@ -55,12 +65,12 @@ export function useMfaSetupReminder() {
     if (!email) return;
 
     pendingFor.value = email;
-    sessionStorage.setItem(STORAGE_KEY, email);
+    storage((store) => store.setItem(STORAGE_KEY, email));
   }
 
   function dismissMfaSetup() {
     pendingFor.value = null;
-    sessionStorage.removeItem(STORAGE_KEY);
+    storage((store) => store.removeItem(STORAGE_KEY));
   }
 
   return {

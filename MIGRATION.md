@@ -117,6 +117,10 @@ Fixed: **the auth layer refreshes the identity after the MFA code is confirmed**
 
 - **Nothing to do.** A `refresh` handler that only re-reads the Sanctum identity can go, and one that keeps it does no harm: cardan-auditor-nuxt's `@refresh="getUser()"` on `MfaDialog` re-reads its own copy of the profile and stays. cardan-academy-nuxt uses `MfaSettings` without a handler.
 
+Fixed: **a sign-out forgets the address typed on the login page**, so the next person on a shared machine finds the form empty, and the MFA setup reminder, which kept the address in `sessionStorage` until the tab closed. Where site data is blocked the reminder now lasts for the page, where reading it threw and the login page showed the error page.
+
+- **Nothing to do.**
+
 New: **ComboBox's `error` event, Form's `resetValidity()` and SpinButton's `readonly` prop**, with small fixes to the field components.
 
 - **ComboBox emits `error`** with what its `options` function threw (an abort left out), and logs it to the console in development, where the popup only said that the options could not be loaded. A project that reports such failures listens to it. A project's vitest test of a failing options function names that log with `expectConsole('error', /The options function failed/)`, or the console guard fails it.
