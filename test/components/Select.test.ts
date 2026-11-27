@@ -190,3 +190,41 @@ describe('Select', () => {
     await expectNoViolations();
   });
 });
+
+describe('Select: no value yet', () => {
+  it.each([undefined, null])(
+    'shows the placeholder with %s as its value',
+    async (modelValue) => {
+      const wrapper = await mountSuspended(Select, {
+        props: {
+          label: 'Colour',
+          options,
+          placeholder: 'Choose a colour',
+          modelValue: modelValue as never,
+        },
+        attachTo: document.body,
+      });
+
+      const select = wrapper.get<HTMLSelectElement>('select').element;
+      expect(select.selectedOptions[0]?.text).toBe('Choose a colour');
+    },
+  );
+
+  it('with options in its slot and none in options, offers only those', async () => {
+    const wrapper = await mountSuspended(Select, {
+      props: { label: 'Colour', modelValue: 'blue' },
+      slots: {
+        default: () => [
+          h('option', { value: 'blue' }, 'Blue'),
+          h('option', { value: 'grey' }, 'Grey'),
+        ],
+      },
+      attachTo: document.body,
+    });
+
+    expect(wrapper.findAll('option').map((option) => option.text())).toEqual([
+      'Blue',
+      'Grey',
+    ]);
+  });
+});

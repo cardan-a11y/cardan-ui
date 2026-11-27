@@ -59,6 +59,11 @@ const {
 
 const { controlAttrs } = useControlAttrs();
 
+const modelOrPlaceholder = computed({
+  get: () => model.value ?? placeholderValue,
+  set: (value) => (model.value = value),
+});
+
 const computedErrorMessage = computed(() => {
   if (errorMessage) return errorMessage;
   if (required && !model.value) {
@@ -138,7 +143,7 @@ defineExpose({
       <select
         :id="id"
         ref="select"
-        v-model="model"
+        v-model="modelOrPlaceholder"
         class="select"
         v-bind="controlAttrs()"
         :name="name"
@@ -152,11 +157,14 @@ defineExpose({
         @change="handleChange"
         @invalid="updateValidity"
       >
-        <template v-if="!options?.length">
-          <option selected disabled :value="placeholderValue">
-            {{ noOptionsLabel || $t('select.no-options') }}
-          </option>
-        </template>
+        <option
+          v-if="!options?.length && !$slots.default"
+          selected
+          disabled
+          :value="placeholderValue"
+        >
+          {{ noOptionsLabel || $t('select.no-options') }}
+        </option>
         <option v-else-if="placeholder" hidden :value="placeholderValue">
           {{ placeholder }}
         </option>
