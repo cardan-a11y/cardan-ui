@@ -91,7 +91,8 @@ h3 {
 .demo-page {
   padding-block-end: 5rem;
 
-  h1 {
+  /* The page's title, not a Dialog's: Dialog is not teleported */
+  h1:not(:where(dialog h1)) {
     font-size: var(--font-size-xxl);
   }
 
