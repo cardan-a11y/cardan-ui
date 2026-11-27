@@ -608,6 +608,25 @@ describe('FileInput and image compression', () => {
     objectUrl.mockRestore();
   });
 
+  it('with a name, posts only the first of several pasted files', async () => {
+    const objectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:preview');
+    const { form } = await mountInFormWithLog();
+
+    // GIFs are not compressed: the input keeps what the paste put in it
+    const transfer = new DataTransfer();
+    transfer.items.add(new File(['a'], 'one.gif', { type: 'image/gif' }));
+    transfer.items.add(new File(['b'], 'two.gif', { type: 'image/gif' }));
+    const paste = new Event('paste', { bubbles: true });
+    Object.defineProperty(paste, 'clipboardData', { value: transfer });
+    document.body.dispatchEvent(paste);
+    await vi.waitFor(() => expect(posted(form)).toBe('one.gif'));
+
+    expect(new FormData(form).getAll('avatar')).toHaveLength(1);
+    objectUrl.mockRestore();
+  });
+
   it('reset() empties the value, the input and the preview, and drops a compression still running', async () => {
     const objectUrl = vi
       .spyOn(URL, 'createObjectURL')

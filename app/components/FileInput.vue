@@ -136,9 +136,7 @@ async function handlePaste(event: ClipboardEvent) {
   const file = event.clipboardData?.files?.[0];
   if (!file) return;
 
-  if (fileInputRef.value && event.clipboardData) {
-    fileInputRef.value.files = event.clipboardData.files;
-  }
+  setInputFile(file);
 
   await handleFile(file);
   emit('paste', file);
