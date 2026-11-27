@@ -24,8 +24,20 @@ import type {
  * ```
  *
  * A route of the page (`page.route()`, as withApi() installs) runs before
- * this one, so its own answers win.
+ * this one, so its own answers win. A project's own backend on another
+ * origin, such as a stand-in the suite starts, goes through with `allow`:
+ *
+ * ```ts
+ * withOtherOrigins(base, expect, {
+ *   allow: (url) => url.origin === 'http://localhost:8001',
+ * });
+ * ```
  */
+
+export interface OtherOriginsOptions {
+  /** Whether a request's URL is the project's own: it goes through, unrecorded */
+  allow?: (url: URL) => boolean;
+}
 
 export type OriginAnswer = {
   status?: number;
@@ -90,7 +102,7 @@ export class OtherOrigins {
 export function withOtherOrigins<
   T extends PlaywrightTestArgs & PlaywrightTestOptions,
   W extends PlaywrightWorkerArgs & PlaywrightWorkerOptions,
->(base: TestType<T, W>, expect: Expect) {
+>(base: TestType<T, W>, expect: Expect, options: OtherOriginsOptions = {}) {
   // As in withApi(): extend the base as Playwright's own, give back the caller's
   const plain = base as unknown as TestType<
     PlaywrightTestArgs & PlaywrightTestOptions,
@@ -102,7 +114,10 @@ export function withOtherOrigins<
         const origin = new URL(baseURL!).origin;
         const guard = new OtherOrigins();
         await context.route(
-          (url) => url.origin !== origin && /^https?:$/.test(url.protocol),
+          (url) =>
+            url.origin !== origin &&
+            /^https?:$/.test(url.protocol) &&
+            !options.allow?.(url),
           (route) => {
             const answer = guard.answerFor(route.request());
             if (!answer) return route.abort('blockedbyclient');
