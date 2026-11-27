@@ -40,6 +40,8 @@ const componentIcons = [
   'material-symbols:logout',
   'material-symbols:more-horiz',
   'material-symbols:open-in-new-rounded',
+  // AvatarButton has no default; its test and the Auditor use this one
+  'material-symbols:person-outline-rounded',
   'material-symbols:refresh-rounded',
   'material-symbols:remove-rounded',
   'material-symbols:search-rounded',

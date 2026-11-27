@@ -1,8 +1,13 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect, vi } from 'vitest';
 import { defineComponent, h, nextTick, ref } from 'vue';
 import { flushPromises, type DOMWrapper } from '@vue/test-utils';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { FileInput } from '#components';
+import {
+  fileTypeIcon,
+  fileTypeIcons,
+} from '../../app/components/FileInput.vue';
 import {
   accessibleName,
   description,
@@ -190,17 +195,20 @@ describe('FileInput in document mode', () => {
     ['cv.pdf.exe', false],
     ['cv', false],
     ['.pdf', false],
-  ])('judges %s by its last extension, in any case: accepted %s', async (name, accepted) => {
-    const wrapper = await mountSuspended(FileInput, {
-      props: { label: 'Document', mode: 'document', accept: '.pdf' },
-      attachTo: document.body,
-    });
-    const input = wrapper.get('input').element;
+  ])(
+    'judges %s by its last extension, in any case: accepted %s',
+    async (name, accepted) => {
+      const wrapper = await mountSuspended(FileInput, {
+        props: { label: 'Document', mode: 'document', accept: '.pdf' },
+        attachTo: document.body,
+      });
+      const input = wrapper.get('input').element;
 
-    await choose(input, new File(['x'], name));
-    expect(wrapper.emitted('select')?.length ?? 0).toBe(accepted ? 1 : 0);
-    expect(input.getAttribute('aria-invalid')).toBe(accepted ? null : 'true');
-  });
+      await choose(input, new File(['x'], name));
+      expect(wrapper.emitted('select')?.length ?? 0).toBe(accepted ? 1 : 0);
+      expect(input.getAttribute('aria-invalid')).toBe(accepted ? null : 'true');
+    },
+  );
 
   it('judges a file by its extension, not its MIME type, which the server checks', async () => {
     const wrapper = await mountSuspended(FileInput, {
@@ -449,10 +457,7 @@ describe('FileInput in image mode', () => {
     expect(value).toBe(gif);
 
     // A drop sets the input's files and fires change, as the picker does
-    await choose(
-      input,
-      new File(['x'], 'cv.pdf', { type: 'application/pdf' }),
-    );
+    await choose(input, new File(['x'], 'cv.pdf', { type: 'application/pdf' }));
     expect(value).toBe(gif);
     expect(input.files?.[0]).toBe(gif);
     expect(input.getAttribute('aria-invalid')).toBe('true');
@@ -472,7 +477,10 @@ describe('FileInput in image mode', () => {
       .spyOn(URL, 'createObjectURL')
       .mockReturnValue('blob:preview');
 
-    await choose(input, new File(['x'], 'shot.png', { type: 'application/pdf' }));
+    await choose(
+      input,
+      new File(['x'], 'shot.png', { type: 'application/pdf' }),
+    );
     expect(input.getAttribute('aria-invalid')).toBe('true');
     expect(description(input)).toBe(
       'PNG or WEBP (max. 5 MB) This file type is not supported. Choose a file of type PNG or WEBP.',
@@ -966,5 +974,58 @@ describe('FileInput: hide-zone', () => {
 
     await choose(input, new File([new Uint8Array(2000)], 'big.pdf'));
     expect(wrapper.text()).toContain('This file is larger than 1 KB.');
+  });
+});
+
+/** The installed Material Symbols, icons and aliases, as `prefix:name` */
+function materialSymbols() {
+  const { prefix, icons, aliases } = JSON.parse(
+    readFileSync(
+      'node_modules/@iconify-json/material-symbols/icons.json',
+      'utf8',
+    ),
+  );
+  return new Set(
+    [...Object.keys(icons), ...Object.keys(aliases ?? {})].map(
+      (name) => `${prefix}:${name}`,
+    ),
+  );
+}
+
+describe('fileTypeIcon', () => {
+  // Any other collection is fetched from Iconify's API at runtime, which a
+  // project's CSP blocks
+  it('returns only icons from the installed Material Symbols', () => {
+    const installed = materialSymbols();
+    const icons = [
+      ...fileTypeIcons.map(([, icon]) => icon),
+      fileTypeIcon(),
+      fileTypeIcon(new File([''], 'onbekend.xyz')),
+    ];
+    expect(icons.filter((icon) => !installed.has(icon))).toEqual([]);
+  });
+
+  it('picks the icon by extension or MIME type', () => {
+    const icon = (name: string, type = '') =>
+      fileTypeIcon(new File([''], name, { type }));
+    expect(icon('App.VUE')).toBe(
+      'material-symbols:code-blocks-outline-rounded',
+    );
+    expect(icon('README.md')).toBe('material-symbols:markdown-outline-rounded');
+    expect(icon('werkblad.pdf', 'application/pdf')).toBe(
+      'material-symbols:picture-as-pdf-outline-rounded',
+    );
+    expect(
+      icon(
+        'cijfers.xlsx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ),
+    ).toBe('material-symbols:table-outline-rounded');
+    expect(icon('foto.jpg', 'image/jpeg')).toBe(
+      'material-symbols:image-outline-rounded',
+    );
+    expect(icon('archief.zip', 'application/zip')).toBe(
+      'material-symbols:unknown-document-outline-rounded',
+    );
   });
 });
