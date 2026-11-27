@@ -109,6 +109,7 @@ Fixed: **FileInput's form post carries the compressed image.** Once compressorjs
 
 Fixed: **small defects in the field components**.
 
+- **CheckboxGroup's `v-model` is typed as an array**, `(string | number)[]`, where it also allowed a boolean, and the group treats any other model as empty: `undefined` or `null` made the first tick tick every box. Every project binds an array. Nothing to do.
 - **A disabled or read-only required field is no longer `aria-invalid`** after a failed submit, nor described by an error that does not show: Checkbox, CheckboxGroup, RadioGroup, DatePicker, ComboBox, SpinButton, FileInput and MarkdownEditor, which no longer holds a submit back while disabled. Nothing to do.
 
 ### 2.6.2

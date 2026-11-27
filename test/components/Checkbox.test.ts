@@ -248,6 +248,30 @@ describe('CheckboxGroup', () => {
   });
 });
 
+describe('CheckboxGroup: a model that is no array', () => {
+  it.each([undefined, null])(
+    'with %s ticks only the box that is ticked, and the model becomes an array',
+    async (modelValue) => {
+      const wrapper = await mountSuspended(CheckboxGroup, {
+        props: {
+          label: 'Toppings',
+          options: toppings,
+          modelValue: modelValue as never,
+          'onUpdate:modelValue': (value: unknown) =>
+            wrapper.setProps({ modelValue: value as never }),
+        },
+        attachTo: document.body,
+      });
+      const boxes = wrapper.findAll<HTMLInputElement>('input');
+
+      await boxes[0]!.setValue(true);
+
+      expect(wrapper.emitted('update:modelValue')).toEqual([[['cheese']]]);
+      expect(boxes.map((box) => box.element.checked)).toEqual([true, false]);
+    },
+  );
+});
+
 describe('A disabled, required field after a failed submit', () => {
   it('Checkbox: not invalid, and not described by an error that does not show', async () => {
     const wrapper = await mountInForm(() => [

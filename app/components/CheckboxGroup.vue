@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends GroupOption">
-const model = defineModel<boolean | (string | number)[]>();
+const model = defineModel<(string | number)[]>();
 
 const {
   options,
@@ -57,9 +57,12 @@ const message = computed(
   () => errorMessage ?? t('form.checkbox-group-required'),
 );
 
-const hasSelection = computed(() =>
-  Array.isArray(model.value) ? model.value.length > 0 : !!model.value,
-);
+const selectedArray = computed({
+  get: () => (Array.isArray(model.value) ? model.value : []),
+  set: (value) => (model.value = value),
+});
+
+const hasSelection = computed(() => selectedArray.value.length > 0);
 
 const { customErrorActive, clearCustomError, errorShown } = useCustomError(
   () => customError,
@@ -118,7 +121,7 @@ watch([hasSelection, message, () => required, () => options], applyValidity, {
             :key="`checkbox-${String(option[valueKey])}`"
           >
             <Checkbox
-              v-model="model"
+              v-model="selectedArray"
               :value="optionValue(option)"
               :label="optionText(option, labelKey)"
               :disabled="disabled || !!option[disabledKey]"
