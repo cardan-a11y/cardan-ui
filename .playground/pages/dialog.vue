@@ -227,6 +227,8 @@ function makeToast() {
         The consent dialog of a site: Accept or Deny is stored in a cookie for a
         year, and a button such as this one opens it again. On a site it opens
         by itself until a choice is stored; here only from this button.
+        <NuxtLink to="/cookies">Cookie consent</NuxtLink> shows a first
+        visit, and what loads from Google when.
       </p>
 
       <Card>

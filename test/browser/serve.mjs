@@ -19,6 +19,10 @@ await serve({
   envName: 'production',
   writeTypes: true,
   output: 'PLAYGROUND_OUTPUT',
-  // The Auth UI pages talk to the mock endpoints of this server
-  serverEnv: ({ origin }) => ({ NUXT_PUBLIC_SANCTUM_BASE_URL: origin }),
+  serverEnv: ({ origin }) => ({
+    // The Auth UI pages talk to the mock endpoints of this server
+    NUXT_PUBLIC_SANCTUM_BASE_URL: origin,
+    // CookiesDialog registers Tag Manager; the tests answer its request
+    NUXT_PUBLIC_GTM_ID: 'GTM-TEST',
+  }),
 });

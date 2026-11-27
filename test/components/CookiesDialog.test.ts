@@ -7,11 +7,12 @@ import { accessibleName, description, expectNoViolations } from '../a11y';
 
 /**
  * The consent dialog, the button that opens it and the state they share.
- * GTM is the module's business: its composables are stubbed, and nothing
- * here checks what reaches the data layer, only whether GTM is asked for.
+ * GTM's composables are stubbed: these tests pin what the dialog hands them
+ * (the consent trigger, the denied default) and pushDataLayer(); whether the
+ * browser asks Google for anything is pinned in test/browser/cookies.spec.ts.
  */
 const { consentTrigger, useGtm } = vi.hoisted(() => {
-  const gtm = { proxy: { dataLayer: { push: () => {} } }, remove: () => {} };
+  const gtm = { proxy: { dataLayer: { push: () => {} } } };
   return {
     consentTrigger: Object.assign(Promise.resolve(), { accept: vi.fn() }),
     useGtm: vi.fn(() => gtm),
@@ -20,6 +21,12 @@ const { consentTrigger, useGtm } = vi.hoisted(() => {
 
 mockNuxtImport('useScriptGoogleTagManager', () => useGtm);
 mockNuxtImport('useScriptTriggerConsent', () => () => consentTrigger);
+
+type GtmOptions = {
+  id: string;
+  onBeforeGtmStart?: (gtag: (...command: unknown[]) => void) => void;
+  scriptOptions?: { trigger?: unknown };
+};
 
 type Consent = { necessary: boolean; analytics: boolean; marketing: boolean };
 
@@ -162,19 +169,79 @@ describe('CookiesDialog and GTM', () => {
     expect(consentTrigger.accept).not.toHaveBeenCalled();
   });
 
-  it('loads GTM with the gtmId on Accept', async () => {
+  it('registers GTM with the gtmId behind the consent trigger, every kind denied by default, and fires the trigger on Accept', async () => {
     useRuntimeConfig().public.gtmId = 'GTM-TEST';
     const { button } = await mountDialog();
 
-    expect(useGtm).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'GTM-TEST' }),
-    );
+    expect(useGtm).toHaveBeenCalledOnce();
+    const [options] = useGtm.mock.calls[0] as unknown as [GtmOptions];
+    expect(options.id).toBe('GTM-TEST');
+    // The one line that keeps the script from loading before an Accept
+    expect(options.scriptOptions?.trigger).toBe(consentTrigger);
+
+    const gtag = vi.fn();
+    options.onBeforeGtmStart?.(gtag);
+    expect(gtag.mock.calls).toEqual([
+      [
+        'consent',
+        'default',
+        {
+          ad_storage: 'denied',
+          ad_user_data: 'denied',
+          ad_personalization: 'denied',
+          analytics_storage: 'denied',
+          functionality_storage: 'denied',
+          personalization_storage: 'denied',
+        },
+      ],
+    ]);
     expect(consentTrigger.accept).not.toHaveBeenCalled();
 
     button('Accept').click();
     await nextTick();
 
     expect(consentTrigger.accept).toHaveBeenCalledOnce();
+  });
+});
+
+describe('pushDataLayer', () => {
+  const event = { event: 'form_submit', form: 'contact' };
+  const dataLayer = () =>
+    (window as unknown as { dataLayer?: unknown[] }).dataLayer ?? [];
+
+  beforeEach(() => {
+    delete (window as unknown as { dataLayer?: unknown[] }).dataLayer;
+  });
+
+  it('pushes nothing before a choice or after Deny, and pushes after Accept', async () => {
+    useRuntimeConfig().public.gtmId = 'GTM-TEST';
+    const { button } = await mountDialog();
+    const { pushDataLayer, openCookiesDialog } = useCookiesDialog();
+
+    pushDataLayer(event);
+    expect(dataLayer()).not.toContainEqual(event);
+
+    button('Deny').click();
+    await nextTick();
+    pushDataLayer(event);
+    expect(dataLayer()).not.toContainEqual(event);
+
+    openCookiesDialog();
+    await nextTick();
+    button('Accept').click();
+    await nextTick();
+    pushDataLayer(event);
+    expect(dataLayer()).toContainEqual(event);
+  });
+
+  it('pushes nothing without a gtmId, also after Accept', async () => {
+    const { button } = await mountDialog();
+
+    button('Accept').click();
+    await nextTick();
+    useCookiesDialog().pushDataLayer(event);
+
+    expect(dataLayer()).toEqual([]);
   });
 });
 

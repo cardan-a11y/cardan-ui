@@ -39,6 +39,7 @@ export const navGroups: { id: string; label: string; items: NavItem[] }[] = [
       { id: 'tooltip', to: '/tooltip', label: 'Tooltip & Popover' },
       { id: 'dialog', to: '/dialog', label: 'Modal Dialog' },
       { id: 'confirm-dialog', to: '/confirm-dialog', label: 'Confirm Dialog' },
+      { id: 'cookies', to: '/cookies', label: 'Cookie Consent' },
     ],
   },
   {

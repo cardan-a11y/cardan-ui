@@ -50,7 +50,6 @@ interface ConsentTrigger extends Promise<void> {
 }
 interface GoogleTagManager {
   proxy: { dataLayer: { push: (command: IArguments) => void } };
-  remove: () => void;
 }
 
 function useTagManager(id: string) {
@@ -97,9 +96,11 @@ function useTagManager(id: string) {
       updateConsent('granted');
       consentTrigger.accept();
     },
+    // No remove(): before the script loaded it would cancel a later Accept in
+    // this visit, and after, GTM keeps running anyway; the denied update tells
+    // its consent-aware tags to hold back
     deny() {
       updateConsent('denied');
-      gtm.remove();
     },
   };
 }

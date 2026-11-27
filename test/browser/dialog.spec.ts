@@ -220,15 +220,6 @@ test('MobileMenu: a press in the panel released over the backdrop leaves it open
   await expect(menu).toBeHidden();
 });
 
-async function blockGtm(context: BrowserContext) {
-  const requests: string[] = [];
-  await context.route('https://www.googletagmanager.com/**', (route) => {
-    requests.push(route.request().url());
-    return route.abort();
-  });
-  return requests;
-}
-
 async function storedConsent(context: BrowserContext) {
   const cookie = (await context.cookies()).find(
     (cookie) => cookie.name === 'cookieConsent',
@@ -236,23 +227,19 @@ async function storedConsent(context: BrowserContext) {
   return cookie ? JSON.parse(decodeURIComponent(cookie.value)) : undefined;
 }
 
-test('CookiesDialog: the page does not open it on load', async ({
-  page,
-  context,
-}) => {
-  const gtm = await blockGtm(context);
+// What the page asks of Google, Tag Manager included, is pinned in
+// cookies.spec.ts; here the other-origin guard fails any request
+test('CookiesDialog: the page does not open it on load', async ({ page }) => {
   await gotoHydrated(page, '/dialog');
 
   await expect(page.getByRole('dialog', { name: 'Cookies' })).toHaveCount(0);
   expect(await inertElements(page)).toEqual([]);
-  expect(gtm).toEqual([]);
 });
 
 test('CookiesDialog: focus inside, Tab wraps both ways, Escape closes without a choice', async ({
   page,
   context,
 }) => {
-  const gtm = await blockGtm(context);
   await gotoHydrated(page, '/dialog');
   const trigger = page.getByRole('button', { name: 'Open cookies dialog' });
   const dialog = page.getByRole('dialog', { name: 'Cookies' });
@@ -261,7 +248,6 @@ test('CookiesDialog: focus inside, Tab wraps both ways, Escape closes without a 
   expect(await storedConsent(context)).toBeUndefined();
 
   await expectModalPattern(page, trigger, dialog);
-  expect(gtm).toEqual([]);
 });
 
 for (const [choice, granted] of [
@@ -271,8 +257,14 @@ for (const [choice, granted] of [
   test(`CookiesDialog: ${choice} closes, stores the choice and returns focus`, async ({
     page,
     context,
+    otherOrigins,
   }) => {
-    const gtm = await blockGtm(context);
+    if (granted)
+      otherOrigins.answer(
+        (url) => url.hostname === 'www.googletagmanager.com',
+        { contentType: 'text/javascript' },
+        'Tag Manager, after Accept',
+      );
     await gotoHydrated(page, '/dialog');
     const trigger = page.getByRole('button', { name: 'Open cookies dialog' });
     const dialog = page.getByRole('dialog', { name: 'Cookies' });
@@ -289,46 +281,6 @@ for (const [choice, granted] of [
       analytics: granted,
       marketing: granted,
     });
-    expect(gtm).toEqual([]);
+    await page.waitForLoadState('networkidle');
   });
 }
-
-async function blockGoogle(context: BrowserContext) {
-  const requests: string[] = [];
-  const google =
-    /(^|\.)(google|googletagmanager|google-analytics|googleadservices|googlesyndication|doubleclick|googleapis|gstatic)\.[a-z]+(\.[a-z]+)?$/;
-  await context.route(
-    (url) => google.test(url.hostname),
-    (route) => {
-      requests.push(route.request().url());
-      return route.abort();
-    },
-  );
-  return requests;
-}
-
-test('CookiesDialog: Accept without a gtmId asks Google for nothing', async ({
-  page,
-  context,
-}) => {
-  const google = await blockGoogle(context);
-  await gotoHydrated(page, '/dialog');
-  const trigger = page.getByRole('button', { name: 'Open cookies dialog' });
-  const dialog = page.getByRole('dialog', { name: 'Cookies' });
-
-  await trigger.click();
-  await dialog.getByRole('button', { name: 'Accept' }).click();
-  await expect(dialog).toBeHidden();
-  expect((await storedConsent(context))?.analytics).toBe(true);
-  await page.waitForLoadState('networkidle');
-  expect(google).toEqual([]);
-
-  // The next visit, with the accepted choice in the cookie
-  await gotoHydrated(page, '/dialog');
-  await trigger.click();
-  await expect(dialog).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(dialog).toBeHidden();
-  await page.waitForLoadState('networkidle');
-  expect(google).toEqual([]);
-});

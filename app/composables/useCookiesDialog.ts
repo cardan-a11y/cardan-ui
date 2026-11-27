@@ -4,8 +4,15 @@ type CookieConsent = {
   marketing: boolean;
 };
 
-/** The cookie consent CookiesDialog collects and applies, shared by every caller. */
+/**
+ * The cookie consent CookiesDialog collects and applies, shared by every caller.
+ * CookiesDialog registers Google Tag Manager with `runtimeConfig.public.gtmId`;
+ * a project never registers it itself (a second `useScriptGoogleTagManager()`
+ * loads it before any consent) and sends its own events with `pushDataLayer()`.
+ */
 export function useCookiesDialog() {
+  const { gtmId } = useRuntimeConfig().public;
+
   /** Whether CookiesDialog is open: set it and the dialog follows */
   const cookiesDialogOpen = useState<boolean>(
     'cardan-ui:cookies-dialog-open',
@@ -42,6 +49,18 @@ export function useCookiesDialog() {
     cookiesDialogOpen.value = false;
   }
 
+  /**
+   * Pushes an event to Tag Manager's data layer, only once the visitor has
+   * accepted, and only with a gtmId; before that, or after a Deny, it is dropped
+   */
+  function pushDataLayer(event: Record<string, unknown>) {
+    if (!import.meta.client || !gtmId || !hasConsent.value) return;
+
+    const page = window as unknown as { dataLayer?: unknown[] };
+    page.dataLayer ??= [];
+    page.dataLayer.push(event);
+  }
+
   function acceptCookies() {
     saveConsent(true);
   }
@@ -56,6 +75,7 @@ export function useCookiesDialog() {
     cookiesDialogOpen,
     hasConsent,
     openCookiesDialog,
+    pushDataLayer,
     acceptCookies,
     denyCookies,
   };
