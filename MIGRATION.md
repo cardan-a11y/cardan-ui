@@ -109,8 +109,8 @@ New: **`useCookiesDialog().pushDataLayer(event)`** sends a project's own event t
 
 Fixed: **FileInput's form post carries the compressed image.** Once compressorjs is done, FileInput writes the result to its input as well as to its value, and emits the new `ready` with it; a GIF, a file that is not an image or a failed compression keeps the original and emits `ready` with that. A submit before `ready` posts the original, which passed `maxFileSize`. A paste of several files puts only the first in the input, so the post carries one file. compressorjs now loads only when an image is chosen; keep it installed.
 
-- **Remove the `formData.set(...)` that put the compressed file in the post by hand**: cardan-academy-nuxt's `UserProfileForm.vue` (`avatar`), cardan-auditor-nuxt's `FileUploadForm.vue`, `FindingForm.vue` and `TeamDialog.vue`. In `TeamDialog.vue` this also fixes `logo_dark`, which went uncompressed.
-- **Call `reset()` instead of setting `validity` or `imagePreview` from outside** (cardan-auditor-nuxt's `FileUpload.vue` and `useFileUpload.ts`): it empties the value, the input and the preview. Both refs stay exposed for now.
+- **Remove the `formData.set(...)` that put the compressed file in the post by hand**: cardan-academy-nuxt's `UserProfileForm.vue` (`avatar`), cardan-auditor-nuxt's `FileUploadForm.vue`, `FindingForm.vue` and `TeamDialog.vue`. In `TeamDialog.vue` this also fixes `logo_dark`, which went uncompressed. Both projects do this on `chore/cardan-ui-2.6.3`, which merges only after this release is on `main`.
+- **Call `reset()` instead of setting `validity` or `imagePreview` from outside** (cardan-auditor-nuxt's `FileUpload.vue` and `useFileUpload.ts`): it empties the value, the input and the preview. Both refs stay exposed for now. cardan-auditor-nuxt does this on `chore/cardan-ui-2.6.3`.
 
 New: **ComboBox's `error` event, Form's `resetValidity()` and SpinButton's `readonly` prop**, with small fixes to the field components.
 
