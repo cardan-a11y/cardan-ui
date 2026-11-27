@@ -235,7 +235,8 @@ async function handleSubmit(formData: FormData) {
       <p class="demo-hint">
         A Form checks its fields on submit and moves focus to the first one that
         fails. The switches in the form make every field required, read-only or
-        disabled.
+        disabled. An error names the check that failed: try one letter in the
+        first field, which needs at least two.
       </p>
 
       <Card>
@@ -248,7 +249,8 @@ async function handleSubmit(formData: FormData) {
           :required="required"
           name="input"
           label="Input"
-          instruction="Submit the name Ada for an error from the server"
+          :minlength="2"
+          instruction="At least 2 characters. Submit the name Ada for an error from the server"
           :custom-error="serverError"
           :variant="inputVariant"
           :disabled="disabled"

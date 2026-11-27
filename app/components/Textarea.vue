@@ -43,19 +43,33 @@ const {
 
 const { controlAttrs } = useControlAttrs();
 
+const textareaRef = useTemplateRef<HTMLTextAreaElement>('textarea');
+const isValid = ref(true);
+const reason = ref<ValidityReason>();
+
+// `minlength` and `maxlength` come as attributes: read from the control
 const computedErrorMessage = computed(() => {
   if (errorMessage) return errorMessage;
-  if (required && !String(model.value ?? '').trim()) {
+  if (reason.value === 'too-short') {
+    return t('form.too-short', { length: textareaRef.value?.minLength });
+  }
+  if (reason.value === 'too-long') {
+    return t('form.too-long', { length: textareaRef.value?.maxLength });
+  }
+  if (
+    reason.value === 'missing' ||
+    (required && !String(model.value ?? '').trim())
+  ) {
     return t('form.missing-value', { item: label });
   }
   return t('form.invalid-value');
 });
 
-const textareaRef = useTemplateRef<HTMLTextAreaElement>('textarea');
-const isValid = ref(true);
-
 function updateValidity() {
   isValid.value = textareaRef.value?.validity.valid ?? true;
+  reason.value = textareaRef.value
+    ? validityReason(textareaRef.value)
+    : undefined;
 }
 
 const { customErrorActive, clearCustomError, errorShown } = useCustomError(

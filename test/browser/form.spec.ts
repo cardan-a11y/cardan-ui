@@ -167,3 +167,23 @@ test('a Form rendered after a client-side navigation takes its attributes: the f
 
   await expect(page.getByRole('form', { name: 'Form fields' })).toBeVisible();
 });
+
+test('Input names the length it needs once a typed text is too short', async ({
+  page,
+}) => {
+  await gotoHydrated(page, '/form');
+  const input = page.getByRole('textbox', { name: 'Input', exact: true });
+
+  // The browser sets tooShort only after real typing
+  await input.pressSequentially('A');
+  await page.getByRole('button', { name: 'Submit' }).click();
+
+  await expect(input).toBeFocused();
+  await expect(input).toHaveAttribute('aria-invalid', 'true');
+  await expect(input).toHaveAccessibleDescription(
+    /Enter at least 2 characters/,
+  );
+
+  await input.pressSequentially('d');
+  await expect(input).not.toHaveAttribute('aria-invalid');
+});

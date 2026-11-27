@@ -110,7 +110,9 @@
     "checkbox-required": "Vink dit vakje aan om verder te gaan",
     "checkbox-group-required": "Vink minstens één optie aan",
     "below-min": "Vul {min} of meer in",
-    "above-max": "Vul {max} of minder in"
+    "above-max": "Vul {max} of minder in",
+    "too-short": "Vul minstens {length} tekens in",
+    "too-long": "Vul hoogstens {length} tekens in"
   },
   "files": {
     "browse": "Selecteer bestand",

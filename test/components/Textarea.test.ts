@@ -195,3 +195,29 @@ describe('Textarea', () => {
     expect(field.attributes('aria-invalid')).toBeUndefined();
   });
 });
+
+describe('Textarea: the error names the check that failed', () => {
+  it.each([
+    {
+      attrs: { minlength: 10 },
+      value: 'Too short',
+      error: 'Enter at least 10 characters',
+    },
+    {
+      attrs: { maxlength: 5 },
+      value: 'Too long',
+      error: 'Enter at most 5 characters',
+    },
+  ])('$error', async ({ attrs, value, error }) => {
+    const wrapper = await mountInForm(() => [
+      h(Textarea, { label: 'Comment', modelValue: value, ...attrs }),
+    ]);
+    const textarea = wrapper.get('textarea');
+
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+
+    expect(textarea.attributes('aria-invalid')).toBe('true');
+    expect(description(textarea)).toBe(error);
+  });
+});

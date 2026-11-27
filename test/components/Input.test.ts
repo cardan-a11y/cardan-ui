@@ -327,3 +327,55 @@ describe('Input', () => {
     expect(field.attributes('aria-invalid')).toBeUndefined();
   });
 });
+
+describe('Input: the error names the check that failed', () => {
+  it.each([
+    {
+      check: 'a number below min',
+      props: { type: 'number', min: 2, max: 9 },
+      value: '1',
+      error: 'Enter 2 or more',
+    },
+    {
+      check: 'a number above max',
+      props: { type: 'number', min: 2, max: 9 },
+      value: '12',
+      error: 'Enter 9 or less',
+    },
+    {
+      check: 'a text below minlength',
+      props: { minlength: 3 },
+      value: 'ab',
+      error: 'Enter at least 3 characters',
+    },
+    {
+      check: 'a text above maxlength',
+      props: { maxlength: 3 },
+      value: 'abcd',
+      error: 'Enter at most 3 characters',
+    },
+    {
+      check: 'an empty required field, before its length',
+      props: { required: true, minlength: 3 },
+      value: '',
+      error: 'Code is missing',
+    },
+    {
+      check: 'a value its pattern refuses',
+      props: { pattern: '[0-9]+' },
+      value: 'abc',
+      error: 'Value invalid',
+    },
+  ])('$check', async ({ props, value, error }) => {
+    const { wrapper, input } = await mountField(
+      { label: 'Code', ...props },
+      value,
+    );
+
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+
+    expect(input.attributes('aria-invalid')).toBe('true');
+    expect(description(input)).toBe(error);
+  });
+});

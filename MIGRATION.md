@@ -113,6 +113,7 @@ Fixed: **small defects in the field components**.
 - **Select shows its placeholder for `undefined` and `null`**, and no "No options" entry next to options in its slot. Nothing to do.
 - **RadioGroup counts only an option's value as a choice**, so a required group with `null` or a value no option has shows its error after a failed submit. Nothing to do.
 - **A disabled or read-only required field is no longer `aria-invalid`** after a failed submit, nor described by an error that does not show: Checkbox, CheckboxGroup, RadioGroup, DatePicker, ComboBox, SpinButton, FileInput and MarkdownEditor, which no longer holds a submit back while disabled. Nothing to do.
+- **Input's and Textarea's error names the check that failed**, such as "Enter at least 3 characters" or "Enter 2 or more", with the layer's new keys `form.too-short` and `form.too-long`. Nothing to do.
 
 ### 2.6.2
 

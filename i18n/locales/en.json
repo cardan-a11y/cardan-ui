@@ -110,7 +110,9 @@
     "checkbox-required": "Tick this box to continue",
     "checkbox-group-required": "Tick at least one option",
     "below-min": "Enter {min} or more",
-    "above-max": "Enter {max} or less"
+    "above-max": "Enter {max} or less",
+    "too-short": "Enter at least {length} characters",
+    "too-long": "Enter at most {length} characters"
   },
   "files": {
     "browse": "Browse files",

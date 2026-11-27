@@ -84,19 +84,36 @@ const {
 
 const { controlAttrs } = useControlAttrs();
 
-const computedErrorMessage = computed(() => {
-  if (errorMessage) {
-    return errorMessage;
-  } else if (required && !String(model.value ?? '').trim()) {
-    return t('form.missing-value', { item: label });
-  } else if (type === 'email') {
-    return t('form.invalid-email');
-  } else if (type === 'tel') {
-    return t('form.invalid-phone');
-  } else if (type === 'url') {
-    return t('form.invalid-url');
-  }
+function mismatchMessage() {
+  if (type === 'email') return t('form.invalid-email');
+  if (type === 'tel') return t('form.invalid-phone');
+  if (type === 'url') return t('form.invalid-url');
   return t('form.invalid-value');
+}
+
+const computedErrorMessage = computed(() => {
+  if (errorMessage) return errorMessage;
+
+  switch (reason.value) {
+    case 'missing':
+      return t('form.missing-value', { item: label });
+    case 'below-min':
+      return t('form.below-min', { min });
+    case 'above-max':
+      return t('form.above-max', { max });
+    case 'too-short':
+      return t('form.too-short', { length: minlength });
+    case 'too-long':
+      return t('form.too-long', { length: maxlength });
+    case 'mismatch':
+      return mismatchMessage();
+    case 'invalid':
+      return t('form.invalid-value');
+  }
+
+  return required && !String(model.value ?? '').trim()
+    ? t('form.missing-value', { item: label })
+    : mismatchMessage();
 });
 
 const inputMode = computed(() => {
@@ -117,6 +134,7 @@ const chipSize = computed(() => {
 
 const inputRef = useTemplateRef<HTMLInputElement>('input');
 const isValid = ref(true);
+const reason = ref<ValidityReason>();
 
 const EMAIL_PATTERN = '.+@.+\\..+';
 const NOT_ONLY_SPACES = '(?=.*\\S)';
@@ -129,6 +147,7 @@ const computedPattern = computed(() => {
 
 function updateValidity() {
   isValid.value = inputRef.value?.validity.valid ?? true;
+  reason.value = inputRef.value ? validityReason(inputRef.value) : undefined;
 }
 
 const { customErrorActive, clearCustomError, errorShown } = useCustomError(
