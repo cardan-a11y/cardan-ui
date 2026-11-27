@@ -22,6 +22,15 @@ const avatar = ref<File>();
 
 const serverError = ref<string>();
 
+// A ConfirmDialog inside the Form, whose action leaves the form as it is
+const draftDialog = useTemplateRef<ConfirmDialogComponent>('draftDialog');
+const draftStatus = ref('');
+
+async function deleteDraft() {
+  await draftDialog.value?.closeDialog();
+  draftStatus.value = 'The saved draft was deleted.';
+}
+
 const wcagLevel = ref<string[]>([]);
 const wcagLevels = [
   { value: 'A', label: 'Level A' },
@@ -238,6 +247,15 @@ async function handleSubmit(formData: FormData) {
         disabled. An error names the check that failed: try one letter in the
         first field, which needs at least two.
       </p>
+      <p class="demo-hint">
+        Reset empties the fields that have no <code>v-model</code> and hides the
+        errors of a failed submit; <code>resetValidity()</code> on the Form
+        hides only the errors, for a form that stays mounted, such as one in a
+        dialog that opens again for the next item. Delete the saved draft asks
+        first, in a ConfirmDialog inside the Form. Its field for the digit is a
+        small form of its own, and the outer Form leaves a submit or reset of a
+        nested form alone: it neither checks its own fields nor submits.
+      </p>
 
       <Card>
       <Form
@@ -440,8 +458,25 @@ async function handleSubmit(formData: FormData) {
             />
 
             <Button type="reset" label="Reset" :disabled="disabled" />
+
+            <Button
+              label="Delete the saved draft"
+              :disabled="disabled"
+              @click="draftDialog?.openDialog()"
+            />
           </div>
         </div>
+
+        <p role="status">{{ draftStatus }}</p>
+
+        <ConfirmDialog
+          ref="draftDialog"
+          label="Delete the saved draft?"
+          description="The draft saved on the server goes; what is in the form stays."
+          challenge
+          autofocus
+          @confirm="deleteDraft"
+        />
       </Form>
 
       <template v-if="raw">

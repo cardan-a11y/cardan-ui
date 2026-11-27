@@ -187,3 +187,50 @@ test('Input names the length it needs once a typed text is too short', async ({
   await input.pressSequentially('d');
   await expect(input).not.toHaveAttribute('aria-invalid');
 });
+
+test('Form: a reset hides the errors of a failed submit', async ({ page }) => {
+  await gotoHydrated(page, '/form');
+  await page.getByRole('switch', { name: 'Require form inputs' }).click();
+  const input = page.getByRole('textbox', {
+    name: 'Input required',
+    exact: true,
+  });
+
+  await page.getByRole('button', { name: 'Submit' }).click();
+  await expect(input).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByText('Input is missing')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Reset' }).click();
+  await expect(input).not.toHaveAttribute('aria-invalid');
+  await expect(page.getByText('Input is missing')).toBeHidden();
+  await expect(input).not.toHaveAccessibleDescription(/Input is missing/);
+});
+
+test('Form: the submit of a ConfirmDialog nested in it is that dialog’s own', async ({
+  page,
+}) => {
+  await gotoHydrated(page, '/form');
+  await page.getByRole('switch', { name: 'Require form inputs' }).click();
+  const input = page.getByRole('textbox', {
+    name: 'Input required',
+    exact: true,
+  });
+
+  const trigger = page.getByRole('button', { name: 'Delete the saved draft' });
+  await trigger.click();
+  const dialog = page.getByRole('alertdialog', {
+    name: 'Delete the saved draft?',
+  });
+  const field = dialog.getByRole('textbox', { name: 'Confirm number' });
+  await expect(field).toBeFocused();
+  await field.fill((await field.getAttribute('pattern'))!);
+  await field.press('Enter');
+
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect(page.getByText('The saved draft was deleted.')).toBeVisible();
+  // The outer Form neither checked its empty required fields nor submitted.
+  // Browsers end a submit at an ancestor form; Form.test.ts pins Form's own guard
+  await expect(input).not.toHaveAttribute('aria-invalid');
+  await expect(page.locator('pre code')).toBeHidden();
+});

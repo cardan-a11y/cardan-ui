@@ -228,3 +228,102 @@ describe('Form', () => {
     expect(describedAtFocus).toContain('Fill in your name');
   });
 });
+
+describe('Form: resetting the shown errors', () => {
+  /** A required Input in a Form that stays mounted, as in a reopened dialog */
+  async function mountRequired() {
+    const form = ref<{ resetValidity: () => void }>();
+    const wrapper = await mountSuspended(
+      defineComponent({
+        setup: () => () =>
+          h(
+            Form,
+            { ref: form },
+            {
+              default: () => [
+                h(Input, { label: 'Name', required: true, minlength: 5 }),
+              ],
+            },
+          ),
+      }),
+      { attachTo: document.body },
+    );
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+    const input = wrapper.get('input');
+    expect(input.attributes('aria-invalid')).toBe('true');
+    return { wrapper, input, form };
+  }
+
+  it('resetValidity() hides the errors of the failed submit and keeps the values', async () => {
+    const { input, form } = await mountRequired();
+    // Still too short: the error is hidden, not solved
+    await input.setValue('kept');
+    expect(input.attributes('aria-invalid')).toBe('true');
+
+    form.value!.resetValidity();
+    await nextTick();
+
+    expect(input.attributes('aria-invalid')).toBeUndefined();
+    expect(description(input)).toBe('');
+    expect((input.element as HTMLInputElement).value).toBe('kept');
+  });
+
+  it('a reset of the form hides them too', async () => {
+    const { wrapper, input } = await mountRequired();
+
+    await wrapper.get('form').trigger('reset');
+
+    expect(input.attributes('aria-invalid')).toBeUndefined();
+    expect(description(input)).toBe('');
+  });
+});
+
+describe('Form: a form nested in it', () => {
+  it('leaves the submit and reset of the inner form to that form', async () => {
+    const submitted = vi.fn();
+    const invalid = vi.fn();
+    const wrapper = await mountInForm(
+      () => [
+        h(Input, { label: 'Name', required: true, modelValue: '' }),
+        h(
+          'form',
+          { class: 'inner', onSubmit: (e: Event) => e.preventDefault() },
+          [h('input', { name: 'digit', value: '3' })],
+        ),
+      ],
+      { onSubmit: submitted, onInvalid: invalid },
+    );
+
+    await wrapper.get('form.inner').trigger('submit');
+    await nextTick();
+
+    expect(submitted).not.toHaveBeenCalled();
+    expect(invalid).not.toHaveBeenCalled();
+    expect(wrapper.get('input').attributes('aria-invalid')).toBeUndefined();
+
+    // The outer form's own errors stay through a reset of the inner one
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+    await wrapper.get('form.inner').trigger('reset');
+    expect(wrapper.get('input').attributes('aria-invalid')).toBe('true');
+  });
+});
+
+describe('Form: focus functions', () => {
+  it('calls autofocusFn on mount, and invalidFocusFn in place of focusing the first invalid field', async () => {
+    const autofocusFn = vi.fn();
+    const invalidFocusFn = vi.fn();
+    const wrapper = await mountInForm(
+      () => [h(Input, { label: 'Name', required: true, modelValue: '' })],
+      { autofocusFn, invalidFocusFn },
+    );
+    expect(autofocusFn).toHaveBeenCalledTimes(1);
+
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+
+    expect(invalidFocusFn).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).not.toBe(wrapper.get('input').element);
+  });
+});

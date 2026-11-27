@@ -32,12 +32,29 @@ function submit() {
   formRef.value?.requestSubmit();
 }
 
+/** Hides the errors of a failed submit; the values stay */
+function resetValidity() {
+  validity.value = true;
+}
+
+// A form nested in the DOM (ConfirmDialog's, a Search) submits and resets its own
+function isOwn(event: Event) {
+  return !!formRef.value && event.target === formRef.value;
+}
+
+function handleReset(event: Event) {
+  if (isOwn(event)) resetValidity();
+}
+
 async function handleSubmit(event: Event) {
-  const target = event.target as HTMLFormElement;
+  if (!isOwn(event)) return;
+  event.preventDefault();
+
+  const target = formRef.value as HTMLFormElement;
   const synced = [...syncs].map((sync) => sync()).some(Boolean);
   if (synced) await nextTick();
 
-  validity.value = target?.checkValidity();
+  validity.value = target.checkValidity();
 
   if (validity.value) {
     const data = new FormData(target);
@@ -59,6 +76,7 @@ async function handleSubmit(event: Event) {
 
 defineExpose({
   submit,
+  resetValidity,
 });
 
 const emit = defineEmits<{
@@ -81,7 +99,8 @@ const emit = defineEmits<{
     novalidate
     method="dialog"
     action="."
-    @submit.prevent="handleSubmit"
+    @submit="handleSubmit"
+    @reset="handleReset"
   >
     <slot />
   </form>

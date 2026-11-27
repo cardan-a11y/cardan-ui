@@ -107,8 +107,9 @@ Fixed: **FileInput's form post carries the compressed image.** Once compressorjs
 - **Remove the `formData.set(...)` that put the compressed file in the post by hand**: cardan-academy-nuxt's `UserProfileForm.vue` (`avatar`), cardan-auditor-nuxt's `FileUploadForm.vue`, `FindingForm.vue` and `TeamDialog.vue`. In `TeamDialog.vue` this also fixes `logo_dark`, which went uncompressed.
 - **Call `reset()` instead of setting `validity` or `imagePreview` from outside** (cardan-auditor-nuxt's `FileUpload.vue` and `useFileUpload.ts`): it empties the value, the input and the preview. Both refs stay exposed for now.
 
-Fixed: **small defects in the field components**.
+New: **Form's `resetValidity()`**, with small fixes to the field components.
 
+- **Form exposes `resetValidity()`**, which hides the errors of a failed submit and keeps the values, for a Form that stays mounted, such as one in a dialog that opens again for the next item; a native reset (a `type="reset"` button, `form.reset()`) hides them too. A `:key` that a project put on a Form only to clear its errors can go. Form also leaves a submit or reset of another form, nested in it in the DOM, to that form.
 - **CheckboxGroup's `v-model` is typed as an array**, `(string | number)[]`, where it also allowed a boolean, and the group treats any other model as empty: `undefined` or `null` made the first tick tick every box. Every project binds an array. Nothing to do.
 - **Select shows its placeholder for `undefined` and `null`**, and no "No options" entry next to options in its slot. Nothing to do.
 - **RadioGroup counts only an option's value as a choice**, so a required group with `null` or a value no option has shows its error after a failed submit. Nothing to do.
