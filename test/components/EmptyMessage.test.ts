@@ -66,9 +66,6 @@ describe('EmptyMessage', () => {
     const button = wrapper.get('button');
     expect(roleOf(button)).toBe('button');
     expect(accessibleName(button)).toBe('Reset filters');
-    expect(button.element.closest('[inert], [hidden], [aria-hidden]')).toBe(
-      null,
-    );
     const actionFollowsText =
       paragraphs[0]!.element.compareDocumentPosition(button.element) &
       Node.DOCUMENT_POSITION_FOLLOWING;

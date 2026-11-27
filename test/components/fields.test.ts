@@ -264,7 +264,7 @@ describe.each(Object.entries(fields))('%s, as a field', (_, field) => {
   );
 
   it.runIf(field.change)(
-    'shows a custom error, and is described by it, until the user changes the value',
+    'shows a custom error, and is described by it, until the user changes the value or the parent drops it',
     async () => {
       const { wrapper, control } = await mountField(field, {
         modelValue: field.filled,
@@ -288,6 +288,13 @@ describe.each(Object.entries(fields))('%s, as a field', (_, field) => {
       await nextTick();
       expect(description(control)).not.toContain('Sold out');
       expect(control.attributes('aria-invalid')).toBeUndefined();
+
+      await wrapper.setProps({ customError: 'Sold out again' } as never);
+      await nextTick();
+      expect(description(control)).toContain('Sold out again');
+      await wrapper.setProps({ customError: undefined } as never);
+      await nextTick();
+      expect(description(control)).not.toContain('Sold out again');
     },
   );
 

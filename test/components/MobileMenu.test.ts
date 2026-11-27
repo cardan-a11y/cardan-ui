@@ -116,8 +116,9 @@ describe('MobileMenu', () => {
 
     await vi.waitFor(() => expect(dialog.open).toBe(false));
     expect(trigger.attributes('aria-expanded')).toBe('false');
-    // And the page around it is no longer inert
     await vi.waitFor(() => expectFocused(trigger));
+    // And the page around it is no longer inert
+    expect(document.querySelectorAll('[inert]')).toHaveLength(0);
   });
 
   it('has released the page by the time the dialog closes and the browser returns focus', async () => {

@@ -5,6 +5,7 @@ import { Checkbox, CheckboxGroup } from '#components';
 import {
   accessibleName,
   description,
+  expectFocused,
   expectNoViolations,
   roleOf,
 } from '../a11y';
@@ -60,7 +61,8 @@ describe('Checkbox', () => {
     const checkbox = wrapper.get<HTMLInputElement>('input');
 
     expect(checkbox.attributes('aria-disabled')).toBe('true');
-    expect(checkbox.element.disabled).toBe(false);
+    checkbox.element.focus();
+    expectFocused(checkbox);
 
     checkbox.element.click();
     await nextTick();
