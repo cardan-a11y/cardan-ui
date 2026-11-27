@@ -107,8 +107,9 @@ Fixed: **FileInput's form post carries the compressed image.** Once compressorjs
 - **Remove the `formData.set(...)` that put the compressed file in the post by hand**: cardan-academy-nuxt's `UserProfileForm.vue` (`avatar`), cardan-auditor-nuxt's `FileUploadForm.vue`, `FindingForm.vue` and `TeamDialog.vue`. In `TeamDialog.vue` this also fixes `logo_dark`, which went uncompressed.
 - **Call `reset()` instead of setting `validity` or `imagePreview` from outside** (cardan-auditor-nuxt's `FileUpload.vue` and `useFileUpload.ts`): it empties the value, the input and the preview. Both refs stay exposed for now.
 
-New: **Form's `resetValidity()`**, with small fixes to the field components.
+New: **ComboBox's `error` event and Form's `resetValidity()`**, with small fixes to the field components.
 
+- **ComboBox emits `error`** with what its `options` function threw (an abort left out), and logs it to the console in development, where the popup only said that the options could not be loaded. A project that reports such failures listens to it. A project's vitest test of a failing options function names that log with `expectConsole('error', /The options function failed/)`, or the console guard fails it.
 - **Form exposes `resetValidity()`**, which hides the errors of a failed submit and keeps the values, for a Form that stays mounted, such as one in a dialog that opens again for the next item; a native reset (a `type="reset"` button, `form.reset()`) hides them too. A `:key` that a project put on a Form only to clear its errors can go. Form also leaves a submit or reset of another form, nested in it in the DOM, to that form.
 - **CheckboxGroup's `v-model` is typed as an array**, `(string | number)[]`, where it also allowed a boolean, and the group treats any other model as empty: `undefined` or `null` made the first tick tick every box. Every project binds an array. Nothing to do.
 - **Select shows its placeholder for `undefined` and `null`**, and no "No options" entry next to options in its slot. Nothing to do.

@@ -199,6 +199,8 @@ const {
 const emit = defineEmits<{
   /** The create option was picked, with the trimmed text */
   create: [text: string];
+  /** The options function failed (not an abort), with what it threw */
+  error: [error: unknown];
 }>();
 
 const isMultiple = !!multiple;
@@ -231,6 +233,7 @@ const optionsOfField = useComboBoxOptions<T>(
     loading: () => loading,
     createOption: () => createOption,
     createText: () => createText,
+    onError: (error) => emit('error', error),
   },
   {
     query: () => query.value,

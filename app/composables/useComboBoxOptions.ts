@@ -45,6 +45,8 @@ export function useComboBoxOptions<T>(
     createOption?: () => boolean | undefined;
     /** The create option's text for the typed text; "Create “…”" by default */
     createText?: () => ((text: string) => string) | undefined;
+    /** What the options function threw, but not an abort */
+    onError?: (error: unknown) => void;
   },
   field: {
     /** The text to filter on, trimmed: empty until the user edited it */
@@ -111,6 +113,18 @@ export function useComboBoxOptions<T>(
         : true),
   );
 
+  function report(error: unknown, signal: AbortSignal) {
+    const cause = (error as { cause?: unknown } | null)?.cause;
+    const isAbort = (value: unknown) =>
+      (value as { name?: unknown } | null)?.name === 'AbortError';
+    if (signal.aborted || isAbort(error) || isAbort(cause)) return;
+
+    if (import.meta.dev || import.meta.test) {
+      console.error('[ComboBox] The options function failed:', error);
+    }
+    source.onError?.(error);
+  }
+
   async function ask(
     query: string,
     page: number,
@@ -141,9 +155,10 @@ export function useComboBoxOptions<T>(
 
       loaded.value = listing;
       loadState.value = 'loaded';
-    } catch {
+    } catch (error) {
       if (request !== controller) return;
 
+      report(error, controller.signal);
       loadState.value = 'failed';
     }
 
@@ -206,9 +221,10 @@ export function useComboBoxOptions<T>(
       stopLoadingMore();
       found.value = listing;
       searchState.value = 'idle';
-    } catch {
+    } catch (error) {
       if (searchRequest !== controller) return;
 
+      report(error, controller.signal);
       stopLoadingMore();
       found.value = { query, page: 1, options: [], more: false };
       searchState.value = 'failed';
@@ -253,9 +269,10 @@ export function useComboBoxOptions<T>(
       else if (current === loaded.value) loaded.value = longer;
 
       if (field.isOpen()) field.say(() => t('combobox.more-loaded'));
-    } catch {
+    } catch (error) {
       if (moreRequest !== controller) return;
 
+      report(error, controller.signal);
       if (field.isOpen()) field.say(() => t('combobox.more-failed'));
     }
 

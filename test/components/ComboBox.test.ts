@@ -963,6 +963,7 @@ describe('ComboBox: options from a function', () => {
   });
 
   it('asks again on the next open after a failure, and after an empty answer', async () => {
+    expectConsole('error', /The options function failed/);
     const { options, calls } = loader([fail, () => []]);
     const { input, labels, popupText } = await mountComboBox({ options });
 
@@ -1046,6 +1047,7 @@ describe('ComboBox: the states of the list', () => {
       state: 'failed',
       props: { options: () => Promise.reject(new Error('failed')) },
       text: 'The options could not be loaded. Open the list again to retry.',
+      logs: /The options function failed/,
     },
     { state: 'empty', props: { options: [] }, text: 'There are no options' },
     {
@@ -1055,7 +1057,8 @@ describe('ComboBox: the states of the list', () => {
     },
   ])(
     '$state: a text in the popup and in the status, no listbox and aria-expanded false',
-    async ({ props, text }) => {
+    async ({ props, text, logs }) => {
+      if (logs) expectConsole('error', logs);
       const { wrapper, input, popupText, status } = await mountComboBox(props);
 
       await input.trigger('click');
@@ -1139,6 +1142,7 @@ describe('ComboBox: what the review found', () => {
   });
 
   it('says the failure of a load that arrives after the pause in typing', async () => {
+    expectConsole('error', /The options function failed/);
     let fail: (error: Error) => void = () => {};
     const { input, status } = await mountComboBox({
       options: () => new Promise<unknown[]>((_, reject) => (fail = reject)),
@@ -1444,6 +1448,7 @@ describe('ComboBox: search on the server', () => {
   });
 
   it('says that nothing matches, and that a search failed, which the next keystroke asks again', async () => {
+    expectConsole('error', /The options function failed/);
     const { options, calls } = server({ fail: ['ac'] });
     const { input, popupText, labels } = await mountComboBox({
       options,
@@ -1645,6 +1650,31 @@ describe('ComboBox: pages', () => {
 
     await press('ArrowDown');
     expect(highlighted()).toBe('Option 1');
+  });
+
+  it('says when the next page could not be loaded, and emits error with its cause', async () => {
+    expectConsole('error', /The options function failed/, 1);
+    const cause = new Error('Page 2 failed');
+    const options = vi.fn(async (_query: string, context: { page: number }) => {
+      if (context.page === 2) throw cause;
+      return { options: page(context.page), more: true };
+    });
+    const { wrapper, input, highlighted, status } = await mountComboBox({
+      options,
+      serverSearch: true,
+    });
+    input.element.focus();
+    await flushPromises();
+
+    await press('ArrowDown');
+    await press('ArrowDown');
+    await press('ArrowDown');
+    await flushPromises();
+    await pause();
+
+    expect(highlighted()).toBe('Option 2');
+    expect(status()).toBe('More options could not be loaded');
+    expect(wrapper.emitted('error')).toEqual([[cause]]);
   });
 
   it('takes a list that is filtered in the browser as whole: "more" is ignored without server-search', async () => {
@@ -2005,6 +2035,84 @@ describe('ComboBox: disabled options', () => {
     await input.trigger('click');
 
     expect(option('Ham').attributes('aria-disabled')).toBe('true');
+  });
+});
+
+describe('ComboBox: the cause of a failed load', () => {
+  it('emits error with what the options function threw, and logs it in development', async () => {
+    expectConsole(
+      'error',
+      /The options function failed: Error: No connection/,
+      1,
+    );
+    const cause = new Error('No connection');
+    const { wrapper, input } = await mountComboBox({
+      options: () => Promise.reject(cause),
+    });
+
+    await input.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.emitted('error')).toEqual([[cause]]);
+  });
+
+  it('emits error for a failed search', async () => {
+    expectConsole('error', /The options function failed/, 1);
+    const cause = new Error('Search failed');
+    const options = vi.fn(async (query: string) => {
+      if (query) throw cause;
+      return [{ value: 1, label: 'Acme' }];
+    });
+    const { wrapper, input } = await mountComboBox({
+      options,
+      serverSearch: true,
+    });
+    input.element.focus();
+    await flushPromises();
+
+    await type(input, 'ac');
+    await pause(650);
+    await flushPromises();
+
+    expect(wrapper.emitted('error')).toEqual([[cause]]);
+  });
+
+  it('leaves out an abort, also one wrapped as the cause of a fetch error', async () => {
+    const abort = new DOMException('The operation was aborted.', 'AbortError');
+    const wrapped = Object.assign(new Error('[GET] /api: <no response>'), {
+      cause: abort,
+    });
+
+    for (const thrown of [abort, wrapped]) {
+      const { wrapper, input } = await mountComboBox({
+        options: () => Promise.reject(thrown),
+      });
+      await input.trigger('click');
+      await flushPromises();
+
+      expect(wrapper.emitted('error')).toBeUndefined();
+      wrapper.unmount();
+    }
+  });
+});
+
+describe('ComboBox: value-key and label-key', () => {
+  it('reads the value and label from the named fields', async () => {
+    const { wrapper, input, labels, option } = await mountComboBox({
+      options: [
+        { id: 7, name: 'Ham' },
+        { id: 8, name: 'Cheese' },
+      ],
+      valueKey: 'id',
+      labelKey: 'name',
+    });
+
+    await input.trigger('click');
+    expect(labels()).toEqual(['Ham', 'Cheese']);
+
+    await option('Cheese').trigger('click');
+    expect(wrapper.props('modelValue')).toBe(8);
+    expect(input.element.value).toBe('Cheese');
   });
 });
 
