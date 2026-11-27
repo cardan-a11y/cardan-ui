@@ -25,6 +25,11 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # A newer push replaces the run before it; a group name of its own, as one
+    # the caller's workflow shares would make the two wait on each other
+    concurrency:
+      group: cardan-ui-project-check-${{ github.repository }}-${{ github.ref }}
+      cancel-in-progress: true
     defaults:
       run:
         working-directory: project
@@ -51,6 +56,11 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
+          # One store for both installs below, so the second mostly links
+          cache: pnpm
+          cache-dependency-path: |
+            project/pnpm-lock.yaml
+            cardan-ui/pnpm-lock.yaml
 
       - name: Install Cardan UI's packages
         working-directory: cardan-ui
