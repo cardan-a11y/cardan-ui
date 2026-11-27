@@ -1,12 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
-import { useMfa } from '#imports';
+import { useMfa, useMfaSetupReminder } from '#imports';
 import {
   RECOVERY_CODES,
   client,
   fortify,
   navigate,
+  pending,
+  refuse,
   requests,
+  signIn,
   twoFactorApi,
   useScenario,
 } from './fortify';
@@ -21,6 +24,7 @@ mockNuxtImport(
 
 const codes = 'GET /api/user/two-factor-recovery-codes';
 const confirm = 'POST /api/user/confirmed-two-factor-authentication';
+const identity = `GET ${academy.sanctum.endpoints.user}` as const;
 
 describe('useMfa', () => {
   useScenario(academy);
@@ -75,5 +79,42 @@ describe('useMfa', () => {
     expect(requests(confirm)).toEqual([]);
     expect(mfaStep.value).toBe(3);
     expect(mfaError.value?.message).toBeTruthy();
+  });
+
+  it('refreshes the identity once the code is confirmed, with the codes shown first', async () => {
+    signIn(academy.user({ mfa_enabled: false }));
+    const refresh = pending({ data: academy.user({ mfa_enabled: true }) });
+    fortify(
+      twoFactorApi(academy, academy.user(), { [identity]: refresh.handler }),
+    );
+    const { mfaStep, enterCode } = useMfa();
+    mfaStep.value = 3;
+
+    let settled = false;
+    const confirming = enterCode().then((result) => {
+      settled = true;
+      return result;
+    });
+    await vi.waitFor(() => expect(requests(identity)).toHaveLength(1));
+
+    expect(mfaStep.value).toBe(4);
+    expect(settled).toBe(false);
+
+    refresh.answer();
+    await expect(confirming).resolves.toBe(true);
+    expect(useMfaSetupReminder().mfaEnabled.value).toBe(true);
+  });
+
+  it('confirms all the same when the refresh fails', async () => {
+    signIn(academy.user({ mfa_enabled: false }));
+    fortify(twoFactorApi(academy, academy.user(), { [identity]: refuse(500) }));
+    const { mfaStep, mfaError, enterCode } = useMfa();
+    mfaStep.value = 3;
+
+    await expect(enterCode()).resolves.toBe(true);
+
+    expect(requests(identity)).toHaveLength(1);
+    expect(mfaStep.value).toBe(4);
+    expect(mfaError.value).toBeNull();
   });
 });

@@ -172,6 +172,7 @@ export function useMfa() {
     }
   }
 
+  /** Confirms the code, then refreshes the identity; true once MFA is on. */
   async function enterCode() {
     mfaError.value = null;
     loadingConfirmationCode.value = true;
@@ -194,14 +195,17 @@ export function useMfa() {
         method: 'POST',
         body: mfaCredentials.value,
       });
-      mfaStep.value = 4;
-      return true;
     } catch (error) {
       setMfaError(error);
       return false;
     } finally {
       loadingConfirmationCode.value = false;
     }
+
+    // The codes first: they never wait on the refresh
+    mfaStep.value = 4;
+    await refreshIdentityAfterChange();
+    return true;
   }
 
   /** Posts the second factor at sign-in and goes where the sign-in was headed. */

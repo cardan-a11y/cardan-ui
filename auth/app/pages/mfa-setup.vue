@@ -16,27 +16,52 @@ const { t } = useI18n();
 useHead({ title: computed(() => t('mfa.setup-title')) });
 
 const { refreshIdentity, logout, loginRedirectTarget } = useAuth();
-const { mfaRequired, dismissMfaSetup } = useMfaSetupReminder();
+const { mfaRequired, isMfaSetupRequired, dismissMfaSetup } =
+  useMfaSetupReminder();
 const { mfaStep } = useMfa();
 
 const isPastIntro = computed(() => mfaStep.value > 1);
+
+const pageError = ref<ApiErrorData | null>(null);
 
 async function continueToApp() {
   dismissMfaSetup();
   await navigateTo(loginRedirectTarget() || '/');
 }
 
+const finishing = ref(false);
+
+// A refresh that failed after the code leaves MFA off in the identity, and
+// `mfa-setup.global` would send a required account back here
+async function finish() {
+  pageError.value = null;
+
+  if (isMfaSetupRequired.value) {
+    finishing.value = true;
+
+    try {
+      await refreshIdentity();
+    } catch (error) {
+      pageError.value = extractApiError(error);
+      return;
+    } finally {
+      finishing.value = false;
+    }
+  }
+
+  await continueToApp();
+}
+
 const signingOut = ref(false);
-const signOutError = ref<ApiErrorData | null>(null);
 
 async function signOut() {
-  signOutError.value = null;
+  pageError.value = null;
   signingOut.value = true;
 
   try {
     await logout();
   } catch (error) {
-    signOutError.value = extractApiError(error);
+    pageError.value = extractApiError(error);
   } finally {
     signingOut.value = false;
   }
@@ -59,16 +84,12 @@ async function signOut() {
       :skippable="!mfaRequired"
       :heading-level="1"
       :show-intro="false"
-      @refresh="refreshIdentity()"
+      :finishing
       @skip="continueToApp"
-      @done="continueToApp"
+      @done="finish"
     />
 
-    <ErrorMessage
-      v-if="mfaRequired"
-      class="mfa-setup-sign-out-error"
-      :data="signOutError"
-    />
+    <ErrorMessage class="mfa-setup-page-error" :data="pageError" />
 
     <!-- Without a skip, signing out is the only other way off this page. -->
     <template v-if="mfaRequired" #footer>
@@ -84,7 +105,7 @@ async function signOut() {
 </template>
 
 <style>
-.mfa-setup-sign-out-error .error-message {
+.mfa-setup-page-error .error-message {
   margin-block-start: 1.5rem;
   margin-inline: auto;
 }

@@ -9,6 +9,7 @@ const {
   autofocus = false,
   headingLevel = 2,
   showIntro = true,
+  finishing = false,
 } = defineProps<{
   /** Offer a way out of the flow before MFA is on. */
   skippable?: boolean;
@@ -18,6 +19,8 @@ const {
   headingLevel?: 1 | 2;
   /** Show the intro step's heading and description; off when the page introduces MFA itself. */
   showIntro?: boolean;
+  /** Keep the finish button loading while the parent handles `done`. */
+  finishing?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -25,7 +28,7 @@ const emit = defineEmits<{
   skip: [];
   /** MFA is on and the user has seen the recovery codes. */
   done: [];
-  /** MFA is on: re-sync any copy of the user the app keeps (the identity is refreshed). */
+  /** MFA is on and the identity refreshed: re-sync any copy of the user the app keeps. */
   refresh: [];
 }>();
 
@@ -190,6 +193,7 @@ onUnmounted(resetMfa);
         icon="material-symbols:arrow-right-alt"
         icon-pos="end"
         :label="$t('mfa.setup-finish')"
+        :loading="finishing"
         @click="finish"
       />
     </div>

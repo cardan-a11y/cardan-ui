@@ -5,7 +5,6 @@
  * straight on to the setup page.
  */
 const route = useRoute();
-const { refreshIdentity } = useAuth();
 const { loadingDisableMfa } = useMfa();
 
 const { mfaEnabled, mfaRequired, mfaExempt } = useMfaSetupReminder();
@@ -21,7 +20,6 @@ const {
 const resetsMfa = computed(() => mfaRequired.value && !mfaExempt.value);
 
 async function handleRefresh() {
-  await refreshIdentity().catch(() => {});
   emit('refresh');
 
   if (resetsMfa.value && loadingDisableMfa.value) {

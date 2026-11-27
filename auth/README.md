@@ -373,7 +373,7 @@ const {
 
 The recovery codes are shown only when they are created: once in the setup, read before the code is confirmed, and once after regenerating them. `openMfaRecoveryCodesDialog()` asks for the password and opens the dialog on replacing the codes, which shows the new set once and forgets it when it closes. Label its button `mfa.recovery-codes-regenerate`. An API that keeps serving the codes still works; the layer reads them only right after they are created. The Cardan Academy API serves them only those two times and an empty list after that.
 
-`MfaDialog` emits **`refresh`** once MFA has actually been turned on or off. The layer already refreshes the Sanctum identity itself; handle `refresh` to re-sync any copy of the user your app keeps of its own, so an "MFA enabled" badge updates immediately.
+`MfaDialog` emits **`refresh`** once MFA has actually been turned on or off. The layer refreshes the Sanctum identity itself before it emits, on confirming the code as on disabling, so its own `mfa-setup` middleware reads the new `mfa_enabled` whether or not your app handles the event; handle `refresh` only to re-sync any copy of the user your app keeps of its own, so an "MFA enabled" badge updates immediately. A failed refresh does not hold the flow back: the recovery codes still show, and the next read of the identity catches up.
 
 If that handler takes the user elsewhere after MFA is turned off (say, back to a setup page because MFA is required), pass `:show-disable-result="false"`. The dialog then skips its "MFA is off" step and keeps the disable button loading until your handler closes it with `closeMfaDialog()`.
 
@@ -400,12 +400,13 @@ Whether MFA is currently on stays your app's call — the flag lives in your `/a
 | ----------- | ------- | ---------------------------------------------------------------- |
 | `skippable` | `true`  | Offer "Skip for now" before MFA is on. Turn off to require setup |
 | `autofocus` | `false` | Focus the intro heading on mount                                 |
+| `finishing` | `false` | Keep the finish button loading while your `@done` handler works  |
 
-| Event      |                                                                       |
-| ---------- | --------------------------------------------------------------------- |
-| `@skip`    | The user chose to set up MFA later                                    |
-| `@done`    | MFA is on and the user confirmed they stored the recovery codes       |
-| `@refresh` | MFA has actually been turned on — re-sync your app's copy of the user |
+| Event      |                                                                            |
+| ---------- | -------------------------------------------------------------------------- |
+| `@skip`    | The user chose to set up MFA later                                         |
+| `@done`    | MFA is on and the user confirmed they stored the recovery codes            |
+| `@refresh` | MFA is on and the identity refreshed — re-sync your app's copy of the user |
 
 The buttons follow the [button variants](#button-variants) of your app config.
 
@@ -421,7 +422,7 @@ The buttons follow the [button variants](#button-variants) of your app config.
 
 ### Setup reminder
 
-When the user payload has `mfa_enabled: false`, a sign-in on `/login` detours past `/mfa-setup` before continuing (once per sign-in, kept in sessionStorage). With `mfa_required` the page offers no skip, and the layer's middleware sends the user back there on every navigation. When the API answers `403` with the code `mfa_setup_required` or `backoffice_mfa_required` mid-session, the layer re-reads the user and goes to `/mfa-setup` too.
+When the user payload has `mfa_enabled: false`, a sign-in on `/login` detours past `/mfa-setup` before continuing (once per sign-in, kept in sessionStorage). With `mfa_required` the page offers no skip, and the layer's middleware sends the user back there on every navigation. When the identity could not be read after the code was confirmed, the page's finish button reads it again before a required account leaves, and shows the error when that fails too, so the middleware never sends a user who has just turned MFA on back to the start. When the API answers `403` with the code `mfa_setup_required` or `backoffice_mfa_required` mid-session, the layer re-reads the user and goes to `/mfa-setup` too.
 
 ### Signing out
 

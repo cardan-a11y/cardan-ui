@@ -96,6 +96,7 @@ describe('MfaSettings: disabling (Academy)', () => {
     await flushPromises();
 
     expect(requests(disable)).toHaveLength(1);
+    expect(requests(identity)).toHaveLength(1);
     expect(dialog.text()).toContain(disabledText);
     expect(navigate).not.toHaveBeenCalled();
     expect(wrapper.emitted('refresh')).toHaveLength(1);
