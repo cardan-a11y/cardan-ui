@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
@@ -313,12 +313,14 @@ describe('serve', { timeout: 30_000 }, () => {
     server?: number | 'stay';
     /** Sends the signal once the log's last line starts with `after` */
     stop?: { after: string; signal: NodeJS.Signals };
+    env?: Record<string, string>;
   };
 
   /** Runs serve() in a process of its own, with stand-ins for nuxt/kit and
    * the built server; each step writes what it sees to a log */
   async function runServe(options: Run = {}) {
     const log = join(dir, 'log');
+    rmSync(log, { force: true });
     const entry = join(
       dir,
       'node_modules/.cache/site-browser/.output/server/index.mjs',
@@ -349,6 +351,7 @@ describe('serve', { timeout: 30_000 }, () => {
         kit: async () => {
           log('kit', process.env.SITE_URL, 'SITE_NOTHING' in process.env);
           return {
+            loadNuxtConfig: async () => ({ _layers: [{ cwd: ${JSON.stringify(dir)} }] }),
             loadNuxt: async () => {
               log('build', process.env.SITE_URL, process.env.SERVER_ONLY ?? '-');
               if (process.env.BUILD === 'fail') throw new Error('Broken config');
@@ -378,6 +381,8 @@ describe('serve', { timeout: 30_000 }, () => {
         LOG: log,
         BUILD: options.build ?? 'ok',
         SERVER: String(options.server ?? 0),
+        REBUILD: undefined,
+        ...options.env,
       },
       stdio: 'ignore',
     });
@@ -442,6 +447,55 @@ describe('serve', { timeout: 30_000 }, () => {
 
     expect(log).toEqual([...start, 'onExit']);
     expect(status).toBe(130);
+  });
+
+  describe('in a git checkout', () => {
+    const reused = ['kit http://localhost:4999 false', 'onExit'];
+    const buildOnly = { args: ['--build-only'] };
+
+    beforeEach(() => {
+      execFileSync('git', ['init', '-q'], { cwd: dir });
+      writeFileSync(join(dir, '.gitignore'), 'log\nnode_modules\n');
+      writeFileSync(join(dir, 'app.vue'), '<template>One</template>');
+    });
+
+    it('builds once, then serves that build while nothing it is built from changed, a test file included', async () => {
+      expect((await runServe(buildOnly)).log).toEqual([...start, 'onExit']);
+
+      writeFileSync(join(dir, 'page.spec.ts'), '');
+      writeFileSync(join(dir, 'page.test.ts'), '');
+      const { log, status } = await runServe(buildOnly);
+
+      expect(log).toEqual(reused);
+      expect(status).toBe(0);
+    });
+
+    it('builds again after a change to a source or a NUXT_ variable, and with REBUILD', async () => {
+      await runServe(buildOnly);
+
+      writeFileSync(join(dir, 'app.vue'), '<template>Two</template>');
+      expect((await runServe(buildOnly)).log).toEqual([...start, 'onExit']);
+
+      const env = { NUXT_PUBLIC_X: 'y' };
+      expect((await runServe({ ...buildOnly, env })).log).toEqual([
+        ...start,
+        'onExit',
+      ]);
+      expect((await runServe({ ...buildOnly, env })).log).toEqual(reused);
+
+      expect(
+        (await runServe({ ...buildOnly, env: { ...env, REBUILD: '1' } })).log,
+      ).toEqual([...start, 'onExit']);
+    });
+
+    it('builds again after a failed build, which may have left half an output, also once the change is undone', async () => {
+      await runServe(buildOnly);
+      writeFileSync(join(dir, 'app.vue'), '<template>Broken</template>');
+      await runServe({ ...buildOnly, build: 'fail' });
+      writeFileSync(join(dir, 'app.vue'), '<template>One</template>');
+
+      expect((await runServe(buildOnly)).log).toEqual([...start, 'onExit']);
+    });
   });
 
   it('stops the server on a signal, calls onExit once, and exits 128 + the signal', async () => {

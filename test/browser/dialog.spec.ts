@@ -16,7 +16,11 @@ async function expectModalPattern(
   const first = await focusStop(page, dialog);
 
   for (const reverse of [false, true]) {
-    const stops = await focusWalk(page, 60, { reverse, within: dialog });
+    const stops = await focusWalk(page, 60, {
+      reverse,
+      within: dialog,
+      until: first.key,
+    });
     expect(stops.filter((stop) => !stop.inside)).toEqual([]);
     expect(stops.map((stop) => stop.key)).toContain(first.key);
   }

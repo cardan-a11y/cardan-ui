@@ -29,6 +29,14 @@
  * script's: 128 + the signal's number after a signal, 1 after a failed build.
  * `--build-only` on the command line stops after the build.
  *
+ * A build is reused while nothing it is built from changed: the working tree
+ * of every git checkout that holds one of the app's Nuxt layers (untracked
+ * files included, ignored files and `*.spec.ts` and `*.test.ts` left out),
+ * the packages installed there, the `NUXT_*` and `NITRO_*` variables, `.env`, the port and Node's version.
+ * The fingerprint is `build-fingerprint` in the cache folder, written after a
+ * build that succeeded. `REBUILD=1` builds anyway; outside a git checkout it
+ * always builds.
+ *
  * Options:
  * - `root`: the project's root, a path or a file URL.
  * - `name`: the cache folder's name, `<name>-browser`.
@@ -54,9 +62,17 @@
  * - `onExit`: called once when the script ends, however it ends, to stop a
  *   process the project started first (the cms's Statamic stand-in).
  */
-import { spawn } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { constants } from 'node:os';
+import { execFileSync, spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import {
+  copyFileSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { constants, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -123,6 +139,97 @@ export function nuxtOptions(options, cache) {
   };
 }
 
+/**
+ * The git checkout that holds `dir` and its working tree as a tree hash:
+ * untracked files included, ignored files and test files left out. Undefined
+ * outside a git checkout.
+ */
+export function workingTree(dir) {
+  const git = (args, cwd, env = {}) =>
+    execFileSync('git', args, {
+      cwd,
+      env: { ...process.env, ...env },
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+
+  let top;
+  try {
+    top = git(['rev-parse', '--show-toplevel'], dir);
+  } catch {
+    return undefined;
+  }
+  const temp = mkdtempSync(join(tmpdir(), 'serve-index-'));
+  const env = { GIT_INDEX_FILE: join(temp, 'index') };
+  try {
+    const index = resolve(top, git(['rev-parse', '--git-path', 'index'], top));
+    if (existsSync(index)) copyFileSync(index, env.GIT_INDEX_FILE);
+    git(['add', '--all', '.'], top, env);
+    git(
+      [
+        'rm',
+        '--cached',
+        '-r',
+        '-q',
+        '--ignore-unmatch',
+        '--',
+        ':(glob)**/*.spec.ts',
+        ':(glob)**/*.test.ts',
+      ],
+      top,
+      env,
+    );
+    return { top, tree: git(['write-tree'], top, env) };
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+}
+
+/**
+ * What the build depends on, as a hash; undefined when a layer is outside a
+ * git checkout. Reads the config without its overrides, which may act when
+ * called (support's removes a database).
+ */
+export async function buildFingerprint(options, kit, port) {
+  const root = pathOf(options.root);
+  const cwd = join(root, options.cwd ?? '');
+  const config = await kit.loadNuxtConfig({
+    cwd,
+    envName: options.envName ?? 'test',
+    ...(options.dotenv === false ? { dotenv: false } : {}),
+  });
+
+  const trees = new Map();
+  for (const layer of config._layers ?? []) {
+    const found = workingTree(layer.cwd);
+    if (!found) return undefined;
+    // What is installed, which a lockfile changed by a pull may not be yet
+    const installed = join(found.top, 'node_modules/.pnpm/lock.yaml');
+    trees.set(found.top, [
+      found.tree,
+      existsSync(installed) ? readFileSync(installed, 'utf8') : null,
+    ]);
+  }
+
+  const dotenv = join(cwd, '.env');
+  const hash = createHash('sha256');
+  hash.update(
+    JSON.stringify({
+      trees: [...trees].sort(),
+      env: Object.entries(process.env)
+        .filter(([key]) => /^(NUXT|NITRO)_/.test(key))
+        .sort(),
+      dotenv:
+        options.dotenv !== false && existsSync(dotenv)
+          ? readFileSync(dotenv, 'utf8')
+          : null,
+      port,
+      node: process.version,
+    }),
+  );
+  return hash.digest('hex');
+}
+
 export async function serve(options) {
   const root = pathOf(options.root);
   const port = String(process.env.PORT ?? options.port);
@@ -153,13 +260,31 @@ export async function serve(options) {
     withoutUndefined(valueOf(options.env, { origin, port })),
   );
 
-  async function build() {
-    const { loadNuxt, buildNuxt, writeTypes } = await options.kit();
-    const nuxt = await loadNuxt(nuxtOptions(options, cache));
+  const stamp = join(cache, 'build-fingerprint');
+  const builtEntry = join(cache, '.output/server/index.mjs');
 
-    if (options.writeTypes) await writeTypes(nuxt);
-    await buildNuxt(nuxt);
+  async function build() {
+    const kit = await options.kit();
+    const fingerprint = await buildFingerprint(options, kit, port);
+    if (
+      fingerprint &&
+      !process.env.REBUILD &&
+      existsSync(builtEntry) &&
+      existsSync(stamp) &&
+      readFileSync(stamp, 'utf8') === fingerprint
+    ) {
+      console.error(
+        `Serving the build in ${cache}: nothing it is built from changed (REBUILD=1 builds anyway)`,
+      );
+      return join(cache, '.output');
+    }
+
+    rmSync(stamp, { force: true });
+    const nuxt = await kit.loadNuxt(nuxtOptions(options, cache));
+    if (options.writeTypes) await kit.writeTypes(nuxt);
+    await kit.buildNuxt(nuxt);
     await nuxt.close();
+    if (fingerprint) writeFileSync(stamp, fingerprint);
 
     return join(cache, '.output');
   }

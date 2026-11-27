@@ -97,17 +97,26 @@ export function tabKey(page: Page, { reverse = false } = {}): string {
   return `${reverse ? 'Shift+' : ''}${webkit ? 'Alt+' : ''}Tab`;
 }
 
-/** Presses `tabKey` `steps` times and returns where focus went after each press. */
+/**
+ * Presses `tabKey` `steps` times and returns where focus went after each
+ * press; with `until`, a stop's key, it ends at that stop.
+ */
 export async function focusWalk(
   page: Page,
   steps: number,
-  { reverse = false, within }: { reverse?: boolean; within?: Locator } = {},
+  {
+    reverse = false,
+    within,
+    until,
+  }: { reverse?: boolean; within?: Locator; until?: string } = {},
 ): Promise<FocusStop[]> {
   const stops: FocusStop[] = [];
 
   for (let i = 0; i < steps; i++) {
     await page.keyboard.press(tabKey(page, { reverse }));
-    stops.push(await focusStop(page, within));
+    const stop = await focusStop(page, within);
+    stops.push(stop);
+    if (until && stop.key === until) break;
   }
 
   return stops;
