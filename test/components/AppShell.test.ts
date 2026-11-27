@@ -243,6 +243,8 @@ describe('AppShell', () => {
     expectFocused(shellOf(wrapper));
   });
 
+  // The exit animation is stubbed; test/browser/shell.spec.ts ("MobileMenu:
+  // after a link in it") proves the real one
   it('takes focus after a link in the mobile menu, once the menu has closed', async () => {
     const wrapper = await mountSuspended(AppShell, {
       slots: {
@@ -300,6 +302,8 @@ describe('AppShell', () => {
     expectFocused(shell);
   });
 
+  // `:modal`, `close()` and the exit animation are stubbed;
+  // test/browser/shell.spec.ts ("Dialog: after a link in it") proves the real ones
   it('takes focus after a link in a modal Dialog, once the dialog has closed and given focus back to its opener', async () => {
     const wrapper = await mountSuspended(AppShell, {
       slots: {

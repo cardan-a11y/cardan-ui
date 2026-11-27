@@ -402,6 +402,8 @@ describe('ConfirmDialog', () => {
       (button) => accessibleName(button) === name,
     )!;
 
+  // The component's focus() on Cancel; where the browser puts focus is in
+  // test/browser/confirm-dialog.spec.ts ("focus starts on Cancel")
   it('is an alertdialog named by its label, described by its description, Cancel focused', async () => {
     const { dialog } = await mountDialog();
 
@@ -425,6 +427,7 @@ describe('ConfirmDialog', () => {
     expect(dialog.querySelector('strong')!.getAttribute('lang')).toBe('nl');
   });
 
+  // As above: test/browser/confirm-dialog.spec.ts ("the challenge starts in its field")
   it('starts in the digit field with challenge and autofocus', async () => {
     const { dialog } = await mountDialog({ challenge: true, autofocus: true });
 
