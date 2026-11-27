@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { defineComponent, h, nextTick, ref } from 'vue';
-import type { DOMWrapper } from '@vue/test-utils';
+import { flushPromises, type DOMWrapper } from '@vue/test-utils';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { FileInput } from '#components';
 import {
@@ -48,7 +48,7 @@ async function choose(input: HTMLInputElement, file: File) {
     configurable: true,
   });
   input.dispatchEvent(new Event('change'));
-  await nextTick();
+  await flushPromises();
 }
 
 describe('FileInput', () => {
@@ -183,6 +183,70 @@ describe('FileInput in document mode', () => {
     expect(description(input)).toBe('PDF (max. 5 MB)');
     await expectNoViolations();
   });
+
+  it.each([
+    ['CV.PDF', true],
+    ['x.exe.pdf', true],
+    ['cv.pdf.exe', false],
+    ['cv', false],
+    ['.pdf', false],
+  ])('judges %s by its last extension, in any case: accepted %s', async (name, accepted) => {
+    const wrapper = await mountSuspended(FileInput, {
+      props: { label: 'Document', mode: 'document', accept: '.pdf' },
+      attachTo: document.body,
+    });
+    const input = wrapper.get('input').element;
+
+    await choose(input, new File(['x'], name));
+    expect(wrapper.emitted('select')?.length ?? 0).toBe(accepted ? 1 : 0);
+    expect(input.getAttribute('aria-invalid')).toBe(accepted ? null : 'true');
+  });
+
+  it('judges a file by its extension, not its MIME type, which the server checks', async () => {
+    const wrapper = await mountSuspended(FileInput, {
+      props: { label: 'Document', mode: 'document', accept: '.pdf' },
+      attachTo: document.body,
+    });
+    const input = wrapper.get('input').element;
+
+    await choose(input, new File(['x'], 'cv.pdf', { type: 'image/png' }));
+    expect(wrapper.emitted('select')).toHaveLength(1);
+    await choose(input, new File(['x'], 'cv.png', { type: 'application/pdf' }));
+    expect(wrapper.emitted('select')).toHaveLength(1);
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('without accept, hands on a file of any type, an empty one too', async () => {
+    const wrapper = await mountSuspended(FileInput, {
+      props: { label: 'Document', mode: 'document' },
+      attachTo: document.body,
+    });
+    const input = wrapper.get('input').element;
+    expect(description(input)).toBe('(max. 5 MB)');
+
+    const files = [new File(['x'], 'run.exe'), new File([], 'empty.txt')];
+    for (const file of files) await choose(input, file);
+    expect(wrapper.emitted('select')).toEqual(files.map((file) => [file]));
+    expect(input.hasAttribute('aria-invalid')).toBe(false);
+  });
+
+  it('takes a file of exactly the size limit and turns down a larger one', async () => {
+    const wrapper = await mountSuspended(FileInput, {
+      props: { label: 'Document', mode: 'document', maxFileSize: 1 },
+      attachTo: document.body,
+    });
+    const input = wrapper.get('input').element;
+
+    await choose(input, new File([new Uint8Array(1000)], 'limit.pdf'));
+    expect(wrapper.emitted('select')).toHaveLength(1);
+
+    await choose(input, new File([new Uint8Array(1001)], 'over.pdf'));
+    expect(wrapper.emitted('select')).toHaveLength(1);
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(description(input)).toBe(
+      '(max. 1 KB) This file is larger than 1 KB. Choose a smaller file.',
+    );
+  });
 });
 
 describe('FileInput in document mode in a form', () => {
@@ -195,8 +259,7 @@ describe('FileInput in document mode in a form', () => {
     transfer.items.add(file);
     input.files = transfer.files;
     input.dispatchEvent(new Event('change'));
-    await nextTick();
-    await nextTick();
+    await flushPromises();
   }
 
   /** The file a submit of the form posts under `name`, `undefined` for none */
@@ -366,6 +429,61 @@ describe('FileInput in image mode', () => {
     expect(input.files?.[0]).toBe(small);
   });
 
+  it('with accept, turns down a file of another type, chosen or dropped, and keeps the one before', async () => {
+    let value: File | undefined;
+    const wrapper = await mountSuspended(FileInput, {
+      props: {
+        label: 'Picture',
+        accept: 'image/*',
+        'onUpdate:modelValue': (file?: File) => (value = file),
+      },
+      attachTo: document.body,
+    });
+    const input = wrapper.get('input').element;
+    const gif = new File(['x'], 'cat.gif', { type: 'image/gif' });
+    const objectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:preview');
+
+    await choose(input, gif);
+    expect(value).toBe(gif);
+
+    // A drop sets the input's files and fires change, as the picker does
+    await choose(
+      input,
+      new File(['x'], 'cv.pdf', { type: 'application/pdf' }),
+    );
+    expect(value).toBe(gif);
+    expect(input.files?.[0]).toBe(gif);
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(description(input)).toBe(
+      '(max. 5 MB) This file type is not supported. Choose a file of type image.',
+    );
+    objectUrl.mockRestore();
+  });
+
+  it('with accept, judges by the MIME type and by an extension it names', async () => {
+    const wrapper = await mountSuspended(FileInput, {
+      props: { label: 'Picture', accept: 'image/png, .WEBP' },
+      attachTo: document.body,
+    });
+    const input = wrapper.get('input').element;
+    const objectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:preview');
+
+    await choose(input, new File(['x'], 'shot.png', { type: 'application/pdf' }));
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(description(input)).toBe(
+      'PNG or WEBP (max. 5 MB) This file type is not supported. Choose a file of type PNG or WEBP.',
+    );
+
+    await choose(input, new File(['x'], 'shot.webp', { type: '' }));
+    expect(input.hasAttribute('aria-invalid')).toBe(false);
+    expect(wrapper.emitted('update:modelValue')).toHaveLength(1);
+    objectUrl.mockRestore();
+  });
+
   it('leaves a paste into a text field to that field', async () => {
     const textarea = addToPage('<textarea></textarea>');
     const wrapper = await mountSuspended(FileInput, {
@@ -436,6 +554,14 @@ describe('FileInput and a pasted file', () => {
 
   const pdf = () => new File(['x'], 'cv.pdf', { type: 'application/pdf' });
 
+  async function mountWithRealFiles(props: Record<string, unknown> = {}) {
+    const wrapper = await mountSuspended(FileInput, {
+      props: { label: 'Picture', ...props },
+      attachTo: document.body,
+    });
+    return { wrapper, input: wrapper.get('input').element };
+  }
+
   it('takes a file pasted anywhere on the page, as its value and in the input', async () => {
     let value: File | undefined;
     const { wrapper, input } = await mountPicture({
@@ -464,6 +590,51 @@ describe('FileInput and a pasted file', () => {
     await vi.waitFor(() => expect(wrapper.emitted('paste')).toHaveLength(1));
 
     expect(validAtPaste).toBe(false);
+  });
+
+  it('keeps a pasted file over the size limit out of the value and the input, and shows the error', async () => {
+    let value: File | undefined;
+    const { wrapper, input } = await mountWithRealFiles({
+      maxFileSize: 1,
+      'onUpdate:modelValue': (file?: File) => (value = file),
+    });
+
+    pasteFile(new File([new Uint8Array(2000)], 'big.pdf'));
+    await vi.waitFor(() => expect(wrapper.emitted('paste')).toHaveLength(1));
+
+    expect(value).toBeUndefined();
+    expect(input.files).toHaveLength(0);
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(description(input)).toBe(
+      '(max. 1 KB) This file is larger than 1 KB. Choose a smaller file.',
+    );
+  });
+
+  it('with accept, turns down a pasted file of another type', async () => {
+    let value: File | undefined;
+    const { wrapper, input } = await mountWithRealFiles({
+      accept: 'image/*',
+      'onUpdate:modelValue': (file?: File) => (value = file),
+    });
+
+    pasteFile(pdf());
+    await vi.waitFor(() => expect(wrapper.emitted('paste')).toHaveLength(1));
+
+    expect(value).toBeUndefined();
+    expect(input.files).toHaveLength(0);
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(description(input)).toContain('Choose a file of type image.');
+  });
+
+  it('takes no paste while disabled', async () => {
+    const { wrapper, input } = await mountPicture({ disabled: true });
+
+    pasteFile(pdf());
+    await flushPromises();
+
+    expect(wrapper.emitted('paste')).toBeUndefined();
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    expect(input.files).toHaveLength(0);
   });
 
   it('gives a paste to one field: the one with focus, else the first one mounted', async () => {
@@ -577,8 +748,7 @@ describe('FileInput and image compression', () => {
     transfer.items.add(file);
     input.files = transfer.files;
     input.dispatchEvent(new Event('change'));
-    await nextTick();
-    await nextTick();
+    await flushPromises();
   }
 
   const posted = (form: HTMLFormElement) =>
@@ -778,5 +948,23 @@ describe('FileInput: disabled', () => {
 
     expect(input.attributes('aria-invalid')).toBeUndefined();
     expect(description(input)).not.toContain('Picture is missing');
+  });
+});
+
+describe('FileInput: hide-zone', () => {
+  it('opens the picker from open() and still shows its error', async () => {
+    const wrapper = await mountSuspended(FileInput, {
+      props: { label: 'Logo', hideZone: true, maxFileSize: 1 },
+      attachTo: document.body,
+    });
+    const input = wrapper.get('input').element;
+    const opened = vi.fn();
+    input.addEventListener('click', opened);
+
+    (wrapper.vm as unknown as { open: () => void }).open();
+    expect(opened).toHaveBeenCalledTimes(1);
+
+    await choose(input, new File([new Uint8Array(2000)], 'big.pdf'));
+    expect(wrapper.text()).toContain('This file is larger than 1 KB.');
   });
 });

@@ -121,6 +121,7 @@
     "open": "Bestand openen",
     "too-big": "Dit bestand is groter dan {size}. Kies een kleiner bestand.",
     "button-text": "Klik om te uploaden of sleep een bestand",
+    "type-image": "afbeelding",
     "wrong-type": "Dit bestandstype wordt niet ondersteund. Kies een bestand van het type {types}."
   },
   "filters": {

@@ -121,6 +121,7 @@
     "open": "Open file",
     "too-big": "This file is larger than {size}. Choose a smaller file.",
     "button-text": "Click to upload or drop a file",
+    "type-image": "image",
     "wrong-type": "This file type is not supported. Choose a file of type {types}."
   },
   "filters": {

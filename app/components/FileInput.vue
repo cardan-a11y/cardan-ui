@@ -22,8 +22,9 @@ const {
 } = defineProps<{
   label: string;
   /**
-   * `image` keeps the file as the value, previews and compresses it and takes
-   * a paste. `document` checks a file against `accept` and hands it to
+   * `image` keeps the file as the value, previews and compresses an image and
+   * takes a paste; with `accept` it turns down a file of another type, also
+   * one dropped or pasted. `document` checks a file against `accept` and hands it to
    * `select`, without preview, compression or paste. Without `name` it is
    * empty again, for a parent that uploads the file (the same file can be
    * chosen again) and `required` only shows the chip; with `name` the file
@@ -39,7 +40,10 @@ const {
   name?: string;
   placeholderUrl?: string;
   id?: string;
-  /** In document mode, the extensions: `.pdf,.docx` or `pdf,docx` */
+  /**
+   * In document mode, the extensions: `.pdf,.docx` or `pdf,docx`. In image
+   * mode, as the input's own `accept`: `image/*`, `image/png,.webp`
+   */
   accept?: string;
   hideLabel?: boolean;
   /** Shows only the error; `open()` opens the picker, e.g. for "Replace" */
@@ -75,10 +79,46 @@ const acceptedExtensions = computed(() =>
     : [],
 );
 
+const acceptedImageTypes = computed(() =>
+  mode === 'image' && accept
+    ? accept
+        .split(',')
+        .map((type) => type.trim().toLowerCase())
+        .filter(Boolean)
+    : [],
+);
+
+function acceptsImageType(file: File) {
+  const type = file.type.toLowerCase();
+  const extension = getFileExtension(file.name)?.toLowerCase();
+  return acceptedImageTypes.value.some((token) => {
+    if (token.endsWith('/*')) return type.startsWith(token.slice(0, -1));
+    if (token.includes('/')) return type === token;
+    return extension === token.replace(/^\./, '');
+  });
+}
+
+function typeLabel(token: string) {
+  if (token === 'image/*') return t('files.type-image');
+  const subtype = token.split('/').at(-1)!.split('+')[0]!;
+  return subtype.replace(/^\./, '').toUpperCase();
+}
+
+// `image/*` alone: the field's label already says it takes a picture
+const namesTypes = computed(
+  () =>
+    acceptedExtensions.value.length > 0 ||
+    acceptedImageTypes.value.some((token) => token !== 'image/*'),
+);
+
 const typesLabel = computed(() =>
-  new Intl.ListFormat(locale.value, { type: 'disjunction' }).format(
-    acceptedExtensions.value.map((extension) => extension.toUpperCase()),
-  ),
+  new Intl.ListFormat(locale.value, { type: 'disjunction' }).format([
+    ...new Set(
+      acceptedExtensions.value.length
+        ? acceptedExtensions.value.map((extension) => extension.toUpperCase())
+        : acceptedImageTypes.value.map(typeLabel),
+    ),
+  ]),
 );
 
 const maxSizeLabel = computed(() => formatFileSize(maxFileSize * 1000));
@@ -248,16 +288,11 @@ function handleImagePreview(file: File) {
 }
 
 function validateFile(file: File) {
-  if (!file && required) {
-    validity.value = false;
-    errorMessage.value = t('form.missing-value', { item: label });
-    return;
-  }
-
   const extension = getFileExtension(file.name)?.toLowerCase() ?? '';
   if (
-    acceptedExtensions.value.length &&
-    !acceptedExtensions.value.includes(extension)
+    (acceptedExtensions.value.length &&
+      !acceptedExtensions.value.includes(extension)) ||
+    (acceptedImageTypes.value.length && !acceptsImageType(file))
   ) {
     validity.value = false;
     errorMessage.value = t('files.wrong-type', { types: typesLabel.value });
@@ -417,9 +452,7 @@ function removeFile() {
             {{ $t('files.button-text') }}
           </span>
           <span :id="`instruction-${id}`">
-            <template v-if="acceptedExtensions.length"
-              >{{ typesLabel }}
-            </template>
+            <template v-if="namesTypes">{{ typesLabel }} </template>
             {{ $t('files.max-size', { size: maxSizeLabel }) }}
           </span>
         </span>
