@@ -1,8 +1,13 @@
 <script setup lang="ts">
+/**
+ * Deprecated since 2.6.3 and removed in the next minor: VideoPlayer plays
+ * YouTube and Vimeo, and loads nothing from either before the click.
+ */
 import { parseVideoUrl } from '../utils/video';
 
 const { url } = defineProps<{
   url: string;
+  /** Loads the thumbnail eagerly; not passed on, as the player would preload it from YouTube. */
   aboveTheFold?: boolean;
 }>();
 
@@ -11,16 +16,35 @@ const youtubeKey = computed(() => {
 
   return video?.provider === 'youtube' ? video.id : '';
 });
+
+// The placeholder through @nuxt/image (`/_ipx`), not from YouTube; hq720 is missing for some videos
+const thumbFailed = ref(false);
+watch(youtubeKey, () => {
+  thumbFailed.value = false;
+});
 </script>
 
 <template>
   <ScriptYouTubePlayer
     v-if="youtubeKey"
     :video-id="youtubeKey"
-    :above-the-fold="aboveTheFold"
-    :placeholder-attrs="{ alt: '' }"
     class="youtube-player"
   >
+    <template #placeholder="{ placeholder }">
+      <NuxtImg
+        :src="
+          thumbFailed
+            ? `https://i.ytimg.com/vi/${youtubeKey}/hqdefault.jpg`
+            : placeholder
+        "
+        alt=""
+        :loading="aboveTheFold ? 'eager' : 'lazy'"
+        format="webp"
+        class="youtube-player-placeholder"
+        @error="thumbFailed = true"
+      />
+    </template>
+
     <template #awaitingLoad>
       <div class="play-button">
         <svg
@@ -52,6 +76,12 @@ const youtubeKey = computed(() => {
 
 <style>
 .youtube-player {
+  .youtube-player-placeholder {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
   .play-button {
     position: absolute;
     inset: 0;

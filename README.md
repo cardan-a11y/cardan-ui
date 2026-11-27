@@ -84,7 +84,7 @@ pnpm add @vueform/multiselect
 # VideoPlayer, or a video link in MarkdownPreview
 pnpm add @nuxt/image
 
-# YouTube or CookiesDialog
+# CookiesDialog, or YouTube (deprecated for VideoPlayer, removed in the next minor)
 pnpm add @nuxt/scripts
 ```
 

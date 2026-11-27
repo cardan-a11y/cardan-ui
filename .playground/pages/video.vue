@@ -52,14 +52,15 @@ const vimeoPrivate = ref('https://vimeo.com/706156113/91b6e7682f');
       <h2 id="video-youtube">YouTube</h2>
       <p class="demo-hint">
         The YouTube player of Nuxt Scripts (<code>ScriptYouTubePlayer</code>),
-        for a YouTube link only.
+        for a YouTube link only. Deprecated for VideoPlayer and removed in the
+        next minor version.
       </p>
 
       <div class="demo-grid">
         <Card>
           <h3>YouTube - Nuxt Scripts</h3>
 
-          <YouTube :url="youtube" />
+          <YouTube :url="youtube" above-the-fold />
           <Input v-model="youtube" label="ID" hide-label />
         </Card>
       </div>

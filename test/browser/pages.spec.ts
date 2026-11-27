@@ -53,15 +53,7 @@ const KNOWN_VIOLATIONS: {
 ];
 
 // Known defects: a page asks a third party unasked; fails once the request is gone
-const KNOWN_THIRD_PARTIES: { route: string; url: string; cause: string }[] = [
-  {
-    route: '/video',
-    // VideoPlayer would ask the same address; it goes through /_ipx instead
-    url: 'https://i.ytimg.com/vi_webp/PGvgdZuQu6w/hq720.webp',
-    cause:
-      "YouTube.vue: Nuxt Scripts' ScriptYouTubePlayer loads its placeholder from YouTube on mount",
-  },
-];
+const KNOWN_THIRD_PARTIES: { route: string; url: string; cause: string }[] = [];
 
 /**
  * How the sweep reaches each page of the auth layer: a route in
