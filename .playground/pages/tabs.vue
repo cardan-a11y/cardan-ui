@@ -12,6 +12,12 @@ const tabs = [
     label: 'Overflowing content',
     icon: 'material-symbols:format-text-overflow-rounded',
   },
+  {
+    value: 'c',
+    label: 'Disabled tab',
+    icon: 'material-symbols:block-rounded',
+    disabled: true,
+  },
 ];
 
 const activeTab = ref('a');

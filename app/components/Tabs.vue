@@ -1,4 +1,16 @@
 <script setup lang="ts">
+/**
+ * The APG tabs pattern with automatic activation: a tab that gets focus by
+ * an arrow key, Home or End is selected and shows its panel. Left and Right
+ * wrap around the ends and pass over a disabled tab; the list is one tab
+ * stop, on the selected tab, or on the first enabled one while the selected
+ * tab is disabled or nothing is selected. The open panel is the next stop.
+ *
+ * A panel is the slot named after its tab's value. The `tabpanel` slot
+ * instead renders one panel for every tab, such as a list the tab filters,
+ * labelled by the selected tab.
+ */
+
 const activeTab = defineModel<string>();
 
 const {
@@ -65,6 +77,16 @@ function focusTabpanel() {
   tabpanelRef.value?.focus();
 }
 
+const slots = useSlots();
+
+const tabId = (index: number) => `${id}-tab-${index}`;
+const panelId = (index: number) =>
+  slots.tabpanel ? `${id}-tabpanel` : `${id}-tabpanel-${index}`;
+
+const selectedIndex = computed(() =>
+  tabs.findIndex((tab) => tab.value === activeTab.value),
+);
+
 defineExpose({
   setActiveTab,
   focusTabpanel,
@@ -85,15 +107,15 @@ defineExpose({
     }"
   >
     <div ref="tablist" class="tablist" role="tablist" :aria-label="ariaLabel">
-      <template v-for="tab in tabs" :key="'tab-' + tab.value">
+      <template v-for="(tab, index) in tabs" :key="'tab-' + tab.value">
         <button
-          :id="`${id}-tab-${tab.value}`"
+          :id="tabId(index)"
           type="button"
           class="tab"
           role="tab"
           :aria-selected="tab.value === activeTab"
           :tabindex="tab.value === focusableTab ? '0' : '-1'"
-          :aria-controls="`${id}-tabpanel-${tab.value}`"
+          :aria-controls="panelId(index)"
           :disabled="tab.disabled"
           @keydown.left.prevent="handleStep($event, -1)"
           @keydown.right.prevent="handleStep($event, 1)"
@@ -109,25 +131,31 @@ defineExpose({
 
     <slot name="top" />
 
-    <slot name="tabpanel" />
+    <div ref="tabpanel" class="tabpanel-wrapper" tabindex="-1">
+      <div
+        v-if="$slots.tabpanel"
+        :id="panelId(0)"
+        :aria-labelledby="selectedIndex >= 0 ? tabId(selectedIndex) : undefined"
+        role="tabpanel"
+        class="tabpanel"
+        tabindex="0"
+      >
+        <slot name="tabpanel" />
+      </div>
 
-    <div
-      v-if="!$slots.tabpanel"
-      ref="tabpanel"
-      class="tabpanel-wrapper"
-      tabindex="-1"
-    >
-      <template v-for="tab in tabs" :key="tab.value">
-        <div
-          v-show="tab.value === activeTab"
-          :id="`${id}-tabpanel-${tab.value}`"
-          :aria-labelledby="`${id}-tab-${tab.value}`"
-          role="tabpanel"
-          class="tabpanel"
-          :tabindex="tab.value === activeTab ? '0' : '-1'"
-        >
-          <slot :name="tab.value" />
-        </div>
+      <template v-else>
+        <template v-for="(tab, index) in tabs" :key="tab.value">
+          <div
+            v-show="tab.value === activeTab"
+            :id="panelId(index)"
+            :aria-labelledby="tabId(index)"
+            role="tabpanel"
+            class="tabpanel"
+            :tabindex="tab.value === activeTab ? '0' : '-1'"
+          >
+            <slot :name="tab.value" />
+          </div>
+        </template>
       </template>
     </div>
 

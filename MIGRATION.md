@@ -127,6 +127,10 @@ New: **ComboBox's `error` event, Form's `resetValidity()` and SpinButton's `read
 - **A disabled or read-only required field is no longer `aria-invalid`** after a failed submit, nor described by an error that does not show: Checkbox, CheckboxGroup, RadioGroup, DatePicker, ComboBox, SpinButton, FileInput and MarkdownEditor, which no longer holds a submit back while disabled. Nothing to do.
 - **Input's and Textarea's error names the check that failed**, such as "Enter at least 3 characters" or "Enter 2 or more", with the layer's new keys `form.too-short` and `form.too-long`. Nothing to do.
 
+Fixed: **Tabs' references hold**: a tab's `aria-controls` and its panel's `aria-labelledby` use the tab's position, where they used its value, which broke on a value with a space. The `tabpanel` slot is now wrapped in one `role="tabpanel"` element (class `tabpanel`) that every tab controls, labelled by the selected tab, and `focusTabpanel()` reaches it; before, the tabs pointed at panels that did not exist.
+
+- **Nothing to do.** No project uses the `tabpanel` slot or Tabs' ids.
+
 Changed: **the test harness is faster**, and a project's suites get most of it without a change of their own.
 
 - **`serve()` reuses the browser suite's build** while nothing it is built from changed: the working tree of every checkout that holds one of the app's layers (spec and test files left out), the installed packages, the `NUXT_*` and `NITRO_*` variables, `.env`, the port and Node's version. The first run after the update builds as before. `REBUILD=1` builds anyway. Nothing to do.

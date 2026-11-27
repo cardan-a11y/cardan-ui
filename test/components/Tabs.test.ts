@@ -165,4 +165,80 @@ describe('Tabs', () => {
     expect(panel('C').getAttribute('tabindex')).toBe('0');
     expect(panel('A').getAttribute('tabindex')).toBe('-1');
   });
+
+  it('keeps a disabled selected tab selected with its panel, and the tab stop on the first enabled tab', async () => {
+    const { wrapper, tab, selected } = await mountTabs({ modelValue: 'b' });
+
+    expect(selected()).toEqual(['B']);
+    expect(
+      wrapper.findAll('[role="tab"]').map((tab) => tab.attributes('tabindex')),
+    ).toEqual(['0', '-1', '-1']);
+    const panel = document.getElementById(
+      tab('B').getAttribute('aria-controls') ?? '',
+    )!;
+    expect(panel.textContent).toBe('B');
+    expect(panel.getAttribute('tabindex')).toBe('0');
+  });
+
+  it('refers to its panels by ids that hold, also for a value with a space', async () => {
+    const { tab } = await mountTabs({
+      tabs: [
+        { value: 'first tab', label: 'A' },
+        { value: 'second tab', label: 'C' },
+      ],
+      modelValue: 'first tab',
+    });
+
+    for (const name of ['A', 'C']) {
+      const controls = tab(name).getAttribute('aria-controls') ?? '';
+      expect(controls).not.toMatch(/\s/);
+      const panel = document.getElementById(controls);
+      expect(panel?.getAttribute('aria-labelledby')).toBe(tab(name).id);
+    }
+  });
+
+  it('wraps the tabpanel slot in one panel that every tab controls, labelled by the selected tab', async () => {
+    const wrapper = await mountSuspended(Tabs, {
+      props: {
+        tabs,
+        modelValue: 'c',
+        ariaLabel: 'Letters',
+        'onUpdate:modelValue': (value?: string) =>
+          wrapper.setProps({ modelValue: value }),
+      },
+      slots: { tabpanel: '<p>Shared</p>' },
+      attachTo: document.body,
+    });
+
+    const panels = wrapper.findAll('[role="tabpanel"]');
+    expect(panels).toHaveLength(1);
+    const panel = panels[0]!.element;
+    expect(panel.textContent).toBe('Shared');
+    for (const tab of wrapper.findAll('[role="tab"]')) {
+      expect(tab.attributes('aria-controls')).toBe(panel.id);
+    }
+    const selectedTab = wrapper.get('[role="tab"][aria-selected="true"]');
+    expect(panel.getAttribute('aria-labelledby')).toBe(
+      selectedTab.attributes('id'),
+    );
+    expect(accessibleName(panel)).toBe('C');
+    await expectNoViolations();
+  });
+
+  it('selects a tab and moves focus to the open panel through its exposed functions', async () => {
+    const { wrapper, selected } = await mountTabs();
+    const exposed = wrapper.vm as unknown as {
+      setActiveTab: (tab: { value: string }) => void;
+      focusTabpanel: () => void;
+    };
+
+    exposed.setActiveTab({ value: 'c' });
+    await nextTick();
+    expect(selected()).toEqual(['C']);
+
+    exposed.focusTabpanel();
+    expectFocused(
+      document.querySelector('[role="tabpanel"]')!.parentElement as HTMLElement,
+    );
+  });
 });
