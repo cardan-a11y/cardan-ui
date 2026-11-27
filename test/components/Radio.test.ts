@@ -170,7 +170,52 @@ describe('RadioGroup', () => {
   });
 });
 
-describe('RadioGroup: disabled', () => {
+describe('RadioGroup: a choice is an option', () => {
+  it.each([
+    { name: 'null', modelValue: null },
+    { name: 'a value no option has', modelValue: 'maybe' },
+  ])(
+    'with $name and required, is described by its error after a failed submit',
+    async ({ modelValue }) => {
+      const wrapper = await mountInForm(() => [
+        h(RadioGroup, {
+          label: 'Answer',
+          required: true,
+          options: answers,
+          modelValue: modelValue as never,
+        }),
+      ]);
+
+      await wrapper.get('form').trigger('submit');
+      await nextTick();
+
+      expect(description(wrapper.get('fieldset'))).toBe('Answer is missing');
+    },
+  );
+
+  it('counts a model that Vue checks a radio for as a choice: the text 1 for the option 1', async () => {
+    const wrapper = await mountInForm(() => [
+      h(RadioGroup, {
+        label: 'Rating',
+        required: true,
+        options: [
+          { value: 1, label: 'One' },
+          { value: 2, label: 'Two' },
+        ],
+        modelValue: '1',
+      }),
+      // Another field fails, so the Form shows errors
+      h('input', { required: true, 'aria-label': 'Other' }),
+    ]);
+    const radios = wrapper.findAll<HTMLInputElement>('input[type="radio"]');
+    expect(radios[0]!.element.checked).toBe(true);
+
+    await wrapper.get('form').trigger('submit');
+    await nextTick();
+
+    expect(description(wrapper.get('fieldset'))).toBe('');
+  });
+
   it('disabled and required, is not described by an error that does not show', async () => {
     const wrapper = await mountInForm(() => [
       h(RadioGroup, {

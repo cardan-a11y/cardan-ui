@@ -111,6 +111,7 @@ Fixed: **small defects in the field components**.
 
 - **CheckboxGroup's `v-model` is typed as an array**, `(string | number)[]`, where it also allowed a boolean, and the group treats any other model as empty: `undefined` or `null` made the first tick tick every box. Every project binds an array. Nothing to do.
 - **Select shows its placeholder for `undefined` and `null`**, and no "No options" entry next to options in its slot. Nothing to do.
+- **RadioGroup counts only an option's value as a choice**, so a required group with `null` or a value no option has shows its error after a failed submit. Nothing to do.
 - **A disabled or read-only required field is no longer `aria-invalid`** after a failed submit, nor described by an error that does not show: Checkbox, CheckboxGroup, RadioGroup, DatePicker, ComboBox, SpinButton, FileInput and MarkdownEditor, which no longer holds a submit back while disabled. Nothing to do.
 
 ### 2.6.2

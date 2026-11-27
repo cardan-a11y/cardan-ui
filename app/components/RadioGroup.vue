@@ -4,6 +4,7 @@ const model = defineModel<string | number | boolean | undefined>({
 });
 
 const {
+  options,
   valueKey = 'value' as keyof T & string,
   labelKey = 'label' as keyof T & string,
   variant = 'default',
@@ -58,8 +59,13 @@ const message = computed(
   () => errorMessage ?? t('form.missing-value', { item: label }),
 );
 
+// As Vue's radio v-model compares (looseEqual): '1' chooses the option 1
 const hasChoice = computed(
-  () => model.value !== undefined && model.value !== '',
+  () =>
+    model.value != null &&
+    options.some(
+      (option) => String(optionValue(option)) === String(model.value),
+    ),
 );
 
 const { customErrorActive, clearCustomError, errorShown } = useCustomError(
